@@ -4775,13 +4775,14 @@ function ensureProfileSocialLinks(){
       return;
     }
 
-    // Insert inside the profile view container so it hides with the tab.
+    // Insert inside the profile page body and keep it at the very bottom.
     const profileView = (els && els.viewProfile) ? els.viewProfile : document.getElementById("view-profile");
     if(!profileView) return;
+    const profileContainer = profileView.querySelector('.profilePage') || profileView.querySelector('.viewBody') || profileView;
 
     if(existing){
-      // If card exists but is outside profile, move it into profile.
-      if(!profileView.contains(existing)) profileView.prepend(existing);
+      if(!profileContainer.contains(existing)) profileContainer.appendChild(existing);
+      else if(profileContainer.lastElementChild !== existing) profileContainer.appendChild(existing);
       return;
     }
 
@@ -4845,7 +4846,7 @@ function ensureProfileSocialLinks(){
     if(anchor && anchor.parentElement === profileView){
       anchor.insertAdjacentElement("afterend", card);
     }else{
-      profileView.prepend(card);
+      profileContainer.appendChild(card);
     }
   }catch(e){}
 }
@@ -5025,3 +5026,17 @@ document.addEventListener("keydown", (e)=>{
     closeOrderReceipt();
   }
 });
+
+
+/* === v4 profile organizer === */
+function orzuMoveProfileSocialToBottom(){
+  try{
+    const profileContainer = document.querySelector('#view-profile .profilePage') || document.querySelector('#view-profile .viewBody');
+    const socialCard = document.getElementById('socialCard');
+    if(profileContainer && socialCard && profileContainer.lastElementChild !== socialCard){
+      profileContainer.appendChild(socialCard);
+    }
+  }catch(e){}
+}
+window.addEventListener('hashchange', ()=>setTimeout(orzuMoveProfileSocialToBottom, 40));
+window.addEventListener('load', ()=>setTimeout(orzuMoveProfileSocialToBottom, 120));

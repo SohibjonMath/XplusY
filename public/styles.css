@@ -4952,3 +4952,430 @@ body{
     width:100% !important;
   }
 }
+
+
+/* ===== v4 final fixes per request ===== */
+
+/* 1) Product image must fill card area, no inner frame or side gap */
+.grid{
+  gap: 12px !important;
+}
+.pcard{
+  border-radius: 18px !important;
+  overflow: hidden !important;
+}
+.pmedia{
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+.pcard .pimg{
+  width: 100% !important;
+  display: block !important;
+  aspect-ratio: 3 / 4 !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 18px 18px 0 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.pbody{
+  padding: 10px 10px 12px !important;
+}
+.favBtn{
+  top: 10px !important;
+  right: 10px !important;
+  z-index: 4 !important;
+}
+.pbadgeStack{
+  left: 10px !important;
+  top: 10px !important;
+  z-index: 4 !important;
+}
+.authOnImg{
+  bottom: 10px !important;
+  left: 10px !important;
+  z-index: 4 !important;
+}
+
+/* 2) Desktop header: show logo + balance + profile access */
+@media (min-width: 901px){
+  .topbar{
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    align-items: center !important;
+    gap: 18px !important;
+    padding: 12px 18px !important;
+    background: rgba(255,255,255,.94) !important;
+    backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid #eceef3 !important;
+  }
+  .brandCenter{
+    display:flex !important;
+    justify-content:flex-start !important;
+    order: 1 !important;
+  }
+  .brandCenter .logoLink{
+    display:inline-flex !important;
+    align-items:center !important;
+  }
+  .logoImg{
+    display:block !important;
+    height: 42px !important;
+    width: auto !important;
+    filter: none !important;
+  }
+  .userboxLeft{
+    display:flex !important;
+    align-items:center !important;
+    gap:12px !important;
+    order: 2 !important;
+  }
+  .balGroup,
+  #balHeaderBtn,
+  #balTopupQuick{
+    display:flex !important;
+  }
+  .balGroup{
+    align-items:center !important;
+    gap:10px !important;
+  }
+  .balChip{
+    height: 44px !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    background:#fff !important;
+    border:1px solid #eceef3 !important;
+    box-shadow: 0 4px 16px rgba(15,23,42,.05) !important;
+  }
+  .balCur{ display:inline !important; }
+  .balPlus{
+    display:grid !important;
+    place-items:center !important;
+    width:44px !important;
+    height:44px !important;
+    border-radius:999px !important;
+    border:1px solid #eceef3 !important;
+    background:#fff !important;
+    box-shadow: 0 4px 16px rgba(15,23,42,.05) !important;
+  }
+  .actionsRight{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:10px !important;
+    order: 3 !important;
+  }
+  .avatarBtn{
+    display:flex !important;
+    align-items:center !important;
+    gap:10px !important;
+    height:44px !important;
+    padding:0 12px !important;
+    border-radius:999px !important;
+    background:#fff !important;
+    border:1px solid #eceef3 !important;
+    box-shadow: 0 4px 16px rgba(15,23,42,.05) !important;
+  }
+}
+@media (max-width: 900px){
+  .brandCenter,
+  .userboxLeft,
+  .balGroup,
+  #balHeaderBtn,
+  #balTopupQuick,
+  .avatarBtn{
+    display:none !important;
+  }
+}
+
+/* 3) Profile page: reorganize professionally */
+#view-profile .viewBody.profilePage{
+  display:flex !important;
+  flex-direction:column !important;
+  gap: 14px !important;
+  padding-bottom: calc(var(--bottom-bar-pad) + 8px) !important;
+}
+#view-profile .viewHeader{
+  padding: 4px 2px 8px !important;
+}
+#view-profile .profileHead{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  padding:16px !important;
+  background: linear-gradient(180deg,#ffffff 0%,#f9fbff 100%) !important;
+  border:1px solid #eceef4 !important;
+  border-radius:22px !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.05) !important;
+}
+#view-profile .profileHeadLeft{
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+  min-width:0 !important;
+}
+#view-profile .profileMeta{ min-width:0 !important; }
+#view-profile .profileName{
+  font-size:18px !important;
+  font-weight:800 !important;
+  line-height:1.15 !important;
+}
+#view-profile .profileUid{
+  margin-top:4px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  padding:6px 10px !important;
+  border-radius:999px !important;
+  background:#f4f7fb !important;
+  border:1px solid #e8edf3 !important;
+  color:#798396 !important;
+  font-size:12px !important;
+}
+#view-profile .profileAvatar{
+  width:58px !important;
+  height:58px !important;
+  border-radius:50% !important;
+  background:#f2f4f8 !important;
+  border:1px solid #e8edf3 !important;
+}
+#view-profile #profileEditBtn{
+  background:#f1eaff !important;
+  border:1px solid #e1d3ff !important;
+  color:#6e45f4 !important;
+}
+#view-profile #profileLogout{
+  background:#fff7f7 !important;
+  border:1px solid #f3dada !important;
+  color:#cc5252 !important;
+}
+#view-profile .formGrid{
+  display:grid !important;
+  grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+  gap:14px !important;
+  padding:16px !important;
+  background:#fff !important;
+  border:1px solid #eceef4 !important;
+  border-radius:22px !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.05) !important;
+}
+#view-profile .field{
+  display:block !important;
+}
+#view-profile .field span{
+  display:block !important;
+  margin-bottom:6px !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+  color:#5f697d !important;
+}
+#view-profile .field input,
+#view-profile .field select,
+#view-profile #topupAmount,
+#view-profile #payerCard,
+#view-profile #payerAmount,
+#view-profile #payerFirst,
+#view-profile #payerLast,
+#view-profile #receiptFile{
+  width:100% !important;
+  min-width:0 !important;
+  height:46px !important;
+  padding:0 14px !important;
+  border-radius:14px !important;
+  border:1px solid #e7eaf0 !important;
+  background:#f7f8fb !important;
+  box-shadow:none !important;
+}
+#view-profile #profileHint{
+  padding:12px 14px !important;
+  border-radius:16px !important;
+  background:#f8fafc !important;
+  border:1px dashed #dde5ef !important;
+  color:#7c879a !important;
+}
+#view-profile .profileBottomBar{
+  position:sticky !important;
+  bottom: calc(var(--bottom-bar-h) + 10px) !important;
+  z-index:5 !important;
+  padding:0 !important;
+  margin:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#view-profile .profileBottomBar .btn,
+#view-profile #profileSave{
+  width:100% !important;
+  height:48px !important;
+  border-radius:16px !important;
+  background:#e9e0ff !important;
+  border:1px solid #ddcfff !important;
+  color:#6c44f3 !important;
+  font-weight:800 !important;
+  box-shadow:none !important;
+}
+#view-profile #walletCard,
+#view-profile #moneyHistoryCard,
+#view-profile #ordersHistoryCard,
+#view-profile #socialCard,
+#view-profile .profileCard,
+#view-profile .modalCard.orderReceiptCard{
+  background:#fff !important;
+  border:1px solid #eceef4 !important;
+  border-radius:22px !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.05) !important;
+  overflow:hidden !important;
+}
+#view-profile #walletCard .profileCardTop,
+#view-profile .collapsibleTop,
+#view-profile #socialCard .socialTop,
+#view-profile .modalTop{
+  padding:16px !important;
+  border-bottom:1px solid #eef1f5 !important;
+  background:#fff !important;
+}
+#view-profile .profileCardTitle,
+#view-profile #socialCard .title,
+#view-profile .modalTitle{
+  font-size:17px !important;
+  font-weight:800 !important;
+  color:#111827 !important;
+}
+#view-profile .profileCardSub,
+#view-profile #socialCard .hint{
+  margin-top:4px !important;
+  color:#7b8798 !important;
+  line-height:1.45 !important;
+}
+#view-profile #walletCard .ordersList,
+#view-profile .collapsibleBody,
+#view-profile #socialCard .socialGrid,
+#view-profile .modalBody,
+#view-profile .modalBottom{
+  padding:14px !important;
+}
+#view-profile #walletCard .ordersList,
+#view-profile #ordersList,
+#view-profile #moneyHistoryList,
+#view-profile #socialCard .socialGrid{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:12px !important;
+}
+#view-profile #walletCard .orderItem,
+#view-profile #ordersList > *,
+#view-profile #moneyHistoryList > *,
+#view-profile #socialCard .sBtn,
+#view-profile .adminCardItem{
+  border:1px solid #edf1f5 !important;
+  border-radius:16px !important;
+  background:#fbfcfe !important;
+  box-shadow:none !important;
+  padding:13px !important;
+}
+#view-profile #walletCard .orderTotal,
+#view-profile #balProfile,
+#view-profile #confirmAmount{
+  font-size:20px !important;
+  font-weight:900 !important;
+  color:#16a34a !important;
+}
+#view-profile #topupBtn,
+#view-profile #topupNext,
+#view-profile #topupSubmit,
+#view-profile #checkoutSubmit{
+  height:46px !important;
+  border-radius:14px !important;
+  background:#ede5ff !important;
+  border:1px solid #ddceff !important;
+  color:#6c44f3 !important;
+  font-weight:800 !important;
+  box-shadow:none !important;
+}
+#view-profile #topupCancel1,
+#view-profile #topupBack,
+#view-profile #orderReceiptPrint,
+#view-profile .ghostBtn,
+#view-profile .btn.ghost{
+  height:46px !important;
+  border-radius:14px !important;
+  background:#f7f8fb !important;
+  border:1px solid #e7ebf0 !important;
+  color:#445062 !important;
+  box-shadow:none !important;
+}
+#view-profile .countPill{
+  background:#f1eaff !important;
+  color:#6d45f4 !important;
+  border:1px solid #dfd0ff !important;
+}
+#view-profile #socialCard{
+  order: 999 !important;
+}
+#view-profile #socialCard .socialGrid{
+  padding-top:14px !important;
+}
+#view-profile #socialCard .sBtn{
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+}
+#view-profile #socialCard .sBtn .txt{
+  display:flex !important;
+  flex-direction:column !important;
+  min-width:0 !important;
+}
+#view-profile #socialCard .sBtn .name{
+  font-weight:800 !important;
+  color:#111827 !important;
+}
+#view-profile #socialCard .sBtn .sub{
+  color:#7b8798 !important;
+  font-size:12px !important;
+}
+#view-profile .profileTwoCol{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:14px !important;
+}
+
+@media (max-width: 900px){
+  #view-profile .formGrid{
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 640px){
+  .grid{
+    gap: 10px !important;
+  }
+  #view-profile .viewBody.profilePage{
+    gap:12px !important;
+  }
+  #view-profile .profileHead,
+  #view-profile .formGrid,
+  #view-profile #walletCard,
+  #view-profile #moneyHistoryCard,
+  #view-profile #ordersHistoryCard,
+  #view-profile #socialCard{
+    border-radius:18px !important;
+  }
+  #view-profile #walletCard .orderItem[style*="justify-content:space-between"]{
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+  }
+  #view-profile #walletCard [style*="justify-content:flex-end"]{
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    width:100% !important;
+    gap:8px !important;
+  }
+  #view-profile .modalBottom{
+    flex-direction:column !important;
+    align-items:stretch !important;
+  }
+}
