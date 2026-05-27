@@ -1367,11 +1367,11 @@ const authHTML = renderProductTypeBadge(p);
         <div class="pname clamp2">${escapeHtml(p.name || "Nomsiz")}</div>
         <div class="pship">${renderDeliveryBadge(p)}</div>
 
-        
+        <div class="pmetaRow">
+          <div class="pratingInline">${(showCount ? `<i class="fa-solid fa-star" aria-hidden="true"></i> ${Number(showAvg).toFixed(1)} <span>(${showCount})</span>` : `<span class="muted">&nbsp;</span>`)}</div>
+        </div>
 
         <div class="pactions">
-          <div class="pratingInline">${(showCount ? `<i class="fa-solid fa-star" aria-hidden="true"></i> ${Number(showAvg).toFixed(1)} <span>(${showCount})</span>` : ``)}</div>
-
           <button class="iconPill" data-act="info" title="Tavsif" aria-label="Tavsif">
             <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
           </button>
@@ -1381,8 +1381,7 @@ const authHTML = renderProductTypeBadge(p);
           <button class="iconPill" data-act="reviews" title="Sharh" aria-label="Sharh">
             <i class="fa-solid fa-message" aria-hidden="true"></i>
           </button>
-
-          <button class="iconPill primary" data-act="cart" title="Savatchaga" aria-label="Savatchaga">
+          <button class="iconPill primary cartOnly" data-act="cart" title="Savatchaga" aria-label="Savatchaga">
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path fill="currentColor" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2Zm10 0c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2ZM7.17 14h9.66c.75 0 1.4-.41 1.74-1.03L21 6H6.21L5.27 4H2v2h2l3.6 7.59-1.35 2.44C5.52 17.37 6.48 19 8 19h12v-2H8l1.17-3Z"/>
             </svg>
