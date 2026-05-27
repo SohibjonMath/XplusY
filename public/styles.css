@@ -5379,3 +5379,85 @@ body{
     align-items:stretch !important;
   }
 }
+
+
+/* ===== v4.1 small profile header fix ===== */
+
+/* Profile header compact and tidy on both PC and mobile */
+#view-profile .viewHeader{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+}
+#view-profile .viewHeaderActions{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  flex:0 0 auto !important;
+}
+#view-profile .viewHeaderActions #profileEditBtn{
+  width:40px !important;
+  min-width:40px !important;
+  height:40px !important;
+  padding:0 !important;
+  border-radius:14px !important;
+  display:grid !important;
+  place-items:center !important;
+}
+
+#view-profile .profileHead{
+  display:grid !important;
+  grid-template-columns:auto 1fr auto !important;
+  align-items:center !important;
+  gap:14px !important;
+}
+#view-profile .profileHeadLeft{
+  display:grid !important;
+  grid-template-columns:auto 1fr !important;
+  align-items:center !important;
+  gap:12px !important;
+  min-width:0 !important;
+}
+#view-profile .profileMeta{
+  min-width:0 !important;
+  overflow:hidden !important;
+}
+#view-profile .profileName{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#view-profile #profileLogout{
+  width:44px !important;
+  min-width:44px !important;
+  height:44px !important;
+  padding:0 !important;
+  border-radius:14px !important;
+  display:grid !important;
+  place-items:center !important;
+  flex:none !important;
+  justify-self:end !important;
+}
+#view-profile #profileLogout i{
+  margin:0 !important;
+}
+
+@media (max-width: 640px){
+  #view-profile .profileHead{
+    grid-template-columns:1fr auto !important;
+    padding:14px !important;
+  }
+  #view-profile .profileHeadLeft{
+    grid-template-columns:auto 1fr !important;
+  }
+  #view-profile .profileAvatar{
+    width:52px !important;
+    height:52px !important;
+  }
+  #view-profile #profileLogout{
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+  }
+}
