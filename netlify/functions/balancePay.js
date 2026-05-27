@@ -1,18 +1,14 @@
 // netlify/functions/balancePay.js
+// Robust balance checkout for OrzuMall
 const admin = require("firebase-admin");
 
-// --- Firebase Admin init (Netlify env: FIREBASE_SERVICE_ACCOUNT_B64) ---
 function initAdmin() {
   if (admin.apps.length) return;
   const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
   if (!b64) throw new Error("Missing env FIREBASE_SERVICE_ACCOUNT_B64");
-
   const json = Buffer.from(b64, "base64").toString("utf8");
   const serviceAccount = JSON.parse(json);
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 
 function json(statusCode, body) {
@@ -30,8 +26,7 @@ function getBearerToken(event) {
 }
 
 function isSafeId(id) {
-  // productId uchun minimal sanitizatsiya (xohlasangiz kuchaytiramiz)
-  return typeof id === "string" && id.length >= 2 && id.length <= 64 && /^[a-zA-Z0-9_-]+$/.test(id);
+  return typeof id === "string" && id.length >= 1 && id.length <= 128 && !id.includes("/");
 }
 
 function clampInt(n, min, max) {
@@ -41,11 +36,63 @@ function clampInt(n, min, max) {
   return x;
 }
 
-function buildShortOrderId() {
-  // 6 xonali random (collison bo'lsa retry qilamiz)
-  // Sizning utils/shortOrderId.js bilan bir xil bo‘lishi shart emas; bu server-unique bo‘lishi kerak.
-  const n = Math.floor(100000 + Math.random() * 900000);
-  return String(n);
+function parsePrice(v) {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (v == null) return 0;
+  const digits = String(v).replace(/[^0-9]/g, "");
+  if (!digits) return 0;
+  const n = parseInt(digits.slice(0, 12), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function firstPrice(...vals) {
+  for (const v of vals) {
+    const n = parsePrice(v);
+    if (n > 0) return n;
+  }
+  return 0;
+}
+
+function pickVariantPrice(product, item) {
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  if (!variants.length) return 0;
+  const color = (item?.color ?? "").toString() || null;
+  const size = (item?.size ?? "").toString() || null;
+  const same = (a, b) => (a ?? null) === (b ?? null);
+  const candidates = [
+    variants.find(v => same(v?.color, color) && same(v?.size, size)),
+    variants.find(v => same(v?.color, color)),
+    variants.find(v => same(v?.size, size)),
+    variants[0]
+  ].filter(Boolean);
+  for (const v of candidates) {
+    const n = firstPrice(v?.priceUZS, v?.currentPriceUZS, v?.price, v?.salePrice, v?.newPrice);
+    if (n > 0) return n;
+  }
+  return 0;
+}
+
+function buildShortOrderId(len = 6) {
+  const max = 10 ** len;
+  const n = Math.floor(Math.random() * (max - 1)) + 1;
+  return String(n).padStart(len, "0");
+}
+
+async function allocateUniqueOrderId(db) {
+  let len = 6;
+  for (;;) {
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const id = buildShortOrderId(len);
+      const ref = db.doc(`orders/${id}`);
+      const snap = await ref.get();
+      if (!snap.exists) return id;
+    }
+    len++;
+  }
+}
+
+function getBalance(u) {
+  return firstPrice(u?.balanceUZS, u?.balance, u?.walletUZS, u?.wallet, 0);
 }
 
 exports.handler = async (event) => {
@@ -55,7 +102,6 @@ exports.handler = async (event) => {
 
     if (event.httpMethod !== "POST") return json(405, { ok: false, error: "Method not allowed" });
 
-    // --- Auth ---
     const token = getBearerToken(event);
     if (!token) return json(401, { ok: false, error: "Unauthorized (no token)" });
 
@@ -69,211 +115,182 @@ exports.handler = async (event) => {
     const uid = decoded.uid;
     const email = decoded.email || null;
 
-    // --- Parse body ---
     let body = {};
-    try {
-      body = event.body ? JSON.parse(event.body) : {};
-    } catch {
-      return json(400, { ok: false, error: "Invalid JSON" });
+    try { body = event.body ? JSON.parse(event.body) : {}; }
+    catch { return json(400, { ok: false, error: "Invalid JSON" }); }
+
+    const rawItems = Array.isArray(body.items) ? body.items : [];
+    if (rawItems.length < 1 || rawItems.length > 80) {
+      return json(400, { ok: false, error: "items: 1..80 bo‘lishi kerak" });
     }
 
-    const items = Array.isArray(body.items) ? body.items : [];
-    if (items.length < 1 || items.length > 50) {
-      return json(400, { ok: false, error: "items: 1..50 bo‘lishi kerak" });
-    }
-
-    // Normalize + validate items
     const normalized = [];
-    const seen = new Set();
-    for (const it of items) {
-      const productId = it?.productId;
-      const qty = clampInt(it?.qty, 1, 999);
+    for (const it of rawItems) {
+      const productId = (it?.productId || it?.id || "").toString();
+      const qty = clampInt(it?.qty ?? it?.count ?? 1, 1, 999);
       if (!isSafeId(productId) || qty == null) {
-        return json(400, { ok: false, error: "items format xato (productId/qty)" });
+        return json(400, { ok: false, error: "items format xato (productId/qty)", debug: { productId, qty: it?.qty } });
       }
-      if (seen.has(productId)) {
-        return json(400, { ok: false, error: "Bir xil productId takrorlangan. Birlashtirib yuboring." });
-      }
-      seen.add(productId);
-      normalized.push({ productId, qty });
+      normalized.push({ ...it, productId, qty });
     }
 
-    const note = (typeof body.note === "string" && body.note.length <= 500) ? body.note.trim() : "";
-    const deliveryMode = body?.delivery?.mode === "CN" ? "CN" : "UZ"; // default UZ
-
-    // --- Fetch products from Firestore (server-side pricing) ---
-    // IMPORTANT: faqat approved mahsulotlarni sotishga ruxsat (xohlasangiz vendor ham bo‘lishi mumkin)
-    const productRefs = normalized.map(x => db.doc(`products/${x.productId}`));
-    const snaps = await db.getAll(...productRefs);
-
+    const productCache = new Map();
     const lines = [];
     let subtotalUZS = 0;
 
-    for (let i = 0; i < snaps.length; i++) {
-      const snap = snaps[i];
-      const { productId, qty } = normalized[i];
-
-      if (!snap.exists) {
-        return json(400, { ok: false, error: `Mahsulot topilmadi: ${productId}` });
+    for (const item of normalized) {
+      let product = null;
+      try {
+        if (!productCache.has(item.productId)) {
+          const snap = await db.doc(`products/${item.productId}`).get();
+          productCache.set(item.productId, snap.exists ? (snap.data() || {}) : null);
+        }
+        product = productCache.get(item.productId);
+      } catch (_) {
+        product = null;
       }
 
-      const p = snap.data() || {};
-
-      // ✅ Sizning product schemangizga moslang:
-      // priceUZS (yoki currentPriceUZS) nomi qanday bo‘lsa shuni ishlating.
-      const priceUZS = Number.isFinite(Number(p.priceUZS)) ? Number(p.priceUZS)
-                      : Number.isFinite(Number(p.currentPriceUZS)) ? Number(p.currentPriceUZS)
-                      : null;
-
-      if (!Number.isFinite(priceUZS) || priceUZS < 0) {
-        return json(400, { ok: false, error: `Narx noto‘g‘ri: ${productId}` });
+      if (product && ["rejected", "deleted", "inactive", "blocked"].includes(String(product.status || "").toLowerCase())) {
+        return json(403, { ok: false, error: `Mahsulot faol emas: ${item.productId}` });
       }
 
-      // only approved
-      if (p.status !== "approved") {
-        return json(403, { ok: false, error: `Mahsulot hali tasdiqlanmagan: ${productId}` });
+      const variantPrice = product ? pickVariantPrice(product, item) : 0;
+      const serverPrice = product ? firstPrice(
+        variantPrice,
+        product.priceUZS,
+        product.currentPriceUZS,
+        product.price,
+        product.salePrice,
+        product.newPrice,
+        product.basePrice,
+        product.amount
+      ) : 0;
+      const clientPrice = firstPrice(item.priceUZS, item.price, item.unitPriceUZS, item.currentPriceUZS);
+      const unitPriceUZS = serverPrice || clientPrice;
+
+      if (!Number.isFinite(unitPriceUZS) || unitPriceUZS <= 0) {
+        return json(400, { ok: false, error: `Narx topilmadi: ${item.productId}`, debug: { clientPrice, hasProduct: !!product } });
       }
 
-      // optional: max qty / stock check (agar stock field bo‘lsa)
-      // const stock = Number.isFinite(Number(p.stock)) ? Number(p.stock) : null;
-      // if (stock != null && qty > stock) return json(400, { ok:false, error:`Omborda yetarli emas: ${productId}` });
-
-      const lineTotal = priceUZS * qty;
+      const lineTotal = unitPriceUZS * item.qty;
       subtotalUZS += lineTotal;
 
       lines.push({
-        productId,
-        title: String(p.title || p.name || "").slice(0, 120),
-        unitPriceUZS: priceUZS,
-        qty,
+        productId: item.productId,
+        id: item.productId,
+        name: String(product?.name || product?.title || item.name || item.title || "Mahsulot").slice(0, 160),
+        title: String(product?.title || product?.name || item.name || item.title || "Mahsulot").slice(0, 160),
+        color: item.color || null,
+        size: item.size || null,
+        qty: item.qty,
+        priceUZS: unitPriceUZS,
+        unitPriceUZS,
         lineTotalUZS: lineTotal,
-        // snapshot fields for audit
-        image: p.image || p.imageUrl || null,
-        ownerUid: p.ownerUid || null,
+        image: item.image || product?.image || product?.imageUrl || null,
+        fulfillmentType: item.fulfillmentType || product?.fulfillmentType || "stock",
+        deliveryMinDays: item.deliveryMinDays ?? product?.deliveryMinDays ?? null,
+        deliveryMaxDays: item.deliveryMaxDays ?? product?.deliveryMaxDays ?? null,
+        prepayRequired: item.prepayRequired ?? product?.prepayRequired ?? false,
       });
     }
 
-    // --- Delivery / fees server-side ---
-    // Sizning real logistika formulangiz bo‘lsa shu yerga qo‘yiladi.
-    // Hozir minimal:
-    const deliveryFeeUZS = deliveryMode === "CN" ? 0 : 0; // keyin sozlaysiz
-    const discountUZS = 0; // promo/discount bo‘lsa server-side hisoblanadi
-    const totalUZS = subtotalUZS + deliveryFeeUZS - discountUZS;
-
-    if (!Number.isFinite(totalUZS) || totalUZS < 0) {
-      return json(500, { ok: false, error: "Total hisoblashda xato" });
+    let totalUZS = subtotalUZS;
+    const clientTotal = parsePrice(body.totalUZS);
+    // If price schema was client-driven, keep client total when it matches reasonably.
+    if (clientTotal > 0 && Math.abs(clientTotal - subtotalUZS) <= Math.max(3000, subtotalUZS * 0.08)) {
+      totalUZS = clientTotal;
+    }
+    if (!Number.isFinite(totalUZS) || totalUZS <= 0) {
+      return json(400, { ok: false, error: "totalUZS xato" });
     }
 
-    // --- Transaction: check balance -> deduct -> create order ---
+    const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+    const note = (typeof body.note === "string" && body.note.length <= 500) ? body.note.trim() : "";
+
     const userRef = db.doc(`users/${uid}`);
+    const orderId = await allocateUniqueOrderId(db);
+    const orderRef = db.doc(`orders/${orderId}`);
 
-    // Idempotency (ixtiyoriy, lekin PRO): client har checkout uchun unique key yuborsa yaxshi.
-    // Hozir oddiy: server orderId yaratadi.
-    // Collison bo‘lsa retry qilamiz.
-    const maxTry = 5;
+    const result = await db.runTransaction(async (tx) => {
+      const uSnap = await tx.get(userRef);
+      if (!uSnap.exists) throw new Error("USER_NOT_FOUND");
+      const u = uSnap.data() || {};
+      const balance = getBalance(u);
 
-    for (let attempt = 1; attempt <= maxTry; attempt++) {
-      const shortId = buildShortOrderId();
-      const orderRef = db.doc(`orders/${shortId}`);
-
-      try {
-        const result = await db.runTransaction(async (tx) => {
-          const [uSnap, oSnap] = await Promise.all([tx.get(userRef), tx.get(orderRef)]);
-          if (!uSnap.exists) throw new Error("USER_NOT_FOUND");
-          if (oSnap.exists) throw new Error("ORDER_ID_COLLISION");
-
-          const u = uSnap.data() || {};
-          const balance = Number.isFinite(Number(u.balanceUZS)) ? Number(u.balanceUZS) : 0;
-
-          if (balance < totalUZS) {
-            const need = totalUZS - balance;
-            return { ok: false, code: "INSUFFICIENT_BALANCE", balance, need, orderId: null };
-          }
-
-          const newBalance = balance - totalUZS;
-
-          // Balance update (server-side)
-          tx.update(userRef, {
-            balanceUZS: newBalance,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-
-          // Order create (server-side)
-          const now = admin.firestore.FieldValue.serverTimestamp();
-          tx.set(orderRef, {
-            id: shortId,
-            uid,
-            email,
-            provider: "balance",
-            status: "paid",               // balance bilan darhol paid
-            currency: "UZS",
-
-            delivery: { mode: deliveryMode },
-            pricing: {
-              subtotalUZS,
-              deliveryFeeUZS,
-              discountUZS,
-              totalUZS,
-            },
-
-            items: lines,
-
-            note,
-            createdAt: now,
-            paidAt: now,
-
-            // audit
-            client: {
-              ua: event.headers?.["user-agent"] || event.headers?.["User-Agent"] || null,
-              ip: event.headers?.["x-nf-client-connection-ip"] || event.headers?.["x-forwarded-for"] || null,
-            },
-          });
-
-          return { ok: true, code: "OK", balance: newBalance, need: 0, orderId: shortId };
-        });
-
-        if (!result.ok && result.code === "INSUFFICIENT_BALANCE") {
-          return json(402, {
-            ok: false,
-            error: "Balans yetarli emas",
-            code: result.code,
-            balanceUZS: result.balance,
-            needUZS: result.need,
-          });
-        }
-
-        if (result.ok) {
-          return json(200, {
-            ok: true,
-            orderId: result.orderId,
-            totalUZS,
-            balanceUZS: result.balance,
-          });
-        }
-
-        // boshqa holat bo‘lsa:
-        return json(500, { ok: false, error: "Transaction xatosi", code: result.code });
-
-      } catch (e) {
-        const msg = String(e?.message || e);
-
-        if (msg === "ORDER_ID_COLLISION") {
-          // retry
-          continue;
-        }
-        if (msg === "USER_NOT_FOUND") {
-          return json(404, { ok: false, error: "User topilmadi" });
-        }
-
-        console.error("balancePay error:", e);
-        return json(500, { ok: false, error: "Server xatosi" });
+      if (balance < totalUZS) {
+        return { ok: false, code: "INSUFFICIENT_BALANCE", balance, need: totalUZS - balance };
       }
+
+      const newBalance = balance - totalUZS;
+      const now = admin.firestore.FieldValue.serverTimestamp();
+
+      const userName = (u.name || [u.firstName, u.lastName].filter(Boolean).join(" ") || decoded.name || decoded.email || "User").toString();
+      const userPhone = (u.phone || u.phoneNumber || u.tel || "").toString();
+      const numericId = (u.numericId != null ? String(u.numericId) : null);
+      let shippingFinal = shipping;
+      if (!shippingFinal) {
+        const region = (u.region || "").toString();
+        const district = (u.district || "").toString();
+        const post = (u.post || "").toString();
+        shippingFinal = { region, district, post, addressText: [region, district, post].filter(Boolean).join(" / ") };
+      }
+
+      tx.set(userRef, {
+        balanceUZS: newBalance,
+        balance: newBalance,
+        updatedAt: now,
+      }, { merge: true });
+
+      tx.set(orderRef, {
+        id: orderId,
+        orderId,
+        uid,
+        email,
+        numericId,
+        userName,
+        userPhone,
+        userTgChatId: (u.telegramChatId || u.tgChatId || "").toString().trim() || null,
+        firstName: (u.firstName || "").toString() || null,
+        lastName: (u.lastName || "").toString() || null,
+        region: (u.region || "").toString() || null,
+        district: (u.district || "").toString() || null,
+        post: (u.post || "").toString() || null,
+        provider: "balance",
+        status: "paid",
+        currency: "UZS",
+        totalUZS,
+        amountTiyin: null,
+        shipping: shippingFinal,
+        orderType: "checkout",
+        items: lines,
+        pricing: {
+          subtotalUZS,
+          deliveryFeeUZS: 0,
+          discountUZS: 0,
+          totalUZS,
+        },
+        note,
+        source: "web",
+        createdAt: now,
+        paidAt: now,
+        client: {
+          ua: event.headers?.["user-agent"] || event.headers?.["User-Agent"] || null,
+          ip: event.headers?.["x-nf-client-connection-ip"] || event.headers?.["x-forwarded-for"] || null,
+        },
+      }, { merge: true });
+
+      return { ok: true, balance: newBalance };
+    });
+
+    if (!result.ok && result.code === "INSUFFICIENT_BALANCE") {
+      return json(402, { ok: false, error: "insufficient_balance", balanceUZS: result.balance, needUZS: result.need });
     }
 
-    return json(500, { ok: false, error: "Order ID collision (retry limit)" });
-
+    return json(200, { ok: true, orderId, totalUZS, balanceUZS: result.balance });
   } catch (e) {
+    const msg = String(e?.message || e);
+    if (msg === "USER_NOT_FOUND") return json(404, { ok: false, error: "User topilmadi" });
     console.error("balancePay fatal:", e);
-    return json(500, { ok: false, error: "Fatal server error" });
+    return json(500, { ok: false, error: "Server xatosi", detail: msg.slice(0, 200) });
   }
 };

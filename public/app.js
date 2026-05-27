@@ -3098,12 +3098,13 @@ async function createOrderFromCheckout(){
       const out = await resp.json().catch(()=>({}));
       if(out && out.orderId) payload.orderId = String(out.orderId);
       if(!resp.ok || !out.ok){
-        if(out && out.error === "insufficient_balance"){
+        if(out && (out.error === "insufficient_balance" || out.error === "Balans yetarli emas")){
           toast("Balans yetarli emas.");
           return;
         }
-        throw new Error(out?.error || "balance_pay_failed");
+        throw new Error(out?.error || out?.detail || "balance_pay_failed");
       }
+      try{ tgNotifyOrderCreated(payload.orderId); }catch(_e){}
     } else {
       // Cash checkout: create order via Netlify Function (avoids Firestore permission issues)
       const token = await currentUser.getIdToken();
@@ -3133,7 +3134,8 @@ async function createOrderFromCheckout(){
     closeCheckout();
   }catch(e){
     console.warn("checkout order create failed", e);
-    toast("Buyurtma yaratilmadi. Qayta urinib ko‘ring.");
+    const msg = (e && e.message) ? String(e.message) : "";
+    toast(msg ? ("Buyurtma yaratilmadi: " + msg) : "Buyurtma yaratilmadi. Qayta urinib ko‘ring.");
     return; // IMPORTANT: don't show success message on failure
   }
 
