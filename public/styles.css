@@ -4616,3 +4616,339 @@ body{
   }
   .cartImg{ width:82px !important; }
 }
+
+
+/* ===== v3 pro polish: frameless bigger product images + professional profile ===== */
+
+/* Home product image: remove visible inner frame and enlarge image area */
+.pcard{
+  overflow:hidden !important;
+}
+.pmedia{
+  padding: 10px 10px 0 !important;
+  background: transparent !important;
+}
+.pcard .pimg{
+  aspect-ratio: 3 / 4 !important;
+  object-fit: contain !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.pbody{
+  padding: 8px 10px 12px !important;
+}
+.ppriceNow{
+  font-size: 17px !important;
+}
+.pname{
+  margin-top: 6px !important;
+}
+.pship{ margin-top: 6px !important; }
+.pactions{ margin-top: 8px !important; }
+.favBtn{
+  top: 12px !important;
+  right: 12px !important;
+}
+.pbadgeStack{
+  left: 12px !important;
+  top: 12px !important;
+}
+
+/* Keep home card cleaner */
+.productsHead{
+  margin-bottom: 8px !important;
+}
+.productsTitle i,
+.productsTitle .fa-bag-shopping{
+  display:none !important;
+}
+
+/* ===== Professional profile page ===== */
+.profilePage{
+  gap: 14px !important;
+}
+.profilePage > *{ order: 10; }
+.profileHead{ order: 1; }
+.formGrid{ order: 2; }
+#profileHint{ order: 3; }
+.profileBottomBar{ order: 4; }
+#walletCard{ order: 5; }
+.profileTwoCol{ order: 6; }
+#socialCard{ order: 99 !important; }
+
+.profileTwoCol{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:14px !important;
+}
+
+.profileHead{
+  position:relative;
+  padding:16px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%) !important;
+  border:1px solid #eceef4 !important;
+  border-radius:22px !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.06) !important;
+}
+.profileAvatar{
+  width:62px !important;
+  height:62px !important;
+  background: linear-gradient(180deg,#f2f4f8,#ebeef5) !important;
+  border:1px solid #e7eaf0 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8) !important;
+}
+.profileMeta{
+  min-width:0;
+}
+.profileName{
+  font-size:19px !important;
+  line-height:1.15 !important;
+}
+.profileUid{
+  margin-top:4px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:6px !important;
+  padding:6px 10px !important;
+  border-radius:999px !important;
+  background:#f4f7fb !important;
+  border:1px solid #e7ebf2 !important;
+  color:#7b8798 !important;
+}
+#profileLogout{
+  background:#fff7f7 !important;
+  border-color:#f2d6d6 !important;
+  color:#cf4e4e !important;
+}
+#profileEditBtn{
+  background:#f3ecff !important;
+  border-color:#e3d7ff !important;
+  color:#7447f4 !important;
+}
+
+.formGrid{
+  background:#fff !important;
+  border-radius:22px !important;
+  border:1px solid #eceef4 !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.05) !important;
+  padding:16px !important;
+  gap:14px !important;
+}
+.field span{
+  font-size:13px !important;
+  font-weight:700 !important;
+  color:#5c6678 !important;
+}
+.field input,
+.field select,
+#topupAmount{
+  height:46px !important;
+  border-radius:14px !important;
+  background:#f7f8fb !important;
+  border:1px solid #e7eaf0 !important;
+}
+#profileHint{
+  padding:12px 14px !important;
+  border-radius:16px !important;
+  background:#f8fafc !important;
+  border:1px dashed #dde5f0 !important;
+  color:#7b8798 !important;
+}
+.profileBottomBar{
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+.profileBottomBar .btn{
+  width:100% !important;
+  height:48px !important;
+  border-radius:16px !important;
+}
+
+/* Wallet / balance card pro */
+#walletCard{
+  background: linear-gradient(180deg,#ffffff 0%,#fbfcff 100%) !important;
+  border:1px solid #eceef4 !important;
+  border-radius:22px !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.05) !important;
+  overflow:hidden !important;
+}
+#walletCard .profileCardTop{
+  padding:16px !important;
+  border-bottom:1px solid #eef1f5 !important;
+}
+#walletCard .profileCardTitle{
+  font-size:18px !important;
+}
+#walletCard .profileCardSub{
+  margin-top:4px !important;
+  color:#7b8798 !important;
+  line-height:1.45 !important;
+}
+#walletCard .ordersList{
+  padding:14px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:12px !important;
+}
+#walletCard .orderItem{
+  margin:0 !important;
+  padding:14px !important;
+  border:1px solid #eef1f5 !important;
+  border-radius:18px !important;
+  background:#f9fbff !important;
+  box-shadow:none !important;
+}
+#walletCard .orderId{
+  font-size:14px !important;
+  font-weight:800 !important;
+  color:#111827 !important;
+}
+#walletCard .orderMeta{
+  margin-top:4px !important;
+  color:#7b8798 !important;
+}
+#balProfile,
+#walletCard .orderTotal{
+  font-size:20px !important;
+  font-weight:900 !important;
+  color:#16a34a !important;
+}
+#walletCard [style*="justify-content:flex-end"]{
+  width:100% !important;
+}
+#walletCard input#topupAmount{
+  min-width:0 !important;
+  width:100% !important;
+  flex:1 1 180px !important;
+}
+#topupBtn{
+  height:46px !important;
+  border-radius:14px !important;
+  background:#efe8ff !important;
+  border-color:#ded0ff !important;
+  color:#7048f2 !important;
+  font-weight:800 !important;
+}
+
+/* Orders / money history professional cards */
+.profileCard.collapsible,
+#ordersHistoryCard,
+#moneyHistoryCard,
+.profileCard,
+.ordersCard,
+.moneyHistoryCard,
+.socialCard{
+  border-radius:22px !important;
+  border:1px solid #eceef4 !important;
+  background:#fff !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.05) !important;
+}
+.collapsibleTop,
+.profileCardTop,
+.cardHead{
+  padding:16px !important;
+  border-bottom:1px solid #eef1f5 !important;
+}
+.profileCardTitle,
+.cardTitle span,
+.cardTitle,
+.collapsibleTop .profileCardTitle{
+  font-size:17px !important;
+  font-weight:800 !important;
+  color:#111827 !important;
+}
+.profileCardSub{
+  color:#7b8798 !important;
+  line-height:1.45 !important;
+}
+.collapsibleBody,
+.ordersList,
+.moneyHistoryList{
+  padding:14px !important;
+}
+.ordersList,
+#moneyHistoryList{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:12px !important;
+}
+.orderItem,
+.moneyHistoryItem,
+#ordersList > div,
+#moneyHistoryList > div{
+  border:1px solid #eef1f5 !important;
+  border-radius:16px !important;
+  background:#fbfcfe !important;
+  box-shadow:none !important;
+  padding:13px !important;
+}
+.countPill{
+  background:#f1ebff !important;
+  color:#7148f3 !important;
+  border:1px solid #e0d4ff !important;
+}
+#ordersReload{
+  background:#f4f7fb !important;
+  border-color:#e5eaf1 !important;
+  color:#4b5563 !important;
+}
+
+/* Social card at the very bottom */
+#socialCard{
+  margin-top: 2px !important;
+}
+#socialCard .socialGrid{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:12px !important;
+  padding:14px !important;
+}
+#socialCard .socialBtn{
+  border-radius:16px !important;
+  border:1px solid #eef1f5 !important;
+  background:#fbfcfe !important;
+  padding:14px !important;
+  box-shadow:none !important;
+}
+#socialCard .cardHead{
+  padding-bottom:14px !important;
+}
+
+/* Responsive */
+@media (max-width: 640px){
+  .pmedia{
+    padding: 8px 8px 0 !important;
+  }
+  .pcard .pimg{
+    aspect-ratio: 3 / 4 !important;
+  }
+  .profileHead,
+  .formGrid,
+  #walletCard,
+  .profileCard,
+  #ordersHistoryCard,
+  #moneyHistoryCard,
+  #socialCard{
+    border-radius:18px !important;
+  }
+  #walletCard .orderItem{
+    padding:12px !important;
+  }
+  #walletCard [style*="justify-content:flex-end"]{
+    justify-content:stretch !important;
+    gap:8px !important;
+  }
+  #walletCard .orderItem [style*="justify-content:flex-end"]{
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+  }
+  #topupBtn,
+  #walletCard input#topupAmount{
+    width:100% !important;
+  }
+}
