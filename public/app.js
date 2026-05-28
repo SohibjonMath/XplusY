@@ -822,14 +822,17 @@ let cart = loadLS(LS.cart, []);
 // Cart selection (for partial checkout / later buy)
 let cartSelected = new Set(); // contains cart item keys
 let lastCartKeys = new Set(cart.map(x=>x.key)); // track additions (so deselected items stay deselected)
+let cartSelectionInitialized = false; // important: empty selection must remain empty after user unchecks all
 
 function syncCartSelected(autoSelectNew=true){
   const keys = new Set(cart.map(x=>x.key));
 
-  // first run: default everything selected
-  if(cartSelected.size === 0){
+  // First run only: default everything selected.
+  // After that, cartSelected.size === 0 means the user intentionally unchecked all.
+  if(!cartSelectionInitialized){
     cartSelected = new Set(keys);
     lastCartKeys = new Set(keys);
+    cartSelectionInitialized = true;
     return;
   }
 
