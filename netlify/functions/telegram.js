@@ -110,6 +110,35 @@ async function tgApi(botToken, method, payload){
   return data;
 }
 
+
+function getRequestOrigin(event){
+  const h = event.headers || {};
+  const host = h["x-forwarded-host"] || h["X-Forwarded-Host"] || h.host || h.Host || "";
+  const proto = h["x-forwarded-proto"] || h["X-Forwarded-Proto"] || "https";
+  if(!host) return "";
+  return `${proto}://${host}`;
+}
+
+async function ensureTelegramWebhook(botToken, event){
+  // Telegram callback buttons work only when the bot has a webhook (or a polling backend).
+  // This project is Netlify-only, so we auto-connect the bot webhook to this function
+  // whenever a new admin order notification is sent.
+  const origin = getRequestOrigin(event);
+  if(!origin) return false;
+  const url = `${origin.replace(/\/$/, "")}/.netlify/functions/telegram`;
+  try{
+    await tgApi(botToken, "setWebhook", {
+      url,
+      allowed_updates: ["callback_query"],
+      drop_pending_updates: false,
+    });
+    return true;
+  }catch(_e){
+    // Do not block order notification if webhook registration fails.
+    return false;
+  }
+}
+
 function getCallbackAction(data){
   const s = String(data || "");
   let m = s.match(/^om_delivered:(.+)$/);
@@ -315,6 +344,9 @@ exports.handler = async (event) => {
     if(botToken.length < 10 || adminChatId.length < 3){
       return json(500, { ok:false, error:"telegram_env_missing" });
     }
+
+    // Auto-enable Telegram inline button callbacks for this Netlify deployment.
+    await ensureTelegramWebhook(botToken, event);
 
     const db = admin.firestore();
     const orderRef = db.collection("orders").doc(orderId);
