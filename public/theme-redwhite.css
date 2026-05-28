@@ -926,3 +926,260 @@ input[name="topupMode"]{accent-color:#dc2626 !important;}
   .qvName{ font-size:17px; }
   .qvPrice{ font-size:22px !important; }
 }
+
+
+/* ===== 2026-05-28 FINAL brand cleanup: remove Uzum-like colors, compact cards ===== */
+
+/* Global brand accents: use OrzuMall black/red only */
+.mobile-bottom-bar .nav-btn,
+.mobile-bottom-bar .nav-btn small,
+.mobile-bottom-bar .nav-btn .ico,
+.viewTitle,
+.searchPromo .spTitle,
+.searchPromo .spBotTop,
+.searchPromo .spBotBottom,
+.searchPromo .spKicker,
+.searchPromo .spHint,
+.catChip,
+.catPill,
+.qvMovedBtn,
+.qvName,
+.qvDesc,
+.qvTag,
+.brandAccent{
+  color:#111827 !important;
+}
+
+/* Search row should stay own-brand, not Uzum-like */
+#view-home .searchCard{ background:#ffffff !important; }
+#view-home #q{
+  border-color: rgba(17,24,39,.08) !important;
+  background-color:#f6f7f8 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+#view-home #q:focus{
+  border-color:#dc2626 !important;
+  box-shadow:0 0 0 4px rgba(220,38,38,.10) !important;
+}
+
+/* Bottom nav in OrzuMall style */
+.mobile-bottom-bar{
+  background:#ffffff !important;
+  border-top:1px solid rgba(17,24,39,.08) !important;
+  box-shadow:0 -10px 26px rgba(17,24,39,.06) !important;
+}
+.mobile-bottom-bar .nav-btn{
+  color:#6b7280 !important;
+  background:transparent !important;
+}
+.mobile-bottom-bar .nav-btn.active{
+  color:#dc2626 !important;
+  background:rgba(220,38,38,.08) !important;
+}
+.mobile-bottom-bar .nav-btn .badge{
+  background:#dc2626 !important;
+  color:#fff !important;
+}
+.mobile-bottom-bar .nav-btn.nav-home.active{
+  color:#dc2626 !important;
+}
+.mobile-bottom-bar .nav-btn.nav-home .ico.home-logo-wrap{
+  background:linear-gradient(135deg,#ffffff,#fff5f5) !important;
+  border:1px solid rgba(220,38,38,.14) !important;
+  box-shadow:0 8px 18px rgba(220,38,38,.10) !important;
+}
+.mobile-bottom-bar .nav-btn.nav-home.active .ico.home-logo-wrap{
+  box-shadow:0 10px 22px rgba(220,38,38,.16) !important;
+}
+
+/* Remove leftover purple/green style cues */
+.shipBadge,
+.shipBadge.stock,
+.shipBadge.cargo,
+.delivery,
+.delivery-badge,
+.pship,
+.pship *{
+  border-color: rgba(220,38,38,.16) !important;
+}
+.shipBadge.stock,
+.shipBadge.cargo,
+.delivery,
+.delivery-badge{
+  background:#fff5f5 !important;
+  color:#b91c1c !important;
+}
+.productsCount,
+.pratingInline span,
+.pratingInline,
+.muted,
+.hint,
+.pinstall{
+  color:#6b7280 !important;
+}
+
+/* Compact card layout */
+.grid{ gap:10px !important; }
+.pcard{
+  border-radius:16px !important;
+  border:1px solid rgba(17,24,39,.08) !important;
+  background:#fff !important;
+  box-shadow:0 4px 14px rgba(17,24,39,.05) !important;
+}
+.pmedia{
+  padding:0 !important;
+  background:#fff !important;
+}
+.pcard .pimg{
+  width:100% !important;
+  aspect-ratio: 1 / 1 !important;
+  object-fit: contain !important;
+  object-position:center !important;
+  background:#fff !important;
+  padding:6px !important;
+  margin:0 !important;
+  border:none !important;
+  border-radius:16px 16px 0 0 !important;
+  box-shadow:none !important;
+}
+.pbody{
+  padding:8px 9px 9px !important;
+}
+.ppriceRow{
+  gap:6px !important;
+  margin-top:0 !important;
+}
+.ppriceNow,
+.pcard .ppriceNow{
+  color:#dc2626 !important;
+  font-size:15px !important;
+  line-height:1.08 !important;
+  font-weight:900 !important;
+}
+.ppriceOld,
+.pcard .ppriceOld{
+  color:#9ca3af !important;
+  font-size:11px !important;
+  font-weight:700 !important;
+  text-decoration-color:#dc2626 !important;
+}
+.pname{
+  margin-top:6px !important;
+  font-size:12.5px !important;
+  line-height:1.28 !important;
+  font-weight:700 !important;
+  min-height:31px !important;
+}
+.clamp2{
+  -webkit-line-clamp: 2 !important;
+  min-height:31px !important;
+}
+.pship{ margin-top:5px !important; }
+.shipBadge{
+  padding:4px 8px !important;
+  font-size:10.5px !important;
+  line-height:1.1 !important;
+}
+.pactions{ margin-top:7px !important; gap:8px !important; }
+.iconPill{
+  padding:7px 9px !important;
+  min-height:34px !important;
+  box-shadow:none !important;
+  border-color:rgba(17,24,39,.08) !important;
+}
+.iconPill.primary,
+.iconPill.cartOnly{
+  background:linear-gradient(135deg,#111827,#dc2626) !important;
+  color:#fff !important;
+  border:none !important;
+}
+.favBtn{
+  width:32px !important;
+  height:32px !important;
+  top:8px !important;
+  right:8px !important;
+  font-size:15px !important;
+  box-shadow:0 4px 10px rgba(17,24,39,.08) !important;
+}
+.pbadgeStack{
+  left:8px !important;
+  top:8px !important;
+  gap:4px !important;
+}
+.pbadge.discount,
+.discountBadge,
+.pctBadge,
+.badgeDiscount{
+  font-size:10px !important;
+  padding:4px 7px !important;
+  border-radius:999px !important;
+  background:#ef4444 !important;
+  box-shadow:0 6px 14px rgba(239,68,68,.20) !important;
+}
+.authOnImg{
+  left:8px !important;
+  bottom:8px !important;
+  font-size:9.5px !important;
+  padding:4px 6px !important;
+}
+
+/* Desktop can stay a little roomier */
+@media (min-width: 821px){
+  .pcard .pimg{ aspect-ratio: 4 / 5 !important; }
+  .ppriceNow, .pcard .ppriceNow{ font-size:18px !important; }
+  .pname{ font-size:13px !important; min-height:34px !important; }
+}
+
+/* Product quick-view / modal: fully own-brand */
+.qvMovedBtn{
+  background:#fff !important;
+  color:#111827 !important;
+  border:1px solid rgba(17,24,39,.08) !important;
+}
+.qvMovedBtn i{ color:#dc2626 !important; }
+.qvInfoCard{
+  background:linear-gradient(180deg,#ffffff,#fffafa) !important;
+  border:1px solid rgba(220,38,38,.10) !important;
+  box-shadow:0 14px 32px rgba(17,24,39,.08) !important;
+}
+.qvBadge{
+  background:#fff1f2 !important;
+  color:#dc2626 !important;
+  border-color:#fecdd3 !important;
+}
+.qvRating{
+  background:#111827 !important;
+  color:#fff !important;
+}
+.qvTag{
+  background:#f5f5f7 !important;
+  color:#374151 !important;
+}
+.qvMainCta{
+  background:linear-gradient(135deg,#111827,#dc2626) !important;
+  color:#fff !important;
+  box-shadow:0 14px 28px rgba(220,38,38,.16) !important;
+}
+.imgViewer.imageOnly .thumb.active{
+  border-color:#dc2626 !important;
+  box-shadow:0 0 0 3px rgba(220,38,38,.12) !important;
+}
+
+/* Mobile-specific extra compactness */
+@media (max-width: 520px){
+  .container{ padding-left:10px !important; padding-right:10px !important; }
+  .grid{ gap:8px !important; }
+  .pcard{ border-radius:15px !important; }
+  .pcard .pimg{
+    aspect-ratio: 1 / 1 !important;
+    padding:4px !important;
+    border-radius:15px 15px 0 0 !important;
+  }
+  .pbody{ padding:7px 8px 8px !important; }
+  .ppriceNow, .pcard .ppriceNow{ font-size:14px !important; }
+  .ppriceOld, .pcard .ppriceOld{ font-size:10.5px !important; }
+  .pname{ font-size:12px !important; min-height:30px !important; }
+  .clamp2{ min-height:30px !important; }
+  .shipBadge{ padding:4px 7px !important; font-size:10px !important; }
+  .iconPill{ padding:6px 8px !important; min-height:32px !important; }
+}
