@@ -1370,7 +1370,7 @@ const authHTML = renderProductTypeBadge(p);
         <img class="pimg" src="${currentImg || ""}" alt="${escapeHtml(p.name || "product")}" loading="lazy"/>
         ${badgeHTML}
         ${authHTML?`<div class="authOnImg">${authHTML}</div>`:""}
-        <button class="favBtn ${isFav ? "active" : ""}" title="Sevimli">${isFav ? "♥" : "♡"}</button>
+        <button class="favBtn ${isFav ? "active" : ""}" title="Sevimli" aria-label="Sevimli" aria-pressed="${isFav ? "true" : "false"}"><i class="fa-${isFav ? "solid" : "regular"} fa-heart" aria-hidden="true"></i></button>
       </div>
 
       <div class="pbody uz">
@@ -1402,9 +1402,10 @@ const authHTML = renderProductTypeBadge(p);
     favBtn.addEventListener("click", ()=>{
       if(favs.has(p.id)) { favs.delete(p.id); } else { favs.add(p.id); logEvent('favorite', p.id); }
       saveLS(LS.favs, Array.from(favs));
-      favBtn.classList.toggle("active", favs.has(p.id));
-      favBtn.textContent = favs.has(p.id) ? "♥" : "♡";
-      favBtn.setAttribute("aria-pressed", favs.has(p.id) ? "true" : "false");
+      const on = favs.has(p.id);
+      favBtn.classList.toggle("active", on);
+      favBtn.innerHTML = `<i class="fa-${on ? "solid" : "regular"} fa-heart" aria-hidden="true"></i>`;
+      favBtn.setAttribute("aria-pressed", on ? "true" : "false");
       updateBadges();
       if(viewMode === "fav") applyFilterSort();
     });

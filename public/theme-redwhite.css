@@ -4186,3 +4186,53 @@ body select{
     font-size:13px !important;
   }
 }
+
+
+/* ===== 2026-05-28 premium product card heart button ===== */
+.favBtn{
+  width:42px !important;
+  height:42px !important;
+  top:10px !important;
+  right:10px !important;
+  border-radius:999px !important;
+  border:1px solid rgba(17,24,39,.08) !important;
+  background:rgba(255,255,255,.96) !important;
+  color:#111827 !important;
+  box-shadow:0 12px 24px rgba(17,24,39,.12) !important;
+  display:grid !important;
+  place-items:center !important;
+  font-size:20px !important;
+  line-height:1 !important;
+  transition:transform .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease, border-color .16s ease !important;
+  backdrop-filter:blur(8px);
+}
+.favBtn i{
+  font-size:20px !important;
+  line-height:1 !important;
+  transition:transform .16s ease, color .16s ease !important;
+}
+.favBtn:hover,
+.favBtn:active{
+  transform:translateY(-1px) scale(1.04) !important;
+  box-shadow:0 16px 28px rgba(17,24,39,.16) !important;
+}
+.favBtn.active{
+  background:linear-gradient(135deg,#fff1f2,#ffe4e6) !important;
+  border-color:#fda4af !important;
+  color:#dc2626 !important;
+  box-shadow:0 14px 26px rgba(220,38,38,.18) !important;
+}
+.favBtn.active i{
+  color:#dc2626 !important;
+  transform:scale(1.08) !important;
+}
+@media (max-width:520px){
+  .favBtn{
+    width:40px !important;
+    height:40px !important;
+    top:8px !important;
+    right:8px !important;
+    font-size:19px !important;
+  }
+  .favBtn i{font-size:19px !important;}
+}
