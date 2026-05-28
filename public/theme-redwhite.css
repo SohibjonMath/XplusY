@@ -3248,3 +3248,142 @@ input[name="topupMode"]{accent-color:#dc2626 !important;}
   #view-profile #activityCard .moneyHistoryEntry .moneyAmount,
   #view-profile #activityCard .orderTop .orderTotal{ font-size:18px !important; }
 }
+
+
+/* ===== 2026-05-28 compact professional wallet refinement ===== */
+#view-profile #walletCard{
+  border-radius:20px !important;
+  box-shadow:0 14px 30px rgba(17,24,39,.07) !important;
+}
+#view-profile .walletHero{
+  padding:12px 14px 8px !important;
+  gap:8px !important;
+  align-items:center !important;
+}
+#view-profile .walletHeroText .profileCardTitle{
+  font-size:18px !important;
+  line-height:1.15 !important;
+}
+#view-profile .walletHeroText .profileCardSub{
+  margin-top:2px !important;
+  font-size:11.5px !important;
+  line-height:1.35 !important;
+}
+#view-profile .walletStatusPill{
+  min-height:28px !important;
+  padding:0 9px !important;
+  font-size:10.5px !important;
+}
+#view-profile .walletGrid{
+  gap:8px !important;
+  padding:0 14px 14px !important;
+}
+#view-profile .walletBalanceBox,
+#view-profile .walletTopupBox{
+  padding:12px !important;
+  border-radius:16px !important;
+}
+#view-profile .walletBalanceTop{
+  margin-bottom:8px !important;
+}
+#view-profile .walletBalanceIcon{
+  width:40px !important;
+  height:40px !important;
+  border-radius:14px !important;
+  font-size:16px !important;
+}
+#view-profile .walletBalancePill{
+  min-height:28px !important;
+  padding:0 10px !important;
+  font-size:10.5px !important;
+}
+#view-profile .walletBalanceBox .walletMiniLabel,
+#view-profile .walletTopupBox .walletMiniLabel{
+  font-size:10px !important;
+  letter-spacing:.08em !important;
+}
+#view-profile .walletBalanceBox .walletAmount{
+  margin-top:6px !important;
+  font-size:26px !important;
+  line-height:1.02 !important;
+}
+#view-profile .walletBalanceBox .walletSmallText{
+  margin-top:6px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  min-height:26px !important;
+  padding:0 10px !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.10) !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  color:rgba(255,255,255,.82) !important;
+  font-size:10.5px !important;
+}
+#view-profile .walletBalanceMeta{ display:none !important; }
+#view-profile .walletTopupBox{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+}
+#view-profile .walletTopupBox .walletSmallText{
+  margin-top:3px !important;
+  font-size:10.5px !important;
+  color:#6b7280 !important;
+}
+#view-profile .walletTopupRow{
+  margin-top:8px !important;
+  gap:8px !important;
+  align-items:center !important;
+}
+#view-profile .walletInputWrap{
+  min-height:40px !important;
+  border-radius:12px !important;
+  padding:0 12px !important;
+}
+#view-profile .walletInputWrap i{ font-size:14px !important; }
+#view-profile .walletInputWrap input{
+  font-size:14px !important;
+}
+#view-profile .walletTopupBtn{
+  min-height:40px !important;
+  border-radius:12px !important;
+  padding:0 12px !important;
+  font-size:12.5px !important;
+  gap:6px !important;
+}
+#view-profile .walletTopupBtn i{ font-size:13px !important; }
+
+@media (max-width:520px){
+  #view-profile .walletHero{
+    padding:11px 12px 8px !important;
+  }
+  #view-profile .walletIcon{
+    width:40px !important;
+    height:40px !important;
+    border-radius:14px !important;
+    font-size:16px !important;
+  }
+  #view-profile .walletGrid{
+    padding:0 12px 12px !important;
+    gap:7px !important;
+  }
+  #view-profile .walletBalanceBox,
+  #view-profile .walletTopupBox{
+    padding:11px !important;
+    border-radius:15px !important;
+  }
+  #view-profile .walletBalanceBox .walletAmount{
+    font-size:24px !important;
+  }
+  #view-profile .walletTopupRow{
+    flex-direction:row !important;
+  }
+  #view-profile .walletTopupBtn{
+    width:auto !important;
+    flex:0 0 auto !important;
+  }
+  #view-profile .walletInputWrap{
+    flex:1 1 auto !important;
+    min-width:0 !important;
+  }
+}
