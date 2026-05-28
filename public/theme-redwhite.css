@@ -3693,3 +3693,253 @@ body.om-order-waiting{
   html.om-view-home .mobileSearchHead,
   body.om-view-home .mobileSearchHead{display:flex !important;}
 }
+
+
+/* ===== 2026-05-28 site-wide typography compact pass ===== */
+html, body{
+  -webkit-text-size-adjust:100%;
+}
+body,
+button,
+input,
+select,
+textarea{
+  font-size:14px;
+}
+
+/* General headings and captions */
+.viewTitle,
+.pageTitle,
+.sectionTitle,
+.hTitle,
+.heroTitle{
+  font-size:clamp(18px, 2vw, 20px) !important;
+  line-height:1.2 !important;
+}
+.viewSub,
+.profileCardSub,
+.activityPanelSub,
+.walletSmallText,
+.muted,
+.hint,
+.caption,
+.smallText{
+  font-size:11.5px !important;
+  line-height:1.4 !important;
+}
+.countPill,
+.catChip,
+.catPill,
+.badge,
+.orderPill,
+.walletStatusPill,
+.walletBalancePill,
+.walletBalanceMetaItem,
+.favMiniBadge,
+.favRating,
+.activityTab,
+.shipBadge,
+.prepayPill,
+.qvBadge,
+.qvTag{
+  font-size:10.5px !important;
+}
+
+/* Inputs, search, filters, buttons */
+input,
+select,
+textarea{
+  font-size:14px !important;
+}
+#q,
+#mobileHeadSearch,
+.mobileSearchHead input,
+.searchCard input,
+.searchCard select{
+  font-size:14px !important;
+}
+.btn,
+button,
+.iconPill,
+.pBtn,
+.orderActionBtn,
+.favGhostBtn,
+.favPrimaryBtn,
+.walletTopupBtn,
+.profileEditPill,
+.checkRow,
+.mobile-bottom-bar .nav-btn{
+  font-size:12.5px !important;
+}
+.mobile-bottom-bar .nav-btn small,
+.mobile-bottom-bar .nav-btn span:not(.badge){
+  font-size:11px !important;
+}
+
+/* Product list cards */
+.pcard .ppriceNow,
+.ppriceNow{
+  font-size:13px !important;
+  line-height:1.08 !important;
+}
+.pcard .ppriceOld,
+.ppriceOld{
+  font-size:10px !important;
+}
+.pname,
+.favTitle,
+.cartTitle{
+  font-size:11.5px !important;
+  line-height:1.26 !important;
+}
+.pratingInline,
+.pinstall,
+.pmeta,
+.pmetaRow,
+.pship,
+.pship *{
+  font-size:10px !important;
+}
+.productsCount{
+  font-size:11px !important;
+}
+
+/* Quick view / product modal */
+.qvName{
+  font-size:18px !important;
+  line-height:1.2 !important;
+}
+.qvDesc,
+.qvInfoCard,
+.qvMovedBtn,
+.qvRating{
+  font-size:12px !important;
+}
+.qvMainCta{
+  font-size:13px !important;
+}
+
+/* Favorites / cart */
+#view-fav .favPrice,
+#view-cart .cartRow .price,
+#view-cart .total,
+#view-profile .moneyHistoryEntry .moneyAmount,
+#view-profile .orderTop .orderTotal{
+  font-size:17px !important;
+  line-height:1.06 !important;
+}
+#view-fav .favEmptyTitle,
+#view-cart .cartEmptyTitle,
+#view-profile .profileCardTitle,
+#view-profile .activityPanelTitle,
+#view-profile .walletHeroText .profileCardTitle{
+  font-size:16px !important;
+}
+#view-cart .cartSelectedInfo,
+#view-profile .profileName{
+  font-size:15px !important;
+}
+#view-cart .cartSummaryLabel,
+#view-cart .cartSummaryNote,
+#view-profile .orderMeta,
+#view-profile .moneyHistoryEntry .orderMeta{
+  font-size:11px !important;
+}
+
+/* Profile / wallet */
+#view-profile .walletAmount,
+#view-profile .walletBalanceBox .walletAmount{
+  font-size:23px !important;
+  line-height:1.02 !important;
+}
+#view-profile .walletMiniLabel,
+#view-profile .field span,
+#view-profile #profileHint,
+#view-profile .profileUid,
+#view-profile .activityPanelSub{
+  font-size:10.5px !important;
+}
+#view-profile .field input,
+#view-profile .field select,
+#view-profile .walletInputWrap input{
+  font-size:13px !important;
+}
+
+/* Orders / lists / tables */
+.orderId,
+.orderTotal,
+.total,
+.totalRow .total{
+  font-size:16px !important;
+}
+.orderMeta,
+.orderActions,
+.ordersList,
+.empty,
+.panelEmpty{
+  font-size:11.5px !important;
+}
+
+/* Login page */
+.loginTitle,
+.authTitle,
+.brandTitle{
+  font-size:20px !important;
+}
+.loginSubtitle,
+.authSubtitle,
+.brandSubtitle,
+.formHint{
+  font-size:12px !important;
+}
+
+/* Mobile extra reduction */
+@media (max-width:520px){
+  body,
+  button,
+  input,
+  select,
+  textarea{ font-size:13px !important; }
+
+  .viewTitle,
+  .pageTitle,
+  .sectionTitle{ font-size:17px !important; }
+
+  .pcard .ppriceNow,
+  .ppriceNow{ font-size:12px !important; }
+  .pcard .ppriceOld,
+  .ppriceOld{ font-size:9.5px !important; }
+  .pname,
+  .favTitle,
+  .cartTitle{ font-size:11px !important; }
+  .shipBadge,
+  .orderPill,
+  .badge,
+  .walletStatusPill,
+  .walletBalancePill,
+  .walletBalanceMetaItem,
+  .favMiniBadge,
+  .favRating,
+  .activityTab,
+  .prepayPill{ font-size:9.5px !important; }
+
+  .mobile-bottom-bar .nav-btn,
+  .mobile-bottom-bar .nav-btn small,
+  .mobile-bottom-bar .nav-btn span:not(.badge){
+    font-size:10px !important;
+  }
+
+  #view-fav .favPrice,
+  #view-cart .cartRow .price,
+  #view-cart .total,
+  #view-profile .moneyHistoryEntry .moneyAmount,
+  #view-profile .orderTop .orderTotal{
+    font-size:15px !important;
+  }
+  #view-profile .walletAmount,
+  #view-profile .walletBalanceBox .walletAmount{ font-size:21px !important; }
+  #view-profile .profileName,
+  #view-profile .profileCardTitle,
+  #view-profile .activityPanelTitle{ font-size:14px !important; }
+  .qvName{ font-size:16px !important; }
+}
