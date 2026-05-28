@@ -1226,7 +1226,7 @@ function renderProductTypeBadge(p){
   if(!t) return "";
   if(t==="original") return `<span class="authBadge original" title="Original"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Asl mahsulot</span>`;
   if(t==="oem") return `<span class="authBadge oem" title="OEM"><i class="fa-solid fa-industry" aria-hidden="true"></i> OEM</span>`;
-  if(t==="replica") return `<span class="authBadge replica" title="Nusxa"><i class="fa-solid fa-copy" aria-hidden="true"></i> Nusxa</span>`;
+  if(t==="replica") return `<span class="authBadge replica" title="Copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> Copy</span>`;
   return `<span class="authBadge other" title="Mahsulot turi"><i class="fa-solid fa-tag" aria-hidden="true"></i> ${escapeHtml(t)}</span>`;
 }
 
