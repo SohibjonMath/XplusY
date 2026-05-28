@@ -453,42 +453,47 @@
           </div>
         </div>
 
-        <div class="profileTwoCol">
+        <div class="profileCompactStack">
 
-          <div class="profileCard collapsible" id="moneyHistoryCard">
-            <div class="profileCardTop collapsibleTop" id="moneyHistoryToggle" role="button" tabindex="0" aria-expanded="true">
+          <div class="profileCard activityPremium" id="activityCard">
+            <div class="profileCardTop activityCardTop">
               <div>
-                <div class="profileCardTitle">Mablag‘ tarixi</div>
-                <div class="profileCardSub">Balans to‘ldirish va balansdan yechimlar (admin izohi bilan).</div>
+                <div class="profileCardTitle">Faollik tarixi</div>
+                <div class="profileCardSub">Mablag‘ harakati va buyurtmalar tarixini bitta joyda kuzating.</div>
               </div>
-              <div class="collapsibleRight">
-                <span class="countPill" id="moneyHistoryCount">0</span>
-                <i class="fa-solid fa-chevron-down" id="moneyHistoryChevron" aria-hidden="true"></i>
+              <div class="activityTabs" role="tablist" aria-label="Faollik tarixi bo‘limlari">
+                <button class="activityTab isActive" id="activityTabMoney" type="button" role="tab" aria-selected="true">Mablag‘lar</button>
+                <button class="activityTab" id="activityTabOrders" type="button" role="tab" aria-selected="false">Buyurtmalar</button>
               </div>
             </div>
-            <div class="collapsibleBody" id="moneyHistoryBody">
-              <div class="ordersList" id="moneyHistoryList"></div>
-              <div class="empty" id="moneyHistoryEmpty" hidden>Hozircha mablag‘ harakati yo‘q.</div>
+            <div class="activityBody">
+              <section class="activityPanel" id="activityMoneyPanel">
+                <div class="activityPanelHead">
+                  <div>
+                    <div class="activityPanelTitle">Mablag‘lar tarixi</div>
+                    <div class="activityPanelSub">Balans to‘ldirish va balansdan yechimlar.</div>
+                  </div>
+                  <span class="countPill" id="moneyHistoryCount">0</span>
+                </div>
+                <div class="ordersList" id="moneyHistoryList"></div>
+                <div class="empty" id="moneyHistoryEmpty" hidden>Hozircha mablag‘ harakati yo‘q.</div>
+              </section>
+
+              <section class="activityPanel" id="activityOrdersPanel" hidden>
+                <div class="activityPanelHead">
+                  <div>
+                    <div class="activityPanelTitle">Buyurtmalarim</div>
+                    <div class="activityPanelSub">Oxirgi buyurtmalar ro‘yxati.</div>
+                  </div>
+                  <button class="iconPill" id="ordersReload" type="button" title="Yangilash" aria-label="Yangilash">⟳</button>
+                </div>
+                <div class="ordersList" id="ordersList"></div>
+                <div class="empty" id="ordersEmpty" hidden>Hozircha buyurtmalar yo‘q.</div>
+              </section>
             </div>
           </div>
 
-          <div class="profileCard collapsible" id="ordersHistoryCard">
-            <div class="profileCardTop collapsibleTop" id="ordersToggle" role="button" tabindex="0" aria-expanded="true">
-              <div>
-                <div class="profileCardTitle">Buyurtmalarim</div>
-                <div class="profileCardSub">Oxirgi buyurtmalar ro‘yxati</div>
-              </div>
-              <div class="collapsibleRight">
-                <button class="iconPill" id="ordersReload" type="button" title="Yangilash" aria-label="Yangilash">⟳</button>
-                <i class="fa-solid fa-chevron-down" id="ordersChevron" aria-hidden="true"></i>
-              </div>
-            </div>
-            <div class="collapsibleBody" id="ordersBody">
-              <div class="ordersList" id="ordersList"></div>
-              <div class="empty" id="ordersEmpty" hidden>Hozircha buyurtmalar yo‘q.</div>
-            </div>
-          </div>
-
+        </div>
 
           <div class="modalOverlay" id="orderReceiptModal" hidden>
             <div class="modalCard orderReceiptCard" role="dialog" aria-modal="true" aria-label="Buyurtma cheki">

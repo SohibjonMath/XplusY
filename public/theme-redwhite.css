@@ -3040,3 +3040,211 @@ input[name="topupMode"]{accent-color:#dc2626 !important;}
   #view-profile .walletBalanceMeta{ gap:8px; }
   #view-profile .walletBalanceMetaItem{ min-height:32px; padding:0 10px; font-size:10.5px; }
 }
+
+
+/* ===== 2026-05-28 Compact professional profile page ===== */
+#view-profile .profilePage{
+  gap:12px !important;
+}
+#view-profile .profileHead{
+  padding:14px 16px !important;
+  border-radius:20px !important;
+}
+#view-profile .profileAvatar{
+  width:58px !important;
+  height:58px !important;
+  border-radius:18px !important;
+}
+#view-profile .profileName{ font-size:18px !important; }
+#view-profile .profileUid{ font-size:12px !important; margin-top:4px !important; }
+#view-profile .field{
+  padding:10px !important;
+  border-radius:16px !important;
+}
+#view-profile .field input,
+#view-profile .field select{ height:42px !important; }
+#view-profile .formGrid{ gap:10px !important; }
+#view-profile #profileHint{
+  padding:10px 12px !important;
+  border-radius:14px !important;
+  font-size:12px !important;
+}
+
+/* Make wallet card more compact and integrated */
+#view-profile #walletCard{
+  border-radius:24px !important;
+  overflow:hidden !important;
+}
+#view-profile .walletHero{
+  padding:16px 16px 10px !important;
+  gap:10px !important;
+}
+#view-profile .walletIcon{
+  width:46px !important;
+  height:46px !important;
+  border-radius:16px !important;
+  font-size:18px !important;
+}
+#view-profile .walletStatusPill{
+  min-height:32px !important;
+  padding:0 10px !important;
+  font-size:11px !important;
+}
+#view-profile .walletGrid{
+  gap:10px !important;
+  padding:0 16px 16px !important;
+}
+#view-profile .walletBalanceBox,
+#view-profile .walletTopupBox{
+  border-radius:18px !important;
+  padding:14px !important;
+}
+#view-profile .walletBalanceBox .walletAmount{ font-size:30px !important; }
+#view-profile .walletBalanceMeta{ margin-top:10px !important; gap:8px !important; }
+#view-profile .walletBalanceMetaItem{ min-height:30px !important; font-size:10.5px !important; }
+#view-profile .walletTopupBox{
+  background:linear-gradient(180deg,#ffffff,#fff8f8) !important;
+}
+#view-profile .walletTopupRow{
+  margin-top:10px !important;
+  gap:8px !important;
+}
+#view-profile .walletInputWrap{
+  min-height:44px !important;
+  border-radius:14px !important;
+}
+#view-profile .walletTopupBtn{
+  min-height:44px !important;
+  border-radius:14px !important;
+  padding:0 14px !important;
+  white-space:nowrap !important;
+  font-size:13px !important;
+}
+#view-profile .walletMiniLabel{ font-size:11px !important; }
+#view-profile .walletSmallText{ font-size:11.5px !important; }
+
+/* Unified activity history card */
+#view-profile .profileCompactStack{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+#view-profile #activityCard{
+  border-radius:24px !important;
+  overflow:hidden !important;
+  background:linear-gradient(180deg,#ffffff,#fffcfc) !important;
+  border:1px solid rgba(220,38,38,.08) !important;
+  box-shadow:0 16px 34px rgba(17,24,39,.07) !important;
+}
+#view-profile .activityCardTop{
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  padding:16px !important;
+  border-bottom:1px solid rgba(17,24,39,.06) !important;
+  background:linear-gradient(180deg,#ffffff,#fff8f8) !important;
+}
+#view-profile .activityTabs{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px;
+  border-radius:16px;
+  background:#f5f5f7;
+  border:1px solid rgba(17,24,39,.06);
+}
+#view-profile .activityTab{
+  min-height:36px;
+  padding:0 12px;
+  border:none;
+  border-radius:12px;
+  background:transparent;
+  color:#6b7280;
+  font-size:13px;
+  font-weight:900;
+}
+#view-profile .activityTab.isActive{
+  background:linear-gradient(135deg,#111827,#dc2626);
+  color:#fff;
+  box-shadow:0 10px 20px rgba(220,38,38,.14);
+}
+#view-profile .activityBody{
+  padding:14px 16px 16px !important;
+}
+#view-profile .activityPanelHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+#view-profile .activityPanelTitle{
+  font-size:16px;
+  font-weight:900;
+  color:#111827;
+}
+#view-profile .activityPanelSub{
+  margin-top:3px;
+  font-size:12px;
+  color:#6b7280;
+  line-height:1.4;
+}
+#view-profile #activityCard .countPill{
+  min-width:32px !important;
+  height:32px !important;
+  padding:0 10px !important;
+  font-size:12px !important;
+}
+#view-profile #activityCard #ordersReload{
+  width:36px !important;
+  height:36px !important;
+  min-width:36px !important;
+}
+#view-profile #activityCard .ordersList{
+  gap:10px !important;
+}
+#view-profile #activityCard .moneyHistoryEntry,
+#view-profile #activityCard .orderPremiumRow,
+#view-profile #activityCard .orderRow{
+  padding:14px !important;
+  border-radius:18px !important;
+  box-shadow:0 8px 20px rgba(17,24,39,.05) !important;
+}
+#view-profile #activityCard .moneyHistoryEntry .moneyAmount,
+#view-profile #activityCard .orderTop .orderTotal{
+  font-size:20px !important;
+}
+#view-profile #activityCard .orderMeta,
+#view-profile #activityCard .moneyHistoryEntry .orderMeta{
+  gap:6px !important;
+}
+#view-profile #activityCard .orderActionBtn{
+  min-height:38px !important;
+  font-size:12.5px !important;
+}
+#view-profile #activityCard .empty{
+  padding:16px !important;
+  border-radius:18px !important;
+  font-size:12px !important;
+}
+
+@media (max-width: 520px){
+  #view-profile .profileHead{ padding:12px 14px !important; border-radius:18px !important; }
+  #view-profile .profileAvatar{ width:54px !important; height:54px !important; border-radius:16px !important; }
+  #view-profile .profileName{ font-size:17px !important; }
+  #view-profile .walletHero{ padding:14px 14px 10px !important; }
+  #view-profile .walletGrid{ padding:0 14px 14px !important; }
+  #view-profile .walletBalanceBox,
+  #view-profile .walletTopupBox{ padding:12px !important; border-radius:16px !important; }
+  #view-profile .walletBalanceBox .walletAmount{ font-size:27px !important; }
+  #view-profile .walletTopupRow{ flex-direction:column !important; }
+  #view-profile .walletTopupBtn{ width:100% !important; }
+  #view-profile .activityCardTop{ padding:14px !important; flex-direction:column !important; }
+  #view-profile .activityTabs{ width:100% !important; }
+  #view-profile .activityTab{ flex:1 1 0; }
+  #view-profile .activityBody{ padding:12px 14px 14px !important; }
+  #view-profile .activityPanelHead{ margin-bottom:10px !important; }
+  #view-profile #activityCard .moneyHistoryEntry .moneyAmount,
+  #view-profile #activityCard .orderTop .orderTotal{ font-size:18px !important; }
+}

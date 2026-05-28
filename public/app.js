@@ -5103,3 +5103,26 @@ window.addEventListener('load', ()=>setTimeout(orzuMoveProfileSocialToBottom, 12
   q.addEventListener('input', syncToHead);
   syncToHead();
 })();
+
+
+// Compact profile activity tabs (money/orders in one card)
+(function(){
+  const tabMoney = document.getElementById('activityTabMoney');
+  const tabOrders = document.getElementById('activityTabOrders');
+  const panelMoney = document.getElementById('activityMoneyPanel');
+  const panelOrders = document.getElementById('activityOrdersPanel');
+  if(!tabMoney || !tabOrders || !panelMoney || !panelOrders) return;
+
+  function setProfileActivityTab(name){
+    const money = name !== 'orders';
+    tabMoney.classList.toggle('isActive', money);
+    tabOrders.classList.toggle('isActive', !money);
+    tabMoney.setAttribute('aria-selected', money ? 'true' : 'false');
+    tabOrders.setAttribute('aria-selected', money ? 'false' : 'true');
+    panelMoney.hidden = !money;
+    panelOrders.hidden = money;
+  }
+  tabMoney.addEventListener('click', ()=> setProfileActivityTab('money'));
+  tabOrders.addEventListener('click', ()=> setProfileActivityTab('orders'));
+  setProfileActivityTab('money');
+})();
