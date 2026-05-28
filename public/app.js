@@ -2791,49 +2791,69 @@ const removeBtn = item.querySelector(".removeBtn");
 function renderFavPage(){
   if(!els.favPageList || !els.favPageEmpty) return;
   els.favPageList.innerHTML = "";
+  const countEl = document.getElementById("favCountPillPage");
   const list = [];
   for(const id of favs){
     const p = products.find(x=>x.id===id);
     if(p) list.push({p});
   }
+  if(countEl) countEl.textContent = String(list.length);
   els.favPageEmpty.hidden = list.length !== 0;
 
   for(const row of list){
     const p = row.p;
-    const imgSrc = getCurrentImage(p, getSel(p));
-    const item = document.createElement("div");
-    item.className = "cartItem";
+    const sel = getSel(p);
+    const imgSrc = getCurrentImage(p, sel);
+    const priceObj = getVariantPricing(p, sel);
+    const st = getStats(p.id);
+    const ratingHtml = st.count ? `<span class="favRating"><i class="fa-solid fa-star" aria-hidden="true"></i> ${Number(st.avg||0).toFixed(1)} <small>(${st.count})</small></span>` : `<span class="favRating muted"><i class="fa-regular fa-heart" aria-hidden="true"></i> Sevimli</span>`;
+    const item = document.createElement("article");
+    item.className = "favPremiumCard";
     item.innerHTML = `
-      <img class="cartImg" src="${imgSrc||""}" alt="${p.name||"product"}" />
-      <div class="cartMeta">
-        <div class="cartTitle">${p.name||"Nomsiz"}</div>
-        <div class="cartRow">
-          <div class="price">${moneyUZS(getVariantPricing(p, {}).price||0)}</div>
-          <button class="removeBtn" title="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+      <div class="favImgWrap">
+        <img class="favCardImg" src="${imgSrc||""}" alt="${escapeHtml(p.name||"product")}" />
+        <button class="favRemoveBtn" title="Sevimlidan olib tashlash" aria-label="Sevimlidan olib tashlash"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
+      <div class="favContent">
+        <div class="favTopRow">
+          ${ratingHtml}
+          <span class="favMiniBadge">Sevimli</span>
         </div>
-        <div class="cartRow">
-          <button class="pBtn" data-open>Ko‘rish</button>
-          <button class="pBtn iconOnly" title="Savatchaga" data-add><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></button>
+        <div class="favTitle">${escapeHtml(p.name||"Nomsiz")}</div>
+        <div class="favPriceRow">
+          <div class="favPrice">${moneyUZS(priceObj.price||0)}</div>
+          <div class="favShip">${renderDeliveryBadge(p)}</div>
+        </div>
+        <div class="favActions">
+          <button class="favGhostBtn" data-open><i class="fa-regular fa-eye" aria-hidden="true"></i><span>Ko‘rish</span></button>
+          <button class="favPrimaryBtn" data-add><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i><span>Savatga</span></button>
         </div>
       </div>
     `;
 
-    item.querySelector(".cartImg")?.addEventListener("click", (e)=>{
-      e.preventDefault(); e.stopPropagation();
-      openImageZoom(imgSrc);
+    item.addEventListener("click", (e)=>{
+      if(e.target.closest('button')) return;
+      openViewer(p.id);
     });
-
-    item.querySelector("[data-open]")?.addEventListener("click", ()=>{
+    item.querySelector(".favCardImg")?.addEventListener("click", (e)=>{
+      e.preventDefault(); e.stopPropagation();
       openViewer(p.id);
     });
 
-    item.querySelector("[data-add]")?.addEventListener("click", ()=>{
-      addToCart(p.id, 1, getSel(p));
+    item.querySelector("[data-open]")?.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      openViewer(p.id);
+    });
+
+    item.querySelector("[data-add]")?.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      addToCart(p.id, 1, sel);
       updateBadges();
       toast("Savatga qo‘shildi");
     });
 
-    item.querySelector(".removeBtn")?.addEventListener("click", ()=>{
+    item.querySelector(".favRemoveBtn")?.addEventListener("click", (e)=>{
+      e.stopPropagation();
       favs.delete(p.id);
       saveLS(LS.favs, Array.from(favs));
       updateBadges();

@@ -177,12 +177,20 @@
 </section>
 
 <section class="view" id="view-fav" hidden>
-  <div class="viewHeader">
-    <div class="viewTitle">Sevimlilar</div>
+  <div class="viewHeader favPremiumHeader">
+    <div>
+      <div class="viewTitle">Sevimlilar</div>
+      <div class="viewSub">Yoqtirgan mahsulotlaringiz bir joyda.</div>
+    </div>
+    <div class="countPill favCountPill" id="favCountPillPage">0</div>
   </div>
-  <div class="viewBody">
+  <div class="viewBody favPremiumBody">
     <div id="favPageList"></div>
-    <div class="panelEmpty" id="favPageEmpty" hidden>Hozircha bo‘sh.</div>
+    <div class="panelEmpty favPremiumEmpty" id="favPageEmpty" hidden>
+      <div class="favEmptyIcon"><i class="fa-regular fa-heart" aria-hidden="true"></i></div>
+      <div class="favEmptyTitle">Sevimlilar hozircha bo‘sh</div>
+      <div class="favEmptyText">Yoqgan mahsulotlaringizni yurakcha orqali shu bo‘limga saqlang.</div>
+    </div>
   </div>
 </section>
 
