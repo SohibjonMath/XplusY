@@ -3461,6 +3461,25 @@ els.imgViewerBackdrop?.addEventListener("click", closeImageViewer);
 els.imgPrev?.addEventListener("click", ()=>stepViewer(-1));
 els.imgNext?.addEventListener("click", ()=>stepViewer(+1));
 
+// Product card action buttons moved into image viewer.
+// Cart remains on the product card; info/video/reviews open from this quick-view footer.
+document.getElementById("qvInfoBtn")?.addEventListener("click", (e)=>{
+  e.preventDefault();
+  e.stopPropagation();
+  if(viewer?.productId) openMini("info", viewer.productId);
+});
+document.getElementById("qvVideoBtn")?.addEventListener("click", (e)=>{
+  e.preventDefault();
+  e.stopPropagation();
+  if(viewer?.productId) openMini("video", viewer.productId);
+});
+document.getElementById("qvReviewsBtn")?.addEventListener("click", (e)=>{
+  e.preventDefault();
+  e.stopPropagation();
+  if(viewer?.productId) openMini("reviews", viewer.productId);
+});
+
+
 // swipe (mobile) for image viewer
 (() => {
   const stage = document.querySelector('#imgViewer .qvStage');

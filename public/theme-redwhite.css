@@ -354,3 +354,278 @@ input[name="topupMode"]{accent-color:#dc2626 !important;}
   .adminCardNumber{font-size:16px;}
   .confirmAmountBox{align-items:flex-start;flex-direction:column;}
 }
+
+
+/* =====================================================================
+   UI Fix Pack — products border removed, card actions moved, nicer controls,
+   mobile header hidden. Loaded last.
+   ===================================================================== */
+
+/* 1) Remove the outer frame around the products window */
+.productsCard,
+.card.productsCard,
+#view-home > .productsCard{
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+  padding:0 !important;
+}
+.productsCard:hover,
+.card.productsCard:hover{
+  border:0 !important;
+  box-shadow:none !important;
+}
+.productsCard .searchCard{
+  border:1px solid rgba(220,38,38,.14) !important;
+  box-shadow:0 8px 24px rgba(17,24,39,.045) !important;
+}
+
+/* 2) Product card bottom actions: only cart remains on the card */
+.pcard .pactions{
+  justify-content:flex-end !important;
+  gap:8px !important;
+  margin-top:12px !important;
+}
+.pcard .pactions .iconPill:not(.cartOnly){
+  display:none !important;
+}
+.pcard .pactions .cartOnly{
+  width:58px !important;
+  min-width:58px !important;
+  height:38px !important;
+  padding:0 !important;
+  border-radius:999px !important;
+  background:linear-gradient(135deg,#fff7ed,#fff1f2) !important;
+  border:1px solid rgba(220,38,38,.18) !important;
+  color:#111827 !important;
+  box-shadow:0 8px 18px rgba(17,24,39,.07) !important;
+}
+.pcard .pactions .cartOnly svg{color:#111827 !important;}
+.pcard .pactions .cartOnly:hover{
+  background:linear-gradient(135deg,#111827,#dc2626) !important;
+  color:#fff !important;
+  transform:translateY(-1px) !important;
+  box-shadow:0 14px 28px rgba(220,38,38,.20) !important;
+}
+.pcard .pactions .cartOnly:hover svg{color:#fff !important;}
+
+/* Moved actions shown under image viewer */
+.qvMovedActions{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  padding:12px 14px 14px;
+  border-top:1px solid rgba(17,24,39,.08);
+  background:#ffffff;
+}
+.qvMovedBtn{
+  height:44px;
+  border-radius:16px;
+  border:1px solid rgba(17,24,39,.10);
+  background:#ffffff;
+  color:#111827;
+  font-weight:850;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(17,24,39,.055);
+  transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
+}
+.qvMovedBtn i{color:#dc2626 !important;font-size:16px;}
+.qvMovedBtn:hover{
+  transform:translateY(-1px);
+  border-color:rgba(220,38,38,.30);
+  box-shadow:0 14px 26px rgba(220,38,38,.13);
+  background:#fff7f7;
+}
+.qvMovedBtn:active{transform:translateY(0);}
+
+/* Viewer polish to make the new footer look built-in */
+.imgViewerShell.qvShell,
+.qvShellSolo{
+  border-color:rgba(17,24,39,.10) !important;
+  box-shadow:0 28px 80px rgba(17,24,39,.22) !important;
+}
+.qvMedia,
+.qvMediaSolo{
+  background:#ffffff !important;
+}
+.qvThumbs{
+  border-top:1px solid rgba(17,24,39,.08) !important;
+  background:#fff !important;
+}
+
+/* 3) Premium profile edit and balance plus buttons */
+.balPlus{
+  width:46px !important;
+  height:46px !important;
+  border-radius:999px !important;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.32), transparent 30%),
+    linear-gradient(135deg,#111827 0%,#dc2626 100%) !important;
+  border:1px solid rgba(220,38,38,.35) !important;
+  color:#fff !important;
+  box-shadow:0 14px 32px rgba(220,38,38,.24), 0 4px 10px rgba(17,24,39,.10) !important;
+  position:relative !important;
+  overflow:hidden !important;
+}
+.balPlus::after{
+  content:"";
+  position:absolute;
+  inset:3px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);
+  pointer-events:none;
+}
+.balPlus i{
+  color:#fff !important;
+  font-size:17px !important;
+  position:relative;
+  z-index:1;
+}
+.balPlus:hover{
+  transform:translateY(-2px) scale(1.03) !important;
+  box-shadow:0 18px 38px rgba(220,38,38,.30), 0 6px 16px rgba(17,24,39,.14) !important;
+}
+.balChip{
+  height:46px !important;
+  padding:0 16px !important;
+  border-radius:999px !important;
+  border:1px solid rgba(17,24,39,.10) !important;
+  box-shadow:0 10px 24px rgba(17,24,39,.06) !important;
+}
+.balChip i{
+  width:22px;
+  height:22px;
+  border-radius:8px;
+  display:inline-grid;
+  place-items:center;
+  background:#fff1f2;
+  color:#dc2626 !important;
+}
+
+#profileEditBtn,
+.profileEditPill{
+  min-width:132px !important;
+  height:44px !important;
+  padding:0 16px !important;
+  border-radius:999px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:8px !important;
+  background:linear-gradient(135deg,#111827,#dc2626) !important;
+  border:1px solid #111827 !important;
+  color:#fff !important;
+  box-shadow:0 14px 30px rgba(220,38,38,.20) !important;
+  font-weight:900 !important;
+}
+#profileEditBtn i,
+.profileEditPill i{
+  color:#fff !important;
+  font-size:16px !important;
+}
+#profileEditBtn span,
+.profileEditPill span{
+  color:#fff !important;
+  font-size:13px !important;
+  letter-spacing:.1px !important;
+}
+#profileEditBtn:hover,
+.profileEditPill:hover{
+  transform:translateY(-1px) !important;
+  box-shadow:0 18px 38px rgba(220,38,38,.25) !important;
+}
+
+/* Balance top-up section: cleaner card and input row */
+.walletPremium,
+#walletCard{
+  border:1px solid rgba(17,24,39,.08) !important;
+  box-shadow:0 18px 48px rgba(17,24,39,.07) !important;
+  border-radius:28px !important;
+  overflow:hidden !important;
+  background:
+    radial-gradient(900px 220px at 0% 0%, rgba(220,38,38,.075), transparent 55%),
+    #ffffff !important;
+}
+.walletHero{
+  align-items:center !important;
+  border-bottom:1px solid rgba(17,24,39,.07) !important;
+}
+.walletIcon{
+  background:linear-gradient(135deg,#111827,#dc2626) !important;
+  color:#fff !important;
+  box-shadow:0 14px 30px rgba(220,38,38,.22) !important;
+}
+.walletStatusPill{
+  background:#fff1f2 !important;
+  color:#b91c1c !important;
+  border:1px solid #fecdd3 !important;
+}
+.walletBalanceBox,
+.walletTopupBox{
+  background:#fff !important;
+  border:1px solid rgba(17,24,39,.08) !important;
+  border-radius:22px !important;
+  box-shadow:0 10px 28px rgba(17,24,39,.055) !important;
+}
+.walletInputWrap{
+  min-height:50px !important;
+  border-radius:16px !important;
+  background:#f9fafb !important;
+}
+.walletInputWrap i{
+  color:#dc2626 !important;
+}
+.walletTopupBtn{
+  min-height:50px !important;
+  border-radius:16px !important;
+  font-weight:900 !important;
+}
+
+/* 4) Mobile: hide the top header completely */
+@media (max-width:768px){
+  .topbar{
+    display:none !important;
+  }
+  main.container,
+  .container{
+    padding-top:10px !important;
+  }
+  body{
+    padding-top:0 !important;
+  }
+  .qvMovedActions{
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    padding:10px 10px 12px;
+  }
+  .qvMovedBtn{
+    height:40px;
+    border-radius:14px;
+    font-size:12px;
+    gap:6px;
+  }
+  .qvMovedBtn span{display:inline;}
+  #profileEditBtn,
+  .profileEditPill{
+    min-width:46px !important;
+    width:46px !important;
+    padding:0 !important;
+  }
+  #profileEditBtn span,
+  .profileEditPill span{
+    display:none !important;
+  }
+}
+
+/* Desktop spacing after removing outer product frame */
+@media (min-width:769px){
+  .productsCard .grid{
+    margin-top:10px !important;
+  }
+}
+

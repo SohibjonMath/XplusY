@@ -234,7 +234,7 @@
   <div class="viewHeader">
     <div class="viewTitle">Profil</div>
     <div class="viewHeaderActions">
-      <button class="iconPill" id="profileEditBtn" title="Tahrirlash" aria-label="Tahrirlash" type="button">✏️</button>
+      <button class="iconPill profileEditPill" id="profileEditBtn" title="Tahrirlash" aria-label="Tahrirlash" type="button"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Tahrirlash</span></button>
     </div>
   </div>
   <div class="viewBody profilePage">
@@ -478,7 +478,7 @@
   <script type="module" src="./firebase-config.js"></script>
   <script type="module" src="./cardpay-config.js"></script>
   <script src="./telegram-config.js"></script>
-<script type="module" src="./app.js?v=20260327_receiptfix"></script>
+<script type="module" src="./app.js?v=20260528_ui_fix"></script>
 
   
 
@@ -497,6 +497,20 @@
           <button class="navBtn navNext" id="imgNext" title="Keyingi" aria-label="Keyingi">▶</button>
         </div>
         <div class="thumbRow qvThumbs" id="imgThumbs"></div>
+        <div class="qvMovedActions" id="qvMovedActions" aria-label="Mahsulot amallari">
+          <button class="qvMovedBtn" id="qvInfoBtn" type="button" title="Tavsif" aria-label="Tavsif">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            <span>Tavsif</span>
+          </button>
+          <button class="qvMovedBtn" id="qvVideoBtn" type="button" title="Video" aria-label="Video">
+            <i class="fa-brands fa-youtube" aria-hidden="true"></i>
+            <span>Video</span>
+          </button>
+          <button class="qvMovedBtn" id="qvReviewsBtn" type="button" title="Sharhlar" aria-label="Sharhlar">
+            <i class="fa-solid fa-message" aria-hidden="true"></i>
+            <span>Sharhlar</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
