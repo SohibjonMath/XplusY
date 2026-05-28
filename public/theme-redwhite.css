@@ -1,6 +1,25 @@
 
-/* ==== OrzuMall White + Black/Red Theme Override ==== */
+/* =====================================================================
+   OrzuMall Final Theme: WHITE background + BLACK/RED premium elements
+   This file is intentionally loaded last to normalize every page.
+   ===================================================================== */
 :root{
+  --om-black:#111827;
+  --om-black-2:#0f172a;
+  --om-red:#dc2626;
+  --om-red-2:#b91c1c;
+  --om-red-3:#ef4444;
+  --om-red-soft:#fff1f2;
+  --om-red-soft-2:#fee2e2;
+  --om-white:#ffffff;
+  --om-bg:#ffffff;
+  --om-soft:#f8fafc;
+  --om-soft-2:#f3f4f6;
+  --om-border:#e5e7eb;
+  --om-muted:#6b7280;
+  --om-shadow:0 16px 45px rgba(17,24,39,.08);
+  --om-shadow-red:0 16px 36px rgba(220,38,38,.18);
+
   --bg:#ffffff !important;
   --surface:#ffffff !important;
   --surface2:#ffffff !important;
@@ -8,21 +27,21 @@
   --muted:#6b7280 !important;
   --muted2:#9ca3af !important;
   --line:rgba(17,24,39,.10) !important;
-  --gold:#ef4444 !important;
+  --gold:#dc2626 !important;
   --gold2:#b91c1c !important;
   --ink:#111827 !important;
-  --blue:#ef4444 !important;
+  --blue:#dc2626 !important;
   --primary:#dc2626 !important;
   --primary2:#111827 !important;
   --om:#dc2626 !important;
   --om2:#111827 !important;
   --om-green:#dc2626 !important;
   --om-green-dark:#111827 !important;
-  --bg1:rgba(239,68,68,.08) !important;
+  --bg1:rgba(220,38,38,.08) !important;
   --bg2:#ffffff !important;
   --card:#ffffff !important;
   --border:rgba(17,24,39,.10) !important;
-  --ring:rgba(220,38,38,.18) !important;
+  --ring:rgba(220,38,38,.16) !important;
   --shadow:0 18px 50px rgba(17,24,39,.08) !important;
   --brand:#dc2626 !important;
   --brand-dark:#111827 !important;
@@ -49,39 +68,289 @@
   --card-bg:#ffffff !important;
   --border-light:#f3f4f6 !important;
 }
-html,body{background:#ffffff !important;color:#111827 !important;}
+
+*{scrollbar-color:var(--om-red) #f3f4f6;}
+html,body{background:#ffffff !important;color:var(--om-black) !important;}
 body{background-image:none !important;}
-.card, .heroCard, .pcard, .sheet, .modal-content, .modalCard, .drawer, .menuCard,
-.stat-card, .mini-card, .wrap, .search-box, .dynamic-list, .glass, .panel, .summary-card,
-.receipt, .box, .list-card, .product-card, .analytics-card, .chart-card,
-[class*="card"], [class*="panel"]{background:#ffffff;border-color:rgba(17,24,39,.10) !important;}
-body .topbar, body .header, body .toolbar, body .subbar, body .viewHeader,
-body .searchWrap, body .filterBar, body .bottomBar, body .sidebar-footer,
-body .search-box, body .wrap, body .app-container .header{background:#ffffff !important;border-color:rgba(17,24,39,.10) !important;}
-h1,h2,h3,h4,h5,h6,.viewTitle,.heroTitle,.pname,.product-name,.modalTitle,.vTitle,.mini-title,.header h2,.header h1,
-.logo h1,.brand-title,.stat-info h3,.price-cell,.admin-name,.nav-link span,.balAmt{color:#111827 !important;}
-.logo h1 i, .stat-icon, .viewBack, .balPlus i, .nav-link i, .iconbtn i, .iconPill i, .avatarIcon i, .cta i{color:#dc2626 !important;}
-.muted, p, .hint, .form-text, .admin-email, .footer, .balCur, .mini-row .k, .stat-info p{color:#6b7280 !important;}
-a, .hint a, .link, .accent, .price, .price-current, .product-price, .ppriceNow, .balChip i, .section-title i, .form-section h4, .tag{color:#dc2626 !important;}
-.btn, .cta, .btn-primary, .heroBtn, .balPlus, button[type="submit"], .actionBtn,
-.action-btn, .primary-btn, .save-btn, .submit-btn, .checkout-btn, .tab.active,
-button.primary, .toolbar .btn, .sidebar-actions .btn{background:linear-gradient(135deg,#111827,#dc2626) !important;color:#ffffff !important;border-color:#111827 !important;box-shadow:0 12px 26px rgba(220,38,38,.18) !important;}
-.btn i, .cta i, .btn-primary i, button[type="submit"] i, .actionBtn i, .action-btn i, .save-btn i, .submit-btn i, .checkout-btn i{color:#fff !important;}
-.btn-light, .btn.ghost, .tab:not(.active), .iconbtn, .viewBack, .chip, .pill, .balChip, .filterChip,
-.secondary-btn, .ghost-btn, button.secondary, .statusSel, input, select, textarea, .input{background:#ffffff !important;color:#111827 !important;border:1px solid rgba(17,24,39,.12) !important;}
+body::before, body::after{background:none !important;}
+
+/* Main layout */
+.container,.app-container,.main-content,main,.view,.viewBody,.modalBody,.card-body,.collapsibleBody{background:transparent !important;}
+.topbar{
+  background:rgba(255,255,255,.96) !important;
+  border-bottom:1px solid var(--om-border) !important;
+  box-shadow:0 8px 24px rgba(17,24,39,.06) !important;
+}
+.header,.toolbar,.subbar,.viewHeader,.profileCardTop,.cardHead,.collapsibleTop{
+  background:#ffffff !important;
+  border-color:var(--om-border) !important;
+}
+
+/* Cards */
+.card,.productsCard,.searchCard,.pcard,.profileCard,.ordersCard,.moneyHistoryCard,.socialCard,
+.modalCard,.vCard,.modal-content,.stat-card,.mini-card,.section-card,.product-rank-card,.order-card,
+.orderItem,.order-item-card,.dynamic-list,.order-chip,.softCard,.socialCard,.cartItem,.cartRow,
+.receipt,.box,.panel,.summary-card,.searchPromo,.heroCard,.walletPremium,.transferCard{
+  background:#ffffff !important;
+  border:1px solid var(--om-border) !important;
+  box-shadow:0 10px 28px rgba(17,24,39,.06) !important;
+}
+.card:hover,.pcard:hover,.order-card:hover,.stat-card:hover{
+  border-color:rgba(220,38,38,.28) !important;
+  box-shadow:0 18px 45px rgba(17,24,39,.10) !important;
+}
+.pmedia,.qvMedia,.qvStage,.product-media,.imageBox{background:#ffffff !important;}
+.pimg{background:#ffffff !important;}
+
+/* Typography */
+h1,h2,h3,h4,h5,h6,.viewTitle,.heroTitle,.productsTitle,.pname,.product-name,.modalTitle,.vTitle,
+.mini-title,.header h1,.header h2,.logo h1,.brand-title,.profileCardTitle,.cardTitle,.collapsibleTitle,
+.stat-info h3,.price-cell,.admin-name,.walletAmount,.transferTitle,.adminCardHolder,.adminCardNumber,
+.orderId,.order-id .v,.orderTotal,.order-total .v,.kpi-value,.rank-name,.rank-value,.balAmt,.name,.v{
+  color:var(--om-black) !important;
+}
+.profileCardSub,.muted,p,.hint,.form-text,.admin-email,.footer,.balCur,.mini-row .k,.stat-info p,
+.orderMeta,.order-card .k,.order-chip .k,.walletSmallText,.walletMiniLabel,.transferSub,.adminCardLabel,
+.k,.sub,.card-subtitle,.empty-state p{
+  color:var(--om-muted) !important;
+}
+
+/* Brand writing */
+.brand-title .orzu{color:var(--om-black) !important;}
+.brand-title .mall{color:var(--om-red) !important;}
+.logo img,.logoImg{background:transparent !important;}
+
+/* Icons/accent text */
+a,.hint a,.link,.accent,.ppriceNow,.price,.price-current,.product-price,.price-cell,
+.section-title i,.productsTitle i,.form-section h4,.balChip i,.logo h1 i,.stat-icon,.viewBack,
+.iconPill i,.avatarIcon i,.searchTitle i,.spKicker,.spTitle,.catArrow,.copyBtn i{
+  color:var(--om-red) !important;
+}
+
+/* Buttons */
+.btn,.cta,.btn-primary,.heroBtn,.balPlus,button[type="submit"],.actionBtn,.action-btn,.primary-btn,
+.save-btn,.submit-btn,.checkout-btn,.tab.active,button.primary,.toolbar .btn,.sidebar-actions .btn,
+.spBotBtn,.loadMoreBtn,.walletTopupBtn,#topupNext,#topupSubmit,#topupApproveBtn{
+  background:linear-gradient(135deg,var(--om-black),var(--om-red)) !important;
+  color:#ffffff !important;
+  border:1px solid var(--om-black) !important;
+  box-shadow:var(--om-shadow-red) !important;
+}
+.btn i,.cta i,.btn-primary i,button[type="submit"] i,.actionBtn i,.action-btn i,.save-btn i,
+.submit-btn i,.checkout-btn i,.spBotBtn i,.walletTopupBtn i,#topupNext i,#topupSubmit i{color:#fff !important;}
+.btn:hover,.cta:hover,.btn-primary:hover,.spBotBtn:hover,.walletTopupBtn:hover{filter:brightness(1.03);transform:translateY(-1px);}
+.btn-light,.btn.ghost,.tab:not(.active),.iconbtn,.iconBtn,.viewBack,.chip,.pill,.balChip,.filterChip,
+.secondary-btn,.ghost-btn,button.secondary,.statusSel,.qtyBtn,.copyBtn,#topupBack,#topupCancel1,#topupCancelBtn,#topupSaveOnlyBtn{
+  background:#ffffff !important;
+  color:var(--om-black) !important;
+  border:1px solid var(--om-border) !important;
+  box-shadow:0 8px 20px rgba(17,24,39,.06) !important;
+}
+.btn-danger{background:linear-gradient(135deg,#991b1b,#ef4444) !important;color:#fff !important;border-color:#991b1b !important;}
+.btn-success{background:linear-gradient(135deg,#111827,#dc2626) !important;color:#fff !important;border-color:#111827 !important;}
 .tab.active{color:#fff !important;}
-.tab:not(.active){color:#111827 !important;}
-input, select, textarea, .input, .search-box, .search input, .form-control{background:#ffffff !important;color:#111827 !important;border-color:rgba(17,24,39,.12) !important;}
-input:focus, select:focus, textarea:focus, .input:focus-within, .form-control:focus{border-color:#dc2626 !important;box-shadow:0 0 0 4px rgba(220,38,38,.12) !important;outline:none !important;}
-.sidebar{background:linear-gradient(180deg,#111827,#dc2626) !important;color:#ffffff !important;}
-.sidebar .logo h1, .sidebar .nav-link, .sidebar .admin-name, .sidebar .admin-email, .sidebar .sidebar-note{color:#fff !important;}
-.sidebar .logo h1 i, .sidebar .nav-link i{color:#fecaca !important;}
-.nav-link:hover,.nav-link.active{background:rgba(255,255,255,.10) !important;border-left-color:#fecaca !important;}
-thead{background:#fafafa !important;} th, td{border-color:#eceff3 !important; color:#111827 !important;} tbody tr:hover{background:#fff5f5 !important;}
-.product-id{background:#f3f4f6 !important; color:#111827 !important;}
-.price, .price-current, .product-price, .pcard .ppriceNow, .ppriceNow, .price-cell{color:#dc2626 !important;}
-.price-old, .price-was, .product-old-price, .old-price, .pcard .ppriceOld, .ppriceOld, del, s{color:#9ca3af !important;text-decoration-color:#dc2626 !important;}
-.tag, .chip.active, .pill.pending, .pill.pending_payment, .pill.paid, .pill.delivered, .pill.cancelled,
-.badge, .status, .status-badge{background:#fff1f2 !important;color:#b91c1c !important;border:1px solid #fecdd3 !important;}
-.brand-title .orzu{color:#111827 !important;}.brand-title .mall{color:#dc2626 !important;}.logo img{background:transparent !important;}
-.stat-icon.total, .stat-icon.price, .stat-icon.popular, .stat-icon.tags{background:#fff1f2 !important;color:#dc2626 !important;}
+.tab:not(.active){color:var(--om-black) !important;}
+
+/* Inputs and form controls */
+input,select,textarea,.input,.search-box,.search input,.form-control,.walletInputWrap{
+  background:#ffffff !important;
+  color:var(--om-black) !important;
+  border:1px solid var(--om-border) !important;
+  box-shadow:0 6px 18px rgba(17,24,39,.04) !important;
+}
+input::placeholder,textarea::placeholder{color:#9ca3af !important;}
+input:focus,select:focus,textarea:focus,.input:focus-within,.form-control:focus,.walletInputWrap:focus-within{
+  border-color:var(--om-red) !important;
+  box-shadow:0 0 0 4px rgba(220,38,38,.12) !important;
+  outline:none !important;
+}
+.field span,label{color:#374151 !important;}
+
+/* Header/nav chips */
+.chipCount,.countPill,.badge,.status,.status-badge,.tag,.pbadge,.authBadge,.prepayPill,.variant-badge,
+.pill.pending,.pill.pending_payment,.pill.paid,.pill.delivered,.pill.cancelled,.pill.stock,.pill.cargo{
+  background:var(--om-red-soft) !important;
+  color:var(--om-red-2) !important;
+  border:1px solid #fecdd3 !important;
+}
+.status-pill{background:#ffffff !important;color:var(--om-black) !important;border-color:var(--om-border) !important;}
+.status-pill.status-approved,.status-pill.status-paid{background:#fff1f2 !important;color:#b91c1c !important;border-color:#fecdd3 !important;}
+
+/* Tables */
+thead{background:#fafafa !important;}
+th,td{border-color:#eceff3 !important;color:var(--om-black) !important;}
+tbody tr:hover{background:#fff5f5 !important;}
+.product-id,code{background:#f3f4f6 !important;color:var(--om-black) !important;border-radius:6px;}
+
+/* Sidebar/admin */
+.sidebar{background:linear-gradient(180deg,var(--om-black),var(--om-red)) !important;color:#fff !important;}
+.sidebar .logo h1,.sidebar .nav-link,.sidebar .admin-name,.sidebar .admin-email,.sidebar .sidebar-note{color:#fff !important;}
+.sidebar .logo h1 i,.sidebar .nav-link i{color:#fecaca !important;}
+.nav-link:hover,.nav-link.active{background:rgba(255,255,255,.11) !important;border-left-color:#fecaca !important;}
+.main-content{background:#ffffff !important;}
+
+/* Product and prices */
+.pcard{border-radius:22px !important;overflow:hidden !important;}
+.ppriceNow,.price,.price-current,.product-price,.order-total .v{color:var(--om-red) !important;text-shadow:none !important;}
+.price-old,.price-was,.product-old-price,.old-price,.ppriceOld,del,s{color:#9ca3af !important;text-decoration-color:var(--om-red) !important;}
+.pcard span,.pcard strong,.pcard b{color:inherit !important;}
+.pcard .ppriceNow{color:var(--om-red) !important;font-weight:900 !important;}
+.pcard .pname{color:var(--om-black) !important;}
+
+/* Modal overlays */
+.modalOverlay,.vOverlay,.modal,.imgViewerBackdrop{background:rgba(17,24,39,.34) !important;backdrop-filter:blur(10px) !important;}
+.modalTop,.vTop{background:linear-gradient(135deg,#ffffff,#fff5f5) !important;border-bottom:1px solid var(--om-border) !important;}
+.modalBottom,.modal-footer{border-color:var(--om-border) !important;background:#ffffff !important;}
+
+/* Search promo */
+.searchPromo{background:linear-gradient(135deg,#ffffff,#fff5f5) !important;border:1px solid #fecdd3 !important;}
+.spKicker{color:var(--om-red) !important;}
+.spTitle{color:var(--om-black) !important;}
+.spHint{color:var(--om-muted) !important;}
+
+/* ================= WALLET / BALANCE TOP-UP REDESIGN ================= */
+.walletPremium{
+  border-radius:24px !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  background:#ffffff !important;
+}
+.walletHero{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:18px;
+  background:linear-gradient(135deg,#ffffff 0%,#fff5f5 100%) !important;
+  border-bottom:1px solid #fee2e2 !important;
+}
+.walletIcon,.topupTitleIcon{
+  width:52px;
+  height:52px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,var(--om-black),var(--om-red));
+  color:#fff !important;
+  box-shadow:0 14px 32px rgba(220,38,38,.22);
+  flex:0 0 auto;
+}
+.walletIcon i,.topupTitleIcon i{color:#fff !important;font-size:20px;}
+.walletHeroText{min-width:0;flex:1;}
+.walletStatusPill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid #fecdd3;
+  color:#b91c1c;
+  font-weight:800;
+  font-size:12px;
+  white-space:nowrap;
+}
+.walletStatusPill span{width:8px;height:8px;border-radius:999px;background:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.12);}
+.walletGrid{
+  display:grid;
+  grid-template-columns:.86fr 1.14fr;
+  gap:14px;
+  padding:16px;
+}
+.walletBalanceBox,.walletTopupBox{
+  border:1px solid var(--om-border);
+  border-radius:20px;
+  background:#ffffff;
+  padding:16px;
+  box-shadow:0 8px 22px rgba(17,24,39,.04);
+}
+.walletBalanceBox{background:linear-gradient(135deg,#111827,#dc2626) !important;color:#fff !important;}
+.walletBalanceBox .walletMiniLabel,.walletBalanceBox .walletSmallText{color:rgba(255,255,255,.78) !important;}
+.walletBalanceBox .walletAmount{color:#fff !important;font-size:30px;font-weight:950;letter-spacing:-.02em;margin:6px 0 5px;}
+.walletMiniLabel{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#6b7280 !important;}
+.walletSmallText{font-size:13px;line-height:1.35;color:#6b7280 !important;}
+.walletTopupRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;margin-top:12px;align-items:center;}
+.walletInputWrap{height:48px;border-radius:16px !important;display:flex;align-items:center;gap:10px;padding:0 12px;background:#fff !important;}
+.walletInputWrap i{color:var(--om-red) !important;}
+.walletInputWrap input#topupAmount{border:0 !important;box-shadow:none !important;height:44px !important;min-width:0 !important;padding:0 !important;background:transparent !important;width:100% !important;}
+.walletTopupBtn{height:48px !important;border-radius:16px !important;padding:0 18px !important;font-weight:900 !important;white-space:nowrap;}
+#topupAmount{border-radius:16px !important;}
+
+/* Top-up modal */
+#topupModal .topupModalCard{width:min(760px,calc(100vw - 28px)) !important;border-radius:28px !important;overflow:hidden !important;}
+#topupModal .topupModalTop{padding:16px 18px !important;background:linear-gradient(135deg,#ffffff,#fff1f2) !important;}
+#topupModal .topupModalTitle{display:flex;align-items:center;gap:12px;font-weight:950;color:var(--om-black) !important;}
+#topupModal .topupCloseBtn{border-radius:14px !important;}
+#topupModal .topupModalBody{padding:18px !important;background:#ffffff !important;}
+.topupNotice{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:12px 14px;
+  border-radius:18px;
+  background:#fff1f2 !important;
+  border:1px solid #fecdd3 !important;
+  color:#991b1b !important;
+  font-weight:650;
+  line-height:1.45;
+  margin-bottom:14px;
+}
+.topupNotice i{color:#dc2626 !important;margin-top:2px;}
+.topupNotice.small{margin-top:12px;margin-bottom:0;}
+.topupFormGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.topupField{margin:0 !important;}
+.topupField input,.receiptField input{height:48px !important;border-radius:16px !important;background:#fff !important;}
+.topupActions{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px;}
+.topupActions.split{justify-content:space-between;}
+.topupActions .btn{height:46px;border-radius:16px !important;padding:0 18px !important;font-weight:900 !important;}
+.transferCard{border-radius:22px !important;padding:16px !important;background:linear-gradient(135deg,#ffffff,#fff7f7) !important;border-color:#fee2e2 !important;}
+.transferTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.transferTitle{font-size:18px;font-weight:950;}
+.transferBadge{padding:7px 10px;border-radius:999px;background:#111827;color:#fff;font-weight:900;font-size:12px;white-space:nowrap;}
+.adminCardBox{padding:15px;border-radius:20px;background:#111827 !important;border:1px solid rgba(255,255,255,.10) !important;color:#fff !important;box-shadow:0 16px 34px rgba(17,24,39,.16);}
+.adminCardBox .adminCardLabel{color:rgba(255,255,255,.70) !important;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;}
+.adminCardHolder,.adminCardNumber{color:#fff !important;font-weight:950;}
+.adminCardRow{display:flex;align-items:center;gap:10px;justify-content:space-between;}
+.adminCardNumber{font-size:19px;letter-spacing:.08em;word-break:break-word;}
+.copyBtn{width:42px !important;height:42px !important;border-radius:14px !important;flex:0 0 auto;}
+.confirmAmountBox{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:14px;border-radius:18px;background:#ffffff !important;border:1px solid var(--om-border) !important;}
+.confirmAmount{font-size:22px;font-weight:950;color:var(--om-red) !important;white-space:nowrap;}
+.receiptField{margin-top:14px !important;}
+input.fileInput{height:auto !important;padding:11px 12px !important;border:1px dashed #fecdd3 !important;background:#fff7f7 !important;border-radius:16px !important;}
+input.fileInput::file-selector-button{border:0;border-radius:12px;padding:10px 12px;margin-right:10px;background:linear-gradient(135deg,#111827,#dc2626);color:#fff;font-weight:900;cursor:pointer;}
+
+/* Admin top-up request area */
+#topupReqCard{border-radius:22px !important;overflow:hidden !important;border-color:#fecdd3 !important;}
+#topupReqCard .card-header{background:linear-gradient(135deg,#ffffff,#fff1f2) !important;border-bottom:1px solid #fecdd3 !important;padding:18px !important;}
+#topupReqCard .card-header h3{display:flex;align-items:center;gap:10px;color:#111827 !important;font-weight:950 !important;}
+#topupReqCard .card-header h3 i{color:#dc2626 !important;}
+#topupReqCard .card-body{background:#ffffff !important;}
+#topupReqCards.orders-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;padding:0 18px 18px;}
+#topupReqCards .order-card,.topup-card,.turnover-card{border-radius:20px !important;border:1px solid var(--om-border) !important;background:#ffffff !important;box-shadow:0 10px 26px rgba(17,24,39,.06) !important;padding:14px !important;}
+#topupReqCards .order-card-top,.turnover-card .order-card-top{border-bottom:1px solid #f1f5f9;margin-bottom:12px;padding-bottom:12px;}
+#topupReqCards .order-chip,.turnover-card .order-chip{background:#fafafa !important;border-color:#eceff3 !important;border-radius:14px !important;}
+#topupReqCards .order-total .v,.turnover-card .order-total .v{color:#dc2626 !important;font-size:20px !important;}
+#topupReqEmpty{background:#fff !important;border:1px dashed #fecdd3 !important;border-radius:18px !important;margin:0 18px 18px;padding:30px !important;}
+#topupReqEmpty i{color:#dc2626 !important;}
+
+/* Admin approve topup dialog generated by JS */
+#topupFinalPreview{color:#dc2626 !important;font-weight:950 !important;}
+input[name="topupMode"]{accent-color:#dc2626 !important;}
+
+/* Kassa pages */
+.balance-card,.total-card,.cart-panel,.quick-actions,.product-item,.input-group,.form-section,.stat-block,
+.kpi-item,.rank-item,.table-wrapper,.orders-grid .order-card{background:#ffffff !important;border-color:var(--om-border) !important;}
+.logo-icon,.stat-icon,.kpi-icon{background:linear-gradient(135deg,#111827,#dc2626) !important;color:#fff !important;}
+.logo-icon i,.stat-icon i,.kpi-icon i{color:#fff !important;}
+.btn-secondary{background:#ffffff !important;color:#111827 !important;border:1px solid var(--om-border) !important;}
+
+@media (max-width:720px){
+  .walletHero{align-items:flex-start;flex-wrap:wrap;}
+  .walletStatusPill{width:100%;justify-content:center;}
+  .walletGrid{grid-template-columns:1fr;padding:14px;}
+  .walletTopupRow{grid-template-columns:1fr;}
+  .walletTopupBtn{width:100%;}
+  .topupFormGrid{grid-template-columns:1fr;}
+  #topupModal .topupModalCard{border-radius:22px !important;}
+  .topupActions,.topupActions.split{display:grid;grid-template-columns:1fr;}
+  .topupActions .btn{width:100%;justify-content:center;}
+  .adminCardNumber{font-size:16px;}
+  .confirmAmountBox{align-items:flex-start;flex-direction:column;}
+}

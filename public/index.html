@@ -288,33 +288,34 @@
       <button class="btn" id="profileSave" type="button" hidden>Saqlash</button>
           </div>
 
-        <!-- Wallet / Balance (Payme top-up) -->
-        <div class="profileCard" id="walletCard">
-          <div class="profileCardTop">
-            <div>
+        <!-- Wallet / Balance (manual top-up) -->
+        <div class="profileCard walletPremium" id="walletCard">
+          <div class="walletHero">
+            <div class="walletIcon" aria-hidden="true"><i class="fa-solid fa-wallet"></i></div>
+            <div class="walletHeroText">
               <div class="profileCardTitle">Balans</div>
-              <div class="profileCardSub">Cargo (keltirib berish) mahsulotlari uchun oldindan to‘lov — balans orqali.</div>
+              <div class="profileCardSub">Cargo mahsulotlari va oldindan to‘lovlar uchun qulay ichki hisob.</div>
             </div>
+            <div class="walletStatusPill"><span></span> Avtomatik yangilanadi</div>
           </div>
 
-          <div class="ordersList" style="padding-top:0">
-            <div class="orderItem" style="display:flex; align-items:center; justify-content:space-between; gap:12px">
-              <div style="min-width:0">
-                <div class="orderId">Joriy balans</div>
-                <div class="orderMeta">Balans avtomatik yangilanadi</div>
-              </div>
-              <div class="orderTotal" id="balProfile">0 so'm</div>
+          <div class="walletGrid">
+            <div class="walletBalanceBox">
+              <div class="walletMiniLabel">Joriy balans</div>
+              <div class="walletAmount" id="balProfile">0 so'm</div>
+              <div class="walletSmallText">Mablag‘ tushishi admin tasdig‘idan keyin ko‘rinadi.</div>
             </div>
 
-            <div class="orderItem" style="display:flex; align-items:center; justify-content:space-between; gap:12px">
-              <div style="min-width:0; flex:1">
-                <div class="orderId">Depozit</div>
-                <div class="orderMeta" id="topupHint">Minimal: 1000 so‘m • CLICK</div>
-              </div>
-              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end">
-                <input id="topupAmount" inputmode="numeric" placeholder="Masalan: 100000" style="height:40px; padding:0 12px; border:1px solid rgba(0,0,0,.10); border-radius:12px; min-width:180px; background:#fff" />
-                <button class="btn primary" id="topupBtn" type="button" style="height:40px">
-                  <i class="fa-solid fa-wallet" aria-hidden="true" style="margin-right:8px"></i>
+            <div class="walletTopupBox">
+              <div class="walletMiniLabel">Balansni to‘ldirish</div>
+              <div class="walletSmallText" id="topupHint">Minimal: 1000 so‘m • CLICK orqali xavfsiz to‘lov</div>
+              <div class="walletTopupRow">
+                <label class="walletInputWrap" for="topupAmount">
+                  <i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i>
+                  <input id="topupAmount" inputmode="numeric" placeholder="Masalan: 100000" />
+                </label>
+                <button class="btn primary walletTopupBtn" id="topupBtn" type="button">
+                  <i class="fa-solid fa-circle-plus" aria-hidden="true"></i>
                   Click orqali to‘ldirish
                 </button>
               </div>
@@ -323,89 +324,89 @@
         </div>
 
         <!-- Manual Card Top-up Modal -->
-        <div class="modalOverlay" id="topupModal" hidden>
-          <div class="modalCard" role="dialog" aria-modal="true" aria-label="Balans to'ldirish">
-            <div class="modalTop">
-              <div class="modalTitle"><i class="fa-solid fa-wallet" aria-hidden="true"></i> Balans to‘ldirish</div>
-              <button class="iconBtn" id="topupClose" title="Yopish" aria-label="Yopish">✕</button>
+        <div class="modalOverlay topupOverlay" id="topupModal" hidden>
+          <div class="modalCard topupModalCard" role="dialog" aria-modal="true" aria-label="Balans to'ldirish">
+            <div class="modalTop topupModalTop">
+              <div class="modalTitle topupModalTitle">
+                <span class="topupTitleIcon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
+                <span>Balans to‘ldirish</span>
+              </div>
+              <button class="iconBtn topupCloseBtn" id="topupClose" title="Yopish" aria-label="Yopish">✕</button>
             </div>
-            <div class="modalBody">
+            <div class="modalBody topupModalBody">
 
-              <div id="topupStep1">
-                <div class="hint" style="margin:0 0 12px">
-                  Karta orqali to‘lov so‘rovini yuborasiz. Admin tasdiqlasa summa balansingizga tushadi.
+              <div id="topupStep1" class="topupStep">
+                <div class="topupNotice">
+                  <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                  <div>Karta orqali to‘lov so‘rovini yuboring. Admin tasdiqlagandan keyin summa balansingizga qo‘shiladi.</div>
                 </div>
 
-                <div class="grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                  <label class="field" style="margin:0">
+                <div class="topupFormGrid">
+                  <label class="field topupField">
                     <span>Karta raqami</span>
                     <input id="payerCard" inputmode="numeric" placeholder="8600 1234 5678 9012" />
                   </label>
-                  <label class="field" style="margin:0">
+                  <label class="field topupField">
                     <span>Summa (so‘m)</span>
                     <input id="payerAmount" inputmode="numeric" placeholder="Masalan: 100000" />
                   </label>
-                </div>
-
-                <div class="grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-                  <label class="field" style="margin:0">
+                  <label class="field topupField">
                     <span>Ism</span>
                     <input id="payerFirst" placeholder="Ismingiz" />
                   </label>
-                  <label class="field" style="margin:0">
+                  <label class="field topupField">
                     <span>Familiya</span>
                     <input id="payerLast" placeholder="Familiyangiz" />
                   </label>
                 </div>
 
-                <div class="modalBottom" style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+                <div class="modalBottom topupActions">
                   <button class="btn ghost" id="topupCancel1" type="button">Bekor</button>
                   <button class="btn primary" id="topupNext" type="button">Davom etish</button>
                 </div>
               </div>
 
-              <div id="topupStep2" hidden>
-                <div class="profileCard" style="margin:0 0 12px">
-                  <div class="profileCardTop">
+              <div id="topupStep2" class="topupStep" hidden>
+                <div class="transferCard">
+                  <div class="transferTop">
                     <div>
-                      <div class="profileCardTitle">Pulni shu kartaga o‘tkazing</div>
-                      <div class="profileCardSub" id="cardpayNote">—</div>
+                      <div class="transferTitle">Pulni shu kartaga o‘tkazing</div>
+                      <div class="transferSub" id="cardpayNote">—</div>
+                    </div>
+                    <div class="transferBadge">2-bosqich</div>
+                  </div>
+
+                  <div class="adminCardBox">
+                    <div class="adminCardLabel">Karta egasi</div>
+                    <div class="adminCardHolder" id="adminCardHolder">—</div>
+
+                    <div class="adminCardLabel" style="margin-top:12px">Karta raqami</div>
+                    <div class="adminCardRow">
+                      <div class="adminCardNumber mono" id="adminCardNumber">—</div>
+                      <button class="copyBtn" type="button" data-copy="#adminCardNumber" title="Nusxa olish" aria-label="Nusxa olish">
+                        <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                      </button>
                     </div>
                   </div>
-                  <div class="ordersList" style="padding-top:0">
-                    <div class="orderItem adminCardItem">
-  <div class="adminCardBox">
-    <div class="adminCardLabel">Karta egasi</div>
-    <div class="adminCardHolder" id="adminCardHolder">—</div>
 
-    <div class="adminCardLabel" style="margin-top:10px">Karta raqami</div>
-    <div class="adminCardRow">
-      <div class="adminCardNumber mono" id="adminCardNumber">—</div>
-      <button class="copyBtn" type="button" data-copy="#adminCardNumber" title="Nusxa olish" aria-label="Nusxa olish">
-        <i class="fa-regular fa-copy" aria-hidden="true"></i>
-      </button>
-    </div>
-  </div>
-</div>
-                    <div class="orderItem" style="display:flex; align-items:center; justify-content:space-between; gap:12px">
-                      <div style="min-width:0">
-                        <div class="orderId">Yuboriladigan summa</div>
-                        <div class="orderMeta">So‘rovdagi summa</div>
-                      </div>
-                      <div class="orderTotal" id="confirmAmount">—</div>
+                  <div class="confirmAmountBox">
+                    <div>
+                      <div class="walletMiniLabel">Yuboriladigan summa</div>
+                      <div class="walletSmallText">So‘rovdagi summa</div>
                     </div>
+                    <div class="confirmAmount" id="confirmAmount">—</div>
                   </div>
                 </div>
 
-                <label class="field" style="margin:0">
+                <label class="field receiptField">
                   <span>Chek (screenshot/PDF)</span>
                   <input id="receiptFile" class="fileInput" type="file" accept="image/*,application/pdf" />
                 </label>
-                <div class="hint" id="topupHint2" style="margin-top:10px">Chekni yuklang va yuboring.</div>
+                <div class="topupNotice small" id="topupHint2"><i class="fa-solid fa-paperclip" aria-hidden="true"></i><div>Chekni yuklang va so‘rovni yuboring.</div></div>
 
-                <div class="modalBottom" style="display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:14px">
-                  <button class="btn ghost" id="topupBack" type="button"><i class="fa-solid fa-arrow-left" style="margin-right:8px"></i> Orqaga</button>
-                  <button class="btn primary" id="topupSubmit" type="button"><i class="fa-solid fa-paper-plane" style="margin-right:8px"></i> Yuborish</button>
+                <div class="modalBottom topupActions split">
+                  <button class="btn ghost" id="topupBack" type="button"><i class="fa-solid fa-arrow-left"></i> Orqaga</button>
+                  <button class="btn primary" id="topupSubmit" type="button"><i class="fa-solid fa-paper-plane"></i> Yuborish</button>
                 </div>
               </div>
 
