@@ -1840,7 +1840,7 @@ function renderOrders(orders){
     const provider = (o.provider||"").toString();
     const when = fmtDate(o.createdAt);
     const row = document.createElement("div");
-    row.className = "orderRow";
+    row.className = "orderRow orderPremiumRow";
     row.innerHTML = `
       <div class="orderTop">
         <div class="orderId">#${escapeHtml(id)}</div>
@@ -1914,11 +1914,11 @@ function renderMoneyHistory(items){
     `.trim();
 
     const right = document.createElement("div");
-    right.className = "orderTotal";
+    right.className = `orderTotal moneyAmount ${isIn ? "isIn" : "isOut"}`;
     right.textContent = (isIn ? "+ " : "- ") + amt;
 
     const row = document.createElement("div");
-    row.className = "orderItem";
+    row.className = `orderItem moneyHistoryEntry ${isIn ? "isIn" : "isOut"}`;
     row.style.display = "flex";
     row.style.alignItems = "flex-start";
     row.style.justifyContent = "space-between";
