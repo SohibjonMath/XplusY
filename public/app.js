@@ -1,3 +1,17 @@
+
+// Detect APK/WebView/TWA/standalone shell so mobile safe-area spacing is corrected
+(function(){
+  try{
+    const ua = (navigator.userAgent || "").toLowerCase();
+    const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone;
+    const webview = /\bwv\b/.test(ua) || /; wv\)/.test(ua) || /version\/\d+\.\d+.*chrome\//.test(ua);
+    if(standalone || webview){
+      document.documentElement.classList.add("om-app-shell");
+      document.body && document.body.classList.add("om-app-shell");
+    }
+  }catch(e){}
+})();
+
 /* OrzuMall: silence noisy console in production */
 try{ if(typeof console!=="undefined"){ console.warn=()=>{}; console.error=()=>{}; } }catch(e){}
 
