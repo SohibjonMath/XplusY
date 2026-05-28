@@ -1752,7 +1752,9 @@ function buildOrderReceiptHTML(order){
   const provider = providerLabel(order?.provider || "") || (order?.provider || "—");
   const customer = order?.userName || [order?.firstName, order?.lastName].filter(Boolean).join(" ") || "—";
   const phone = order?.userPhone || order?.shipping?.phone || "—";
+  const deliveryLabel = order?.shipping?.methodLabel || (order?.shipping?.method === 'delivery' ? 'Yetkazib berish' : (order?.shipping?.method === 'pickup' ? 'Do‘kondan olib ketish' : '—'));
   const addr = order?.shipping?.addressText || [order?.shipping?.region, order?.shipping?.district, order?.shipping?.post, order?.shipping?.address].filter(Boolean).join(' / ') || [order?.region, order?.district, order?.post].filter(Boolean).join(' / ') || "—";
+  const mapUrl = order?.shipping?.mapUrl || (order?.shipping?.lat && order?.shipping?.lng ? `https://maps.google.com/?q=${order.shipping.lat},${order.shipping.lng}` : '');
   const items = Array.isArray(order?.items) ? order.items : [];
   const itemsHtml = items.length ? items.map((it)=>{
     const qty = Number(it?.qty || 1) || 1;
@@ -1787,7 +1789,8 @@ function buildOrderReceiptHTML(order){
         <div class="orderReceiptBox"><div class="k">Mijoz</div><div class="v">${escapeHtml(customer)}</div></div>
         <div class="orderReceiptBox"><div class="k">Telefon</div><div class="v">${escapeHtml(phone)}</div></div>
         <div class="orderReceiptBox"><div class="k">To‘lov turi</div><div class="v">${escapeHtml(provider)}</div></div>
-        <div class="orderReceiptBox"><div class="k">Manzil</div><div class="v">${escapeHtml(addr)}</div></div>
+        <div class="orderReceiptBox"><div class="k">Yetkazish</div><div class="v">${escapeHtml(deliveryLabel)}</div></div>
+        <div class="orderReceiptBox"><div class="k">Manzil</div><div class="v">${escapeHtml(addr)}${mapUrl ? `<br><a href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">Xaritada ochish</a>` : ''}</div></div>
       </div>
 
       <div class="orderReceiptItems">${itemsHtml}</div>
@@ -3002,6 +3005,7 @@ function renderCartPage(){
 function openCheckout(){
   if(!els.checkoutSheet) return;
   els.checkoutSheet.hidden = false;
+  try{ updateDeliveryMethodUI(); }catch(_e){}
 
   // Require completed profile before checkout
   try{
@@ -3029,6 +3033,119 @@ function getPayType(){
   const r = document.querySelector('input[name="paytype"]:checked');
   return r ? r.value : "cash";
 }
+
+let omDeliveryLocation = null;
+
+function getDeliveryMethod(){
+  const r = document.querySelector('input[name="deliveryMethod"]:checked');
+  return r ? r.value : "pickup";
+}
+
+function updateDeliveryMethodUI(){
+  const method = getDeliveryMethod();
+  document.querySelectorAll('.deliveryOption').forEach(label=>{
+    const inp = label.querySelector('input[name="deliveryMethod"]');
+    label.classList.toggle('active', !!inp && inp.checked);
+  });
+  const box = document.getElementById('deliveryAddressBox');
+  if(box) box.hidden = method !== 'delivery';
+}
+
+function setDeliveryLocationStatus(text, ok=false){
+  const el = document.getElementById('deliveryLocationStatus');
+  if(!el) return;
+  el.textContent = text;
+  el.classList.toggle('ok', !!ok);
+}
+
+async function detectDeliveryLocation(){
+  if(!navigator.geolocation){
+    toast('Bu qurilmada joylashuvni aniqlash qo‘llab-quvvatlanmaydi.');
+    return;
+  }
+  const btn = document.getElementById('deliveryLocateBtn');
+  const old = btn ? btn.innerHTML : '';
+  if(btn){
+    btn.disabled = true;
+    btn.innerHTML = `<span class="omBtnSpinner" aria-hidden="true"></span> Aniqlanmoqda...`;
+  }
+  setDeliveryLocationStatus('Joylashuv olinmoqda, ruxsat bering...');
+  try{
+    const pos = await new Promise((resolve, reject)=>{
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000
+      });
+    });
+    const lat = Number(pos.coords.latitude);
+    const lng = Number(pos.coords.longitude);
+    const accuracy = Math.round(Number(pos.coords.accuracy || 0));
+    omDeliveryLocation = {
+      lat,
+      lng,
+      accuracy,
+      mapUrl: `https://maps.google.com/?q=${lat},${lng}`
+    };
+    setDeliveryLocationStatus(`Joylashuv olindi: ${lat.toFixed(6)}, ${lng.toFixed(6)}${accuracy ? ` • ±${accuracy} m` : ''}`, true);
+    toast('Joylashuv qo‘shildi.');
+  }catch(e){
+    omDeliveryLocation = null;
+    setDeliveryLocationStatus('Joylashuv olinmadi. Ruxsat bering yoki manzilni qo‘lda yozing.');
+    toast('Joylashuv olinmadi. Manzilni qo‘lda kiriting.');
+  }finally{
+    if(btn){
+      btn.disabled = false;
+      btn.innerHTML = old;
+    }
+  }
+}
+
+function getCheckoutDeliveryInfo(){
+  const method = getDeliveryMethod();
+  if(method === 'pickup'){
+    return {
+      ok: true,
+      data: {
+        method: 'pickup',
+        methodLabel: 'Do‘kondan olib ketish',
+        addressText: 'Do‘kondan olib ketish'
+      }
+    };
+  }
+  const address = (document.getElementById('deliveryAddressInput')?.value || '').trim();
+  const note = (document.getElementById('deliveryNoteInput')?.value || '').trim();
+  if(!address && !omDeliveryLocation){
+    return { ok:false, reason:'Yetkazib berish uchun manzil yozing yoki joylashuvni aniqlang.' };
+  }
+  const mapUrl = omDeliveryLocation?.mapUrl || '';
+  const coordText = omDeliveryLocation ? `${omDeliveryLocation.lat.toFixed(6)}, ${omDeliveryLocation.lng.toFixed(6)}` : '';
+  const addressText = [address, coordText ? `Koordinata: ${coordText}` : ''].filter(Boolean).join(' • ');
+  return {
+    ok: true,
+    data: {
+      method: 'delivery',
+      methodLabel: 'Yetkazib berish',
+      address: address,
+      note: note,
+      addressText: addressText,
+      lat: omDeliveryLocation?.lat ?? null,
+      lng: omDeliveryLocation?.lng ?? null,
+      accuracy: omDeliveryLocation?.accuracy ?? null,
+      mapUrl: mapUrl,
+      location: omDeliveryLocation ? { ...omDeliveryLocation } : null
+    }
+  };
+}
+
+function initCheckoutDeliveryUI(){
+  document.querySelectorAll('input[name="deliveryMethod"]').forEach(inp=>{
+    inp.addEventListener('change', updateDeliveryMethodUI);
+  });
+  document.getElementById('deliveryLocateBtn')?.addEventListener('click', detectDeliveryLocation);
+  updateDeliveryMethodUI();
+}
+initCheckoutDeliveryUI();
 
 
 function applyPayTypeRules(){
@@ -3158,6 +3275,12 @@ async function createOrderFromCheckout(){
   }
 
 
+  const deliveryInfo = getCheckoutDeliveryInfo();
+  if(!deliveryInfo.ok){
+    toast(deliveryInfo.reason || 'Yetkazish ma’lumotlarini to‘ldiring.');
+    return;
+  }
+
   let payType = getPayType(); // cash | balance
   if(hasPrepay && payType !== "balance"){
     toast("Keltirib berish mahsulotlari: faqat BALANS orqali to‘lanadi.");
@@ -3184,6 +3307,16 @@ async function createOrderFromCheckout(){
       addressText: [region, district, post].filter(Boolean).join(" / ")
     };
   }catch(_e){}
+
+  shippingSnap = {
+    ...(shippingSnap || {}),
+    ...(deliveryInfo.data || {}),
+    profileAddressText: shippingSnap?.addressText || ""
+  };
+  if(deliveryInfo.data?.method === 'delivery'){
+    const parts = [shippingSnap.profileAddressText, deliveryInfo.data.addressText].filter(Boolean);
+    shippingSnap.addressText = parts.join(' / ');
+  }
 
   const payload = {
     orderId,
