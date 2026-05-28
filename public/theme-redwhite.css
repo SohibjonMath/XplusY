@@ -3492,3 +3492,55 @@ input[name="topupMode"]{accent-color:#dc2626 !important;}
     height:32px !important;
   }
 }
+
+
+/* ===== 2026-05-28 final mobile polish: home-only search + edge-to-edge product images ===== */
+
+/* Product cards: make image area fill the card more, remove inner side gaps */
+.pcard .pmedia,
+.pmedia{
+  padding:0 !important;
+}
+.pcard .pimg{
+  padding:0 !important;
+  width:100% !important;
+  display:block !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  border-radius:inherit !important;
+  border-top-left-radius:15px !important;
+  border-top-right-radius:15px !important;
+}
+@media (min-width:521px){
+  .pcard .pimg{
+    border-top-left-radius:22px !important;
+    border-top-right-radius:22px !important;
+  }
+}
+@media (max-width:520px){
+  .pcard .pimg{
+    padding:0 !important;
+    border-top-left-radius:15px !important;
+    border-top-right-radius:15px !important;
+  }
+  .pmedia{
+    margin:0 !important;
+  }
+}
+
+/* Mobile top search should appear only on Home */
+.mobileSearchHead{ display:none !important; }
+@media (max-width: 820px){
+  html.om-view-home .mobileSearchHead,
+  body.om-view-home .mobileSearchHead{
+    display:flex !important;
+  }
+  html.om-view-home #view-home .searchCard,
+  body.om-view-home #view-home .searchCard{
+    display:none !important;
+  }
+  html:not(.om-view-home) .mobileSearchHead,
+  body:not(.om-view-home) .mobileSearchHead{
+    display:none !important;
+  }
+}

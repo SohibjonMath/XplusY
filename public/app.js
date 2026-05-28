@@ -2116,6 +2116,14 @@ function showView(tab){
   });
   activeTab = tab;
   setActiveNav(tab);
+  try{
+    const cls = ["om-view-home","om-view-categories","om-view-fav","om-view-cart","om-view-profile"];
+    document.documentElement.classList.remove(...cls);
+    document.body && document.body.classList.remove(...cls);
+    const nowCls = "om-view-" + tab;
+    document.documentElement.classList.add(nowCls);
+    document.body && document.body.classList.add(nowCls);
+  }catch(e){}
 
   // render pages on enter
   if(tab === "categories") renderCategoriesPage();
