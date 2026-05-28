@@ -3544,3 +3544,145 @@ input[name="topupMode"]{accent-color:#dc2626 !important;}
     display:none !important;
   }
 }
+
+
+/* ===== Order submit waiting overlay ===== */
+.omOrderWaitOverlay{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(255,255,255,.72);
+  backdrop-filter:blur(14px);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease;
+}
+.omOrderWaitOverlay.open{
+  opacity:1;
+  pointer-events:auto;
+}
+.omOrderWaitOverlay[hidden]{
+  display:none !important;
+}
+.omOrderWaitCard{
+  width:min(92vw, 340px);
+  border-radius:28px;
+  padding:24px 22px 22px;
+  background:linear-gradient(180deg,#ffffff,#fff7f7);
+  border:1px solid rgba(220,38,38,.14);
+  box-shadow:0 26px 70px rgba(17,24,39,.18);
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.omOrderWaitCard::before{
+  content:"";
+  position:absolute;
+  width:160px;
+  height:160px;
+  border-radius:999px;
+  right:-55px;
+  top:-65px;
+  background:radial-gradient(circle, rgba(220,38,38,.18), rgba(220,38,38,0) 68%);
+}
+.omOrderWaitLogoWrap{
+  width:86px;
+  height:86px;
+  margin:0 auto 14px;
+  border-radius:26px;
+  display:grid;
+  place-items:center;
+  background:#fff;
+  border:1px solid rgba(17,24,39,.08);
+  box-shadow:0 14px 34px rgba(220,38,38,.13);
+  position:relative;
+  z-index:1;
+}
+.omOrderWaitLogo{
+  width:76px;
+  height:76px;
+  object-fit:contain;
+  border-radius:24px;
+}
+.omOrderWaitTitle{
+  position:relative;
+  z-index:1;
+  font-size:20px;
+  line-height:1.18;
+  font-weight:950;
+  color:#111827;
+}
+.omOrderWaitText{
+  position:relative;
+  z-index:1;
+  margin-top:8px;
+  font-size:13px;
+  line-height:1.45;
+  color:#6b7280;
+  font-weight:650;
+}
+.omOrderWaitProgress{
+  position:relative;
+  z-index:1;
+  margin-top:18px;
+  height:8px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#fee2e2;
+}
+.omOrderWaitProgress span{
+  display:block;
+  width:42%;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#111827,#dc2626);
+  animation:omOrderProgress 1.05s ease-in-out infinite;
+}
+@keyframes omOrderProgress{
+  0%{ transform:translateX(-120%); }
+  55%{ transform:translateX(90%); }
+  100%{ transform:translateX(260%); }
+}
+.omBtnSpinner{
+  width:16px;
+  height:16px;
+  display:inline-block;
+  border-radius:999px;
+  border:2px solid rgba(255,255,255,.55);
+  border-top-color:#fff;
+  animation:omSpin .75s linear infinite;
+  vertical-align:-3px;
+  margin-right:8px;
+}
+@keyframes omSpin{ to{ transform:rotate(360deg); } }
+button.isLoading{
+  cursor:wait !important;
+  opacity:.88;
+}
+html.om-order-waiting,
+body.om-order-waiting{
+  overflow:hidden;
+}
+@media(max-width:520px){
+  .omOrderWaitCard{
+    width:min(92vw, 310px);
+    padding:22px 18px 20px;
+    border-radius:26px;
+  }
+  .omOrderWaitLogoWrap{
+    width:78px;
+    height:78px;
+    border-radius:24px;
+  }
+  .omOrderWaitLogo{
+    width:68px;
+    height:68px;
+  }
+  .omOrderWaitTitle{
+    font-size:18px;
+  }
+}

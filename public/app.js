@@ -3072,7 +3072,72 @@ function applyPayTypeRules(){
 window.applyPayTypeRules = applyPayTypeRules;
 
 
+
+let __omOrderSubmitting = false;
+
+function ensureOrderWaitOverlay(){
+  let el = document.getElementById("omOrderWaitOverlay");
+  if(el) return el;
+
+  el = document.createElement("div");
+  el.id = "omOrderWaitOverlay";
+  el.className = "omOrderWaitOverlay";
+  el.hidden = true;
+  el.innerHTML = `
+    <div class="omOrderWaitCard" role="status" aria-live="polite">
+      <div class="omOrderWaitLogoWrap">
+        <img src="./logo.webp" alt="OrzuMall" class="omOrderWaitLogo">
+      </div>
+      <div class="omOrderWaitTitle">Buyurtma yuborilmoqda</div>
+      <div class="omOrderWaitText">Iltimos, kuting. Ma’lumotlar tekshirilmoqda...</div>
+      <div class="omOrderWaitProgress"><span></span></div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  return el;
+}
+
+function showOrderWaitOverlay(){
+  const el = ensureOrderWaitOverlay();
+  el.hidden = false;
+  requestAnimationFrame(()=> el.classList.add("open"));
+  document.documentElement.classList.add("om-order-waiting");
+  document.body.classList.add("om-order-waiting");
+
+  const btns = [els?.checkoutSubmit, els?.orderBtnPage].filter(Boolean);
+  btns.forEach(btn=>{
+    if(!btn.dataset.omOldHtml) btn.dataset.omOldHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add("isLoading");
+  });
+  if(els?.checkoutSubmit){
+    els.checkoutSubmit.innerHTML = `<span class="omBtnSpinner" aria-hidden="true"></span> Kuting...`;
+  }
+}
+
+function hideOrderWaitOverlay(){
+  const el = document.getElementById("omOrderWaitOverlay");
+  if(el){
+    el.classList.remove("open");
+    setTimeout(()=>{ if(!el.classList.contains("open")) el.hidden = true; }, 180);
+  }
+  document.documentElement.classList.remove("om-order-waiting");
+  document.body.classList.remove("om-order-waiting");
+
+  const btns = [els?.checkoutSubmit, els?.orderBtnPage].filter(Boolean);
+  btns.forEach(btn=>{
+    btn.disabled = false;
+    btn.classList.remove("isLoading");
+    if(btn.dataset.omOldHtml){
+      btn.innerHTML = btn.dataset.omOldHtml;
+      delete btn.dataset.omOldHtml;
+    }
+  });
+}
+
+
 async function createOrderFromCheckout(){
+  if(__omOrderSubmitting) return;
   if(!currentUser){
     toast("Avval kirish qiling (Telefon raqam + parol).");
     document.getElementById('authCard')?.scrollIntoView({behavior:'smooth'});
@@ -3097,6 +3162,9 @@ async function createOrderFromCheckout(){
     if(rb) rb.checked = true;
     payType = "balance";
   }
+  __omOrderSubmitting = true;
+  showOrderWaitOverlay();
+
   const orderId = null; // server will allocate unique short id
   const amountTiyin = Math.round(built.totalUZS * 100);
 
@@ -3146,6 +3214,8 @@ async function createOrderFromCheckout(){
       if(!resp.ok || !out.ok){
         if(out && (out.error === "insufficient_balance" || out.error === "Balans yetarli emas")){
           toast("Balans yetarli emas.");
+          hideOrderWaitOverlay();
+          __omOrderSubmitting = false;
           return;
         }
         throw new Error(out?.error || out?.detail || "balance_pay_failed");
@@ -3182,9 +3252,13 @@ async function createOrderFromCheckout(){
     console.warn("checkout order create failed", e);
     const msg = (e && e.message) ? String(e.message) : "";
     toast(msg ? ("Buyurtma yaratilmadi: " + msg) : "Buyurtma yaratilmadi. Qayta urinib ko‘ring.");
+    hideOrderWaitOverlay();
+    __omOrderSubmitting = false;
     return; // IMPORTANT: don't show success message on failure
   }
 
+  hideOrderWaitOverlay();
+  __omOrderSubmitting = false;
   toast("Buyurtmangiz qabul qilindi");
   goTab("profile");
 }
