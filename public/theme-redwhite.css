@@ -1,0 +1,87 @@
+
+/* ==== OrzuMall White + Black/Red Theme Override ==== */
+:root{
+  --bg:#ffffff !important;
+  --surface:#ffffff !important;
+  --surface2:#ffffff !important;
+  --text:#111827 !important;
+  --muted:#6b7280 !important;
+  --muted2:#9ca3af !important;
+  --line:rgba(17,24,39,.10) !important;
+  --gold:#ef4444 !important;
+  --gold2:#b91c1c !important;
+  --ink:#111827 !important;
+  --blue:#ef4444 !important;
+  --primary:#dc2626 !important;
+  --primary2:#111827 !important;
+  --om:#dc2626 !important;
+  --om2:#111827 !important;
+  --om-green:#dc2626 !important;
+  --om-green-dark:#111827 !important;
+  --bg1:rgba(239,68,68,.08) !important;
+  --bg2:#ffffff !important;
+  --card:#ffffff !important;
+  --border:rgba(17,24,39,.10) !important;
+  --ring:rgba(220,38,38,.18) !important;
+  --shadow:0 18px 50px rgba(17,24,39,.08) !important;
+  --brand:#dc2626 !important;
+  --brand-dark:#111827 !important;
+  --brand-light:#fee2e2 !important;
+  --brand-glow:rgba(220,38,38,.16) !important;
+  --bg-primary:#ffffff !important;
+  --bg-secondary:#fafafa !important;
+  --card-white:#ffffff !important;
+  --card-glass:rgba(255,255,255,.96) !important;
+  --success:#dc2626 !important;
+  --danger:#dc2626 !important;
+  --secondary:#111827 !important;
+  --warning:#ef4444 !important;
+  --light:#ffffff !important;
+  --dark:#111827 !important;
+  --gray:#6b7280 !important;
+  --gray-light:#eceff3 !important;
+  --accent:#dc2626 !important;
+  --primary-light:#374151 !important;
+  --text-main:#111827 !important;
+  --text-muted:#6b7280 !important;
+  --text-light:#9ca3af !important;
+  --bg-color:#ffffff !important;
+  --card-bg:#ffffff !important;
+  --border-light:#f3f4f6 !important;
+}
+html,body{background:#ffffff !important;color:#111827 !important;}
+body{background-image:none !important;}
+.card, .heroCard, .pcard, .sheet, .modal-content, .modalCard, .drawer, .menuCard,
+.stat-card, .mini-card, .wrap, .search-box, .dynamic-list, .glass, .panel, .summary-card,
+.receipt, .box, .list-card, .product-card, .analytics-card, .chart-card,
+[class*="card"], [class*="panel"]{background:#ffffff;border-color:rgba(17,24,39,.10) !important;}
+body .topbar, body .header, body .toolbar, body .subbar, body .viewHeader,
+body .searchWrap, body .filterBar, body .bottomBar, body .sidebar-footer,
+body .search-box, body .wrap, body .app-container .header{background:#ffffff !important;border-color:rgba(17,24,39,.10) !important;}
+h1,h2,h3,h4,h5,h6,.viewTitle,.heroTitle,.pname,.product-name,.modalTitle,.vTitle,.mini-title,.header h2,.header h1,
+.logo h1,.brand-title,.stat-info h3,.price-cell,.admin-name,.nav-link span,.balAmt{color:#111827 !important;}
+.logo h1 i, .stat-icon, .viewBack, .balPlus i, .nav-link i, .iconbtn i, .iconPill i, .avatarIcon i, .cta i{color:#dc2626 !important;}
+.muted, p, .hint, .form-text, .admin-email, .footer, .balCur, .mini-row .k, .stat-info p{color:#6b7280 !important;}
+a, .hint a, .link, .accent, .price, .price-current, .product-price, .ppriceNow, .balChip i, .section-title i, .form-section h4, .tag{color:#dc2626 !important;}
+.btn, .cta, .btn-primary, .heroBtn, .balPlus, button[type="submit"], .actionBtn,
+.action-btn, .primary-btn, .save-btn, .submit-btn, .checkout-btn, .tab.active,
+button.primary, .toolbar .btn, .sidebar-actions .btn{background:linear-gradient(135deg,#111827,#dc2626) !important;color:#ffffff !important;border-color:#111827 !important;box-shadow:0 12px 26px rgba(220,38,38,.18) !important;}
+.btn i, .cta i, .btn-primary i, button[type="submit"] i, .actionBtn i, .action-btn i, .save-btn i, .submit-btn i, .checkout-btn i{color:#fff !important;}
+.btn-light, .btn.ghost, .tab:not(.active), .iconbtn, .viewBack, .chip, .pill, .balChip, .filterChip,
+.secondary-btn, .ghost-btn, button.secondary, .statusSel, input, select, textarea, .input{background:#ffffff !important;color:#111827 !important;border:1px solid rgba(17,24,39,.12) !important;}
+.tab.active{color:#fff !important;}
+.tab:not(.active){color:#111827 !important;}
+input, select, textarea, .input, .search-box, .search input, .form-control{background:#ffffff !important;color:#111827 !important;border-color:rgba(17,24,39,.12) !important;}
+input:focus, select:focus, textarea:focus, .input:focus-within, .form-control:focus{border-color:#dc2626 !important;box-shadow:0 0 0 4px rgba(220,38,38,.12) !important;outline:none !important;}
+.sidebar{background:linear-gradient(180deg,#111827,#dc2626) !important;color:#ffffff !important;}
+.sidebar .logo h1, .sidebar .nav-link, .sidebar .admin-name, .sidebar .admin-email, .sidebar .sidebar-note{color:#fff !important;}
+.sidebar .logo h1 i, .sidebar .nav-link i{color:#fecaca !important;}
+.nav-link:hover,.nav-link.active{background:rgba(255,255,255,.10) !important;border-left-color:#fecaca !important;}
+thead{background:#fafafa !important;} th, td{border-color:#eceff3 !important; color:#111827 !important;} tbody tr:hover{background:#fff5f5 !important;}
+.product-id{background:#f3f4f6 !important; color:#111827 !important;}
+.price, .price-current, .product-price, .pcard .ppriceNow, .ppriceNow, .price-cell{color:#dc2626 !important;}
+.price-old, .price-was, .product-old-price, .old-price, .pcard .ppriceOld, .ppriceOld, del, s{color:#9ca3af !important;text-decoration-color:#dc2626 !important;}
+.tag, .chip.active, .pill.pending, .pill.pending_payment, .pill.paid, .pill.delivered, .pill.cancelled,
+.badge, .status, .status-badge{background:#fff1f2 !important;color:#b91c1c !important;border:1px solid #fecdd3 !important;}
+.brand-title .orzu{color:#111827 !important;}.brand-title .mall{color:#dc2626 !important;}.logo img{background:transparent !important;}
+.stat-icon.total, .stat-icon.price, .stat-icon.popular, .stat-icon.tags{background:#fff1f2 !important;color:#dc2626 !important;}
