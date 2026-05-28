@@ -65,16 +65,124 @@ function getOrderCoords(o){
   return { lat, lng, text, mapUrl };
 }
 
-function buildOrderInlineKeyboard(o){
+function buildOrderInlineKeyboard(o, opts={}){
   const c = getOrderCoords(o);
-  if(!c) return null;
-  const keyboard = [
-    [{ text: "📋 Koordinatani copy qilish", copy_text: { text: c.text } }]
-  ];
-  if(c.mapUrl){
-    keyboard.push([{ text: "🗺 Xaritada ochish", url: c.mapUrl }]);
+  const includeAdminActions = opts.includeAdminActions === true;
+  const orderId = String(opts.orderId || o.orderId || o.id || "").trim();
+  const isDelivered = String(o.status || "").toLowerCase() === "delivered" || String(o.status || "").toLowerCase() === "completed";
+
+  const keyboard = [];
+
+  if(includeAdminActions && orderId){
+    keyboard.push([{
+      text: isDelivered ? "✅ Yakunlandi" : "🟢 Yetkazib berildi",
+      callback_data: isDelivered ? `om_done:${orderId}` : `om_delivered:${orderId}`
+    }]);
   }
-  return { inline_keyboard: keyboard };
+
+  if(c){
+    keyboard.push([{ text: "📋 Koordinatani copy qilish", copy_text: { text: c.text } }]);
+    if(c.mapUrl){
+      keyboard.push([{ text: "🗺 Xaritada ochish", url: c.mapUrl }]);
+    }
+  }
+
+  return keyboard.length ? { inline_keyboard: keyboard } : null;
+}
+
+async function tgApi(botToken, method, payload){
+  const url = `https://api.telegram.org/bot${botToken}/${method}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await res.json().catch(()=>null);
+  if(!res.ok || !data || data.ok !== true){
+    const err = data && data.description ? data.description : `telegram_http_${res.status}`;
+    throw new Error(err);
+  }
+  return data;
+}
+
+function getCallbackOrderId(data){
+  const s = String(data || "");
+  const m = s.match(/^om_delivered:(.+)$/);
+  return m ? m[1] : "";
+}
+
+async function handleTelegramCallback(event, body){
+  const botToken = (process.env.ORDER_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.TG_BOT_TOKEN || "").trim();
+  const adminChatId = (process.env.TELEGRAM_ADMIN_CHAT_ID || "").trim();
+  if(botToken.length < 10 || adminChatId.length < 3){
+    return json(500, { ok:false, error:"telegram_env_missing" });
+  }
+
+  const q = body.callback_query || {};
+  const data = String(q.data || "");
+  const orderId = getCallbackOrderId(data);
+  const callbackId = String(q.id || "");
+  const message = q.message || {};
+  const chatId = message.chat && message.chat.id != null ? String(message.chat.id) : "";
+
+  if(chatId !== String(adminChatId)){
+    if(callbackId){
+      try{ await tgApi(botToken, "answerCallbackQuery", { callback_query_id: callbackId, text: "Bu amal faqat admin uchun.", show_alert: true }); }catch(_e){}
+    }
+    return json(403, { ok:false, error:"forbidden_chat" });
+  }
+
+  if(!orderId){
+    if(callbackId){
+      try{ await tgApi(botToken, "answerCallbackQuery", { callback_query_id: callbackId, text: "Bu buyurtma allaqachon yakunlangan.", show_alert: false }); }catch(_e){}
+    }
+    return json(200, { ok:true, ignored:true });
+  }
+
+  initFirebase();
+  const db = admin.firestore();
+  const orderRef = db.collection("orders").doc(orderId);
+  const snap = await orderRef.get();
+  if(!snap.exists){
+    if(callbackId){
+      try{ await tgApi(botToken, "answerCallbackQuery", { callback_query_id: callbackId, text: "Buyurtma topilmadi.", show_alert: true }); }catch(_e){}
+    }
+    return json(404, { ok:false, error:"order_not_found" });
+  }
+
+  await orderRef.set({
+    status: "delivered",
+    deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    telegramDeliveredBy: {
+      id: q.from && q.from.id ? String(q.from.id) : "",
+      username: q.from && q.from.username ? String(q.from.username) : "",
+      firstName: q.from && q.from.first_name ? String(q.from.first_name) : "",
+    }
+  }, { merge:true });
+
+  const updated = { ...(snap.data() || {}), id: orderId, orderId, status:"delivered" };
+  const replyMarkup = buildOrderInlineKeyboard(updated, { includeAdminActions:true, orderId });
+
+  if(callbackId){
+    await tgApi(botToken, "answerCallbackQuery", {
+      callback_query_id: callbackId,
+      text: "✅ Buyurtma yakunlandi",
+      show_alert: false
+    });
+  }
+
+  if(message.message_id){
+    try{
+      await tgApi(botToken, "editMessageReplyMarkup", {
+        chat_id: adminChatId,
+        message_id: message.message_id,
+        reply_markup: replyMarkup
+      });
+    }catch(_e){}
+  }
+
+  return json(200, { ok:true, orderId, status:"delivered" });
 }
 
 function buildOrderCreatedHTML(o){
@@ -156,6 +264,9 @@ exports.handler = async (event) => {
     }
 
     const body = parseBody(event) || {};
+    if(body && body.callback_query){
+      return await handleTelegramCallback(event, body);
+    }
     const ev = String(body.event || "");
     const orderId = String(body.orderId || "").trim();
     if (ev !== "order_created" || orderId.length < 3) {
@@ -200,7 +311,7 @@ exports.handler = async (event) => {
     // Build html server-side (ignore any client-provided html)
     const orderForMessage = { ...o, orderId };
     const html = buildOrderCreatedHTML(orderForMessage);
-    const replyMarkup = buildOrderInlineKeyboard(orderForMessage);
+    const replyMarkup = buildOrderInlineKeyboard(orderForMessage, { includeAdminActions:true, orderId });
 
     // Send admin notification
     await sendTelegram(botToken, adminChatId.trim(), html, replyMarkup);
@@ -208,7 +319,7 @@ exports.handler = async (event) => {
     // Optional: send user notification if their chat id exists in profile/order
     const userChatId = String(o.userTgChatId || o.telegramChatId || o.tgChatId || "").trim();
     if(userChatId.length >= 3){
-      try{ await sendTelegram(botToken, userChatId, html, replyMarkup); }catch(_e){}
+      try{ await sendTelegram(botToken, userChatId, html, buildOrderInlineKeyboard(orderForMessage, { includeAdminActions:false, orderId })); }catch(_e){}
     }
 
     return json(200, { ok:true });
