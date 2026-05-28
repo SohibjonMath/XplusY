@@ -4708,7 +4708,13 @@ function initMobileBottomBar(){
   handleHash();
 }
 
-document.addEventListener("DOMContentLoaded", initMobileBottomBar);
+// Run immediately if app.js loads after DOMContentLoaded (common in WebView/module scripts),
+// otherwise the home search class is not set until the first navigation.
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", initMobileBottomBar);
+} else {
+  initMobileBottomBar();
+}
 
 /* =========================
    Mobile search toggle (icon -> input)

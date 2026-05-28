@@ -3686,3 +3686,10 @@ body.om-order-waiting{
     font-size:18px;
   }
 }
+
+
+/* ===== initial home search visibility fix ===== */
+@media (max-width:820px){
+  html.om-view-home .mobileSearchHead,
+  body.om-view-home .mobileSearchHead{display:flex !important;}
+}
