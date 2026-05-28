@@ -2518,3 +2518,112 @@ input[name="topupMode"]{accent-color:#dc2626 !important;}
   #view-cart .cartSummaryTop{ align-items:center; }
   #view-cart .total{ font-size:20px !important; }
 }
+
+
+/* ===== 2026-05-28 cart typography compact fix ===== */
+#view-cart .cartTitle{
+  font-size:14px !important;
+  line-height:1.28 !important;
+}
+#view-cart .cartVariant,
+#view-cart .cartVariantLine,
+#view-cart .cartMeta .muted{
+  font-size:11px !important;
+  line-height:1.35 !important;
+}
+#view-cart .cartRow{
+  gap:8px !important;
+  flex-wrap:wrap !important;
+}
+#view-cart .cartRow .price{
+  font-size:18px !important;
+  line-height:1.08 !important;
+  flex:1 1 auto;
+  min-width:0;
+  word-break:break-word;
+}
+#view-cart .qty{
+  transform:scale(.96);
+  transform-origin:right center;
+}
+#view-cart .qty button{
+  width:32px !important;
+  height:32px !important;
+  font-size:16px !important;
+}
+#view-cart .qty span{
+  min-width:26px !important;
+  font-size:13px !important;
+}
+#view-cart .badge{
+  padding:7px 10px !important;
+  font-size:13px !important;
+  line-height:1.1 !important;
+  text-align:center;
+  white-space:normal !important;
+  word-break:break-word;
+  max-width:96px;
+}
+#view-cart .cartSummaryLabel{
+  font-size:11px !important;
+}
+#view-cart .cartSelectedInfo{
+  font-size:14px !important;
+  line-height:1.2 !important;
+}
+#view-cart .total{
+  font-size:20px !important;
+  line-height:1.05 !important;
+  text-align:right;
+  max-width:150px;
+  word-break:break-word;
+}
+#view-cart .cartSummaryNote{
+  font-size:11px !important;
+  line-height:1.4 !important;
+}
+#view-cart #orderBtnPage{
+  font-size:15px !important;
+}
+
+@media (max-width:520px){
+  #view-cart .cartTitle{
+    font-size:13px !important;
+    line-height:1.24 !important;
+    padding-right:40px !important;
+  }
+  #view-cart .cartShip .shipBadge{
+    font-size:9.5px !important;
+    padding:4px 7px !important;
+  }
+  #view-cart .prepayPill{
+    font-size:10px !important;
+    padding:5px 8px !important;
+  }
+  #view-cart .cartRow .price{
+    font-size:16px !important;
+  }
+  #view-cart .qty{
+    transform:scale(.92);
+  }
+  #view-cart .badge{
+    font-size:12px !important;
+    padding:6px 9px !important;
+    max-width:86px;
+  }
+  #view-cart .cartSummaryTop{
+    gap:10px;
+    align-items:center;
+  }
+  #view-cart .cartSelectedInfo{
+    font-size:13px !important;
+  }
+  #view-cart .total{
+    font-size:18px !important;
+    max-width:120px;
+  }
+  #view-cart #orderBtnPage{
+    min-height:46px !important;
+    font-size:14px !important;
+  }
+}
