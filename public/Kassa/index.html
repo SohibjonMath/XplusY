@@ -2,715 +2,514 @@
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  
-    <link rel="icon" type="image/webp" sizes="32x32" href="/favicon.webp">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="shortcut icon" href="/favicon.ico">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>OrzuMall Pro | Mobil Kassa + Nasiya + Variantlar</title>
+  <link rel="icon" type="image/webp" sizes="32x32" href="/favicon.webp">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>OrzuMall Pro Kassa | Premium POS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
 
-    body {
-      background: linear-gradient(145deg, #eef5f0 0%, #ddebe2 100%);
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      padding: 12px;
-      min-height: 100vh;
-      color: #1a2f24;
-    }
+:root{
+  --bg:#07080c;
+  --panel:#10131a;
+  --panel2:#151924;
+  --panel3:#1b202c;
+  --line:rgba(255,255,255,.08);
+  --line2:rgba(255,255,255,.12);
+  --text:#f8fafc;
+  --muted:#9ca6b8;
+  --muted2:#667085;
+  --red:#ff2934;
+  --red2:#d81f29;
+  --green:#20d677;
+  --orange:#ff9f2e;
+  --yellow:#ffd36c;
+  --blue:#6ea8ff;
+  --radius:26px;
+  --shadow:0 24px 70px rgba(0,0,0,.38);
+  --shadow2:0 10px 30px rgba(0,0,0,.24);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%}
+body{
+  font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  background:
+    radial-gradient(900px 600px at -8% -12%, rgba(255,41,52,.24), transparent 55%),
+    radial-gradient(700px 480px at 102% 0%, rgba(255,211,108,.11), transparent 52%),
+    linear-gradient(135deg,#07080c 0%,#0c0f16 45%,#07080c 100%);
+  color:var(--text);
+  padding:14px;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;touch-action:manipulation}
+button:active{transform:scale(.97)}
+input,select,textarea{
+  width:100%;
+  outline:none;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.045);
+  color:#fff;
+  border-radius:18px;
+  padding:13px 15px;
+  font-weight:600;
+}
+input::placeholder,textarea::placeholder{color:#788399}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#9ca6b8 50%),linear-gradient(135deg,#9ca6b8 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+textarea{min-height:76px;resize:vertical}
+hr{border:0;height:1px;background:var(--line);margin:14px 0}
+
+.pos-shell{
+  max-width:1580px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:280px minmax(0,1fr) 380px;
+  gap:16px;
+  align-items:start;
+}
+.pos-sidebar,.pos-main,.pos-right{min-width:0}
+.pos-sidebar{
+  position:sticky;
+  top:14px;
+  height:calc(100vh - 28px);
+  background:linear-gradient(180deg,rgba(18,22,31,.96),rgba(10,12,18,.96));
+  border:1px solid var(--line);
+  border-radius:32px;
+  padding:16px;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.brand-lockup{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border-radius:24px;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--line);
+}
+.brand-mark{
+  width:56px;height:56px;border-radius:20px;
+  background:linear-gradient(145deg,#202633,#0e1118);
+  position:relative;display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)
+}
+.brand-mark:before{content:"";position:absolute;bottom:12px;width:30px;height:28px;border-radius:9px 9px 14px 14px;background:linear-gradient(180deg,#ff4c55,#df1f2b)}
+.brand-mark:after{content:"";position:absolute;top:12px;width:20px;height:12px;border:3px solid #fff;border-bottom:0;border-radius:999px 999px 0 0}
+.brand-title{font-size:24px;line-height:1;font-weight:900;letter-spacing:-.04em}
+.brand-title span:last-child{color:var(--red)}
+.brand-sub{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-top:5px}
+.sidebar-menu{display:flex;flex-direction:column;gap:9px}
+.side-link{
+  display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:18px;
+  background:rgba(255,255,255,.035);border:1px solid transparent;color:#dbe2ee;font-weight:800
+}
+.side-link.active{background:linear-gradient(135deg,rgba(255,41,52,.22),rgba(255,41,52,.08));border-color:rgba(255,41,52,.18);color:#fff}
+.side-link small{margin-left:auto;color:var(--muted);font-weight:800}
+.status-panel{
+  margin-top:auto;
+  border-radius:24px;
+  padding:14px;
+  background:linear-gradient(180deg,rgba(255,41,52,.12),rgba(255,255,255,.035));
+  border:1px solid rgba(255,41,52,.18);
+}
+.status-kicker{font-size:11px;color:#ff9da4;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.status-title{font-size:20px;font-weight:900;margin-top:6px}
+.status-text{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px}
+.status-dots{display:flex;gap:6px;margin-top:12px}
+.status-dots i{width:8px;height:8px;border-radius:999px;background:var(--green);box-shadow:0 0 18px rgba(32,214,119,.7)}
+
+.pos-main{display:flex;flex-direction:column;gap:16px}
+.terminal-hero{
+  background:linear-gradient(135deg,rgba(21,25,36,.98),rgba(11,13,19,.98));
+  border:1px solid var(--line);
+  border-radius:34px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.terminal-top{
+  display:grid;
+  grid-template-columns:minmax(0,1.1fr) 340px;
+  gap:16px;
+  padding:18px;
+}
+.scan-console{
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));
+  border:1px solid var(--line);
+  border-radius:28px;
+  padding:14px;
+}
+.console-label{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;
+  color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.12em
+}
+.live-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:rgba(32,214,119,.10);color:#9ff6c7;border:1px solid rgba(32,214,119,.2);font-size:10px}
+.live-pill:before{content:"";width:7px;height:7px;border-radius:999px;background:var(--green);box-shadow:0 0 14px rgba(32,214,119,.8)}
+.input-group{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.input-group input{height:56px;font-size:16px;border-radius:20px;background:rgba(0,0,0,.22)}
+.btn-scan{
+  height:56px;padding:0 20px;border-radius:20px;border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;font-weight:900;box-shadow:0 14px 28px rgba(255,41,52,.25)
+}
+.camera-preview{display:none;position:relative;margin-top:14px;border-radius:24px;overflow:hidden;background:#000;border:1px solid var(--line2)}
+.camera-preview.active{display:block}
+#reader{width:100%;border-radius:20px}
+.close-camera{position:absolute;top:10px;right:10px;z-index:5;background:rgba(0,0,0,.7);color:#fff;border:1px solid rgba(255,255,255,.18);padding:8px 14px;border-radius:999px;font-size:12px}
+.customer-strip{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.customer-summary-card{
+  margin-top:12px;
+  background:rgba(255,255,255,.035);
+  border:1px dashed rgba(255,255,255,.12);
+  border-radius:20px;
+  padding:12px;
+  color:var(--muted);
+}
+.customer-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.customer-summary-mini{background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:15px;padding:10px;color:#e5eaf3;font-size:12px}
+
+.total-console{
+  background:
+    radial-gradient(circle at top right,rgba(255,255,255,.18),transparent 28%),
+    linear-gradient(135deg,var(--red),var(--red2));
+  border-radius:28px;
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-height:100%;
+  box-shadow:0 18px 36px rgba(255,41,52,.24);
+}
+.final-total-block{background:transparent;border-radius:0;padding:0;margin:0;text-align:left;box-shadow:none}
+.final-total-block .label{font-size:11px;font-weight:900;letter-spacing:.18em;opacity:.85;text-transform:uppercase}
+.final-total-block .value{font-size:42px;line-height:1.04;font-weight:900;letter-spacing:-.055em;margin-top:8px}
+.mini-pos-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+.mini-pos-stat{border-radius:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);padding:10px}
+.mini-pos-stat span{display:block;font-size:10px;opacity:.78;text-transform:uppercase;font-weight:900;letter-spacing:.08em}
+.mini-pos-stat b{display:block;font-size:18px;margin-top:5px}
+
+.card{
+  background:linear-gradient(180deg,rgba(21,25,36,.96),rgba(12,14,20,.96));
+  border:1px solid var(--line);
+  border-radius:32px;
+  box-shadow:var(--shadow2);
+  padding:18px;
+}
+.sale-actions-card{
+  border-top:1px solid var(--line);
+  padding:18px;
+  background:rgba(255,255,255,.02);
+}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat-block{
+  border-radius:20px;background:rgba(255,255,255,.045);border:1px solid var(--line);padding:13px
+}
+.stat-label{font-size:11px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.stat-value{font-size:22px;font-weight:900;margin-top:7px}
+.action-buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.action-buttons button,.action-buttons select{min-height:48px}
+button{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.055);
+  color:#fff;
+  border-radius:17px;
+  padding:12px 16px;
+  font-weight:850;
+  transition:.12s ease;
+}
+button:hover{transform:translateY(-1px);background:rgba(255,255,255,.075)}
+.btn-primary{background:linear-gradient(135deg,var(--red),var(--red2));border-color:rgba(255,255,255,.12);box-shadow:0 12px 24px rgba(255,41,52,.2)}
+.btn-secondary{background:rgba(255,255,255,.055);border-color:var(--line)}
+.btn-danger{background:linear-gradient(135deg,#ff9d2d,#e95022);border-color:rgba(255,255,255,.12);box-shadow:0 12px 24px rgba(255,157,45,.16)}
+#cashSaleBtn,#nasiyaOpenBtn{font-size:15px;flex:1 1 180px}
+#salePaymentMethod{flex:1 1 150px}
+#saleNote{margin-top:12px}
+
+.section-head,.card-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.section-title,.card-title h2{
+  font-size:22px;font-weight:900;letter-spacing:-.03em
+}
+.section-sub{color:var(--muted);font-size:12px;font-weight:700;margin-top:4px}
+.live-badge{
+  padding:7px 12px;border-radius:999px;background:rgba(32,214,119,.1);border:1px solid rgba(32,214,119,.2);
+  color:#9ff6c7;font-size:10px;font-weight:900;letter-spacing:.12em
+}
+.cart-list,.credits-list,.sales-list,.top-customer-list{display:flex;flex-direction:column;gap:12px;max-height:530px;overflow:auto;padding-right:4px}
+.cart-list::-webkit-scrollbar,.credits-list::-webkit-scrollbar,.sales-list::-webkit-scrollbar,.top-customer-list::-webkit-scrollbar,.modal-card::-webkit-scrollbar{width:8px}
+.cart-list::-webkit-scrollbar-thumb,.credits-list::-webkit-scrollbar-thumb,.sales-list::-webkit-scrollbar-thumb,.top-customer-list::-webkit-scrollbar-thumb,.modal-card::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px}
+.cart-item,.credit-item,.sale-item,.top-customer-item{
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:14px;
+}
+.product-row{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:14px;align-items:center}
+.product-thumb{
+  width:76px;height:76px;border-radius:20px;display:grid;place-items:center;overflow:hidden;flex-shrink:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035));border:1px solid var(--line);font-size:30px
+}
+.product-thumb img{width:100%;height:100%;object-fit:cover}
+.product-info{min-width:0}
+.product-name{font-weight:900;font-size:15px;line-height:1.35}
+.variant-detail{
+  display:inline-flex;margin-top:6px;padding:5px 10px;border-radius:999px;
+  font-size:11px;color:#ffd789;background:rgba(255,211,108,.10);border:1px solid rgba(255,211,108,.16);font-weight:800
+}
+.price-big{font-size:18px;font-weight:900;text-align:right;white-space:nowrap}
+.qty-stepper{display:inline-flex;align-items:center;gap:10px;margin-top:8px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.045);border:1px solid var(--line)}
+.qty-btn{width:30px;height:30px;border-radius:999px;padding:0;background:#fff;color:#111827;font-size:18px;border:0}
+.empty{
+  text-align:center;color:var(--muted);padding:30px 16px;border-radius:24px;background:rgba(255,255,255,.028);border:1px dashed rgba(255,255,255,.12)
+}
+.pos-right{display:flex;flex-direction:column;gap:16px;position:sticky;top:14px}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));
+  border:1px solid var(--line);border-radius:22px;padding:14px
+}
+.kpi span{display:block;color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.kpi b{display:block;font-size:21px;margin-top:8px;letter-spacing:-.03em}
+.kpi.red b{color:#ff7078}.kpi.green b{color:#73f3ad}.kpi.gold b{color:#ffd36c}.kpi.blue b{color:#9dc2ff}
+.flex-between{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.status-chip{display:inline-flex;padding:6px 11px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.06em}
+.status-ishonchli{background:rgba(32,214,119,.12);color:#9df6c7;border:1px solid rgba(32,214,119,.18)}
+.status-ortacha{background:rgba(255,211,108,.12);color:#ffd988;border:1px solid rgba(255,211,108,.18)}
+.status-xavfli{background:rgba(255,159,46,.12);color:#ffc17f;border:1px solid rgba(255,159,46,.18)}
+.status-blok{background:rgba(255,41,52,.12);color:#ff9aa1;border:1px solid rgba(255,41,52,.18)}
+.mini-muted{font-size:11px;color:var(--muted)}
+.mini-amount{font-weight:900;color:#ffd36c;font-size:15px}
+
+.autocomplete-container{position:relative}
+.autocomplete-suggestions{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#151924;border:1px solid var(--line2);border-radius:18px;max-height:240px;overflow:auto;display:none;z-index:30;box-shadow:var(--shadow2)}
+.autocomplete-suggestions.show{display:block}
+.autocomplete-suggestion{padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.autocomplete-suggestion:hover{background:rgba(255,255,255,.055)}
+
+.modal{position:fixed;inset:0;background:rgba(2,3,6,.82);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;z-index:2000;padding:16px}
+.modal.open{display:flex}
+.modal-card{
+  width:min(620px,100%);max-height:88vh;overflow:auto;
+  background:linear-gradient(180deg,#171b25,#0f1219);border:1px solid var(--line2);border-radius:30px;box-shadow:var(--shadow)
+}
+.modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px;border-bottom:1px solid var(--line);font-size:18px;font-weight:900}
+.modal-header button{width:38px;height:38px;padding:0;border-radius:14px}
+.modal-body{padding:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.variant-list{display:flex;flex-direction:column;gap:12px;margin:14px 0}
+.variant-item{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;border-radius:22px;background:rgba(255,255,255,.045);border:1px solid var(--line);cursor:pointer}
+.variant-item:hover{background:rgba(255,255,255,.07)}
+.variant-price{font-weight:900;color:#9df6c7;margin-top:6px}
+.variant-stock{font-size:12px;color:var(--muted);margin-top:4px}
+#receiptContent{background:rgba(255,255,255,.045)!important;border:1px solid var(--line)!important;color:#fff;border-radius:20px!important}
+#imageModal .modal-card{background:transparent;border:0;box-shadow:none;max-width:760px}
+#closeImageModalBtn{display:block;margin:12px auto 0}
+
+.mobile-dock{display:none}
+@media (max-width:1280px){
+  .pos-shell{grid-template-columns:240px minmax(0,1fr)}
+  .pos-right{grid-column:2;position:static}
+}
+@media (max-width:980px){
+  body{padding:10px;padding-bottom:84px}
+  .pos-shell{grid-template-columns:1fr}
+  .pos-sidebar{position:static;height:auto;border-radius:26px}
+  .sidebar-menu{display:grid;grid-template-columns:repeat(4,1fr)}
+  .side-link{justify-content:center}
+  .side-link small,.status-panel{display:none}
+  .terminal-top{grid-template-columns:1fr}
+  .pos-right{grid-column:auto}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .product-row{grid-template-columns:64px minmax(0,1fr);align-items:start}
+  .price-big{grid-column:2;text-align:left}
+  .mobile-dock{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:10px;right:10px;bottom:10px;z-index:80;background:rgba(15,18,25,.92);backdrop-filter:blur(12px);border:1px solid var(--line2);border-radius:22px;padding:8px;box-shadow:var(--shadow2)}
+  .mobile-dock a{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:var(--muted);font-size:10px;font-weight:800}
+  .mobile-dock b{width:38px;height:38px;border-radius:15px;display:grid;place-items:center;background:rgba(255,255,255,.045);color:#fff}
+  .mobile-dock a.active b{background:linear-gradient(135deg,var(--red),var(--red2))}
+}
+@media (max-width:680px){
+  .terminal-top,.sale-actions-card,.card{padding:14px}
+  .terminal-hero,.card{border-radius:24px}
+  .customer-strip,.grid-2{grid-template-columns:1fr}
+  .input-group{grid-template-columns:1fr}
+  .btn-scan{width:100%}
+  .final-total-block .value{font-size:32px}
+  .kpi-grid,.stats-row{grid-template-columns:1fr 1fr}
+  .sidebar-menu{grid-template-columns:repeat(2,1fr)}
+  .action-buttons button,.action-buttons select{flex:1 1 145px}
+}
 
-    .app-container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .header {
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(10px);
-      border-radius: 28px;
-      padding: 12px 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      box-shadow: 0 6px 20px rgba(0, 32, 16, 0.08);
-      border: 1px solid rgba(200, 225, 200, 0.6);
-    }
-
-    .logo-area {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .logo-icon {
-      width: 44px;
-      height: 44px;
-      background: linear-gradient(135deg, #f7e6bc, #e0b86e);
-      border-radius: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: 800;
-      color: #2a5a3e;
-    }
-
-    .logo-text h1 {
-      font-size: 18px;
-      font-weight: 800;
-      line-height: 1.2;
-    }
-
-    .logo-text p {
-      font-size: 9px;
-      font-weight: 600;
-      color: #5f7c6b;
-    }
-
-    .badge-group {
-      display: flex;
-      gap: 6px;
-    }
-
-    .badge {
-      background: #eef3ea;
-      padding: 5px 10px;
-      border-radius: 30px;
-      font-size: 9px;
-      font-weight: 700;
-      color: #1f6e46;
-      border: 1px solid #cde0d2;
-    }
-
-    .scanner-area {
-      background: linear-gradient(135deg, #1f3d2e, #163829);
-      border-radius: 28px;
-      padding: 12px;
-      margin-bottom: 16px;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      background: white;
-      border-radius: 50px;
-      padding: 4px;
-      border: 1px solid #d0e3d6;
-    }
-
-    .input-group input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 12px 16px;
-      font-size: 15px;
-      font-weight: 500;
-      outline: none;
-    }
-
-    .btn-scan {
-      background: linear-gradient(135deg, #2c6e4a, #1e553a);
-      border: none;
-      padding: 10px 18px;
-      border-radius: 40px;
-      color: white;
-      font-weight: 700;
-      font-size: 13px;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-
-    .camera-preview {
-      display: none;
-      position: relative;
-      margin-top: 12px;
-      border-radius: 24px;
-      overflow: hidden;
-      background: #000;
-    }
-
-    .camera-preview.active {
-      display: block;
-    }
-
-    #reader {
-      width: 100%;
-      border-radius: 20px;
-    }
-
-    .close-camera {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.7);
-      border: none;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 30px;
-      font-size: 12px;
-      z-index: 10;
-      cursor: pointer;
-    }
-
-    .card {
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(4px);
-      border-radius: 32px;
-      padding: 18px;
-      margin-bottom: 18px;
-      border: 1px solid rgba(220, 240, 220, 0.8);
-      box-shadow: 0 8px 24px rgba(0, 32, 16, 0.06);
-    }
-
-    .card-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .card-title h2 {
-      font-size: 20px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #1c5e3f, #0f462e);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-    }
-
-    .live-badge {
-      background: #133f2c;
-      color: #e2f9e6;
-      padding: 4px 10px;
-      border-radius: 40px;
-      font-size: 9px;
-      font-weight: 700;
-    }
-
-    .final-total-block {
-      background: linear-gradient(135deg, #1b784b, #0f5a38);
-      border-radius: 28px;
-      padding: 14px;
-      text-align: center;
-      margin: 16px 0;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-
-    .final-total-block .label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      opacity: 0.85;
-    }
-
-    .final-total-block .value {
-      font-size: 34px;
-      font-weight: 900;
-      line-height: 1.2;
-    }
-
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin: 14px 0;
-    }
-
-    .stat-block {
-      background: #f1f9f3;
-      border-radius: 24px;
-      padding: 10px;
-      text-align: center;
-    }
-
-    .stat-label {
-      font-size: 10px;
-      font-weight: 800;
-      color: #4c6e5c;
-    }
-
-    .stat-value {
-      font-size: 22px;
-      font-weight: 900;
-      margin-top: 4px;
-    }
-
-    .cart-list, .credits-list, .sales-list, .top-customer-list {
-      max-height: 420px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .cart-item {
-      background: white;
-      border-radius: 24px;
-      padding: 12px;
-      border: 1px solid #e2efe5;
-    }
-
-    .product-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .product-thumb {
-      width: 60px;
-      height: 60px;
-      background: #edf6ef;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 26px;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-
-    .product-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .product-info {
-      flex: 1;
-    }
-
-    .product-name {
-      font-weight: 800;
-      font-size: 15px;
-    }
-
-    .variant-detail {
-      font-size: 11px;
-      color: #1f6e46;
-      background: #e8f3ec;
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 20px;
-      margin-top: 4px;
-    }
-
-    .price-big {
-      font-weight: 800;
-      font-size: 18px;
-      text-align: right;
-    }
-
-    .qty-stepper {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #f2f8f2;
-      border-radius: 40px;
-      padding: 3px 10px;
-      width: fit-content;
-      margin-top: 6px;
-    }
-
-    .qty-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 40px;
-      background: white;
-      font-weight: 800;
-      font-size: 18px;
-      border: 1px solid #d0e0d4;
-      cursor: pointer;
-    }
-
-    .action-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    button {
-      border: none;
-      background: white;
-      padding: 10px 16px;
-      border-radius: 40px;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: 0.08s linear;
-      touch-action: manipulation;
-    }
-
-    button:active {
-      transform: scale(0.96);
-    }
-
-    .btn-primary {
-      background: linear-gradient(105deg, #1b784b, #0f5a38);
-      color: white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-
-    .btn-secondary {
-      background: #f5fbf7;
-      border: 1px solid #d1e3d8;
-    }
-
-    .btn-danger {
-      background: linear-gradient(105deg, #bc4a4a, #a03333);
-      color: white;
-    }
-
-    .credit-item, .sale-item, .top-customer-item {
-      background: #ffffffdd;
-      border-radius: 24px;
-      padding: 14px;
-      border: 1px solid #dcf0e2;
-    }
-
-    .flex-between {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .status-chip {
-      display: inline-flex;
-      padding: 4px 10px;
-      border-radius: 40px;
-      font-size: 9px;
-      font-weight: 800;
-    }
-
-    .status-ishonchli { background: #e2f3e8; color: #14663f; }
-    .status-ortacha { background: #fff1cf; color: #8a6100; }
-    .status-xavfli { background: #ffe4cf; color: #b15300; }
-    .status-blok { background: #ffe2e2; color: #bc3a3a; }
-
-    .customer-summary-card {
-      background: #f5fcf7;
-      border-radius: 24px;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #cde0d2;
-    }
-
-    .customer-summary-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .customer-summary-mini {
-      background: white;
-      border-radius: 18px;
-      padding: 8px;
-      font-size: 12px;
-    }
-
-    /* Modal styles */
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(10, 30, 18, 0.85);
-      backdrop-filter: blur(8px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      padding: 16px;
-    }
-
-    .modal.open {
-      display: flex;
-    }
-
-    .modal-card {
-      background: white;
-      border-radius: 36px;
-      width: 100%;
-      max-width: 500px;
-      max-height: 85vh;
-      overflow-y: auto;
-    }
-
-    .modal-header {
-      padding: 16px;
-      font-weight: 800;
-      font-size: 18px;
-      border-bottom: 1px solid #e2efe5;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .modal-header button {
-      background: none;
-      padding: 0;
-      font-size: 20px;
-      line-height: 1;
-    }
-
-    .modal-body {
-      padding: 16px;
-    }
-
-    .variant-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin: 16px 0;
-    }
-
-    .variant-item {
-      background: #f8fbf9;
-      border-radius: 24px;
-      padding: 14px;
-      border: 1px solid #e2efe5;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .variant-item:hover {
-      background: #e8f3ec;
-      transform: translateX(4px);
-    }
-
-    .variant-detail {
-      flex: 1;
-    }
-
-    .variant-detail strong {
-      font-size: 16px;
-      display: block;
-    }
-
-    .variant-price {
-      font-weight: 800;
-      color: #1f6e46;
-      font-size: 16px;
-    }
-
-    .variant-stock {
-      font-size: 12px;
-      color: #6e8b7a;
-    }
-
-    .empty {
-      text-align: center;
-      padding: 28px;
-      background: #fafef9;
-      border-radius: 28px;
-      color: #628574;
-      font-size: 13px;
-    }
-
-    .mini-muted {
-      font-size: 10px;
-      color: #6e8b7a;
-    }
-
-    .mini-amount {
-      font-size: 15px;
-      font-weight: 800;
-      color: #0f5a38;
-    }
-
-    input, select, textarea {
-      background: white;
-      border: 1.5px solid #d7e6dc;
-      border-radius: 28px;
-      padding: 10px 14px;
-      font-size: 14px;
-      font-weight: 500;
-      font-family: inherit;
-      width: 100%;
-      outline: none;
-    }
-
-    .autocomplete-container {
-      position: relative;
-      width: 100%;
-    }
-
-    .autocomplete-suggestions {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: white;
-      border: 1px solid #d7e6dc;
-      border-radius: 20px;
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      display: none;
-    }
-
-    .autocomplete-suggestions.show {
-      display: block;
-    }
-
-    .autocomplete-suggestion {
-      padding: 10px 14px;
-      cursor: pointer;
-      border-bottom: 1px solid #eef3ea;
-    }
-
-    .autocomplete-suggestion:hover {
-      background: #f1f9f3;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    @media (max-width: 480px) {
-      body {
-        padding: 8px;
-      }
-      .stats-row {
-        grid-template-columns: 1fr 1fr;
-      }
-      .final-total-block .value {
-        font-size: 28px;
-      }
-      .card-title h2 {
-        font-size: 18px;
-      }
-    }
   </style>
-
-<link rel="stylesheet" href="/theme-redwhite.css">
 </head>
+
 <body>
-<div class="app-container">
-  <div class="header">
-    <div class="logo-area">
-      <div class="logo-icon">🛍️</div>
-      <div class="logo-text">
-        <h1>OrzuMall</h1>
-        <p>Kassa + Nasiya + Variantlar</p>
+<div class="pos-shell">
+  <aside class="pos-sidebar">
+    <div class="brand-lockup">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div>
+        <div class="brand-title"><span>Orzu</span><span>Mall</span></div>
+        <div class="brand-sub">Pro Kassa</div>
       </div>
     </div>
-    <div class="badge-group">
-      <div class="badge">📱 Skaner</div>
-      <div class="badge">🎨 Variantli</div>
-    </div>
-  </div>
 
-  <div class="scanner-area">
-    <div class="input-group">
-      <input type="text" id="barcodeInput" placeholder="Shtrixkod yoki QR skanerlang" autocomplete="off">
-      <button id="scanCameraBtn" class="btn-scan">📷 Kamera</button>
-    </div>
-    <div id="cameraPreview" class="camera-preview">
-      <div id="reader" style="width:100%"></div>
-      <button id="closeCameraBtn" class="close-camera">✖ Yopish</button>
-    </div>
-  </div>
+    <nav class="sidebar-menu" aria-label="Kassa menyusi">
+      <a class="side-link active" href="#sale"><span>🧾</span> Savdo <small>POS</small></a>
+      <a class="side-link" href="#cart"><span>🛒</span> Savat <small id="posMiniItems">0</small></a>
+      <a class="side-link" href="#credits"><span>📌</span> Nasiya <small id="creditOpenCountPOS">0</small></a>
+      <a class="side-link" href="#analytics"><span>📊</span> Hisobot <small id="todaySalesCountPOS">0</small></a>
+    </nav>
 
-  <div class="card">
-    <div class="card-title">
-      <h2>🧾 Savdo</h2>
-      <div class="live-badge">● ONLAYN</div>
+    <div class="status-panel">
+      <div class="status-kicker">Terminal status</div>
+      <div class="status-title">Onlayn rejim</div>
+      <div class="status-text">Shtrixkod, nasiya, sotuv va mijozlar bazasi Firebase orqali ishlaydi.</div>
+      <div class="status-dots"><i></i><i></i><i></i></div>
     </div>
-    
-    <div style="display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap;">
-      <div style="flex: 1; position: relative;" class="autocomplete-container">
-        <input type="text" id="customerQuickName" placeholder="Mijoz ismi" autocomplete="off">
-        <div id="nameSuggestions" class="autocomplete-suggestions"></div>
+  </aside>
+
+  <main class="pos-main">
+    <section class="terminal-hero" id="sale">
+      <div class="terminal-top">
+        <div class="scan-console">
+          <div class="console-label">
+            <span>QR / Shtrixkod terminal</span>
+            <span class="live-pill">SCAN READY</span>
+          </div>
+
+          <div class="input-group">
+            <input type="text" id="barcodeInput" placeholder="Mahsulot shtrixkodini kiriting yoki skanerlang" autocomplete="off">
+            <button id="scanCameraBtn" class="btn-scan">📷 Kamera skaner</button>
+          </div>
+
+          <div id="cameraPreview" class="camera-preview">
+            <div id="reader" style="width:100%"></div>
+            <button id="closeCameraBtn" class="close-camera">✖ Yopish</button>
+          </div>
+
+          <div class="customer-strip">
+            <div class="autocomplete-container">
+              <input type="text" id="customerQuickName" placeholder="Mijoz ismi" autocomplete="off">
+              <div id="nameSuggestions" class="autocomplete-suggestions"></div>
+            </div>
+            <div class="autocomplete-container">
+              <input type="text" id="customerQuickPhone" placeholder="Telefon raqam" autocomplete="off">
+              <div id="phoneSuggestions" class="autocomplete-suggestions"></div>
+            </div>
+          </div>
+
+          <div id="customerSummaryCard" class="customer-summary-card">
+            <div class="mini-muted">Mijoz tanlanganda limit, qarz va nasiya ma’lumoti shu yerda chiqadi.</div>
+          </div>
+        </div>
+
+        <div class="total-console">
+          <div class="final-total-block">
+            <div class="label">Yakuniy to‘lov</div>
+            <div class="value" id="finalTotalHighlight">0 so'm</div>
+          </div>
+          <div class="mini-pos-stats">
+            <div class="mini-pos-stat"><span>Jami</span><b id="posMiniTotal">0 so‘m</b></div>
+            <div class="mini-pos-stat"><span>Dona</span><b id="posMiniQty">0</b></div>
+          </div>
+        </div>
       </div>
-      <div style="flex: 1; position: relative;" class="autocomplete-container">
-        <input type="text" id="customerQuickPhone" placeholder="Telefon" autocomplete="off">
-        <div id="phoneSuggestions" class="autocomplete-suggestions"></div>
+
+      <div class="sale-actions-card">
+        <div class="stats-row">
+          <div class="stat-block"><div class="stat-label">Turlar</div><div class="stat-value" id="totalKinds">0</div></div>
+          <div class="stat-block"><div class="stat-label">Dona</div><div class="stat-value" id="totalQty">0</div></div>
+          <div class="stat-block"><div class="stat-label">Chegirma</div><div class="stat-value" id="totalDiscountAmount">0</div></div>
+          <div class="stat-block"><div class="stat-label">Subtotal</div><div class="stat-value" id="subtotalAmount">0</div></div>
+        </div>
+
+        <div class="action-buttons">
+          <button id="clearCartBtn" class="btn-secondary">🗑️ Tozalash</button>
+          <button id="discountManagerBtn" class="btn-secondary">⚡ Chegirma</button>
+          <select id="salePaymentMethod">
+            <option value="cash">💵 Naqd</option>
+            <option value="card">💳 Karta</option>
+            <option value="xolis">🧾 Xolis</option>
+          </select>
+          <button id="cashSaleBtn" class="btn-primary">✅ Sotishni yakunlash</button>
+          <button id="nasiyaOpenBtn" class="btn-danger">📆 Nasiya rasmiylashtirish</button>
+        </div>
+        <textarea id="saleNote" rows="2" placeholder="Savdo izohi, chek uchun qo‘shimcha ma’lumot"></textarea>
       </div>
-    </div>
-    
-    <div id="customerSummaryCard" class="customer-summary-card">
-      <div class="mini-muted">Mijoz tanlanganda limit va nasiya ma'lumoti</div>
-    </div>
+    </section>
 
-    <div class="final-total-block">
-      <div class="label">YAKUNIY TO'LOV</div>
-      <div class="value" id="finalTotalHighlight">0 so'm</div>
-    </div>
+    <section class="card cart-card" id="cart">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Faol savatcha</div>
+          <div class="section-sub">Sotilayotgan mahsulotlar, variantlar va miqdorlar</div>
+        </div>
+        <div class="live-badge" id="cartCountBadge">0 ta</div>
+      </div>
+      <div id="cartContainer" class="cart-list"><div class="empty">Mahsulot qo‘shing</div></div>
+    </section>
+  </main>
 
-    <div class="stats-row">
-      <div class="stat-block"><div class="stat-label">Turlar</div><div class="stat-value" id="totalKinds">0</div></div>
-      <div class="stat-block"><div class="stat-label">Dona</div><div class="stat-value" id="totalQty">0</div></div>
-      <div class="stat-block"><div class="stat-label">Chegirma</div><div class="stat-value" id="totalDiscountAmount">0</div></div>
-      <div class="stat-block"><div class="stat-label">Subtotal</div><div class="stat-value" id="subtotalAmount">0</div></div>
-    </div>
+  <aside class="pos-right">
+    <section class="card" id="analytics">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Bugungi panel</div>
+          <div class="section-sub">Kassa holati va tezkor analytics</div>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi green"><span>Tushum</span><b id="todayRevenuePOS">0 so‘m</b></div>
+        <div class="kpi red"><span>Sotuvlar</span><b id="todaySalesCountPOS">0</b></div>
+        <div class="kpi gold"><span>Ochiq nasiya</span><b id="creditOpenCountPOS">0</b></div>
+        <div class="kpi blue"><span>O‘rtacha chek</span><b id="avgTicketPOS">0 so‘m</b></div>
+      </div>
+    </section>
 
-    <div class="action-buttons">
-      <button id="clearCartBtn" class="btn-secondary">🗑️ Tozalash</button>
-      <button id="discountManagerBtn" class="btn-secondary">⚡ Chegirma</button>
-      <select id="salePaymentMethod" style="flex:1; background:#f5fbf7;">
-        <option value="cash">💵 Naqd</option>
-        <option value="card">💳 Karta</option>
-        <option value="xolis">🧾 Xolis</option>
-      </select>
-      <button id="cashSaleBtn" class="btn-primary">✅ Sotish</button>
-      <button id="nasiyaOpenBtn" class="btn-danger">📆 Nasiya</button>
-    </div>
-    <textarea id="saleNote" rows="2" placeholder="Izoh (ixtiyoriy)" style="margin-top:10px;"></textarea>
-  </div>
+    <section class="card" id="credits">
+      <div class="card-title">
+        <h2>📌 Ochiq nasiyalar</h2>
+        <input type="text" id="searchCredit" placeholder="Qidirish" style="max-width:160px;">
+      </div>
+      <div id="creditsContainer" class="credits-list"><div class="empty">Yuklanmoqda...</div></div>
+    </section>
 
-  <div class="card">
-    <div class="card-title">
-      <h2>🛒 Savat</h2>
-      <div class="live-badge" id="cartCountBadge">0 ta</div>
-    </div>
-    <div id="cartContainer" class="cart-list"><div class="empty">Mahsulot qo'shing</div></div>
-  </div>
+    <section class="card">
+      <div class="card-title"><h2>⭐ Faol mijozlar</h2></div>
+      <div id="topCustomersContainer" class="top-customer-list"></div>
+    </section>
 
-  <div class="card">
-    <div class="card-title">
-      <h2>📌 Ochiq nasiyalar</h2>
-      <input type="text" id="searchCredit" placeholder="Qidirish" style="width:130px; padding:8px;">
-    </div>
-    <div id="creditsContainer" class="credits-list"><div class="empty">Yuklanmoqda...</div></div>
-    
-    <div style="margin: 16px 0 8px 0;"><h2 style="font-size: 18px;">⭐ Faol mijozlar</h2></div>
-    <div id="topCustomersContainer" class="top-customer-list"></div>
-    
-    <div style="margin: 16px 0 8px 0;"><h2 style="font-size: 18px;">📅 Bugungi sotuvlar</h2></div>
-    <div id="todaySalesContainer" class="sales-list"></div>
-  </div>
+    <section class="card">
+      <div class="card-title"><h2>📅 Bugungi sotuvlar</h2></div>
+      <div id="todaySalesContainer" class="sales-list"></div>
+    </section>
+  </aside>
 </div>
+
+<nav class="mobile-dock">
+  <a class="active" href="#sale"><b>🧾</b><span>Savdo</span></a>
+  <a href="#cart"><b>🛒</b><span>Savat</span></a>
+  <a href="#credits"><b>📌</b><span>Nasiya</span></a>
+  <a href="#analytics"><b>📊</b><span>Hisobot</span></a>
+  <a href="#barcodeInput"><b>📷</b><span>Skaner</span></a>
+</nav>
 
 <!-- Variant tanlash modal -->
 <div id="variantModal" class="modal">
   <div class="modal-card">
     <div class="modal-header">
       <span id="variantModalTitle">Mahsulot variantini tanlang</span>
-      <button id="closeVariantModalBtn">✖️</button>
+      <button id="closeVariantModalBtn">✖</button>
     </div>
     <div class="modal-body">
       <div id="variantListContainer" class="variant-list"></div>
@@ -719,31 +518,30 @@
   </div>
 </div>
 
-<!-- MODALS (discount, nasiya, payment, receipt) -->
 <div id="discountModal" class="modal">
   <div class="modal-card">
     <div class="modal-header">
-      <span>⏱️ Chegirma markazi</span>
-      <button id="closeDiscountModalBtn">✖️</button>
+      <span>⚡ Chegirma markazi</span>
+      <button id="closeDiscountModalBtn">✖</button>
     </div>
     <div class="modal-body">
       <select id="globalDiscType">
-        <option value="none">Yo'q</option>
+        <option value="none">Yo‘q</option>
         <option value="percent">Foiz %</option>
         <option value="fixed">Summa</option>
       </select>
-      <input id="globalDiscValue" type="number" placeholder="Qiymat" style="margin:8px 0">
+      <input id="globalDiscValue" type="number" placeholder="Qiymat" style="margin:10px 0">
       <div class="grid-2">
-        <input type="datetime-local" id="globalDiscStart" placeholder="Boshlanish">
-        <input type="datetime-local" id="globalDiscEnd" placeholder="Tugash">
+        <input type="datetime-local" id="globalDiscStart">
+        <input type="datetime-local" id="globalDiscEnd">
       </div>
-      <button id="applyGlobalDiscountBtn" class="btn-primary" style="width:100%; margin-top:8px">Umumiy aksiya qo'llash</button>
-      <button id="clearGlobalDiscountBtn" class="btn-secondary" style="width:100%; margin-top:6px">Bekor qilish</button>
-      <hr style="margin:12px 0">
-      <div style="display:flex; flex-wrap:wrap; gap:8px">
-        <button class="quickGlobal" data-percent="10" data-hours="24">🔹 10% 24 soat</button>
-        <button class="quickGlobal" data-percent="20" data-hours="24">🔸 20% 24 soat</button>
-        <button class="quickGlobal" data-percent="30" data-hours="24">🔹 30% 24 soat</button>
+      <button id="applyGlobalDiscountBtn" class="btn-primary" style="width:100%; margin-top:10px">Umumiy aksiya qo‘llash</button>
+      <button id="clearGlobalDiscountBtn" class="btn-secondary" style="width:100%; margin-top:8px">Bekor qilish</button>
+      <hr>
+      <div class="action-buttons">
+        <button class="quickGlobal" data-percent="10" data-hours="24">10% / 24 soat</button>
+        <button class="quickGlobal" data-percent="20" data-hours="24">20% / 24 soat</button>
+        <button class="quickGlobal" data-percent="30" data-hours="24">30% / 24 soat</button>
       </div>
     </div>
   </div>
@@ -753,7 +551,7 @@
   <div class="modal-card">
     <div class="modal-header">
       <span>📝 Nasiya hujjati</span>
-      <button id="closeNasiyaModalBtn">✖️</button>
+      <button id="closeNasiyaModalBtn">✖</button>
     </div>
     <div class="modal-body">
       <div class="grid-2">
@@ -762,16 +560,16 @@
         <input id="creditPhone1" placeholder="Telefon">
         <input id="creditPhone2" placeholder="Telefon 2">
       </div>
-      <div class="grid-2">
+      <div class="grid-2" style="margin-top:10px">
         <input type="date" id="creditGivenDate">
         <input type="date" id="creditDueDate">
       </div>
-      <select id="creditKind">
+      <select id="creditKind" style="margin-top:10px">
         <option value="oddiy">Oddiy nasiya</option>
         <option value="diler">Diler nasiya</option>
       </select>
-      <textarea id="creditNote" placeholder="Izoh" rows="2"></textarea>
-      <div id="nasiyaAmountPreview" class="stat-block" style="margin:10px 0">Nasiya summasi: 0 so'm</div>
+      <textarea id="creditNote" placeholder="Izoh" rows="2" style="margin-top:10px"></textarea>
+      <div id="nasiyaAmountPreview" class="stat-block" style="margin:12px 0">Nasiya summasi: 0 so'm</div>
       <button id="saveNasiyaBtn" class="btn-primary" style="width:100%">✅ Saqlash</button>
     </div>
   </div>
@@ -780,8 +578,8 @@
 <div id="paymentModal" class="modal">
   <div class="modal-card">
     <div class="modal-header">
-      <span>💳 To'lov</span>
-      <button id="closePaymentModalBtn">✖️</button>
+      <span>💳 To‘lov</span>
+      <button id="closePaymentModalBtn">✖</button>
     </div>
     <div class="modal-body">
       <div id="paymentCreditInfo" class="stat-block" style="margin-bottom:12px"></div>
@@ -792,10 +590,10 @@
           <option value="cash">Naqd</option>
           <option value="card">Karta</option>
         </select>
-        <input type="date" id="paymentNewDueDate" placeholder="Yangi muddat">
+        <input type="date" id="paymentNewDueDate">
       </div>
-      <label style="margin:10px 0; display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="fullCloseCheckbox"> To'liq yopish
+      <label style="margin:12px 0; display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="fullCloseCheckbox" style="width:auto"> To‘liq yopish
       </label>
       <div class="action-buttons">
         <button id="fillRemainingBtn" class="btn-secondary">Qolgan summa</button>
@@ -809,7 +607,7 @@
   <div class="modal-card">
     <div class="modal-header">
       <span>🧾 Chek</span>
-      <button id="closeReceiptModalBtn">✖️</button>
+      <button id="closeReceiptModalBtn">✖</button>
     </div>
     <div class="modal-body">
       <button id="printReceiptBtn" class="btn-primary" style="margin-bottom:12px">🖨️ Chop etish</button>
@@ -820,8 +618,8 @@
 
 <div id="imageModal" class="modal">
   <div class="modal-card">
-    <img id="fullImage" style="width:100%">
-    <button id="closeImageModalBtn" style="margin:10px auto; display:block;">Yopish</button>
+    <img id="fullImage" style="width:100%; border-radius:24px">
+    <button id="closeImageModalBtn">Yopish</button>
   </div>
 </div>
 
@@ -1082,7 +880,19 @@
     renderCart();
   }
   
-  function renderCart() {
+  function syncProDashboard(){
+  try{
+    const t = recalc();
+    const el1 = document.getElementById('posMiniTotal');
+    const el2 = document.getElementById('posMiniItems');
+    const el3 = document.getElementById('posMiniQty');
+    if(el1) el1.textContent = fmt(t.final) + " so‘m";
+    if(el2) el2.textContent = String(cart.length);
+    if(el3) el3.textContent = String(cart.reduce((s,i)=>s+(Number(i.qty)||0),0));
+  }catch(e){}
+}
+
+function renderCart() {
     const container = document.getElementById('cartContainer');
     if (!cart.length) {
       container.innerHTML = '<div class="empty">Savatcha bo\'sh</div>';
@@ -1125,7 +935,7 @@
     document.getElementById('totalDiscountAmount').innerText = fmt(t.totalDisc);
     document.getElementById('subtotalAmount').innerHTML = fmt(t.sub)+" so‘m";
     document.getElementById('finalTotalHighlight').innerHTML = fmt(t.final)+" so‘m";
-    document.getElementById('nasiyaAmountPreview').innerHTML = `Nasiya summasi: ${fmt(t.final)} so‘m`;
+    document.getElementById('nasiyaAmountPreview').innerHTML = `Nasiya summasi: ${fmt(t.final)} so‘m`; syncProDashboard();
   }
   
   // Sotish (variantlar bo'yicha qoldiqni kamaytirish)
@@ -1280,6 +1090,8 @@
     const snap = await getDocs(query(collection(db, 'credits'), orderBy('dueDate', 'asc')));
     creditsArray = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderCreditsUI();
+    const creditOpen = document.getElementById('creditOpenCountPOS');
+    if(creditOpen) creditOpen.textContent = String(creditsArray.filter(c=>((Number(c.totalUZS)||0)-(Number(c.paidUZS)||0))>0).length);
     renderTopCustomers();
     await loadAllCustomers();
   }
@@ -1308,8 +1120,21 @@
     const cont = document.getElementById('todaySalesContainer');
     if (!todayArr.length) {
       cont.innerHTML = '<div class="empty">Bugun sotuv yo‘q</div>';
+      const rev = document.getElementById('todayRevenuePOS');
+      const cnt = document.getElementById('todaySalesCountPOS');
+      const avg = document.getElementById('avgTicketPOS');
+      if(rev) rev.textContent = '0 so‘m';
+      if(cnt) cnt.textContent = '0';
+      if(avg) avg.textContent = '0 so‘m';
       return;
     }
+    const todaySum = todayArr.reduce((s,x)=>s+(Number(x.totalUZS)||0),0);
+    const rev = document.getElementById('todayRevenuePOS');
+    const cnt = document.getElementById('todaySalesCountPOS');
+    const avg = document.getElementById('avgTicketPOS');
+    if(rev) rev.textContent = fmt(todaySum) + ' so‘m';
+    if(cnt) cnt.textContent = String(todayArr.length);
+    if(avg) avg.textContent = fmt(todayArr.length ? todaySum/todayArr.length : 0) + ' so‘m';
     cont.innerHTML = todayArr.map(s => `<div class="sale-item"><div class="flex-between"><b>${s.type === 'credit_payment' ? 'Nasiya to‘lovi' : (s.type === 'credit' ? 'Nasiya' : 'Sotuv')}</b><span>${fmt(s.totalUZS)} so‘m</span></div><div>${s.fullName || s.customerName || 'Mijoz'}</div><button class="btn-secondary receipt-sale-btn" data-id="${s.id}">🧾 Chek</button></div>`).join('');
   }
   
