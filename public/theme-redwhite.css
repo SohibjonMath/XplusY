@@ -3943,3 +3943,73 @@ button,
   #view-profile .activityPanelTitle{ font-size:14px !important; }
   .qvName{ font-size:16px !important; }
 }
+
+
+/* ===== 2026-05-28 final compact product names + mobile personal-info card ===== */
+
+/* Product names: noticeably smaller */
+.pname,
+.pcard .pname,
+.product-name{
+  font-size:10.5px !important;
+  line-height:1.18 !important;
+  min-height:24px !important;
+  font-weight:800 !important;
+}
+.clamp2{
+  min-height:24px !important;
+}
+@media (min-width: 821px){
+  .pname,
+  .pcard .pname,
+  .product-name{
+    font-size:11px !important;
+    line-height:1.2 !important;
+    min-height:26px !important;
+  }
+  .clamp2{ min-height:26px !important; }
+}
+
+/* Mobile profile personal info: more compact and space-efficient */
+@media (max-width: 520px){
+  #view-profile .formGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+    padding:12px !important;
+    border-radius:22px !important;
+  }
+  #view-profile .formGrid::before{
+    grid-column:1 / -1 !important;
+    font-size:15px !important;
+    margin-bottom:2px !important;
+  }
+  #view-profile .field{
+    gap:5px !important;
+  }
+  #view-profile .field span{
+    font-size:10px !important;
+    line-height:1.2 !important;
+  }
+  #view-profile .field input,
+  #view-profile .field select{
+    height:40px !important;
+    border-radius:14px !important;
+    font-size:12px !important;
+    padding:0 11px !important;
+  }
+  #view-profile #profileHint{
+    padding:10px 12px !important;
+    border-radius:14px !important;
+    font-size:11px !important;
+    line-height:1.35 !important;
+  }
+  #view-profile .profileHead{
+    padding:12px !important;
+  }
+  #view-profile .profileName{
+    font-size:14px !important;
+  }
+  #view-profile .profileUid{
+    font-size:10px !important;
+  }
+}
