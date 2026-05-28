@@ -1,0 +1,256 @@
+/* OrzuMall Red/Black Theme — lightweight global override */
+:root{
+  color-scheme: dark;
+  --rb-bg:#070708;
+  --rb-bg2:#101012;
+  --rb-card:#151518;
+  --rb-card2:#1b1b20;
+  --rb-line:rgba(255,255,255,.12);
+  --rb-line2:rgba(239,29,47,.36);
+  --rb-text:#f8fafc;
+  --rb-muted:#a8b0bf;
+  --rb-red:#ef1d2f;
+  --rb-red2:#b40016;
+  --rb-red3:#ff3b4f;
+  --rb-shadow:0 18px 55px rgba(0,0,0,.42);
+  --rb-red-glow:0 14px 34px rgba(239,29,47,.28);
+
+  --bg:var(--rb-bg) !important;
+  --surface:var(--rb-card) !important;
+  --surface2:var(--rb-card2) !important;
+  --text:var(--rb-text) !important;
+  --muted:var(--rb-muted) !important;
+  --muted2:#7f8796 !important;
+  --line:var(--rb-line) !important;
+  --gold:var(--rb-red) !important;
+  --gold2:var(--rb-red2) !important;
+  --primary:var(--rb-red) !important;
+  --primary2:var(--rb-red2) !important;
+  --ink:#ffffff !important;
+  --shadow:var(--rb-shadow) !important;
+  --shadow2:0 12px 32px rgba(0,0,0,.45) !important;
+  --shadow3:0 8px 24px rgba(0,0,0,.36) !important;
+}
+
+html, body{
+  background:
+    radial-gradient(900px 520px at 16% -6%, rgba(239,29,47,.18), transparent 60%),
+    radial-gradient(860px 520px at 88% 0%, rgba(239,29,47,.10), transparent 64%),
+    linear-gradient(180deg,#070708 0%, #0e0e11 48%, #060607 100%) !important;
+  color:var(--rb-text) !important;
+}
+
+/* Layout surfaces */
+.topbar, header, .header, .app-header, .navbar{
+  background:rgba(7,7,8,.92) !important;
+  border-bottom:1px solid rgba(239,29,47,.24) !important;
+  box-shadow:0 10px 32px rgba(0,0,0,.34) !important;
+  backdrop-filter:blur(14px) !important;
+  -webkit-backdrop-filter:blur(14px) !important;
+}
+.card, .pcard, .productsCard, .searchCard, .profileCard, .stat-card, .stat-card-premium,
+.section-card, .mini-card, .product-rank-card, .orderItem, .order-card, .modal-card,
+.modalCard, .vCard, .modal-content, .panel, .box, .table-wrapper, .table-container,
+.empty-state, .orders-grid, .rank-item{
+  background:linear-gradient(180deg, rgba(25,25,29,.96), rgba(14,14,17,.96)) !important;
+  border:1px solid var(--rb-line) !important;
+  box-shadow:var(--rb-shadow) !important;
+  color:var(--rb-text) !important;
+}
+
+/* Main card hover */
+.pcard:hover, .product-item:hover, .card:hover{
+  border-color:var(--rb-line2) !important;
+  box-shadow:0 20px 52px rgba(239,29,47,.16), 0 16px 42px rgba(0,0,0,.44) !important;
+}
+
+/* Logo image should stay clean, without frame */
+.logo, .logoLink, .logoImg, .logo img{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+.logoImg, .logo img{
+  filter:drop-shadow(0 10px 18px rgba(239,29,47,.18));
+}
+
+/* Text */
+h1,h2,h3,h4,h5,h6,.title,.card-title,.section-title,.productsTitle,.viewTitle,
+.modalTitle,.vTitle,.name,.pname,.rank-name,.mini-title,.profileCardTitle,
+.stat-number,.stat-value,.kpi-value,.product-title,.cartTitle{
+  color:var(--rb-text) !important;
+}
+p,.muted,.hint,.sub,.mini-muted,.form-text,.stat-label,.kpi-label,.profileCardSub,
+.balCur,.orderMeta,.orderReceiptMuted,.vHint,.vLabel,.footer,.empty,.pagerHint{
+  color:var(--rb-muted) !important;
+}
+a{ color:inherit; }
+a:hover{ color:var(--rb-red3) !important; }
+
+/* Inputs */
+.input, .select, select, textarea, input, .form-control, input[type="tel"],
+.input-group, .field input{
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  color:var(--rb-text) !important;
+  box-shadow:0 10px 24px rgba(0,0,0,.20) !important;
+}
+input::placeholder, textarea::placeholder{ color:rgba(248,250,252,.52) !important; }
+.input:focus, .select:focus, select:focus, textarea:focus, input:focus, .form-control:focus,
+.input:focus-within{
+  border-color:rgba(239,29,47,.70) !important;
+  box-shadow:0 0 0 4px rgba(239,29,47,.16), 0 12px 28px rgba(0,0,0,.24) !important;
+  outline:none !important;
+}
+
+/* Buttons and chips */
+.btn, .iconBtn, .iconbtn, .avatarBtn, .balChip, .balPlus, .tab, .nav-btn, .navBtn,
+.catBtnPc, .qtyBtn, .sBtn, .pBtn, .iconPill, .icon-btn, .btn-light, .btn-secondary,
+button:not(.cta):not(.btn-danger):not(.btn-warning):not(.btn-success){
+  background:linear-gradient(180deg, rgba(31,31,36,.96), rgba(14,14,18,.96)) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  color:var(--rb-text) !important;
+  box-shadow:0 8px 22px rgba(0,0,0,.28) !important;
+}
+.btn:hover, .iconBtn:hover, .iconbtn:hover, .avatarBtn:hover, .balChip:hover,
+.catBtnPc:hover, .tab:hover, .nav-btn:hover, .navBtn:hover{
+  border-color:rgba(239,29,47,.50) !important;
+  color:#fff !important;
+  box-shadow:0 12px 28px rgba(239,29,47,.14), 0 10px 24px rgba(0,0,0,.36) !important;
+}
+.cta, .primary, .btn-primary, .btn-success, .loadMoreBtn, .spBotBtn,
+button[type="submit"], .checkoutBtn, .buyBtn, .cartBtn, .payBtn{
+  background:linear-gradient(135deg, var(--rb-red), var(--rb-red2)) !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  color:#fff !important;
+  box-shadow:var(--rb-red-glow) !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.28);
+}
+.cta:hover, .primary:hover, .btn-primary:hover, .btn-success:hover, .loadMoreBtn:hover,
+.spBotBtn:hover, button[type="submit"]:hover{
+  background:linear-gradient(135deg, #ff3144, #c7001b) !important;
+  transform:translateY(-1px);
+}
+.btn-danger, .danger, .removeBtn{
+  background:linear-gradient(135deg,#ef1d2f,#8f0010) !important;
+  color:#fff !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+.btn-warning{
+  background:linear-gradient(135deg,#f97316,#b91c1c) !important;
+  color:#fff !important;
+}
+
+/* Active tabs / badges */
+.tab.active, .nav-link.active, .nav-item.active, .badge, .chipCount, .pill, .tag,
+.status-badge, .variant-badge, .pbadge, .prepayPill, .authBadge, .order-chip, .range-pill{
+  background:rgba(239,29,47,.16) !important;
+  border-color:rgba(239,29,47,.42) !important;
+  color:#ff6b78 !important;
+}
+.chipCount{
+  background:var(--rb-red) !important;
+  color:#fff !important;
+}
+
+/* Product area */
+.pmedia, .product-img, .product-image, .cartImg{
+  background:#111115 !important;
+}
+.price, .price-current, .product-price, .order-total, .total, .orderTotal{
+  color:#ff3347 !important;
+  font-weight:900 !important;
+  text-shadow:0 8px 22px rgba(239,29,47,.24) !important;
+}
+.price-old, .old-price, .price-was{
+  color:#7f8796 !important;
+  text-decoration-color:var(--rb-red) !important;
+}
+
+/* Promo/search blocks */
+.searchPromo{
+  background:
+    radial-gradient(500px 240px at 0% 0%, rgba(239,29,47,.24), transparent 55%),
+    linear-gradient(135deg, rgba(25,25,29,.96), rgba(9,9,11,.96)) !important;
+  border:1px solid rgba(239,29,47,.22) !important;
+  box-shadow:var(--rb-shadow) !important;
+}
+.spKicker, .spTitle, .searchTitle i, .productsTitle i, .balChip i, .ico, .fa-wallet,
+.fa-bag-shopping, .fa-magnifying-glass{
+  color:var(--rb-red3) !important;
+}
+
+/* Modals, overlays, drawers */
+.modalOverlay, .vOverlay, .imgZoomBackdrop{
+  background:rgba(0,0,0,.72) !important;
+  backdrop-filter:blur(12px) !important;
+}
+.modalTop, .vTop, .modal-header, .card-header{
+  background:linear-gradient(180deg, rgba(29,29,34,.98), rgba(14,14,18,.96)) !important;
+  border-bottom:1px solid rgba(239,29,47,.20) !important;
+}
+.modalBottom, .modal-footer{
+  background:rgba(12,12,15,.96) !important;
+  border-top:1px solid rgba(239,29,47,.16) !important;
+}
+
+/* Tables */
+table, th, td{
+  color:var(--rb-text) !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+thead, th{
+  background:rgba(239,29,47,.12) !important;
+}
+tr:hover, tbody tr:hover{
+  background:rgba(239,29,47,.07) !important;
+}
+
+/* Footer/mobile bars */
+.bottomNav, .mobileNav, .panelBottom{
+  background:rgba(7,7,8,.94) !important;
+  border-top:1px solid rgba(239,29,47,.22) !important;
+  box-shadow:0 -12px 34px rgba(0,0,0,.36) !important;
+}
+
+/* Login page keeps the requested Orzu black + Mall red wordmark readable */
+body.login-page .card{
+  background:rgba(255,255,255,.96) !important;
+  color:#111827 !important;
+  border:1px solid rgba(15,23,42,.10) !important;
+  box-shadow:0 24px 70px rgba(0,0,0,.34) !important;
+}
+body.login-page .card h1,
+body.login-page .card label,
+body.login-page .card .tab:not(.active){
+  color:#111827 !important;
+}
+body.login-page .brand-title .orzu{ color:#111827 !important; }
+body.login-page .brand-title .mall{ color:#ef1d2f !important; }
+body.login-page .card p,
+body.login-page .card .hint,
+body.login-page .card .footer{ color:#64748b !important; }
+body.login-page .card .input,
+body.login-page .card input,
+body.login-page .card .iconbtn,
+body.login-page .card .tab:not(.active){
+  background:#fff !important;
+  border-color:rgba(15,23,42,.12) !important;
+  color:#111827 !important;
+  box-shadow:0 10px 22px rgba(15,23,42,.06) !important;
+}
+body.login-page .card input::placeholder{ color:#64748b !important; }
+body.login-page .card .tab.active{
+  background:rgba(239,29,47,.12) !important;
+  border-color:rgba(239,29,47,.32) !important;
+  color:#ef1d2f !important;
+}
+
+/* Scrollbar */
+*{ scrollbar-color: var(--rb-red2) #111115; }
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:#111115; }
+::-webkit-scrollbar-thumb{ background:linear-gradient(180deg,var(--rb-red),var(--rb-red2)); border-radius:999px; }
+
+/* Small touch polish */
+::selection{ background:rgba(239,29,47,.35); color:#fff; }

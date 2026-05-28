@@ -140,3 +140,7 @@
 .shipBadge.cargo{
   opacity: 0.98;
 }
+
+
+/* OrzuMall Red/Black Theme marker */
+:root{--primary:#ef1d2f!important;--primary2:#b40016!important;--gold:#ef1d2f!important;--gold2:#b40016!important;}
