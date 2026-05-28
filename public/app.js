@@ -1440,6 +1440,12 @@ const openQuickView = ()=>{
       openQuickView();
     });
 
+    // Card click -> open the product quick view, except when tapping controls/buttons
+    card.addEventListener("click", (e)=>{
+      if(e.target.closest('button, a, input, select, textarea, .iconPill, .favBtn, .cartOnly')) return;
+      openQuickView();
+    });
+
     card.querySelector('[data-act="cart"]').addEventListener("click", ()=>{
       handleAddToCart(p, { openCartAfter: false });
     });

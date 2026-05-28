@@ -85,7 +85,7 @@
           <button class="iconBtn searchToggleBtn" id="searchToggleBtn" type="button" title="Qidirish" aria-label="Qidirish">
             <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
           </button>
-          <input class="input" id="q" placeholder="Mahsulot qidiring..." />
+          <input class="input" id="q" placeholder="Mahsulot va toifalarni qidiring" />
         </div>
       </div>
     </section>
@@ -478,7 +478,7 @@
   <script type="module" src="./firebase-config.js"></script>
   <script type="module" src="./cardpay-config.js"></script>
   <script src="./telegram-config.js"></script>
-<script type="module" src="./app.js?v=20260528_ui_fix"></script>
+<script type="module" src="./app.js?v=20260528_uzum_like_mobile"></script>
 
   
 
@@ -510,6 +510,28 @@
             <i class="fa-solid fa-message" aria-hidden="true"></i>
             <span>Sharhlar</span>
           </button>
+        </div>
+
+        <div class="qvInfoCard" id="qvInfoCard">
+          <div class="qvInfoTop">
+            <div class="qvTopMeta">
+              <span class="qvBadge" id="qvBadge"></span>
+              <span class="qvRating" id="qvRating"></span>
+            </div>
+            <h3 class="qvName" id="imgViewerName">Mahsulot</h3>
+            <div class="qvPriceRow">
+              <div class="qvPrice" id="qvPrice"></div>
+              <div class="qvOldPrice" id="qvOldPrice"></div>
+            </div>
+            <div class="qvTags" id="qvTags"></div>
+            <p class="qvDesc" id="imgViewerDesc"></p>
+          </div>
+          <div class="qvInfoBottom">
+            <button class="qvMainCta" id="viewerCart" type="button">
+              <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+              <span>Savatga qo‘shish</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -599,8 +621,8 @@
 
   <!-- Mobile App Bottom Bar -->
   <nav class="mobile-bottom-bar" aria-label="Mobile navigation">
-    <button class="nav-btn active" data-tab="home" type="button">
-      <span class="ico" aria-hidden="true"><i class="fa-solid fa-house" aria-hidden="true"></i></span>
+    <button class="nav-btn nav-home active" data-tab="home" type="button">
+      <span class="ico home-logo-wrap" aria-hidden="true"><img class="navHomeLogo" src="./logo.webp" alt=""></span>
       <small>Bosh sahifa</small>
     </button>
     <button class="nav-btn" data-tab="categories" type="button">
