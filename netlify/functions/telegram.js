@@ -70,6 +70,7 @@ function buildOrderInlineKeyboard(o, opts={}){
   const includeAdminActions = opts.includeAdminActions === true;
   const orderId = String(opts.orderId || o.orderId || o.id || "").trim();
   const isDelivered = String(o.status || "").toLowerCase() === "delivered" || String(o.status || "").toLowerCase() === "completed";
+  const legacyNoCopy = opts.legacyNoCopy === true;
 
   const keyboard = [];
 
@@ -81,7 +82,11 @@ function buildOrderInlineKeyboard(o, opts={}){
   }
 
   if(c){
-    keyboard.push([{ text: "📋 Koordinatani copy qilish", copy_text: { text: c.text } }]);
+    // copy_text is very convenient, but older Telegram gateways may reject it on editMessageReplyMarkup.
+    // In fallback mode we remove this row so the status button can still update reliably.
+    if(!legacyNoCopy){
+      keyboard.push([{ text: "📋 Koordinatani copy qilish", copy_text: { text: c.text } }]);
+    }
     if(c.mapUrl){
       keyboard.push([{ text: "🗺 Xaritada ochish", url: c.mapUrl }]);
     }
@@ -105,10 +110,16 @@ async function tgApi(botToken, method, payload){
   return data;
 }
 
-function getCallbackOrderId(data){
+function getCallbackAction(data){
   const s = String(data || "");
-  const m = s.match(/^om_delivered:(.+)$/);
-  return m ? m[1] : "";
+  let m = s.match(/^om_delivered:(.+)$/);
+  if(m) return { action:"deliver", orderId:m[1] };
+  m = s.match(/^om_done:(.+)$/);
+  if(m) return { action:"done", orderId:m[1] };
+  return { action:"", orderId:"" };
+}
+function getCallbackOrderId(data){
+  return getCallbackAction(data).orderId || "";
 }
 
 async function handleTelegramCallback(event, body){
@@ -120,7 +131,8 @@ async function handleTelegramCallback(event, body){
 
   const q = body.callback_query || {};
   const data = String(q.data || "");
-  const orderId = getCallbackOrderId(data);
+  const cb = getCallbackAction(data);
+  const orderId = cb.orderId || "";
   const callbackId = String(q.id || "");
   const message = q.message || {};
   const chatId = message.chat && message.chat.id != null ? String(message.chat.id) : "";
@@ -134,9 +146,16 @@ async function handleTelegramCallback(event, body){
 
   if(!orderId){
     if(callbackId){
-      try{ await tgApi(botToken, "answerCallbackQuery", { callback_query_id: callbackId, text: "Bu buyurtma allaqachon yakunlangan.", show_alert: false }); }catch(_e){}
+      try{ await tgApi(botToken, "answerCallbackQuery", { callback_query_id: callbackId, text: "Bu tugma hozir faol emas.", show_alert: false }); }catch(_e){}
     }
     return json(200, { ok:true, ignored:true });
+  }
+
+  if(cb.action === "done"){
+    if(callbackId){
+      try{ await tgApi(botToken, "answerCallbackQuery", { callback_query_id: callbackId, text: "🟢 Bu buyurtma allaqachon YETKAZILDI", show_alert: false }); }catch(_e){}
+    }
+    return json(200, { ok:true, done:true, orderId });
   }
 
   initFirebase();
@@ -179,7 +198,17 @@ async function handleTelegramCallback(event, body){
         message_id: message.message_id,
         reply_markup: replyMarkup
       });
-    }catch(_e){}
+    }catch(_e){
+      // If Telegram rejects copy_text while editing, retry with a legacy keyboard.
+      try{
+        const legacyMarkup = buildOrderInlineKeyboard(updated, { includeAdminActions:true, orderId, legacyNoCopy:true });
+        await tgApi(botToken, "editMessageReplyMarkup", {
+          chat_id: adminChatId,
+          message_id: message.message_id,
+          reply_markup: legacyMarkup
+        });
+      }catch(_e2){}
+    }
   }
 
   return json(200, { ok:true, orderId, status:"delivered" });
@@ -254,7 +283,7 @@ async function sendTelegram(botToken, chatId, html, replyMarkup=null){
     const err = data && data.description ? data.description : `telegram_http_${res.status}`;
     throw new Error(err);
   }
-  return true;
+  return data.result || true;
 }
 
 exports.handler = async (event) => {
