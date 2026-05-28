@@ -53,6 +53,30 @@ function fmtUZS(n){
   try { return x.toLocaleString("ru-RU"); } catch { return String(Math.round(x)); }
 }
 
+function getOrderCoords(o){
+  const sh = o && o.shipping ? o.shipping : {};
+  const latRaw = sh.lat ?? sh.latitude ?? o.lat ?? o.latitude;
+  const lngRaw = sh.lng ?? sh.lon ?? sh.longitude ?? o.lng ?? o.lon ?? o.longitude;
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const text = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  const mapUrl = sh.mapUrl || `https://maps.google.com/?q=${lat},${lng}`;
+  return { lat, lng, text, mapUrl };
+}
+
+function buildOrderInlineKeyboard(o){
+  const c = getOrderCoords(o);
+  if(!c) return null;
+  const keyboard = [
+    [{ text: "📋 Koordinatani copy qilish", copy_text: { text: c.text } }]
+  ];
+  if(c.mapUrl){
+    keyboard.push([{ text: "🗺 Xaritada ochish", url: c.mapUrl }]);
+  }
+  return { inline_keyboard: keyboard };
+}
+
 function buildOrderCreatedHTML(o){
   const items = Array.isArray(o.items) ? o.items : [];
   const itemLines = items.slice(0, 8).map((it)=>{
@@ -65,6 +89,7 @@ function buildOrderCreatedHTML(o){
   });
   const more = items.length > 8 ? `<i>... yana ${items.length-8} ta</i>` : "";
   const addr = o.shipping && o.shipping.addressText ? tgEscape(o.shipping.addressText) : "";
+  const coords = getOrderCoords(o);
   const pay = tgEscape(o.provider || "");
   const sum = fmtUZS(o.totalUZS||0);
 
@@ -81,6 +106,7 @@ function buildOrderCreatedHTML(o){
     pay ? `To'lov: <b>${pay}</b>` : "",
     `Summa: <b>${sum} so'm</b>`,
     addr ? `Manzil: <i>${addr}</i>` : "",
+    coords ? `Koordinata: <code>${tgEscape(coords.text)}</code>` : "",
     "",
     `<b>📦 Mahsulotlar:</b>`,
     ...itemLines,
@@ -88,19 +114,34 @@ function buildOrderCreatedHTML(o){
   ].filter(Boolean).join("\n");
 }
 
-async function sendTelegram(botToken, chatId, html){
+async function sendTelegram(botToken, chatId, html, replyMarkup=null){
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-  const res = await fetch(url, {
+  const payload = {
+    chat_id: chatId,
+    text: html,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+  };
+  if(replyMarkup) payload.reply_markup = replyMarkup;
+
+  let res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: html,
-      parse_mode: "HTML",
-      disable_web_page_preview: true,
-    }),
+    body: JSON.stringify(payload),
   });
-  const data = await res.json().catch(()=>null);
+  let data = await res.json().catch(()=>null);
+
+  // Fallback for older Telegram Bot API gateways that may not support copy_text yet.
+  if((!res.ok || !data || data.ok !== true) && replyMarkup){
+    delete payload.reply_markup;
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    data = await res.json().catch(()=>null);
+  }
+
   if(!res.ok || !data || data.ok !== true){
     const err = data && data.description ? data.description : `telegram_http_${res.status}`;
     throw new Error(err);
@@ -157,15 +198,17 @@ exports.handler = async (event) => {
     }
 
     // Build html server-side (ignore any client-provided html)
-    const html = buildOrderCreatedHTML({ ...o, orderId });
+    const orderForMessage = { ...o, orderId };
+    const html = buildOrderCreatedHTML(orderForMessage);
+    const replyMarkup = buildOrderInlineKeyboard(orderForMessage);
 
     // Send admin notification
-    await sendTelegram(botToken, adminChatId.trim(), html);
+    await sendTelegram(botToken, adminChatId.trim(), html, replyMarkup);
 
     // Optional: send user notification if their chat id exists in profile/order
     const userChatId = String(o.userTgChatId || o.telegramChatId || o.tgChatId || "").trim();
     if(userChatId.length >= 3){
-      try{ await sendTelegram(botToken, userChatId, html); }catch(_e){}
+      try{ await sendTelegram(botToken, userChatId, html, replyMarkup); }catch(_e){}
     }
 
     return json(200, { ok:true });
