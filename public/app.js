@@ -3133,10 +3133,186 @@ function getCheckoutDeliveryInfo(){
       lng: omDeliveryLocation?.lng ?? null,
       accuracy: omDeliveryLocation?.accuracy ?? null,
       mapUrl: mapUrl,
+      savedAddressId: omDeliveryLocation?.savedAddressId || "",
+      savedAddressTitle: omDeliveryLocation?.savedAddressTitle || "",
       location: omDeliveryLocation ? { ...omDeliveryLocation } : null
     }
   };
 }
+
+
+
+const OM_SAVED_ADDR_KEY = "orzumall_saved_delivery_addresses_v1";
+
+function omReadSavedAddresses(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(OM_SAVED_ADDR_KEY) || "[]");
+    return Array.isArray(arr) ? arr.filter(Boolean) : [];
+  }catch(_){ return []; }
+}
+
+function omWriteSavedAddresses(arr){
+  try{ localStorage.setItem(OM_SAVED_ADDR_KEY, JSON.stringify(Array.isArray(arr) ? arr : [])); }catch(_){}
+}
+
+function omAddressTitle(a, i=0){
+  return (a?.title || a?.name || `Manzil ${i+1}`).toString().trim();
+}
+
+function omAddressLine(a){
+  const parts = [];
+  if(a?.address) parts.push(String(a.address).trim());
+  if(a?.lat && a?.lng) parts.push(`${Number(a.lat).toFixed(6)}, ${Number(a.lng).toFixed(6)}`);
+  return parts.filter(Boolean).join(" • ");
+}
+
+function omGetGeoPosition(){
+  return new Promise((resolve, reject)=>{
+    if(!navigator.geolocation) return reject(new Error("geo_not_supported"));
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 60000
+    });
+  });
+}
+
+function renderSavedAddressesUI(){
+  const arr = omReadSavedAddresses();
+
+  const list = document.getElementById("savedAddressList");
+  const status = document.getElementById("savedAddressStatus");
+  if(list){
+    list.innerHTML = "";
+    if(!arr.length){
+      list.innerHTML = `<div class="savedAddressEmpty">Hali manzil saqlanmagan.</div>`;
+    }else{
+      arr.forEach((a, i)=>{
+        const row = document.createElement("div");
+        row.className = "savedAddressItem";
+        row.innerHTML = `
+          <div class="savedAddressItemIcon"><i class="fa-solid fa-location-dot" aria-hidden="true"></i></div>
+          <div class="savedAddressItemText">
+            <b>${escapeHtml(omAddressTitle(a, i))}</b>
+            <span>${escapeHtml(omAddressLine(a) || "Manzil ma’lumoti yo‘q")}</span>
+          </div>
+          <button type="button" class="savedAddressDelete" data-del="${escapeHtml(String(a.id || ""))}" title="O‘chirish" aria-label="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+        `;
+        list.appendChild(row);
+      });
+    }
+  }
+  if(status){
+    status.textContent = arr.length ? `${arr.length} ta manzil saqlandi.` : "Saqlangan manzillar buyurtma berishda ko‘rinadi.";
+  }
+
+  const wrap = document.getElementById("savedAddressCheckoutWrap");
+  const sel = document.getElementById("savedDeliveryAddressSelect");
+  if(wrap && sel){
+    wrap.hidden = arr.length === 0;
+    const current = sel.value || "";
+    sel.innerHTML = `<option value="">Saqlangan manzilni tanlang</option>` + arr.map((a,i)=>{
+      const id = String(a.id || "");
+      const txt = `${omAddressTitle(a,i)} — ${omAddressLine(a) || ""}`.trim();
+      return `<option value="${escapeHtml(id)}">${escapeHtml(txt)}</option>`;
+    }).join("");
+    if(current && arr.some(a=>String(a.id)===current)) sel.value = current;
+  }
+}
+
+function applySavedAddressToCheckout(id){
+  const arr = omReadSavedAddresses();
+  const a = arr.find(x=>String(x.id)===String(id));
+  if(!a) return;
+
+  const deliveryRadio = document.querySelector('input[name="deliveryMethod"][value="delivery"]');
+  if(deliveryRadio) deliveryRadio.checked = true;
+  updateDeliveryMethodUI();
+
+  const addrInput = document.getElementById("deliveryAddressInput");
+  const noteInput = document.getElementById("deliveryNoteInput");
+  if(addrInput) addrInput.value = a.address || omAddressTitle(a);
+  if(noteInput && !noteInput.value) noteInput.value = a.note || "";
+
+  if(a.lat && a.lng){
+    omDeliveryLocation = {
+      lat: Number(a.lat),
+      lng: Number(a.lng),
+      accuracy: Number(a.accuracy || 0),
+      mapUrl: a.mapUrl || `https://maps.google.com/?q=${Number(a.lat)},${Number(a.lng)}`,
+      savedAddressId: a.id,
+      savedAddressTitle: omAddressTitle(a)
+    };
+    setDeliveryLocationStatus(`Saqlangan manzil tanlandi: ${omAddressTitle(a)} • ${Number(a.lat).toFixed(6)}, ${Number(a.lng).toFixed(6)}`, true);
+  }else{
+    setDeliveryLocationStatus(`Saqlangan manzil tanlandi: ${omAddressTitle(a)}`, true);
+  }
+}
+
+async function saveCurrentAddressFromProfile(){
+  const btn = document.getElementById("savedAddressDetectSave");
+  const titleInput = document.getElementById("savedAddressName");
+  const addressInput = document.getElementById("savedAddressText");
+  const status = document.getElementById("savedAddressStatus");
+  const old = btn ? btn.innerHTML : "";
+  if(btn){
+    btn.disabled = true;
+    btn.innerHTML = `<span class="omBtnSpinner" aria-hidden="true"></span> Aniqlanmoqda...`;
+  }
+  if(status) status.textContent = "Joylashuv olinmoqda, ruxsat bering...";
+  try{
+    const pos = await omGetGeoPosition();
+    const lat = Number(pos.coords.latitude);
+    const lng = Number(pos.coords.longitude);
+    const accuracy = Math.round(Number(pos.coords.accuracy || 0));
+    const title = (titleInput?.value || "").trim() || "Uyim";
+    const address = (addressInput?.value || "").trim();
+    const item = {
+      id: "addr_" + Date.now(),
+      title,
+      address,
+      lat,
+      lng,
+      accuracy,
+      mapUrl: `https://maps.google.com/?q=${lat},${lng}`,
+      createdAt: new Date().toISOString()
+    };
+    const arr = omReadSavedAddresses();
+    arr.unshift(item);
+    omWriteSavedAddresses(arr.slice(0, 10));
+    if(titleInput) titleInput.value = "";
+    if(addressInput) addressInput.value = "";
+    if(status) status.textContent = `${title} saqlandi. Endi buyurtmada tanlashingiz mumkin.`;
+    renderSavedAddressesUI();
+    toast("Manzil saqlandi.");
+  }catch(e){
+    if(status) status.textContent = "Joylashuv olinmadi. Ruxsat bering yoki GPSni yoqing.";
+    toast("Joylashuv olinmadi.");
+  }finally{
+    if(btn){
+      btn.disabled = false;
+      btn.innerHTML = old;
+    }
+  }
+}
+
+function initSavedAddressUI(){
+  document.getElementById("savedAddressDetectSave")?.addEventListener("click", saveCurrentAddressFromProfile);
+  document.getElementById("savedAddressList")?.addEventListener("click", (e)=>{
+    const btn = e.target.closest("[data-del]");
+    if(!btn) return;
+    const id = btn.getAttribute("data-del");
+    const arr = omReadSavedAddresses().filter(a=>String(a.id)!==String(id));
+    omWriteSavedAddresses(arr);
+    renderSavedAddressesUI();
+    toast("Manzil o‘chirildi.");
+  });
+  document.getElementById("savedDeliveryAddressSelect")?.addEventListener("change", (e)=>{
+    if(e.target.value) applySavedAddressToCheckout(e.target.value);
+  });
+  renderSavedAddressesUI();
+}
+
 
 function initCheckoutDeliveryUI(){
   document.querySelectorAll('input[name="deliveryMethod"]').forEach(inp=>{
@@ -3144,8 +3320,10 @@ function initCheckoutDeliveryUI(){
   });
   document.getElementById('deliveryLocateBtn')?.addEventListener('click', detectDeliveryLocation);
   updateDeliveryMethodUI();
+  try{ renderSavedAddressesUI(); }catch(_){}
 }
 initCheckoutDeliveryUI();
+initSavedAddressUI();
 
 
 function applyPayTypeRules(){

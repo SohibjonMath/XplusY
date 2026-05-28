@@ -275,9 +275,18 @@
             </div>
 
             <div class="deliveryAddressBox" id="deliveryAddressBox" hidden>
+              <div class="savedAddressCheckout" id="savedAddressCheckoutWrap" hidden>
+                <div class="savedAddressCheckoutTop">
+                  <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                  <span>Saqlangan manzillar</span>
+                </div>
+                <select id="savedDeliveryAddressSelect">
+                  <option value="">Saqlangan manzilni tanlang</option>
+                </select>
+              </div>
               <button class="locateBtn" id="deliveryLocateBtn" type="button">
                 <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
-                <span>Manzil qo‘shish / Joylashuvni aniqlash</span>
+                <span>Avto aniqlash</span>
               </button>
               <div class="deliveryLocationStatus" id="deliveryLocationStatus">Joylashuv hali olinmagan.</div>
               <label class="deliveryField">
@@ -356,6 +365,26 @@
         <div class="modalBottom profileBottomBar">
       <button class="btn" id="profileSave" type="button" hidden>Saqlash</button>
           </div>
+
+        <div class="profileCard savedAddressCard" id="savedAddressCard">
+          <div class="savedAddressHead">
+            <div>
+              <div class="profileCardTitle">Yetkazib berish manzillari</div>
+              <div class="profileCardSub">Uy, ish yoki boshqa lokatsiyalarni saqlab qo‘ying.</div>
+            </div>
+            <div class="savedAddressIcon"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i></div>
+          </div>
+          <div class="savedAddressForm">
+            <input id="savedAddressName" type="text" placeholder="Masalan: Uyim / Ishim" />
+            <input id="savedAddressText" type="text" placeholder="Manzil izohi: mahalla, ko‘cha, uy..." />
+            <button class="btn primary" id="savedAddressDetectSave" type="button">
+              <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
+              <span>Avto aniqlab saqlash</span>
+            </button>
+          </div>
+          <div class="savedAddressStatus" id="savedAddressStatus">Saqlangan manzillar buyurtma berishda ko‘rinadi.</div>
+          <div class="savedAddressList" id="savedAddressList"></div>
+        </div>
 
         <!-- Wallet / Balance (manual top-up) -->
         <div class="profileCard walletPremium" id="walletCard">
