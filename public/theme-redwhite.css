@@ -4013,3 +4013,176 @@ button,
     font-size:10px !important;
   }
 }
+
+
+/* ===== 2026-05-28 nav active icon + premium auth inputs ===== */
+
+/* 1) Bottom nav: active menu icon must be red too */
+.mobile-bottom-bar .nav-btn.active,
+.mobile-bottom-bar .nav-btn.active small,
+.mobile-bottom-bar .nav-btn.active span,
+.mobile-bottom-bar .nav-btn.active .ico,
+.mobile-bottom-bar .nav-btn.active i,
+.mobile-bottom-bar .nav-btn.active svg,
+.mobile-bottom-bar .nav-btn.active svg *,
+.mobile-bottom-bar .nav-btn.active .fa,
+.mobile-bottom-bar .nav-btn.active .fa-solid,
+.mobile-bottom-bar .nav-btn.active .fa-regular{
+  color:#dc2626 !important;
+  fill:#dc2626 !important;
+  stroke:#dc2626 !important;
+}
+.mobile-bottom-bar .nav-btn.active .ico:not(.home-logo-wrap){
+  background:rgba(220,38,38,.08) !important;
+  border-radius:14px !important;
+}
+.mobile-bottom-bar .nav-btn.active .home-logo-wrap{
+  border-color:rgba(220,38,38,.28) !important;
+  box-shadow:0 10px 22px rgba(220,38,38,.16) !important;
+}
+
+/* 2) Login / Signup page premium input redesign */
+body .auth,
+body .card{
+  border:1px solid rgba(17,24,39,.08) !important;
+  box-shadow:0 24px 70px rgba(17,24,39,.10) !important;
+}
+body .tabs{
+  gap:10px !important;
+}
+body .tab{
+  min-height:44px !important;
+  border-radius:16px !important;
+  border:1px solid rgba(17,24,39,.08) !important;
+  background:#ffffff !important;
+  color:#111827 !important;
+  box-shadow:0 8px 18px rgba(17,24,39,.04) !important;
+}
+body .tab.active{
+  background:linear-gradient(135deg,#111827,#dc2626) !important;
+  color:#ffffff !important;
+  border-color:transparent !important;
+  box-shadow:0 14px 28px rgba(220,38,38,.16) !important;
+}
+body .field{
+  gap:7px !important;
+  margin:11px 0 !important;
+}
+body .field label{
+  font-size:12px !important;
+  font-weight:850 !important;
+  color:#4b5563 !important;
+  padding-left:2px !important;
+}
+body .input{
+  min-height:50px !important;
+  border-radius:18px !important;
+  padding:0 14px !important;
+  gap:12px !important;
+  background:linear-gradient(180deg,#ffffff,#f8fafc) !important;
+  border:1px solid rgba(17,24,39,.10) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    0 10px 24px rgba(17,24,39,.06) !important;
+  transition:border-color .16s ease, box-shadow .16s ease, transform .16s ease !important;
+}
+body .input i{
+  width:22px !important;
+  height:22px !important;
+  display:grid !important;
+  place-items:center !important;
+  color:#dc2626 !important;
+  font-size:15px !important;
+  opacity:.95 !important;
+}
+body .input input,
+body .input select{
+  border:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  color:#111827 !important;
+  font-size:14px !important;
+  font-weight:650 !important;
+  box-shadow:none !important;
+}
+body .input input::placeholder{
+  color:#9ca3af !important;
+  font-weight:550 !important;
+}
+body .input:focus-within{
+  border-color:rgba(220,38,38,.45) !important;
+  box-shadow:
+    0 0 0 4px rgba(220,38,38,.10),
+    0 14px 30px rgba(17,24,39,.08) !important;
+  transform:translateY(-1px) !important;
+}
+body .input:focus-within i{
+  color:#b91c1c !important;
+}
+body .row .input{
+  flex:1 1 auto !important;
+}
+body .iconbtn{
+  height:50px !important;
+  width:50px !important;
+  min-width:50px !important;
+  border-radius:18px !important;
+  border:1px solid rgba(17,24,39,.10) !important;
+  background:#ffffff !important;
+  color:#111827 !important;
+  box-shadow:0 10px 24px rgba(17,24,39,.06) !important;
+}
+body .iconbtn:hover,
+body .iconbtn:focus{
+  color:#dc2626 !important;
+  border-color:rgba(220,38,38,.25) !important;
+  box-shadow:0 0 0 4px rgba(220,38,38,.10),0 12px 26px rgba(17,24,39,.08) !important;
+}
+body .cta{
+  min-height:50px !important;
+  border-radius:18px !important;
+  background:linear-gradient(135deg,#111827,#dc2626) !important;
+  color:#fff !important;
+  font-size:14px !important;
+  font-weight:950 !important;
+  box-shadow:0 16px 30px rgba(220,38,38,.18) !important;
+}
+body .cta i{color:#fff !important;}
+body .notice{
+  border-radius:16px !important;
+  font-size:12px !important;
+}
+body select{
+  appearance:none;
+  -webkit-appearance:none;
+}
+
+/* Auth mobile compaction */
+@media (max-width:520px){
+  body .field{
+    margin:9px 0 !important;
+  }
+  body .input{
+    min-height:46px !important;
+    border-radius:16px !important;
+    padding:0 12px !important;
+  }
+  body .iconbtn{
+    height:46px !important;
+    width:46px !important;
+    min-width:46px !important;
+    border-radius:16px !important;
+  }
+  body .input input,
+  body .input select{
+    font-size:13px !important;
+  }
+  body .field label{
+    font-size:11px !important;
+  }
+  body .cta{
+    min-height:46px !important;
+    border-radius:16px !important;
+    font-size:13px !important;
+  }
+}
