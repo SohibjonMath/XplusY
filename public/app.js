@@ -827,6 +827,9 @@ function loadLS(key, fallback){
 }
 function saveLS(key, value){
   localStorage.setItem(key, JSON.stringify(value));
+  try{
+    if(key === LS.favs || key === LS.cart) scheduleUserShopSync();
+  }catch(_){}
 }
 
 let viewMode = "all"; // all | fav
@@ -881,6 +884,146 @@ cart = (cart||[]).map(x=>{
   const key = `${id}::::`;
   return {key, id, color:null, size:null, qty, image:null};
 }); // [{id, qty}]
+
+
+/* ===== Cross-device user shop state sync: favorites, cart, saved addresses ===== */
+let omUserShopReady = false;
+let omUserShopApplying = false;
+let omUserShopTimer = null;
+let omUserShopUnsub = null;
+let omUserShopLastJson = "";
+
+function omNormalizeFavs(arr){
+  return Array.from(new Set((Array.isArray(arr) ? arr : []).map(x=>String(x||"").trim()).filter(Boolean)));
+}
+function omNormalizeCart(arr){
+  const map = new Map();
+  (Array.isArray(arr) ? arr : []).forEach(x=>{
+    if(!x || !x.id) return;
+    const item = {...x};
+    item.key = item.key || variantKey(item.id, {color:item.color||null, size:item.size||null});
+    item.qty = Math.max(1, Number(item.qty||1));
+    const old = map.get(item.key);
+    if(old){
+      old.qty = Math.max(Number(old.qty||1), item.qty);
+      if(!old.image && item.image) old.image = item.image;
+    }else{
+      map.set(item.key, item);
+    }
+  });
+  return Array.from(map.values());
+}
+function omNormalizeAddresses(arr){
+  const map = new Map();
+  (Array.isArray(arr) ? arr : []).forEach((a,i)=>{
+    if(!a) return;
+    const id = String(a.id || `addr_${Date.now()}_${i}`);
+    map.set(id, {...a, id});
+  });
+  return Array.from(map.values()).slice(0, 20);
+}
+function omMergeCart(a,b){ return omNormalizeCart([...(a||[]), ...(b||[])]); }
+function omMergeFavs(a,b){ return omNormalizeFavs([...(a||[]), ...(b||[])]); }
+function omMergeAddresses(a,b){ return omNormalizeAddresses([...(a||[]), ...(b||[])]); }
+function omCurrentSavedAddresses(){
+  try{ return omNormalizeAddresses(JSON.parse(localStorage.getItem("orzumall_saved_delivery_addresses_v1") || "[]")); }
+  catch(_){ return []; }
+}
+function omSetSavedAddressesLocal(arr){
+  try{ localStorage.setItem("orzumall_saved_delivery_addresses_v1", JSON.stringify(omNormalizeAddresses(arr))); }catch(_){}
+}
+function omUserShopPayload(){
+  return {
+    favs: omNormalizeFavs(Array.from(favs||[])),
+    cart: omNormalizeCart(cart||[]),
+    savedAddresses: omCurrentSavedAddresses()
+  };
+}
+function omApplyUserShopState(data, opts={merge:false}){
+  if(!data) return;
+  omUserShopApplying = true;
+  try{
+    const serverFavs = data.favs || data.favoriteProducts || data.shop?.favs || [];
+    const serverCart = data.cart || data.shop?.cart || [];
+    const serverAddresses = data.savedAddresses || data.deliveryAddresses || data.shop?.savedAddresses || [];
+
+    const nextFavs = opts.merge ? omMergeFavs(Array.from(favs||[]), serverFavs) : omNormalizeFavs(serverFavs);
+    const nextCart = opts.merge ? omMergeCart(cart||[], serverCart) : omNormalizeCart(serverCart);
+    const nextAddresses = opts.merge ? omMergeAddresses(omCurrentSavedAddresses(), serverAddresses) : omNormalizeAddresses(serverAddresses);
+
+    favs = new Set(nextFavs);
+    cart = nextCart;
+    localStorage.setItem(LS.favs, JSON.stringify(nextFavs));
+    localStorage.setItem(LS.cart, JSON.stringify(nextCart));
+    omSetSavedAddressesLocal(nextAddresses);
+
+    cartSelected = new Set((cart||[]).map(x=>x.key));
+    lastCartKeys = new Set((cart||[]).map(x=>x.key));
+    cartSelectionInitialized = true;
+
+    updateBadges?.();
+    try{ renderSavedAddressesUI?.(); }catch(_){}
+    try{ renderFavPage?.(); }catch(_){}
+    try{ renderCartPage?.(); }catch(_){}
+    try{ if(typeof applyFilterSort === "function") applyFilterSort(); }catch(_){}
+  }finally{
+    omUserShopApplying = false;
+  }
+}
+async function loadUserShopState(user){
+  if(!user?.uid) return;
+  omUserShopReady = false;
+  try{
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    omApplyUserShopState(data, {merge:true});
+    const payload = omUserShopPayload();
+    omUserShopLastJson = JSON.stringify(payload);
+    await setDoc(ref, {...payload, shopUpdatedAt: serverTimestamp()}, {merge:true});
+    omUserShopReady = true;
+  }catch(e){
+    omUserShopReady = true;
+    console.warn("User shop sync load failed", e);
+  }
+}
+function subscribeUserShopState(user){
+  try{ if(omUserShopUnsub) omUserShopUnsub(); }catch(_){}
+  omUserShopUnsub = null;
+  if(!user?.uid) return;
+  const ref = doc(db, "users", user.uid);
+  omUserShopUnsub = onSnapshot(ref, (snap)=>{
+    if(!snap.exists() || omUserShopApplying) return;
+    const data = snap.data() || {};
+    const payload = {
+      favs: omNormalizeFavs(data.favs || data.favoriteProducts || data.shop?.favs || []),
+      cart: omNormalizeCart(data.cart || data.shop?.cart || []),
+      savedAddresses: omNormalizeAddresses(data.savedAddresses || data.deliveryAddresses || data.shop?.savedAddresses || [])
+    };
+    const json = JSON.stringify(payload);
+    if(!payload.favs.length && !payload.cart.length && !payload.savedAddresses.length) return;
+    if(json === omUserShopLastJson) return;
+    omUserShopLastJson = json;
+    omApplyUserShopState(payload, {merge:false});
+  }, (err)=> console.warn("User shop sync snapshot failed", err));
+}
+function scheduleUserShopSync(){
+  try{
+    if(omUserShopApplying || !omUserShopReady || !currentUser?.uid) return;
+    clearTimeout(omUserShopTimer);
+    omUserShopTimer = setTimeout(saveUserShopStateNow, 450);
+  }catch(_){}
+}
+async function saveUserShopStateNow(){
+  try{
+    if(omUserShopApplying || !omUserShopReady || !currentUser?.uid) return;
+    const payload = omUserShopPayload();
+    const json = JSON.stringify(payload);
+    if(json === omUserShopLastJson) return;
+    omUserShopLastJson = json;
+    await setDoc(doc(db, "users", currentUser.uid), {...payload, shopUpdatedAt: serverTimestamp()}, {merge:true});
+  }catch(e){ console.warn("User shop sync save failed", e); }
+}
 
 
 function showTgNotice(msg){
@@ -3153,6 +3296,7 @@ function omReadSavedAddresses(){
 
 function omWriteSavedAddresses(arr){
   try{ localStorage.setItem(OM_SAVED_ADDR_KEY, JSON.stringify(Array.isArray(arr) ? arr : [])); }catch(_){}
+  try{ scheduleUserShopSync(); }catch(_){}
 }
 
 function omAddressTitle(a, i=0){
@@ -4986,11 +5130,19 @@ document.addEventListener("keydown", (e)=>{
 let __appStarted = false;
 onAuthStateChanged(auth, async (user)=>{
   setUserUI(user);
-  if(!user) return; // setUserUI redirects to /login.html
-  if(__appStarted) return;
-  __appStarted = true;
+  if(!user){
+    try{ if(omUserShopUnsub) omUserShopUnsub(); }catch(_){}
+    omUserShopUnsub = null;
+    omUserShopReady = false;
+    return; // setUserUI redirects to /login.html
+  }
 
   if(window.__omProfile?.syncUser) await window.__omProfile.syncUser(user);
+  await loadUserShopState(user);
+  subscribeUserShopState(user);
+
+  if(__appStarted) { updateBadges(); return; }
+  __appStarted = true;
 
   await loadProducts();
   updateBadges();
