@@ -4236,3 +4236,31 @@ body select{
   }
   .favBtn i{font-size:19px !important;}
 }
+
+
+/* ===== 2026-05-28 heart button transparency + no card-click fix visuals ===== */
+.favBtn{
+  background:rgba(255,255,255,.55) !important;
+  border:1px solid rgba(255,255,255,.38) !important;
+  color:#111827 !important;
+  box-shadow:0 10px 20px rgba(17,24,39,.10) !important;
+  backdrop-filter:blur(10px) saturate(120%);
+}
+.favBtn i{
+  color:#111827 !important;
+  opacity:.92;
+}
+.favBtn:hover,
+.favBtn:focus-visible{
+  background:rgba(255,255,255,.72) !important;
+  border-color:rgba(255,255,255,.55) !important;
+}
+.favBtn.active{
+  background:linear-gradient(135deg,rgba(255,241,242,.98),rgba(255,228,230,.98)) !important;
+  border-color:#fda4af !important;
+  color:#dc2626 !important;
+}
+.favBtn.active i{
+  color:#dc2626 !important;
+  opacity:1 !important;
+}

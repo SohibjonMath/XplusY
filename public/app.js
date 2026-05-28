@@ -1399,7 +1399,9 @@ const authHTML = renderProductTypeBadge(p);
     updateCardPricing(card, p, sel);
 
     const favBtn = card.querySelector(".favBtn");
-    favBtn.addEventListener("click", ()=>{
+    favBtn.addEventListener("click", (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
       if(favs.has(p.id)) { favs.delete(p.id); } else { favs.add(p.id); logEvent('favorite', p.id); }
       saveLS(LS.favs, Array.from(favs));
       const on = favs.has(p.id);
