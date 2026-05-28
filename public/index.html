@@ -195,21 +195,40 @@
 </section>
 
 <section class="view" id="view-cart" hidden>
-  <div class="viewHeader">
-    <div class="viewTitle">Savat</div>
+  <div class="viewHeader cartPremiumHeader">
+    <div>
+      <div class="viewTitle">Savat</div>
+      <div class="viewSub">Tanlangan mahsulotlaringiz shu yerda jamlanadi.</div>
+    </div>
+    <div class="countPill cartCountPill" id="cartCountPillPage">0</div>
   </div>
-  <div class="viewBody">
-    <div class="cartTopRow">
+  <div class="viewBody cartPremiumBody">
+    <div class="cartTopRow cartSelectCard">
+      <div class="cartTopLeft">
+        <div class="cartTopIcon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></div>
+        <div>
+          <div class="cartTopTitle">Buyurtma uchun tanlash</div>
+          <div class="cartTopText">Kerakli mahsulotlarni belgilang yoki hammasini tanlang.</div>
+        </div>
+      </div>
       <label class="checkRow"><input type="checkbox" id="cartSelectAllPage" /> <span>Hammasini tanlash</span></label>
     </div>
     <div id="cartPageList"></div>
-    <div class="panelEmpty" id="cartPageEmpty" hidden>Hozircha bo‘sh.</div>
+    <div class="panelEmpty cartPremiumEmpty" id="cartPageEmpty" hidden>
+      <div class="cartEmptyIcon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></div>
+      <div class="cartEmptyTitle">Savatingiz hozircha bo‘sh</div>
+      <div class="cartEmptyText">Mahsulotlarni savatga qo‘shsangiz, buyurtma shu yerda shakllanadi.</div>
+    </div>
 
-    <div class="panelBottom" id="cartPageBottom">
-      <div class="totalRow">
-        <div class="muted">Jami</div>
+    <div class="panelBottom cartPremiumBottom" id="cartPageBottom">
+      <div class="cartSummaryTop">
+        <div>
+          <div class="muted cartSummaryLabel">Tanlangan mahsulotlar</div>
+          <div class="cartSelectedInfo" id="cartSelectedInfo">0 ta tanlangan</div>
+        </div>
         <div class="total" id="cartTotalPage">0 so‘m</div>
       </div>
+      <div class="cartSummaryNote" id="cartSummaryNote">Buyurtma berishda tanlangan mahsulotlar hisoblanadi.</div>
       <div class="panelActions">
         <button class="btn primary" id="orderBtnPage" type="button"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Buyurtma berish</button>
       </div>

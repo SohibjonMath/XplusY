@@ -2696,7 +2696,7 @@ function renderPanel(mode){
       : getCurrentImage(p, getSel(p));
 
     const item = document.createElement("div");
-    item.className = "cartItem";
+    item.className = "cartItem cartPremiumItem";
     item.innerHTML = `
       <img class="cartImg" src="${imgSrc||""}" alt="${p.name||"product"}" />
       <div class="cartMeta">
@@ -2875,14 +2875,19 @@ function renderCartPage(){
     const p = products.find(x=>x.id===ci.id);
     if(p) list.push({p, qty: ci.qty||1, ci});
   }
+  const countEl = document.getElementById("cartCountPillPage");
+  const selectedInfoEl = document.getElementById("cartSelectedInfo");
+  const summaryNoteEl = document.getElementById("cartSummaryNote");
+  if(countEl) countEl.textContent = String(list.length);
   els.cartPageEmpty.hidden = list.length !== 0;
 
   let total = 0;
+  let selectedCount = 0;
 
   for(const row of list){
     const {p, qty, ci} = row;
     const vp = getVariantPricing(p, {color: ci?.color||null, size: ci?.size||null});
-    if(cartSelected.has(ci.key)) total += (vp.price||0) * qty;
+    if(cartSelected.has(ci.key)) { total += (vp.price||0) * qty; selectedCount += qty; }
 
     const imgSrc = ci?.image || getCurrentImage(p, {color: ci?.color||null, size: ci?.size||null, imgIdx:0});
 
@@ -2948,6 +2953,8 @@ function renderCartPage(){
   }
 
   if(els.cartTotalPage) els.cartTotalPage.textContent = moneyUZS(total);
+  if(selectedInfoEl) selectedInfoEl.textContent = `${selectedCount} ta tanlangan`;
+  if(summaryNoteEl) summaryNoteEl.textContent = list.length ? `Savatchada ${list.length} ta mahsulot bor.` : "Savatcha bo‘sh.";
 
   // select all checkbox state
   if(els.cartSelectAllPage){
