@@ -161,7 +161,7 @@ img{ max-width:100%; display:block; }
 
 .brandCenter{ display:flex; justify-content:center; }
 .logoImg{
-  height: clamp(34px, 3.2vw, 54px);
+  height: clamp(46px, 4.4vw, 68px);
   width:auto;
   filter: drop-shadow(0 10px 18px rgba(0,0,0,.22));
 }
@@ -2023,8 +2023,8 @@ body.authPage2{
     border-bottom: none !important;
   }
   .logoImg{
-    height: 56px !important;
-    max-height: 56px !important;
+    height: 66px !important;
+    max-height: 66px !important;
     width: auto;
   }
   .topbar{ padding: 12px 14px; }
@@ -5024,7 +5024,7 @@ body{
   }
   .logoImg{
     display:block !important;
-    height: 42px !important;
+    height: 60px !important;
     width: auto !important;
     filter: none !important;
   }
