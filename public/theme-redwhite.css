@@ -2907,3 +2907,136 @@ input[name="topupMode"]{accent-color:#dc2626 !important;}
   #view-profile .orderTop .orderTotal{ font-size:20px !important; }
   #view-profile .orderActionBtn{ width:100%; justify-content:center; }
 }
+
+
+/* ===== 2026-05-28 Premium current balance box ===== */
+#view-profile .walletBalanceBox{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(135deg,#111827 0%, #1f2937 42%, #dc2626 100%) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 22px 42px rgba(17,24,39,.18) !important;
+}
+#view-profile .walletBalanceBox::before{
+  content:"";
+  position:absolute;
+  width:140px;
+  height:140px;
+  right:-28px;
+  top:-28px;
+  border-radius:999px;
+  background:radial-gradient(circle, rgba(255,255,255,.22), rgba(255,255,255,0) 70%);
+  pointer-events:none;
+}
+#view-profile .walletBalanceBox::after{
+  content:"";
+  position:absolute;
+  left:-26px;
+  bottom:-32px;
+  width:170px;
+  height:90px;
+  border-radius:999px;
+  background:radial-gradient(circle, rgba(255,255,255,.12), rgba(255,255,255,0) 72%);
+  pointer-events:none;
+}
+#view-profile .walletBalanceTop{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+#view-profile .walletBalanceIcon{
+  width:52px;
+  height:52px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 12px 24px rgba(0,0,0,.16);
+  color:#fff;
+  font-size:20px;
+  backdrop-filter:blur(6px);
+}
+#view-profile .walletBalancePill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:0 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);
+  color:#fff;
+  font-size:12px;
+  font-weight:900;
+  backdrop-filter:blur(6px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18);
+}
+#view-profile .walletBalancePill span{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#86efac;
+  box-shadow:0 0 0 4px rgba(134,239,172,.16);
+}
+#view-profile .walletBalanceBox .walletMiniLabel{
+  position:relative;
+  z-index:1;
+  color:rgba(255,255,255,.72) !important;
+  font-size:11px !important;
+  letter-spacing:.11em !important;
+}
+#view-profile .walletBalanceBox .walletAmount{
+  position:relative;
+  z-index:1;
+  margin-top:10px !important;
+  color:#fff !important;
+  font-size:34px !important;
+  line-height:1.02 !important;
+  text-shadow:0 10px 24px rgba(0,0,0,.16);
+}
+#view-profile .walletBalanceBox .walletSmallText{
+  position:relative;
+  z-index:1;
+  margin-top:10px !important;
+  color:rgba(255,255,255,.78) !important;
+  font-size:12px !important;
+  max-width:280px;
+}
+#view-profile .walletBalanceMeta{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:14px;
+}
+#view-profile .walletBalanceMetaItem{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:0 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.14);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  backdrop-filter:blur(6px);
+}
+#view-profile .walletBalanceMetaItem i{
+  color:#fca5a5 !important;
+}
+@media (max-width:520px){
+  #view-profile .walletBalanceTop{ margin-bottom:12px; }
+  #view-profile .walletBalanceIcon{ width:46px; height:46px; border-radius:16px; font-size:18px; }
+  #view-profile .walletBalancePill{ min-height:32px; padding:0 10px; font-size:11px; }
+  #view-profile .walletBalanceBox .walletAmount{ font-size:29px !important; }
+  #view-profile .walletBalanceMeta{ gap:8px; }
+  #view-profile .walletBalanceMetaItem{ min-height:32px; padding:0 10px; font-size:10.5px; }
+}
