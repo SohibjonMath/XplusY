@@ -75,7 +75,7 @@ function buildOrderInlineKeyboard(o, opts={}){
 
   if(includeAdminActions && orderId){
     keyboard.push([{
-      text: isDelivered ? "✅ Yakunlandi" : "🟢 Yetkazib berildi",
+      text: isDelivered ? "🟢 YETKAZILDI" : "🔴 YANGI",
       callback_data: isDelivered ? `om_done:${orderId}` : `om_delivered:${orderId}`
     }]);
   }
@@ -167,7 +167,7 @@ async function handleTelegramCallback(event, body){
   if(callbackId){
     await tgApi(botToken, "answerCallbackQuery", {
       callback_query_id: callbackId,
-      text: "✅ Buyurtma yakunlandi",
+      text: "🟢 Buyurtma YETKAZILDI",
       show_alert: false
     });
   }
