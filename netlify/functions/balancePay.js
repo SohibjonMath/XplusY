@@ -270,6 +270,8 @@ exports.handler = async (event) => {
         status: "paid",
         currency: "UZS",
         totalUZS,
+        productsTotalUZS: subtotalUZS,
+        deliveryFeeUZS,
         amountTiyin: null,
         shipping: shippingFinal,
         orderType: "checkout",

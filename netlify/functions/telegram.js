@@ -53,6 +53,116 @@ function fmtUZS(n){
   try { return x.toLocaleString("ru-RU"); } catch { return String(Math.round(x)); }
 }
 
+
+function fmtMoneyLine(n){
+  const x = Number(n || 0);
+  return `${fmtUZS(x)} so'm`;
+}
+
+function fmtKm(v){
+  const n = Number(v);
+  if(!Number.isFinite(n)) return "—";
+  return `${n.toFixed(n >= 10 ? 1 : 2).replace(/\.00$/, "").replace(/0$/, "")} km`;
+}
+
+function fmtKg(v){
+  const n = Math.max(0, Number(v || 0));
+  if(!Number.isFinite(n) || n <= 0) return "—";
+  if(n < 1) return `${Math.round(n * 1000)} g`;
+  return `${n.toFixed(n >= 10 ? 1 : 2).replace(/\.00$/, "").replace(/0$/, "")} kg`;
+}
+
+function serviceName(service, fallback=""){
+  const s = String(service || "").toLowerCase();
+  if(s === "courier") return "Kuryer";
+  if(s === "uzpost") return "UzPost pochta";
+  if(s === "pickup") return "Do‘kondan olib ketish";
+  return fallback || "Yetkazib berish";
+}
+
+function getOrderWeightKg(o){
+  const sh = o && o.shipping ? o.shipping : {};
+  const direct = Number(sh.totalWeightKg ?? sh.weightKg ?? o.totalWeightKg ?? o.weightKg);
+  if(Number.isFinite(direct) && direct > 0) return direct;
+  const items = Array.isArray(o?.items) ? o.items : [];
+  return items.reduce((sum, it)=>{
+    const lw = Number(it?.lineWeightKg);
+    if(Number.isFinite(lw) && lw > 0) return sum + lw;
+    const w = Number(it?.weightKg || 0);
+    const q = Number(it?.qty || it?.count || 1) || 1;
+    return sum + Math.max(0, w) * Math.max(1, q);
+  }, 0);
+}
+
+function getShippingQuote(o){
+  const sh = o && o.shipping ? o.shipping : {};
+  const q = sh.deliveryQuote && typeof sh.deliveryQuote === "object" ? sh.deliveryQuote : {};
+  const rec = q.recommended && typeof q.recommended === "object" ? q.recommended : {};
+  return { sh, q, rec };
+}
+
+function fmtDeliveryOption(opt){
+  if(!opt || typeof opt !== "object") return "";
+  const svc = serviceName(opt.service, opt.label || "Xizmat");
+  const k = opt.service === "courier"
+    ? `masofa: ${fmtKm(opt.distanceKm)}${opt.billedKm ? `, hisob: ${opt.billedKm} km` : ""}`
+    : `vazn: ${fmtKg(opt.weightKg)}${opt.billedKg ? `, hisob: ${opt.billedKg} kg` : ""}`;
+  const fee = opt.isFree ? `Bepul (asl narx: ${fmtMoneyLine(opt.rawFeeUZS || opt.feeUZS || 0)})` : fmtMoneyLine(opt.feeUZS || 0);
+  const free = opt.freeFromUZS ? `, bepul limit: ${fmtMoneyLine(opt.freeFromUZS)}` : "";
+  const eta = opt.etaText ? `, muddat: ${tgEscape(opt.etaText)}` : "";
+  return `• ${tgEscape(svc)} — ${tgEscape(k)}, narx: <b>${tgEscape(fee)}</b>${tgEscape(free)}${eta}`;
+}
+
+function buildDeliveryDetailsHTML(o){
+  const { sh, q, rec } = getShippingQuote(o);
+  const method = String(sh.method || "delivery").toLowerCase();
+  if(method === "pickup"){
+    return [
+      `<b>🚚 Yetkazib berish:</b>`,
+      `Usul: <b>Do‘kondan olib ketish</b>`,
+      `Narx: <b>0 so'm</b>`
+    ];
+  }
+
+  const service = sh.service || rec.service || "";
+  const label = sh.serviceLabel || sh.methodLabel || rec.label || serviceName(service);
+  const distanceKm = sh.distanceKm ?? q.distanceKm ?? rec.distanceKm ?? null;
+  const billedKm = sh.billedKm ?? rec.billedKm ?? null;
+  const weightKg = getOrderWeightKg(o);
+  const billedKg = sh.billedKg ?? rec.billedKg ?? null;
+  const deliveryFee = Number(o.deliveryFeeUZS ?? o.pricing?.deliveryFeeUZS ?? sh.deliveryFeeUZS ?? q.deliveryFeeUZS ?? rec.feeUZS ?? 0) || 0;
+  const rawFee = Number(sh.deliveryRawFeeUZS ?? rec.rawFeeUZS ?? deliveryFee) || 0;
+  const isFree = Boolean(sh.deliveryIsFree ?? rec.isFree ?? (deliveryFee === 0 && rawFee > 0));
+  const freeFrom = sh.deliveryFreeFromUZS ?? rec.freeFromUZS ?? null;
+  const productsTotal = Number(o.productsTotalUZS ?? o.pricing?.subtotalUZS ?? sh.productsTotalUZS ?? q.orderTotalUZS ?? 0) || 0;
+  const total = Number(o.totalUZS ?? o.pricing?.totalUZS ?? q.totalWithDeliveryUZS ?? 0) || 0;
+  const eta = sh.etaText || rec.etaText || "";
+
+  const feeText = isFree ? `Bepul${rawFee ? ` (asl narx: ${fmtMoneyLine(rawFee)})` : ""}` : fmtMoneyLine(deliveryFee);
+  const lines = [
+    `<b>🚚 Yetkazib berish:</b>`,
+    `Tanlangan xizmat: <b>${tgEscape(label)}</b>`,
+    service ? `Xizmat turi: <b>${tgEscape(serviceName(service, service))}</b>` : "",
+    distanceKm != null ? `Do‘kondan masofa: <b>${tgEscape(fmtKm(distanceKm))}</b>${billedKm ? ` (hisob: ${tgEscape(String(billedKm))} km)` : ""}` : "",
+    weightKg > 0 ? `Umumiy og‘irlik: <b>${tgEscape(fmtKg(weightKg))}</b>${billedKg ? ` (pochta hisobi: ${tgEscape(String(billedKg))} kg)` : ""}` : "",
+    `Yetkazish narxi: <b>${tgEscape(feeText)}</b>`,
+    freeFrom ? `Bepul yetkazish limiti: <b>${fmtMoneyLine(freeFrom)}</b>` : "",
+    eta ? `Taxminiy muddat: <b>${tgEscape(eta)}</b>` : "",
+    productsTotal ? `Mahsulotlar summasi: <b>${fmtMoneyLine(productsTotal)}</b>` : "",
+    total ? `Yetkazish bilan jami: <b>${fmtMoneyLine(total)}</b>` : "",
+  ].filter(Boolean);
+
+  const opts = Array.isArray(q.options) ? q.options : [];
+  if(opts.length){
+    lines.push(`<b>Variantlar solishtiruvi:</b>`);
+    opts.slice(0, 4).forEach(opt=>{
+      const t = fmtDeliveryOption(opt);
+      if(t) lines.push(t);
+    });
+  }
+  return lines;
+}
+
 function getOrderCoords(o){
   const sh = o && o.shipping ? o.shipping : {};
   const latRaw = sh.lat ?? sh.latitude ?? o.lat ?? o.latitude;
@@ -249,15 +359,25 @@ function buildOrderCreatedHTML(o){
     const title = tgEscape(it.title || it.name || it.productTitle || "Mahsulot");
     const qty = Number(it.qty || it.count || 1) || 1;
     const sku = tgEscape(it.sku || it.variantKey || it.key || "");
-    const price = Number(it.priceUZS || it.price || 0) || 0;
-    const tail = [sku ? `<code>${sku}</code>` : "", price ? `${fmtUZS(price)} so'm` : ""].filter(Boolean).join(" · ");
-    return `• ${title} ×${qty}${tail ? ` <i>(${tail})</i>` : ""}`;
+    const price = Number(it.priceUZS || it.price || it.unitPriceUZS || 0) || 0;
+    const lineTotal = Number(it.lineTotalUZS || (price * qty) || 0) || 0;
+    const w = Number(it.lineWeightKg || 0) || (Number(it.weightKg || 0) * qty);
+    const variant = [it.color, it.size].filter(Boolean).map(tgEscape).join(" / ");
+    const tailParts = [
+      sku ? `<code>${sku}</code>` : "",
+      variant ? `variant: ${variant}` : "",
+      price ? `${fmtUZS(price)} so'm` : "",
+      lineTotal ? `jami: ${fmtUZS(lineTotal)} so'm` : "",
+      w ? `vazn: ${tgEscape(fmtKg(w))}` : ""
+    ].filter(Boolean);
+    return `• ${title} ×${qty}${tailParts.length ? ` <i>(${tailParts.join(" · ")})</i>` : ""}`;
   });
   const more = items.length > 8 ? `<i>... yana ${items.length-8} ta</i>` : "";
   const addr = o.shipping && o.shipping.addressText ? tgEscape(o.shipping.addressText) : "";
   const coords = getOrderCoords(o);
   const pay = tgEscape(o.provider || "");
-  const sum = fmtUZS(o.totalUZS||0);
+  const sum = fmtUZS(o.totalUZS || o.pricing?.totalUZS || 0);
+  const deliveryLines = buildDeliveryDetailsHTML(o);
 
   return [
     `<b>🛒 Yangi buyurtma!</b>`,
@@ -270,9 +390,11 @@ function buildOrderCreatedHTML(o){
     (o.district || o.shipping?.district) ? `Tuman: <b>${tgEscape(o.district || o.shipping?.district)}</b>` : "",
     (o.post || o.shipping?.post) ? `Pochta: <b>${tgEscape(o.post || o.shipping?.post)}</b>` : "",
     pay ? `To'lov: <b>${pay}</b>` : "",
-    `Summa: <b>${sum} so'm</b>`,
+    `Umumiy summa: <b>${sum} so'm</b>`,
     addr ? `Manzil: <i>${addr}</i>` : "",
     coords ? `Koordinata: <code>${tgEscape(coords.text)}</code>` : "",
+    "",
+    ...deliveryLines,
     "",
     `<b>📦 Mahsulotlar:</b>`,
     ...itemLines,
