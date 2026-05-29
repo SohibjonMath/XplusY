@@ -1831,13 +1831,23 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
 
 
     async function translateUzTextsForAdmin(texts, target){
+      // DeepSeek API faqat haqiqiy admin uchun ishlaydi.
+      // Asosiy sahifa va oddiy foydalanuvchi bu endpointdan foydalana olmaydi.
+      const user = auth.currentUser;
+      if(!user || !isAdmin(user)) throw new Error("DeepSeek tarjima faqat admin uchun ruxsat etilgan");
+
       const clean = (texts||[]).map(v=>String(v||"").trim());
       const nonEmpty = clean.map((text, index)=>({text,index})).filter(x=>x.text);
       const out = clean.map(()=>"");
       if(!nonEmpty.length) return out;
+
+      const idToken = await user.getIdToken(true);
       const res = await fetch("/.netlify/functions/deepseek-translate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + idToken
+        },
         body: JSON.stringify({ target, texts: nonEmpty.map(x=>x.text) })
       });
       const raw = await res.text();
@@ -1845,8 +1855,10 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
       try{ data = JSON.parse(raw); }catch(_e){}
       if(!res.ok){
         const msg = String(data?.details || data?.error || raw || ("HTTP " + res.status));
+        if(res.status === 401 || res.status === 403) throw new Error("DeepSeek API admin login bilan himoyalangan. Qayta kiring yoki admin ruxsatini tekshiring.");
         if(res.status === 402) throw new Error("DeepSeek hisobida balans/to‘lov muammosi bor: 402 Payment Required");
         if(res.status === 500 && msg.includes("DEEPSEEK_API_KEY")) throw new Error("Netlify’da DEEPSEEK_API_KEY sozlanmagan");
+        if(res.status === 500 && msg.includes("FIREBASE_SERVICE_ACCOUNT_B64")) throw new Error("Netlify’da FIREBASE_SERVICE_ACCOUNT_B64 sozlanmagan — admin token tekshiruv ishlamaydi");
         throw new Error(msg.slice(0, 240));
       }
       const tr = Array.isArray(data.translations) ? data.translations : [];
@@ -1856,6 +1868,7 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
 
     async function autoTranslateProductFields(){
       const btn = document.getElementById("autoTranslateBtn");
+      if(!auth.currentUser || !isAdmin(auth.currentUser)) return toast("Avto tarjima faqat admin uchun. Foydalanuvchi va vendor DeepSeek API ishlata olmaydi.", "error");
       const uzName = ($("name")?.value || "").trim();
       const uzDesc = ($("description")?.value || "").trim();
       if(!uzName && !uzDesc) return toast("Avval o‘zbekcha nom yoki tavsif yozing", "error");
@@ -2176,12 +2189,14 @@ $("currency").value=p.currency||"UZS";
         if(pt) pt.textContent = isA ? "Barcha mahsulotlar" : "Mening mahsulotlarim";
       }catch(e){}
 
-      // Vendor bo'lsa: import/json export kabi admin-only tugmalarni yashiramiz
+      // Vendor bo'lsa: import/json export va DeepSeek tarjima kabi admin-only tugmalarni yashiramiz
       try{
         const importBtn = document.getElementById("importBtn");
         if(importBtn) importBtn.style.display = isA ? "" : "none";
         const exportBtn = document.getElementById("exportJsonBtn");
         if(exportBtn) exportBtn.style.display = isA ? "" : "none";
+        const autoTranslateBtn = document.getElementById("autoTranslateBtn");
+        if(autoTranslateBtn) autoTranslateBtn.style.display = isA ? "" : "none";
       }catch(e){}
     }
 
