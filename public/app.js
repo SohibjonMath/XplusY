@@ -1607,29 +1607,6 @@ function omExplicitProductCategoryPath(p){
   }
   return [];
 }
-function omInferCategoryPath(p){
-  const explicit = omExplicitProductCategoryPath(p);
-  if(explicit.length) return explicit;
-  const hay = [p?.name,p?.name_ru,p?.name_en,p?.description,p?.description_ru,p?.productType,p?.fulfillmentType,...(Array.isArray(p?.tags)?p.tags:[])].filter(Boolean).join(" ").toLowerCase();
-  let best=null;
-  const scoreDef=(def)=>{
-    let score=0;
-    for(const kw of (def.keywords||[])){
-      const k=String(kw).toLowerCase();
-      if(k && hay.includes(k)) score += k.length>6 ? 3 : 2;
-    }
-    return score;
-  };
-  for(const parent of OM_CATEGORY_CATALOG){
-    const ps=scoreDef(parent);
-    if(ps && (!best || ps>best.score)) best={score:ps,path:[parent.id]};
-    for(const child of (parent.children||[])){
-      const sc=ps + scoreDef(child);
-      if(sc && (!best || sc>best.score)) best={score:sc,path:[parent.id,child.id]};
-    }
-  }
-  return best?.path || ["other","other-products"];
-}
 function omProductCategoryPathIds(p){ return omInferCategoryPath(p); }
 function omProductCategoryLabel(p){
   const ids=omProductCategoryPathIds(p);
@@ -1676,57 +1653,6 @@ function getNodeByPath(path){
     node = node.children.get(id);
   }
   return node;
-}
-
-function renderCategoriesPage(){
-  if(!els.catList || !els.catCrumbs) return;
-  buildCategoryTree();
-  const node = getNodeByPath(activeCatPath) || catTree;
-
-  els.catCrumbs.innerHTML = "";
-  const homeCr = document.createElement("button");
-  homeCr.className = "crumb";
-  homeCr.type = "button";
-  homeCr.textContent = omTrText("Barchasi");
-  homeCr.addEventListener("click", ()=>{ activeCatPath = []; renderCategoriesPage(); });
-  els.catCrumbs.appendChild(homeCr);
-
-  let acc = [];
-  for(const part of (activeCatPath||[])){
-    const def = omGetCategoryDef(part);
-    const id = def?.id || part;
-    acc.push(id);
-    const b = document.createElement("button");
-    b.className = "crumb";
-    b.type = "button";
-    b.textContent = omCategoryLangName(def) || omTrText(part);
-    const snap = acc.slice();
-    b.addEventListener("click", ()=>{ activeCatPath = snap; renderCategoriesPage(); });
-    els.catCrumbs.appendChild(b);
-  }
-
-  const children = Array.from((node?.children || new Map()).values())
-    .sort((a,b)=> (b.count||0)-(a.count||0) || String(omCategoryLangName(a)).localeCompare(String(omCategoryLangName(b)), omLang()==="ru"?"ru":"uz"));
-
-  els.catList.innerHTML = "";
-  if(els.catEmpty) els.catEmpty.hidden = children.length !== 0;
-
-  for(const ch of children){
-    const item = document.createElement("div");
-    item.className = "catItem" + ((ch.count||0)===0 ? " catItemEmpty" : "");
-    item.innerHTML = `
-      <div class="catName"><i class="fa-solid ${escapeHtml(ch.icon||"fa-layer-group")}" aria-hidden="true"></i> ${escapeHtml(omCategoryLangName(ch))}</div>
-      <div class="catMeta">
-        <div class="catCount">${omCount(ch.count||0)}</div>
-        <div class="catArrow">›</div>
-      </div>`;
-    item.addEventListener("click", ()=>{
-      activeCatPath = [...(activeCatPath||[]), ch.id];
-      renderCategoriesPage();
-    });
-    els.catList.appendChild(item);
-  }
-  omI18nRefresh(80);
 }
 
 function productMatchesCategory(p, path){
