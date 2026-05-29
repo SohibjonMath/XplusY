@@ -7642,3 +7642,83 @@ body{
     line-height:12px!important;
   }
 }
+
+
+/* v33: product-page tags must show FULL text, no ellipsis */
+@media (max-width:900px){
+  .ppTags{
+    display:flex!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    gap:3px!important;
+    overflow:visible!important;
+    max-height:none!important;
+  }
+  .ppTag{
+    width:auto!important;
+    max-width:none!important;
+    min-width:0!important;
+    flex:0 0 auto!important;
+    height:18px!important;
+    min-height:18px!important;
+    padding:0 5px 0 6px!important;
+    gap:3px!important;
+    font-size:7.4px!important;
+    line-height:1!important;
+    letter-spacing:-.02em!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+  .ppTag:before{
+    width:3px!important;
+    height:3px!important;
+    min-width:3px!important;
+  }
+  .ppTag span{
+    display:inline!important;
+    width:auto!important;
+    max-width:none!important;
+    min-width:0!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    white-space:nowrap!important;
+    font-size:7.4px!important;
+    line-height:1!important;
+  }
+  .ppTag b{
+    height:11px!important;
+    min-width:11px!important;
+    padding:0 2px!important;
+    font-size:6px!important;
+    line-height:11px!important;
+    flex:0 0 auto!important;
+  }
+}
+@media (max-width:380px){
+  .ppTags{
+    gap:2px!important;
+  }
+  .ppTag{
+    height:17px!important;
+    min-height:17px!important;
+    padding:0 4px 0 5px!important;
+    gap:2px!important;
+    font-size:6.6px!important;
+    letter-spacing:-.035em!important;
+    max-width:none!important;
+  }
+  .ppTag span{
+    font-size:6.6px!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    white-space:nowrap!important;
+    max-width:none!important;
+  }
+  .ppTag b{
+    height:10px!important;
+    min-width:10px!important;
+    font-size:5.7px!important;
+    line-height:10px!important;
+  }
+}
