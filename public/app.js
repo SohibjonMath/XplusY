@@ -165,7 +165,8 @@ import {
   getAggregateFromServer,
   average,
   count,
-  addDoc
+  addDoc,
+  increment
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 import { generateShortOrderId } from "./utils/shortOrderId.js";
 
@@ -261,20 +262,184 @@ function toMillis(ts){
   }
 }
 
-// Lightweight interest tracking -> Firestore events (used to compute real popularity)
-async function logEvent(type, productId){
+// Product popularity / interest tracking
+// Popular endi qo'lda beriladigan ball emas: ko'rish + savat + sevimli + sotib olishdan hisoblanadi.
+const OM_METRICS_LS = "om_product_metrics_v2";
+const OM_ANON_LS = "om_anon_id_v1";
+const productMetricsCache = new Map(); // productId -> {views, cartAdds, favoriteAdds, purchases, score, ts}
+
+function omMetricNum(v){
+  const n = Number(v || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+function omAnonId(){
   try{
-    if(!currentUser) return;
+    let id = localStorage.getItem(OM_ANON_LS);
+    if(!id){
+      id = (crypto?.randomUUID?.() || ("anon_" + Date.now() + "_" + Math.random().toString(16).slice(2)));
+      localStorage.setItem(OM_ANON_LS, id);
+    }
+    return id;
+  }catch(e){ return "anon_local"; }
+}
+function omReadLocalMetrics(){
+  try{ return JSON.parse(localStorage.getItem(OM_METRICS_LS) || "{}"); }catch(e){ return {}; }
+}
+function omWriteLocalMetrics(obj){
+  try{ localStorage.setItem(OM_METRICS_LS, JSON.stringify(obj || {})); }catch(e){}
+}
+function omEngagementScore(m){
+  const views = omMetricNum(m?.views);
+  const fav = omMetricNum(m?.favoriteAdds || m?.favorites);
+  const cart = omMetricNum(m?.cartAdds);
+  const buy = omMetricNum(m?.purchases || m?.soldCount);
+  // E-commerce weight: view=1, favorite=4, cart=7, purchase=25
+  return Math.round(views + fav*4 + cart*7 + buy*25);
+}
+function omMetricFromProduct(p){
+  if(!p) return {views:0, cartAdds:0, favoriteAdds:0, purchases:0, score:0};
+  const id = String(p.id || p._docId || "");
+  const cached = productMetricsCache.get(id) || {};
+  const local = (omReadLocalMetrics()[id] || {});
+  const views = Math.max(
+    omMetricNum(p.views), omMetricNum(p.viewCount), omMetricNum(p.viewsCount), omMetricNum(p.productViews), omMetricNum(p.popularViews),
+    omMetricNum(cached.views), omMetricNum(local.views)
+  );
+  const cartAdds = Math.max(
+    omMetricNum(p.cartAdds), omMetricNum(p.cartAddCount), omMetricNum(p.addToCartCount),
+    omMetricNum(cached.cartAdds), omMetricNum(local.cartAdds)
+  );
+  const favoriteAdds = Math.max(
+    omMetricNum(p.favoriteAdds), omMetricNum(p.favorites), omMetricNum(p.favoriteCount), omMetricNum(p.wishlistAdds),
+    omMetricNum(cached.favoriteAdds), omMetricNum(local.favoriteAdds)
+  );
+  const purchases = Math.max(
+    omMetricNum(p.purchases), omMetricNum(p.purchaseCount), omMetricNum(p.soldCount), omMetricNum(p.salesCount),
+    omMetricNum(cached.purchases), omMetricNum(local.purchases)
+  );
+  const calculated = omEngagementScore({views, cartAdds, favoriteAdds, purchases});
+  const score = Math.max(calculated, omMetricNum(p.metricScore), omMetricNum(p.engagementScore), omMetricNum(cached.score), omMetricNum(local.score));
+  return {views, cartAdds, favoriteAdds, purchases, score};
+}
+function omGetProductMetrics(pOrId){
+  const p = (typeof pOrId === "object" && pOrId) ? pOrId : (products || []).find(x=>String(x.id||x._docId)===String(pOrId));
+  return omMetricFromProduct(p || {id:pOrId});
+}
+function omMetricFieldForType(type){
+  const t = String(type||"").toLowerCase();
+  if(t === "view" || t === "views" || t === "open") return {field:"views", weight:1, event:"view"};
+  if(t === "favorite" || t === "fav" || t === "wishlist") return {field:"favoriteAdds", weight:4, event:"favorite"};
+  if(t === "add_to_cart" || t === "cart" || t === "cart_add") return {field:"cartAdds", weight:7, event:"add_to_cart"};
+  if(t === "purchase" || t === "buy" || t === "order") return {field:"purchases", weight:25, event:"purchase"};
+  return {field:"views", weight:1, event:t || "view"};
+}
+function omUpdateLocalMetric(productId, field, qty=1){
+  const id = String(productId || "").trim();
+  if(!id) return;
+  const all = omReadLocalMetrics();
+  const cur = all[id] || {};
+  cur[field] = omMetricNum(cur[field]) + omMetricNum(qty || 1);
+  cur.score = omEngagementScore(cur);
+  cur.updatedAt = Date.now();
+  all[id] = cur;
+  omWriteLocalMetrics(all);
+  productMetricsCache.set(id, {...(productMetricsCache.get(id)||{}), ...cur, ts: Date.now()});
+  const prod = (products || []).find(x=>String(x.id||x._docId)===id);
+  if(prod){
+    prod[field] = Math.max(omMetricNum(prod[field]), omMetricNum(cur[field]));
+    prod.metricScore = Math.max(omMetricNum(prod.metricScore), omMetricNum(cur.score));
+  }
+}
+async function omLoadProductMetric(productId, force=false){
+  const id = String(productId || "").trim();
+  if(!id) return null;
+  const cached = productMetricsCache.get(id);
+  if(!force && cached && Date.now() - (cached.ts || 0) < 120000) return cached;
+  try{
+    const snap = await getDoc(doc(db, "productMetrics", id));
+    if(snap.exists()){
+      const d = snap.data() || {};
+      const out = {
+        views: omMetricNum(d.views),
+        cartAdds: omMetricNum(d.cartAdds),
+        favoriteAdds: omMetricNum(d.favoriteAdds),
+        purchases: omMetricNum(d.purchases),
+        score: omMetricNum(d.score) || omEngagementScore(d),
+        ts: Date.now()
+      };
+      productMetricsCache.set(id, out);
+      return out;
+    }
+  }catch(e){ /* rules may block reads; local metrics still work */ }
+  const local = (omReadLocalMetrics()[id] || {});
+  const out = {...local, score: omMetricNum(local.score) || omEngagementScore(local), ts: Date.now()};
+  productMetricsCache.set(id, out);
+  return out;
+}
+async function preloadProductMetrics(productIds){
+  const ids = [...new Set((productIds||[]).map(String).filter(Boolean))].slice(0, 80);
+  if(!ids.length) return;
+  await Promise.all(ids.map(id=>omLoadProductMetric(id, false)));
+}
+async function omRecordProductInteraction(productId, type="view", qty=1){
+  const id = String(productId || "").trim();
+  if(!id) return;
+  const meta = omMetricFieldForType(type);
+  const n = Math.max(1, Math.round(omMetricNum(qty || 1)));
+
+  // Immediate UI/local update, so numbers change without waiting for Firestore.
+  omUpdateLocalMetric(id, meta.field, n);
+  try{ omRenderQuickViewPro(); }catch(e){}
+  try{
+    if(els?.sort?.value === "popular") applyFilterSort();
+  }catch(e){}
+
+  // Event log. Works for logged users, tries anon too; silently ignores if rules block.
+  try{
     await addDoc(collection(db, "events"), {
-      uid: currentUser.uid,
-      type,
-      productId: String(productId),
+      uid: currentUser?.uid || null,
+      anonId: currentUser?.uid ? null : omAnonId(),
+      type: meta.event,
+      productId: id,
+      qty: n,
+      weight: meta.weight,
       createdAt: serverTimestamp(),
       ua: navigator.userAgent || "",
     });
-  }catch(e){
-    console.warn("logEvent failed", e);
-  }
+  }catch(e){}
+
+  // Aggregated public metrics. If rules allow, this becomes site-wide real popularity.
+  try{
+    await setDoc(doc(db, "productMetrics", id), {
+      [meta.field]: increment(n),
+      score: increment(meta.weight * n),
+      updatedAt: serverTimestamp()
+    }, { merge:true });
+  }catch(e){}
+
+  // Optional mirror fields on product document for sorting/indexing; ignored if rules deny.
+  try{
+    await setDoc(doc(db, "products", id), {
+      [meta.field]: increment(n),
+      metricScore: increment(meta.weight * n),
+      popularScore: increment(meta.weight * n),
+      updatedAt: serverTimestamp()
+    }, { merge:true });
+  }catch(e){}
+}
+function omRecordPurchaseMetrics(items){
+  try{
+    (items || []).forEach(it=>{
+      const id = it.productId || it.id;
+      const qty = Number(it.qty || it.quantity || 1) || 1;
+      omRecordProductInteraction(id, "purchase", qty);
+    });
+  }catch(e){}
+}
+
+// Backward compatible event API used by older buttons.
+async function logEvent(type, productId){
+  return omRecordProductInteraction(productId, type, 1);
 }
 
 
@@ -1737,7 +1902,7 @@ function applyFilterSort(){
   if(sort === "price_asc") arr.sort((a,b)=>(a._price||0)-(b._price||0));
   if(sort === "price_desc") arr.sort((a,b)=>(b._price||0)-(a._price||0));
   if(sort === "new") arr.sort((a,b)=> (b._created||0) - (a._created||0));
-  if(sort === "popular") arr.sort((a,b)=>(b.popularScore||0)-(a.popularScore||0));
+  if(sort === "popular") arr.sort((a,b)=>omGetProductMetrics(b).score-omGetProductMetrics(a).score);
 
   render(arr);
 }
@@ -1900,6 +2065,14 @@ function createNativeAdCard(){
   return card;
 }
 
+
+function omProductPowerMiniHtml(p){
+  const m = omGetProductMetrics(p);
+  const views = omCount(m.views || 0);
+  const score = omCount(m.score || 0);
+  return `<span title="Ko‘rishlar"><i class="fa-regular fa-eye"></i> ${views}</span><span title="Popular ball"><i class="fa-solid fa-fire"></i> ${score}</span>`;
+}
+
 function render(arr){
   els.grid.innerHTML = "";
   if (els.productsCount) {
@@ -1959,6 +2132,7 @@ const authHTML = renderProductTypeBadge(p);
 
         <div class="pname clamp2">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         ${showCount ? `<div class="pratingInline compact"><i class="fa-solid fa-star" aria-hidden="true"></i> ${Number(showAvg).toFixed(1)} <span>(${showCount})</span></div>` : ""}
+        <div class="omPowerRow">${omProductPowerMiniHtml(p)}</div>
 
         <div class="pcardFoot">
           <div class="pship compact">${renderDeliveryBadge(p)}</div>
@@ -2849,6 +3023,8 @@ function closePanel(){
 function omQVProduct(){
   try{ return (viewer && viewer.product) || (products || []).find(x=>String(x.id)===String(viewer?.productId)); }catch(e){ return null; }
 }
+function omCatPathAttr(ids){ return encodeURIComponent(JSON.stringify(ids || [])); }
+function omCatPathFromAttr(v){ try{ return JSON.parse(decodeURIComponent(String(v||"%5B%5D"))) || []; }catch(e){ return []; } }
 function omQVCatTrailHtml(p){
   const ids = omProductCategoryPathIds(p);
   if(!ids.length) return `<span class="qvCrumb muted">Kategoriya tanlanmagan</span>`;
@@ -2856,7 +3032,8 @@ function omQVCatTrailHtml(p){
     const def=omGetCategoryDef(id);
     const icon = idx===0 ? omCategoryIconHtml(def) : "";
     const name=escapeHtml(omCategoryLangName(def)||id);
-    return `<span class="qvCrumb">${icon}<span>${name}</span></span>${idx<ids.length-1?`<span class="qvCrumbSep">›</span>`:""}`;
+    const pathAttr = omCatPathAttr(ids.slice(0, idx+1));
+    return `<button type="button" class="qvCrumb qvCrumbBtn" data-qv-cat-path="${pathAttr}" title="Shu kategoriyadagi mahsulotlarni ko‘rish">${icon}<span>${name}</span></button>${idx<ids.length-1?`<span class="qvCrumbSep">›</span>`:""}`;
   }).join("");
 }
 function omQVCatCardHtml(p){
@@ -2865,7 +3042,32 @@ function omQVCatCardHtml(p){
   const leaf = omGetCategoryDef(ids[ids.length-1]);
   const root = omGetCategoryDef(ids[0]);
   const path = ids.map(id=>escapeHtml(omCategoryLangName(omGetCategoryDef(id))||id)).join(" <b>›</b> ");
-  return `<div class="qvCatHeroIcon">${omCategoryIconHtml(leaf||root)}</div><div class="qvCatHeroText"><span>Kategoriya yo‘li</span><strong>${path}</strong><em>${ids.length} darajali katalog</em></div>`;
+  return `<button type="button" class="qvCatCardBtn" data-qv-cat-path="${omCatPathAttr(ids)}" title="Shu kategoriyadagi mahsulotlarni ochish"><div class="qvCatHeroIcon">${omCategoryIconHtml(leaf||root)}</div><div class="qvCatHeroText"><span>Kategoriya yo‘li</span><strong>${path}</strong><em>${ids.length} darajali katalog • bosib oching</em></div><i class="fa-solid fa-arrow-right qvCatArrow"></i></button>`;
+}
+function omOpenCategoryFromQuickView(path){
+  const ids = (Array.isArray(path) ? path : []).map(x=>omGetCategoryDef(x)?.id || String(x||"")).filter(Boolean);
+  if(!ids.length) return;
+  activeCatPath = [...ids];
+  appliedCatPath = [...ids];
+  if(els?.q) els.q.value = "";
+  applyFilterSort();
+  closeImageViewer();
+  goTab("home");
+  const label = ids.map(id=>omCategoryLangName(omGetCategoryDef(id))||id).filter(Boolean).join(" › ");
+  toast(`${label} kategoriyasi ochildi`);
+}
+function omBindQvCategoryClicks(){
+  const root = document.getElementById("imgViewer");
+  if(!root) return;
+  root.querySelectorAll("[data-qv-cat-path]").forEach(btn=>{
+    if(btn.dataset.boundCat === "1") return;
+    btn.dataset.boundCat = "1";
+    btn.addEventListener("click", (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      omOpenCategoryFromQuickView(omCatPathFromAttr(btn.getAttribute("data-qv-cat-path")));
+    });
+  });
 }
 function omQVVariantHtml(p){
   const colors = normColors(p||{});
@@ -2893,11 +3095,15 @@ function omQVTrustHtml(p){
 function omQVMetricHtml(p){
   const type = String(p?.productType || p?.authType || "").trim();
   const id = String(p?.id || p?._docId || "").trim();
-  const score = Number(p?.popularScore||0) || 0;
+  const m = omGetProductMetrics(p);
   const arr=[];
   if(type) arr.push(`<span><i class="fa-solid fa-certificate"></i>${escapeHtml(type.toUpperCase())}</span>`);
   if(id) arr.push(`<span><i class="fa-solid fa-barcode"></i>${escapeHtml(id)}</span>`);
-  arr.push(`<span><i class="fa-solid fa-chart-line"></i>Ball: ${score}</span>`);
+  arr.push(`<span class="qvMetricViews"><i class="fa-regular fa-eye"></i>Ko‘rishlar: ${omCount(m.views||0)}</span>`);
+  arr.push(`<span><i class="fa-solid fa-cart-shopping"></i>Savat: ${omCount(m.cartAdds||0)}</span>`);
+  arr.push(`<span><i class="fa-solid fa-heart"></i>Sevimli: ${omCount(m.favoriteAdds||0)}</span>`);
+  arr.push(`<span><i class="fa-solid fa-bag-shopping"></i>Sotib olish: ${omCount(m.purchases||0)}</span>`);
+  arr.push(`<span class="qvMetricScore"><i class="fa-solid fa-fire"></i>Popular ball: ${omCount(m.score||0)}</span>`);
   return arr.join("");
 }
 function omRenderQuickViewPro(){
@@ -2908,6 +3114,7 @@ function omRenderQuickViewPro(){
   const variant=byId("qvVariantBox"); if(variant){ variant.innerHTML = p ? omQVVariantHtml(p) : ""; }
   const trust=byId("qvTrustGrid"); if(trust){ trust.innerHTML = p ? omQVTrustHtml(p) : ""; }
   const metrics=byId("qvProMetrics"); if(metrics){ metrics.innerHTML = p ? omQVMetricHtml(p) : ""; metrics.style.display = p ? "" : "none"; }
+  omBindQvCategoryClicks();
 }
 
 // ---------- Image viewer (fullscreen gallery) ----------
@@ -2995,6 +3202,7 @@ function openImageViewer({productId, title, desc, pricing, rating, reviewsCount,
   try{ els.imgViewer?.classList.toggle("imageOnly", !!imageOnly); }catch(e){}
   showOverlay(els.imgViewer);
   renderViewer();
+  if(productId) omRecordProductInteraction(productId, "view", 1);
 
   // Make scroll stable across devices (some browsers need an explicit reset)
   try{
@@ -4250,6 +4458,7 @@ async function createOrderFromCheckout(){
       try{ tgNotifyOrderCreated(payload.orderId); }catch(_e){}
     }
 
+    omRecordPurchaseMetrics(built.items);
     removePurchasedFromCart(built.sel);
     updateBadges();
     renderCartPage();
@@ -4407,6 +4616,7 @@ async function loadProductsPage(){
     buildTagCounts();
     buildCategoryTree();
     applyFilterSort();
+    preloadProductMetrics(arr.map(p=>p.id)).then(()=>{ try{ applyFilterSort(); if(activeTab==="categories") renderCategoriesPage(); }catch(e){} });
     if(activeTab==="categories") renderCategoriesPage();
 
     // If fewer than page size, we reached the end
