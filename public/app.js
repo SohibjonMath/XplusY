@@ -3185,12 +3185,19 @@ function renderViewer(){
     els.qvBadge.style.display = b ? "" : "none";
   }
   if(els.qvTags){
-    const tagsArr = (Array.isArray(viewer.tags) ? viewer.tags : []).map(t=>String(t||"").trim()).filter(Boolean);
-    const shownTags = tagsArr.slice(0,9);
+    const rawTags = (Array.isArray(viewer.tags) ? viewer.tags : []).map(t=>String(t||"").trim()).filter(Boolean);
+    const tagsArr = [...new Map(rawTags.map(t=>[t.toLowerCase(), t])).values()];
+    const shownTags = tagsArr.slice(0,4);
+    const countLabel = (n)=>{
+      const v = Number(n || 0);
+      if(!v) return "";
+      return v > 99 ? "99+" : String(v);
+    };
     els.qvTags.innerHTML = shownTags.map(t=>{
       const label = String(t || "").trim();
       const cnt = tagCounts?.get?.(label.toLowerCase()) || 0;
-      return `<button type="button" class="qvTag" data-qv-tag="${escapeHtml(label)}" title="${escapeHtml(label)} tegidagi mahsulotlarni ko‘rish"><i class="fa-solid fa-hashtag"></i><span>${escapeHtml(label)}</span>${cnt?`<em>${omCount(cnt)}</em>`:""}</button>`;
+      const c = countLabel(cnt);
+      return `<button type="button" class="qvTag" data-qv-tag="${escapeHtml(label)}" title="${escapeHtml(label)} tegidagi mahsulotlarni ko‘rish"><span>${escapeHtml(label)}</span>${c?`<b class="qvTagCount">${escapeHtml(c)}</b>`:""}</button>`;
     }).join("") + (tagsArr.length > shownTags.length ? `<span class="qvMoreTags" title="Yana ${tagsArr.length-shownTags.length} ta teg bor">+${tagsArr.length-shownTags.length}</span>` : "");
     els.qvTags.style.display = tagsArr.length ? "" : "none";
   }
