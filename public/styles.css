@@ -7408,3 +7408,72 @@ body{
   .qvProMetrics span small{display:none!important;}.qvProMetrics span{gap:4px!important;}
   .imgViewer .qvTag{max-width:96px!important;}
 }
+
+
+/* v28 quick-view fine tune: move tags above title and keep trust row on one line */
+.qvTagsTop{order:2;margin-top:-2px}
+.qvTopMeta{order:3}
+.qvName{order:4}
+.qvPriceRow{order:5}
+.qvCategoryTrail{order:1}
+
+@media (max-width: 760px){
+  .imgViewer .qvProHead{
+    gap:8px!important;
+  }
+  .imgViewer .qvTagsTop{
+    display:flex!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    gap:5px!important;
+    max-height:none!important;
+    overflow:visible!important;
+    margin:1px 0 0!important;
+  }
+  .imgViewer .qvTagsTop .qvTag{
+    height:22px!important;
+    min-height:22px!important;
+    max-width:110px!important;
+    padding:0 6px 0 8px!important;
+    font-size:9.5px!important;
+  }
+  .imgViewer .qvTagsTop .qvMoreTags{
+    height:22px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+  }
+  .imgViewer .qvTrustGrid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:6px!important;
+    align-items:stretch!important;
+  }
+  .imgViewer .qvTrustItem{
+    min-height:50px!important;
+    padding:7px 5px!important;
+    border-radius:14px!important;
+    display:grid!important;
+    place-items:center!important;
+    gap:2px!important;
+  }
+  .imgViewer .qvTrustItem:last-child{
+    grid-column:auto!important;
+  }
+  .imgViewer .qvTrustItem span{
+    display:none!important;
+  }
+  .imgViewer .qvTrustItem b{
+    font-size:10.5px!important;
+    line-height:1.1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    text-align:center!important;
+    max-width:100%!important;
+  }
+}
+@media (max-width: 420px){
+  .imgViewer .qvTrustGrid{gap:5px!important;}
+  .imgViewer .qvTrustItem{padding:6px 4px!important;min-height:46px!important;}
+  .imgViewer .qvTrustItem b{font-size:10px!important;}
+  .imgViewer .qvTagsTop .qvTag{max-width:98px!important;font-size:9px!important;}
+}
