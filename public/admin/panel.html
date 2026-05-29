@@ -2498,6 +2498,127 @@ button[data-x] i{
 }
 </style>
 
+
+<style id="orzumall-v10-product-modal-premium-compact">
+/* v10: compact premium product modal */
+#productModal{align-items:center;justify-content:center;padding:22px}
+#productModal .pm-compact-shell{
+  width:min(1180px,96vw)!important;
+  max-width:min(1180px,96vw)!important;
+  max-height:88vh!important;
+  min-height:auto!important;
+  border-radius:30px!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  border:1px solid rgba(226,232,240,.95)!important;
+  background:linear-gradient(180deg,#ffffff,#fbfbff)!important;
+  box-shadow:0 38px 120px rgba(15,23,42,.22)!important;
+}
+#productModal .pm-modal-header{
+  position:sticky;top:0;z-index:6;
+  padding:16px 18px!important;
+  background:rgba(255,255,255,.94)!important;
+  backdrop-filter:blur(14px);
+}
+#productModal .pm-modal-title-wrap{display:flex;align-items:center;gap:12px;min-width:0}
+#productModal .pm-modal-title-wrap h3{margin:0;font-size:24px;line-height:1.15}
+#productModal .pm-modal-subtitle{margin:4px 0 0;color:#6b7280;font-size:12.5px;font-weight:600}
+#productModal .pm-modal-icon{
+  width:48px;height:48px;border-radius:16px;display:grid;place-items:center;
+  color:#fff;font-size:18px;
+  background:linear-gradient(135deg,#7c3aed,#ef4444);
+  box-shadow:0 14px 30px rgba(124,58,237,.25);
+}
+#productModal .pm-modal-body{
+  flex:1;overflow:auto;padding:14px 16px 8px!important;
+  background:
+    radial-gradient(circle at 0% 0%,rgba(124,58,237,.08),transparent 24%),
+    radial-gradient(circle at 100% 0%,rgba(239,68,68,.06),transparent 22%),
+    linear-gradient(180deg,#f8faff 0%,#ffffff 220px);
+}
+#productModal .pm-intro-strip{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+#productModal .pm-intro-card{
+  flex:1 1 380px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  padding:12px 14px;border-radius:18px;border:1px solid rgba(124,58,237,.12);
+  background:linear-gradient(180deg,#ffffff,#f7f5ff);color:#334155;
+}
+#productModal .pm-intro-card strong{display:flex;align-items:center;gap:8px;color:#111827}
+#productModal .pm-intro-card span{font-size:12.5px;color:#64748b}
+#productModal .pm-intro-chip{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 12px;border-radius:999px;
+  background:#fff;border:1px solid #e5e7eb;color:#475569;font-size:12px;font-weight:800;
+}
+#productModal .pm-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(330px,.85fr);gap:14px;align-items:start}
+#productModal .pm-main-col,#productModal .pm-side-col{display:grid;gap:14px;align-content:start}
+#productModal .pm-sticky-card{position:sticky;top:6px}
+#productModal .pm-card{
+  margin-bottom:0!important;padding:14px!important;border-radius:22px!important;
+  border:1px solid rgba(226,232,240,.95)!important;
+  background:linear-gradient(180deg,#ffffff,#fbfdff)!important;
+  box-shadow:0 12px 34px rgba(15,23,42,.05)!important;
+}
+#productModal .pm-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+#productModal .pm-section-head h4{margin:0!important;display:flex;align-items:center;gap:9px;font-size:15px}
+#productModal .pm-badge{
+  display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;
+  background:linear-gradient(135deg,#7c3aed,#ef4444);color:#fff;font-size:11px;font-weight:900;letter-spacing:.02em;
+}
+#productModal .pm-badge-soft{background:#f3f4f6!important;color:#475569!important}
+#productModal .pm-inline-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:2px}
+#productModal .form-row{margin-bottom:12px!important;gap:12px!important}
+#productModal .form-row:last-child{margin-bottom:0!important}
+#productModal .pm-row-1{grid-template-columns:1fr}
+#productModal .pm-row-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+#productModal .pm-row-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#productModal .form-group label{margin-bottom:6px!important;font-size:12.5px!important;letter-spacing:.01em}
+#productModal .form-control,#productModal .statusSel{
+  min-height:42px!important;padding:9px 12px!important;border-radius:14px!important;
+  border:1px solid #e5e7eb!important;background:#fff!important;box-shadow:none!important;font-size:14px!important;
+}
+#productModal textarea.form-control{min-height:92px!important;resize:vertical}
+#productModal .hint,#productModal .form-text{font-size:11.5px!important;line-height:1.45;color:#6b7280}
+#productModal .dynamic-list,#productModal .color-image-builder{
+  padding:12px!important;border-radius:16px!important;border:1px solid #e5e7eb!important;background:#f8fafc!important;
+}
+#productModal .list-item{align-items:flex-start!important;gap:8px!important;margin-bottom:8px!important}
+#productModal .list-item .form-control{min-height:40px!important}
+#productModal .tags-container{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+#productModal .tags-container .tag,
+#productModal .tags-container span{
+  display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#fff1f2;border:1px solid #fecdd3;color:#be123c;font-size:12px;font-weight:800;
+}
+#productModal .pm-modal-footer{
+  position:sticky;bottom:0;z-index:5;background:rgba(255,255,255,.96)!important;backdrop-filter:blur(14px);
+  padding:14px 16px!important;display:flex!important;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+#productModal .pm-footer-note{display:flex;align-items:center;gap:8px;color:#64748b;font-size:12.5px;font-weight:700}
+#productModal .pm-footer-actions{display:flex;gap:10px;align-items:center}
+#productModal #productModalCancelBtn{min-width:110px}
+#productModal #saveProductBtn{min-width:132px}
+#productModal #closeModalBtn{
+  width:42px!important;min-width:42px!important;height:42px!important;border-radius:14px!important;
+  display:grid!important;place-items:center!important;padding:0!important;
+}
+@media (max-width: 1100px){
+  #productModal .pm-grid{grid-template-columns:1fr}
+  #productModal .pm-sticky-card{position:relative;top:auto}
+}
+@media (max-width: 760px){
+  #productModal{padding:10px}
+  #productModal .pm-compact-shell{width:100%!important;max-width:100%!important;max-height:94vh!important;border-radius:22px!important}
+  #productModal .pm-modal-title-wrap h3{font-size:20px}
+  #productModal .pm-modal-subtitle{display:none}
+  #productModal .pm-modal-header{padding:14px 14px!important}
+  #productModal .pm-modal-body{padding:12px 12px 6px!important}
+  #productModal .pm-card{padding:12px!important;border-radius:18px!important}
+  #productModal .pm-row-2,#productModal .pm-row-3{grid-template-columns:1fr}
+  #productModal .pm-modal-footer{padding:12px!important}
+  #productModal .pm-footer-actions{width:100%}
+  #productModal #productModalCancelBtn,#productModal #saveProductBtn{flex:1}
+}
+</style>
+
 </head>
 <body style="display:none;">
   <div class="container">
@@ -3023,148 +3144,189 @@ button[data-x] i{
     </div>
   </div>
 
-
   <!-- Product Modal -->
   <div class="modal" id="productModal">
-    <div class="modal-content pm-fullscreen">
-      <div class="modal-header">
-        <h3 id="modalTitle">Yangi mahsulot</h3>
-        <button class="btn btn-light btn-sm" id="closeModalBtn"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="productForm" class="pm-form">
-          <div class="pm-container">
-          <input type="hidden" id="productId">
-          <div class="form-section pm-col-left">
-            <h4><i class="fas fa-info-circle"></i> Asosiy</h4>
-            <div class="form-row">
-              <div class="form-group"><label>Nomi *</label><input id="name" class="form-control" required></div>
-</div>
-            <div class="form-row">
-              <div class="form-group"><label>Narx (UZS) *</label><input id="price" type="number" class="form-control" required></div>
-              <div class="form-group"><label>Eski narx</label><input id="oldPrice" type="number" class="form-control" value="0"></div>
-              <div class="form-group"><label>Vazn (kg)</label><input id="weightKg" type="number" step="0.01" min="0" class="form-control" placeholder="Masalan: 0.35"><small class="hint">Yetkazib berish va UzPost hisobida ishlatiladi.</small></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Popular (0-100)</label><input id="popularScore" type="number" class="form-control" min="0" max="100" value="50"></div>
-              <div class="form-group"><label>CreatedAt</label><input id="createdAt" type="date" class="form-control"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Valyuta</label><input id="currency" class="form-control" value="UZS"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Mahsulot turi (Original / OEM / Nusxa)</label>
-                <select id="productType" class="form-control">
-                  <option value="">Tanlanmagan</option>
-                  <option value="original">Original</option>
-                  <option value="oem">OEM</option>
-                  <option value="replica">Nusxa</option>
-                </select>
-                <small class="hint"><i class="fas fa-certificate"></i> Bu maydon mijozga mahsulot turini aniq ko‘rsatadi.</small>
-              </div>
-            </div>
-            <div class="form-row"><div class="form-group"><label>Tavsif</label><textarea id="description" class="form-control" rows="3"></textarea></div></div>
-
-            <div class="form-section" style="border:1px solid rgba(220,38,38,.14);background:linear-gradient(180deg,#fff,#fff7f7);box-shadow:none;margin-top:10px">
-              <h4><i class="fas fa-language"></i> RU / EN tarjima</h4>
-              <div class="form-row">
-                <div class="form-group"><label>Nomi RU</label><input id="name_ru" class="form-control" placeholder="Ruscha nomi"></div>
-                <div class="form-group"><label>Nomi EN</label><input id="name_en" class="form-control" placeholder="English product name"></div>
-              </div>
-              <div class="form-row">
-                <div class="form-group"><label>Tavsif RU</label><textarea id="description_ru" class="form-control" rows="3" placeholder="Ruscha tavsif"></textarea></div>
-                <div class="form-group"><label>Tavsif EN</label><textarea id="description_en" class="form-control" rows="3" placeholder="English description"></textarea></div>
-              </div>
-              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <button type="button" class="btn btn-primary btn-sm" id="autoTranslateBtn"><i class="fas fa-wand-magic-sparkles"></i> UZ dan RU/EN yaratish</button>
-                <small class="hint"><i class="fas fa-circle-info"></i> Avval o‘zbekcha nom va tavsifni yozing, keyin bosing. API ishlamasa maydonlarni qo‘lda to‘ldirish mumkin.</small>
-              </div>
-            </div>
-          
-            <div class="form-row">
-              <div class="form-group">
-                <label>YouTube video link (ixtiyoriy)</label>
-                <input id="youtubeUrl" class="form-control" placeholder="https://youtu.be/..." />
-                <small class="hint">Frontenda YouTube ikonkasi shu linkdan foydalanadi.</small>
-              </div>
-            </div>
-</div>
-
-          <div class="form-section pm-col-right">
-            <h4><i class="fas fa-truck"></i> Yetkazib berish turi</h4>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Mahsulot turi</label>
-                <select id="pType" class="form-control">
-                  <option value="stock">O2018zimizda (omborda bor)</option>
-                  <option value="cargo">Keltirib beramiz (cargo)</option>
-                </select>
-                <div class="form-text">"Keltirib beramiz" bo2018lsa, min/max kun va prepay avtomatik yoqiladi.</div>
-              </div>
-              <div class="form-group">
-                <label>Min kun</label>
-                <input id="pMinDays" type="number" class="form-control" min="0" placeholder="15">
-              </div>
-              <div class="form-group">
-                <label>Max kun</label>
-                <input id="pMaxDays" type="number" class="form-control" min="0" placeholder="30">
-              </div>
-            </div>
-          </div>
-
-          ></i> Teglar</h4>
-            <div class="form-group"><label>Vergul bilan</label><input id="tagsInput" class="form-control" placeholder="telefon, premium"></div>
-            <div id="tagsPreview" class="tags-container"></div>
-          </div>
-
-          <div class="form-section pm-col-right">
-            <h4><i class="fas fa-palette"></i> Ranglar</h4>
-            <div id="colorsContainer" class="dynamic-list"></div>
-            <button type="button" class="btn btn-light btn-sm" id="addColorBtn"><i class="fas fa-plus"></i> Rang</button>
-          </div>
-
-          <div class="form-section pm-col-right">
-            <h4><i class="fas fa-ruler"></i> O'lchamlar</h4>
-            <div id="sizesContainer" class="dynamic-list"></div>
-            <button type="button" class="btn btn-light btn-sm" id="addSizeBtn"><i class="fas fa-plus"></i> O'lcham</button>
-          </div>
-
-          <div class="form-section pm-col-right">
-            <h4><i class="fas fa-images"></i> Rasmlar</h4>
-            <div id="imagesContainer" class="dynamic-list"></div>
-            <button type="button" class="btn btn-light btn-sm" id="addImageBtn"><i class="fas fa-plus"></i> Rasm</button>
-          </div>
-
-          <div class="form-section pm-col-right">
-            <h4><i class="fas fa-layer-group"></i> Ranglarga rasm biriktirish</h4>
-            <div class="form-text" style="margin-bottom:10px">
-              Avval rang nomlarini kiriting. Keyin har bir rang uchun rasm yuklang yoki URL qo‘shing. Saqlanganda avtomatik <b>imagesByColor</b> bo‘lib yoziladi.
-            </div>
-            <div id="colorImagesContainer" class="color-image-builder"></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-              <button type="button" class="btn btn-light btn-sm" id="syncColorImagesBtn"><i class="fas fa-wand-magic-sparkles"></i> Ranglardan yaratish</button>
-              <button type="button" class="btn btn-light btn-sm" id="addColorImageBtn"><i class="fas fa-plus"></i> Qator qo‘shish</button>
-            </div>
-            <input id="imagesByColorInput" class="form-control" style="display:none">
-          </div>
-
-          <div class="form-section">
-            <h4><i class="fas fa-layer-group"></i> Variantlar</h4>
-            <div id="variantsContainer"><p class="form-text">Variant narx qo'yilsa ishlaydi.</p></div>
-            <button type="button" class="btn btn-light btn-sm" id="addVariantBtn"><i class="fas fa-plus"></i> Variant</button>
+    <div class="modal-content pm-compact-shell">
+      <div class="modal-header pm-modal-header">
+        <div class="pm-modal-title-wrap">
+          <div class="pm-modal-icon"><i class="fas fa-box-open"></i></div>
+          <div>
+            <h3 id="modalTitle">Yangi mahsulot</h3>
+            <p class="pm-modal-subtitle">Ixcham, premium va tez to‘ldiriladigan mahsulot qo‘shish oynasi</p>
           </div>
         </div>
+        <button class="btn btn-light btn-sm" id="closeModalBtn" aria-label="Yopish"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body pm-modal-body">
+        <form id="productForm" class="pm-form">
+          <input type="hidden" id="productId">
+
+          <div class="pm-intro-strip">
+            <div class="pm-intro-card">
+              <strong><i class="fas fa-sparkles"></i> Premium forma</strong>
+              <span>Majburiy joylar oldinda, qo‘shimcha sozlamalar esa ixcham bloklarda joylashgan.</span>
+            </div>
+            <div class="pm-intro-chip"><i class="fas fa-bolt"></i> Tez to‘ldirish</div>
+            <div class="pm-intro-chip"><i class="fas fa-shield-check"></i> Tartibli</div>
+            <div class="pm-intro-chip"><i class="fas fa-layout"></i> Ixcham</div>
+          </div>
+
+          <div class="pm-grid">
+            <div class="pm-main-col">
+              <div class="form-section pm-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-circle-info"></i> Asosiy ma’lumotlar</h4>
+                  <span class="pm-badge">Asosiy</span>
+                </div>
+                <div class="form-row pm-row-1">
+                  <div class="form-group"><label>Nomi *</label><input id="name" class="form-control" required></div>
+                </div>
+                <div class="form-row pm-row-3">
+                  <div class="form-group"><label>Narx (UZS) *</label><input id="price" type="number" class="form-control" required></div>
+                  <div class="form-group"><label>Eski narx</label><input id="oldPrice" type="number" class="form-control" value="0"></div>
+                  <div class="form-group"><label>Vazn (kg)</label><input id="weightKg" type="number" step="0.01" min="0" class="form-control" placeholder="0.35"><small class="hint">Yetkazib berish va UzPost uchun ishlatiladi.</small></div>
+                </div>
+                <div class="form-row pm-row-3">
+                  <div class="form-group"><label>Popular (0-100)</label><input id="popularScore" type="number" class="form-control" min="0" max="100" value="50"></div>
+                  <div class="form-group"><label>CreatedAt</label><input id="createdAt" type="date" class="form-control"></div>
+                  <div class="form-group"><label>Valyuta</label><input id="currency" class="form-control" value="UZS"></div>
+                </div>
+                <div class="form-row pm-row-2">
+                  <div class="form-group">
+                    <label>Mahsulot turi (Original / OEM / Nusxa)</label>
+                    <select id="productType" class="form-control">
+                      <option value="">Tanlanmagan</option>
+                      <option value="original">Original</option>
+                      <option value="oem">OEM</option>
+                      <option value="replica">Nusxa</option>
+                    </select>
+                    <small class="hint"><i class="fas fa-certificate"></i> Mijozga mahsulot turini aniq ko‘rsatadi.</small>
+                  </div>
+                  <div class="form-group">
+                    <label>YouTube video link</label>
+                    <input id="youtubeUrl" class="form-control" placeholder="https://youtu.be/..." />
+                    <small class="hint">Frontenda YouTube ikonka shu linkni ishlatadi.</small>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Tavsif</label><textarea id="description" class="form-control" rows="3"></textarea></div>
+                </div>
+              </div>
+
+              <div class="form-section pm-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-language"></i> RU / EN tarjima</h4>
+                  <span class="pm-badge pm-badge-soft">Qo‘shimcha</span>
+                </div>
+                <div class="form-row pm-row-2">
+                  <div class="form-group"><label>Nomi RU</label><input id="name_ru" class="form-control" placeholder="Ruscha nomi"></div>
+                  <div class="form-group"><label>Nomi EN</label><input id="name_en" class="form-control" placeholder="English name"></div>
+                </div>
+                <div class="form-row pm-row-2">
+                  <div class="form-group"><label>Tavsif RU</label><textarea id="description_ru" class="form-control" rows="3" placeholder="Ruscha tavsif"></textarea></div>
+                  <div class="form-group"><label>Tavsif EN</label><textarea id="description_en" class="form-control" rows="3" placeholder="English description"></textarea></div>
+                </div>
+                <div class="pm-inline-tools">
+                  <button type="button" class="btn btn-primary btn-sm" id="autoTranslateBtn"><i class="fas fa-wand-magic-sparkles"></i> UZ dan RU/EN yaratish</button>
+                  <small class="hint"><i class="fas fa-circle-info"></i> Avval o‘zbekcha nom va tavsifni yozing, keyin avtomatik tarjima qiling.</small>
+                </div>
+              </div>
+
+              <div class="form-section pm-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-layer-group"></i> Variantlar</h4>
+                  <span class="pm-badge pm-badge-soft">Ixtiyoriy</span>
+                </div>
+                <div id="variantsContainer"><p class="form-text">Variant narx qo‘yilsa ishlaydi.</p></div>
+                <button type="button" class="btn btn-light btn-sm" id="addVariantBtn"><i class="fas fa-plus"></i> Variant</button>
+              </div>
+            </div>
+
+            <div class="pm-side-col">
+              <div class="form-section pm-card pm-sticky-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-truck"></i> Yetkazib berish</h4>
+                  <span class="pm-badge">Tez sozlama</span>
+                </div>
+                <div class="form-row pm-row-1">
+                  <div class="form-group">
+                    <label>Mahsulot turi</label>
+                    <select id="pType" class="form-control">
+                      <option value="stock">O‘zimizda (omborda bor)</option>
+                      <option value="cargo">Keltirib beramiz (cargo)</option>
+                    </select>
+                    <div class="form-text">Cargo tanlansa min/max kun avtomatik qo‘llanadi.</div>
+                  </div>
+                </div>
+                <div class="form-row pm-row-2">
+                  <div class="form-group"><label>Min kun</label><input id="pMinDays" type="number" class="form-control" min="0" placeholder="15"></div>
+                  <div class="form-group"><label>Max kun</label><input id="pMaxDays" type="number" class="form-control" min="0" placeholder="30"></div>
+                </div>
+              </div>
+
+              <div class="form-section pm-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-tags"></i> Teglar</h4>
+                  <span class="pm-badge pm-badge-soft">SEO</span>
+                </div>
+                <div class="form-group"><label>Vergul bilan</label><input id="tagsInput" class="form-control" placeholder="telefon, premium"></div>
+                <div id="tagsPreview" class="tags-container"></div>
+              </div>
+
+              <div class="form-section pm-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-palette"></i> Ranglar</h4>
+                  <button type="button" class="btn btn-light btn-sm" id="addColorBtn"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="colorsContainer" class="dynamic-list"></div>
+              </div>
+
+              <div class="form-section pm-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-ruler"></i> O‘lchamlar</h4>
+                  <button type="button" class="btn btn-light btn-sm" id="addSizeBtn"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="sizesContainer" class="dynamic-list"></div>
+              </div>
+
+              <div class="form-section pm-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-images"></i> Rasmlar</h4>
+                  <button type="button" class="btn btn-light btn-sm" id="addImageBtn"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="imagesContainer" class="dynamic-list"></div>
+              </div>
+
+              <div class="form-section pm-card">
+                <div class="pm-section-head">
+                  <h4><i class="fas fa-layer-group"></i> Ranglarga rasm</h4>
+                  <span class="pm-badge pm-badge-soft">Auto</span>
+                </div>
+                <div class="form-text" style="margin-bottom:10px">Avval rang nomlarini kiriting, keyin har bir rang uchun rasm biriktiring.</div>
+                <div id="colorImagesContainer" class="color-image-builder"></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                  <button type="button" class="btn btn-light btn-sm" id="syncColorImagesBtn"><i class="fas fa-wand-magic-sparkles"></i> Ranglardan yaratish</button>
+                  <button type="button" class="btn btn-light btn-sm" id="addColorImageBtn"><i class="fas fa-plus"></i> Qator</button>
+                </div>
+                <input id="imagesByColorInput" class="form-control" style="display:none">
+              </div>
+            </div>
+          </div>
         </form>
       </div>
-      <div class="modal-footer">
-<button type="button" class="btn btn-primary" id="saveProductBtn">Saqlash</button>
+      <div class="modal-footer pm-modal-footer">
+        <div class="pm-footer-note"><i class="fas fa-circle-info"></i> Kerakli maydonlarni to‘ldirib, mahsulotni tez saqlang.</div>
+        <div class="pm-footer-actions">
+          <button type="button" class="btn btn-light" id="productModalCancelBtn">Bekor qilish</button>
+          <button type="button" class="btn btn-primary" id="saveProductBtn">Saqlash</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- JSON Modal -->
-  <div class="modal" id="jsonModal">
+
+<div class="modal" id="jsonModal">
     <div class="modal-content">
       <div class="modal-header"><h3>JSON</h3><button class="btn btn-light btn-sm" id="closeJsonModalBtn"><i class="fas fa-times"></i></button></div>
       <div class="modal-body"><div class="json-viewer" id="jsonViewer"></div></div>
@@ -4990,6 +5152,7 @@ $("currency").value=p.currency||"UZS";
       $("saveProductBtn").addEventListener("click",(e)=>{ e.preventDefault(); e.stopPropagation(); saveProduct(); });
       $("autoTranslateBtn")?.addEventListener("click",(e)=>{ e.preventDefault(); e.stopPropagation(); autoTranslateProductFields(); });
       $("closeModalBtn").addEventListener("click",()=>{ closeModal("productModal"); resetForm(); });
+      $("productModalCancelBtn")?.addEventListener("click",()=>{ closeModal("productModal"); resetForm(); });
 $("viewJsonBtn").addEventListener("click",viewJson);
       $("closeJsonModalBtn").addEventListener("click",()=>closeModal("jsonModal"));
       $("copyJsonBtn").addEventListener("click",copyJson);
