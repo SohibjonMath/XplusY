@@ -7838,3 +7838,96 @@ body{
   .deliveryOptionIcon{width:32px!important;height:32px!important;border-radius:12px!important}
   .deliveryOptionText b{font-size:11px!important}.deliveryOptionText small{font-size:9.5px!important}
 }
+
+
+/* v38 premium reviews mini modal */
+.miniModal{transition:opacity .14s ease!important}
+.miniBackdrop{background:rgba(15,23,42,.46)!important;backdrop-filter:blur(8px)!important}
+.miniShell{
+  width:min(92vw,540px)!important;
+  max-height:min(84vh,760px)!important;
+  border-radius:26px!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  background:linear-gradient(180deg,#ffffff,#fbfbfd)!important;
+  box-shadow:0 26px 80px rgba(2,6,23,.26)!important;
+  transform:translateY(8px) scale(.992)!important;
+  transition:transform .14s ease, opacity .14s ease!important;
+  overflow:hidden!important;
+}
+.miniModal.isOpen .miniShell{transform:translateY(0) scale(1)!important;opacity:1!important}
+.miniHead{
+  position:sticky;top:0;z-index:2;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 14px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,255,255,.88))!important;
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(226,232,240,.9);
+}
+.miniTitle{font-size:20px!important;font-weight:950!important;letter-spacing:-.02em;color:#111827!important}
+.miniClose{
+  top:16px!important;right:16px!important;width:42px!important;height:42px!important;
+  border-radius:15px!important;border:1px solid #e5e7eb!important;background:rgba(255,255,255,.92)!important;
+  box-shadow:0 12px 28px rgba(15,23,42,.08)!important;color:#475569!important;
+}
+.miniBody{padding:16px 18px 18px!important;background:linear-gradient(180deg,#fcfcff,#fff)!important}
+.miniReviewMeta{display:grid!important;grid-template-columns:1.15fr .85fr;gap:10px!important;margin-bottom:12px!important}
+.miniStatCard{
+  padding:13px 14px;border-radius:18px;border:1px solid #eceef3;background:linear-gradient(180deg,#fff,#fafbff);
+  box-shadow:0 10px 24px rgba(15,23,42,.05);
+}
+.miniStatLabel{font-size:11px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.miniStatValue{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:#111827}
+.miniStatValue b{font-size:22px;font-weight:950;letter-spacing:-.03em}
+.starIcons{display:inline-flex;align-items:center;gap:3px}
+.starIcons img{width:18px;height:18px;display:block;object-fit:contain}
+.starIcons.hero img{width:20px;height:20px}
+.starIcons.small img{width:14px;height:14px}
+.miniComposer{
+  border:1px solid #eceef3!important;background:linear-gradient(180deg,#fff,#fcfcfe)!important;border-radius:22px!important;padding:14px!important;
+  box-shadow:0 12px 28px rgba(15,23,42,.06)!important;
+}
+.miniComposer .revLabelRow{margin-top:0!important;margin-bottom:8px!important}
+.miniComposer .revLabel{font-size:13px!important;font-weight:950!important;color:#111827!important}
+.miniComposer .revHint{font-size:11px!important;color:#64748b!important;font-weight:800!important}
+.miniShell .revStars{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 12px!important}
+.miniShell .starBtn{
+  width:46px;height:46px;border-radius:16px;border:1px solid #e8eaef;background:#fff;
+  display:grid;place-items:center;padding:0;box-shadow:0 8px 18px rgba(15,23,42,.04);
+  transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease,background .12s ease!important;
+}
+.miniShell .starBtn img{width:24px;height:24px;display:block;object-fit:contain}
+.miniShell .starBtn:hover,.miniShell .starBtn:focus-visible{transform:translateY(-1px);border-color:#f2cc4d;box-shadow:0 10px 22px rgba(245,158,11,.16)}
+.miniShell .starBtn.active{border-color:#f4c84b!important;background:#fffaf0!important;box-shadow:0 12px 24px rgba(245,158,11,.16)!important}
+.miniShell .revText{
+  min-height:106px!important;border-radius:18px!important;border:1px solid #e5e7eb!important;background:#f8fafc!important;padding:12px 13px!important;
+  font-size:13.5px!important;line-height:1.5!important;color:#111827!important;
+}
+.miniShell .revText:focus{border-color:#f59e0b!important;box-shadow:0 0 0 4px rgba(245,158,11,.10)!important;background:#fff!important}
+.miniShell .revBtn{
+  width:100%;margin-top:12px!important;min-height:48px;border-radius:16px!important;border:none!important;
+  background:linear-gradient(135deg,#111827,#dc2626)!important;color:#fff!important;font-size:14px!important;font-weight:950!important;
+  box-shadow:0 16px 28px rgba(220,38,38,.18)!important;
+}
+.miniShell .revBtn:hover{filter:brightness(1.02)!important;background:linear-gradient(135deg,#111827,#dc2626)!important}
+.miniRevNote{margin-top:9px!important;font-size:11.5px!important;color:#6b7280!important;line-height:1.45!important}
+.miniShell .revList{margin-top:14px!important;display:grid;gap:10px}
+.miniShell .revItem{
+  border-radius:18px!important;background:linear-gradient(180deg,#f8fafc,#fff)!important;
+  border:1px solid #eceef3!important;padding:12px 13px!important;box-shadow:0 8px 20px rgba(15,23,42,.04)!important;
+}
+.miniShell .revItemTop{display:flex;align-items:center!important;justify-content:space-between!important;gap:10px;margin-bottom:4px}
+.miniShell .revItemName{font-size:13px!important;font-weight:900!important;color:#111827!important}
+.miniShell .revItemText{margin-top:6px!important;color:#475569!important;line-height:1.5!important;font-size:13px!important}
+@media (max-width: 640px){
+  .miniShell{width:min(96vw,540px)!important;max-height:min(86vh,760px)!important;border-radius:24px!important}
+  .miniHead{padding:16px 16px 12px!important}
+  .miniTitle{font-size:18px!important}
+  .miniBody{padding:14px!important}
+  .miniReviewMeta{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .miniStatCard{padding:12px!important;border-radius:16px!important}
+  .miniStatValue b{font-size:18px!important}
+  .starIcons.hero img{width:17px;height:17px}
+  .miniShell .starBtn{width:42px!important;height:42px!important;border-radius:14px!important}
+  .miniShell .starBtn img{width:22px!important;height:22px!important}
+  .miniShell .revText{min-height:92px!important}
+}

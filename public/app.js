@@ -3614,7 +3614,8 @@ function renderMiniStarSelector(container){
     b.type = "button";
     b.className = "starBtn" + (i<=shown ? " active" : "");
     b.title = `${i} / 5`;
-    b.textContent = "★";
+    b.setAttribute("aria-label", `${i} yulduz`);
+    b.innerHTML = `<img src="${omStarIconSrc(i<=shown)}" alt="${i} yulduz" loading="lazy">`;
     b.addEventListener("mouseenter", ()=>{ miniHoverStars=i; renderMiniStarSelector(container); });
     b.addEventListener("focus", ()=>{ miniHoverStars=i; renderMiniStarSelector(container); });
     b.addEventListener("mouseleave", ()=>{ miniHoverStars=0; renderMiniStarSelector(container); });
@@ -3649,6 +3650,14 @@ function parseYouTubeEmbed(url){
   return u; // fallback: try as-is
 }
 
+function omStarIconSrc(active){
+  return active ? "./assets/review-star-filled.png" : "./assets/review-star-empty.png";
+}
+function omRenderStarIcons(score, extraClass=""){
+  const s = Math.max(0, Math.min(5, Number(score)||0));
+  return `<span class="starIcons ${extraClass}">${Array.from({length:5}, (_,i)=>`<img src="${omStarIconSrc(i<s)}" alt="" loading="lazy">`).join("")}</span>`;
+}
+
 function renderMiniReviewsList(list){
   if(!els.miniBody) return;
   const wrap = document.createElement("div");
@@ -3660,11 +3669,10 @@ function renderMiniReviewsList(list){
     const item = document.createElement("div");
     item.className = "revItem";
     const s = Math.max(0, Math.min(5, Number(r.stars)||0));
-    const stars = "★".repeat(s) + "☆".repeat(5-s);
     item.innerHTML = `
       <div class="revItemTop">
         <div class="revItemName">${escapeHtml(r.author||"Foydalanuvchi")}</div>
-        <div class="revItemStars">${stars}</div>
+        <div class="revItemStars">${omRenderStarIcons(s,'small')}</div>
       </div>
       <div class="revItemText">${escapeHtml(r.text||"")}</div>
     `;
@@ -3684,7 +3692,7 @@ async function openMini(kind, productId){
 
   if(!els.miniModal || !els.miniTitle || !els.miniBody) return;
 
-  const titleMap = { info:"Tavsif", video:"Video", reviews:"Sharh" };
+  const titleMap = { info:"Tavsif", video:"Video", reviews:"Sharhlar" };
   els.miniTitle.textContent = titleMap[kind] || "Ma'lumot";
   els.miniBody.innerHTML = "";
 
@@ -3710,10 +3718,16 @@ async function openMini(kind, productId){
     try{
       const st = await refreshStats(p.id, true);
       const meta = document.createElement("div");
-      meta.className = "miniMeta";
+      meta.className = "miniMeta miniReviewMeta";
       meta.innerHTML = `
-        <div class="pill"><i class="fa-solid fa-star" aria-hidden="true"></i> ${st.avg ? st.avg.toFixed(1) : "0.0"}</div>
-        <div class="pill"><i class="fa-solid fa-message" aria-hidden="true"></i> ${st.count} ta sharh</div>
+        <div class="miniStatCard">
+          <div class="miniStatLabel">Umumiy baho</div>
+          <div class="miniStatValue">${omRenderStarIcons(Math.round(st.avg || 0),'hero')}<b>${st.avg ? st.avg.toFixed(1) : "0.0"}</b></div>
+        </div>
+        <div class="miniStatCard">
+          <div class="miniStatLabel">Sharhlar soni</div>
+          <div class="miniStatValue"><i class="fa-solid fa-message"></i><b>${st.count}</b></div>
+        </div>
       `;
       els.miniBody.appendChild(meta);
     }catch(e){}
@@ -3724,8 +3738,8 @@ async function openMini(kind, productId){
     composer.className = "miniComposer";
     composer.innerHTML = `
       <div class="revLabelRow">
-        <div class="revLabel">Reyting</div>
-        <div class="revHint">1–5 yulduz</div>
+        <div class="revLabel">Baholang</div>
+        <div class="revHint">Belgilang</div>
       </div>
       <div class="revStars" id="miniRevStars"></div>
       <div class="revLabelRow">
@@ -3733,8 +3747,8 @@ async function openMini(kind, productId){
         <div class="revHint"><span id="miniChar">0</span>/400</div>
       </div>
       <textarea class="revText" id="miniRevText" rows="3" placeholder="Qisqa va aniq yozing (masalan: sifat zo‘r, yetkazish tez)…"></textarea>
-      <button class="revBtn" id="miniRevSend"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Yuborish</button>
-      <div class="muted miniRevNote" style="margin-top:8px; font-size:12px;">Sharh qoldirish uchun kirish talab qilinadi.</div>
+      <button class="revBtn" id="miniRevSend"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Sharh yuborish</button>
+      <div class="muted miniRevNote">Sharh qoldirish uchun kirish talab qilinadi.</div>
     `;
     els.miniBody.appendChild(composer);
 
