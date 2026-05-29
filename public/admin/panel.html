@@ -409,6 +409,18 @@
       .modal-actions{flex-wrap:wrap;justify-content:flex-end}
     }
 
+
+    /* Easy color → image binding */
+    .color-image-builder{display:flex;flex-direction:column;gap:12px}
+    .color-image-row{border:1px solid #eef2f7;background:#fff;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+    .color-image-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .color-image-head select{min-width:150px;flex:1}
+    .color-image-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .color-image-preview{display:flex;gap:8px;flex-wrap:wrap;min-height:44px}
+    .color-image-preview .ci-thumb{width:52px;height:52px;border-radius:12px;border:1px solid #e5e7eb;object-fit:cover;background:#f8fafc}
+    .color-image-row textarea{min-height:54px;font-size:.86rem}
+    @media (max-width:700px){.color-image-head{align-items:stretch}.color-image-actions .btn{flex:1}.color-image-head select{min-width:100%}}
+
 </style>
   <script src="../telegram-config.js"></script>
 
@@ -968,11 +980,16 @@
           </div>
 
           <div class="form-section pm-col-right">
-            <h4><i class="fas fa-layer-group"></i> imagesByColor</h4>
-            <div class="form-group">
-              <label>Color=url1|url2; Black=url</label>
-              <input id="imagesByColorInput" class="form-control">
+            <h4><i class="fas fa-layer-group"></i> Ranglarga rasm biriktirish</h4>
+            <div class="form-text" style="margin-bottom:10px">
+              Avval rang nomlarini kiriting. Keyin har bir rang uchun rasm yuklang yoki URL qo‘shing. Saqlanganda avtomatik <b>imagesByColor</b> bo‘lib yoziladi.
             </div>
+            <div id="colorImagesContainer" class="color-image-builder"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+              <button type="button" class="btn btn-light btn-sm" id="syncColorImagesBtn"><i class="fas fa-wand-magic-sparkles"></i> Ranglardan yaratish</button>
+              <button type="button" class="btn btn-light btn-sm" id="addColorImageBtn"><i class="fas fa-plus"></i> Qator qo‘shish</button>
+            </div>
+            <input id="imagesByColorInput" class="form-control" style="display:none">
           </div>
 
           <div class="form-section">
@@ -1923,6 +1940,7 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
       $("variantsContainer").innerHTML='<p class="form-text">Variant narx qo\'yilsa ishlaydi.</p>';
       addColor(); addSize(); addImage();
       $("imagesByColorInput").value="";
+      if(document.getElementById("colorImagesContainer")) document.getElementById("colorImagesContainer").innerHTML="";
       if(document.getElementById("productType")) document.getElementById("productType").value="";
       if(document.getElementById("weightKg")) document.getElementById("weightKg").value="";
       ["name_ru","name_en","description_ru","description_en"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
@@ -1938,16 +1956,18 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
       const c=$("colorsContainer");
       const div=document.createElement("div");
       div.className="list-item";
-      div.innerHTML=`<input class="form-control" placeholder="Rang nomi" value="${esc(name)}" style="flex:2">
+      div.innerHTML=`<input class="form-control colorNameInput" placeholder="Rang nomi" value="${esc(name)}" style="flex:2">
         <input type="color" class="color-input" value="${esc(hex)}">
-        <input class="form-control" placeholder="#HEX" value="${esc(hex)}" style="flex:1">
+        <input class="form-control colorHexInput" placeholder="#HEX" value="${esc(hex)}" style="flex:1">
         <button type="button" class="btn btn-light btn-sm rm"><i class="fas fa-times"></i></button>`;
       c.appendChild(div);
+      const nameInp=div.querySelector('.colorNameInput');
       const color=div.querySelector('input[type="color"]');
       const hexInp=div.querySelectorAll("input")[2];
       color.addEventListener("input",()=>hexInp.value=color.value);
       hexInp.addEventListener("input",()=>{ if(/^#[0-9A-F]{6}$/i.test(hexInp.value)) color.value=hexInp.value; });
-      div.querySelector(".rm").addEventListener("click",()=>{ if(c.querySelectorAll(".list-item").length>1) div.remove(); });
+      nameInp.addEventListener("input",()=>{ try{ refreshColorImageSelects(); }catch(e){} });
+      div.querySelector(".rm").addEventListener("click",()=>{ if(c.querySelectorAll(".list-item").length>1){ div.remove(); try{ refreshColorImageSelects(); }catch(e){} } });
     }
     function addSize(val=""){
       const c=$("sizesContainer");
@@ -2046,6 +2066,159 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
         obj[k]=v.split("|").map(x=>x.trim()).filter(Boolean);
       });
       return Object.keys(obj).length?obj:undefined;
+    }
+
+
+    function normalizeColorImageUrls(raw){
+      return String(raw||"")
+        .split(/\n|\|/)
+        .map(x=>x.trim())
+        .filter(Boolean)
+        .filter((x,i,a)=>a.indexOf(x)===i);
+    }
+    function stringifyImagesByColor(obj){
+      if(!obj || typeof obj!=="object") return "";
+      return Object.entries(obj)
+        .filter(([k,arr])=>k && Array.isArray(arr) && arr.length)
+        .map(([k,arr])=>`${k}=${arr.join("|")}`)
+        .join("; ");
+    }
+    function getCurrentColorNames(){
+      const names=[...document.querySelectorAll("#colorsContainer .list-item")]
+        .map(li=>li.querySelector(".colorNameInput, input")?.value?.trim()||"")
+        .filter(Boolean);
+      return [...new Set(names)];
+    }
+    function refreshColorImageSelects(){
+      const names=getCurrentColorNames();
+      document.querySelectorAll("#colorImagesContainer .ciColor").forEach(sel=>{
+        const selected=sel.value;
+        const opts=[...names];
+        if(selected && !opts.includes(selected)) opts.unshift(selected);
+        sel.innerHTML=(opts.length?opts:[""]).map(n=>`<option value="${esc(n)}">${esc(n||"Rang tanlanmagan")}</option>`).join("");
+        sel.value = selected && opts.includes(selected) ? selected : (opts[0]||"");
+      });
+    }
+    function renderColorImagePreview(row){
+      const wrap=row.querySelector(".color-image-preview");
+      const urls=normalizeColorImageUrls(row.querySelector(".ciUrls")?.value||"");
+      if(!wrap) return;
+      wrap.innerHTML = urls.length
+        ? urls.map(u=>`<img class="ci-thumb" src="${esc(u)}" alt="">`).join("")
+        : `<span class="form-text">Bu rang uchun rasm yo‘q</span>`;
+    }
+    function addColorImageRow(colorName="", urls=[]){
+      const c=document.getElementById("colorImagesContainer");
+      if(!c) return;
+      const names=getCurrentColorNames();
+      const opts=[...names];
+      if(colorName && !opts.includes(colorName)) opts.unshift(colorName);
+      const div=document.createElement("div");
+      div.className="color-image-row";
+      div.innerHTML=`
+        <div class="color-image-head">
+          <select class="form-control ciColor">
+            ${(opts.length?opts:[colorName||""]).map(n=>`<option value="${esc(n)}" ${n===colorName?'selected':''}>${esc(n||"Rang tanlanmagan")}</option>`).join("")}
+          </select>
+          <div class="color-image-actions">
+            <input type="file" class="ciFile" accept="image/*" multiple style="display:none">
+            <button type="button" class="btn btn-light btn-sm ciUpload"><i class="fas fa-upload"></i> Rasm yuklash</button>
+            <button type="button" class="btn btn-light btn-sm ciUseMain"><i class="fas fa-images"></i> Asosiy rasmdan</button>
+            <button type="button" class="btn btn-light btn-sm ciRemove"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <textarea class="form-control ciUrls" placeholder="Bu rang rasmlari URL: har qatorga bitta yoki | bilan ajrating">${esc((Array.isArray(urls)?urls:[]).join("\n"))}</textarea>
+        <div class="color-image-preview"></div>
+      `;
+      c.appendChild(div);
+      const ta=div.querySelector(".ciUrls");
+      const fileEl=div.querySelector(".ciFile");
+      const uploadBtn=div.querySelector(".ciUpload");
+      const useMainBtn=div.querySelector(".ciUseMain");
+      const removeBtn=div.querySelector(".ciRemove");
+      ta.addEventListener("input",()=>renderColorImagePreview(div));
+      div.querySelector(".ciColor").addEventListener("change",()=>setImagesByColorInputFromRows());
+      uploadBtn.addEventListener("click",()=>fileEl.click());
+      useMainBtn.addEventListener("click",()=>{
+        const imgs=[...document.querySelectorAll("#imagesContainer .imgUrl")].map(i=>i.value.trim()).filter(Boolean);
+        if(!imgs.length) return toast("Avval asosiy rasmlarga rasm qo‘shing", "error");
+        const current=normalizeColorImageUrls(ta.value);
+        const missing=imgs.filter(u=>!current.includes(u));
+        ta.value=[...current, ...missing].join("\n");
+        renderColorImagePreview(div);
+        setImagesByColorInputFromRows();
+        toast("Asosiy rasmlar rangga biriktirildi");
+      });
+      fileEl.addEventListener("change", async ()=>{
+        const files=[...(fileEl.files||[])];
+        if(!files.length) return;
+        const oldHtml=uploadBtn.innerHTML;
+        uploadBtn.disabled=true;
+        uploadBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...';
+        try{
+          const pid=($("productId")?.value||"temp").trim() || "temp";
+          const color=(div.querySelector(".ciColor")?.value||"rang").replace(/[^a-zA-Z0-9_-]+/g,"_") || "rang";
+          const uploaded=[];
+          for(const file of files){
+            uploaded.push(await uploadImageFile(file, `products/${pid}/colors/${color}`));
+          }
+          const current=normalizeColorImageUrls(ta.value);
+          ta.value=[...current, ...uploaded].filter((x,i,a)=>a.indexOf(x)===i).join("\n");
+          renderColorImagePreview(div);
+          setImagesByColorInputFromRows();
+          toast("Rang rasmi yuklandi");
+        }catch(e){
+          console.warn(e);
+          toast("Rang rasmi upload xato: "+(e.message||e), "error");
+        }finally{
+          uploadBtn.disabled=false;
+          uploadBtn.innerHTML=oldHtml;
+          fileEl.value="";
+        }
+      });
+      removeBtn.addEventListener("click",()=>{ div.remove(); setImagesByColorInputFromRows(); });
+      renderColorImagePreview(div);
+      setImagesByColorInputFromRows();
+    }
+    function getImagesByColorFromRows(){
+      const obj={};
+      document.querySelectorAll("#colorImagesContainer .color-image-row").forEach(row=>{
+        const color=(row.querySelector(".ciColor")?.value||"").trim();
+        const urls=normalizeColorImageUrls(row.querySelector(".ciUrls")?.value||"");
+        if(color && urls.length) obj[color]=urls;
+      });
+      return Object.keys(obj).length?obj:undefined;
+    }
+    function setImagesByColorInputFromRows(){
+      const input=document.getElementById("imagesByColorInput");
+      if(!input) return;
+      input.value=stringifyImagesByColor(getImagesByColorFromRows());
+    }
+    function syncColorImageRows(opts={}){
+      const keep = opts.keepExisting !== false;
+      const existing = keep ? (getImagesByColorFromRows() || parseImagesByColor(document.getElementById("imagesByColorInput")?.value||"") || {}) : {};
+      const names=getCurrentColorNames();
+      const c=document.getElementById("colorImagesContainer");
+      if(!c) return;
+      c.innerHTML="";
+      if(names.length){
+        names.forEach(n=>addColorImageRow(n, existing[n]||[]));
+      }else{
+        Object.entries(existing).forEach(([k,arr])=>addColorImageRow(k, arr||[]));
+      }
+      setImagesByColorInputFromRows();
+      if(!opts.quiet) toast("Rang rasm qatorlari tayyor");
+    }
+    function renderColorImagesFromObject(obj){
+      const c=document.getElementById("colorImagesContainer");
+      if(!c) return;
+      c.innerHTML="";
+      const data=(obj && typeof obj==="object") ? obj : {};
+      const names=getCurrentColorNames();
+      const used=new Set();
+      names.forEach(n=>{ used.add(n); addColorImageRow(n, Array.isArray(data[n])?data[n]:[]); });
+      Object.entries(data).forEach(([k,arr])=>{ if(!used.has(k)) addColorImageRow(k, Array.isArray(arr)?arr:[]); });
+      setImagesByColorInputFromRows();
     }
 
     
@@ -2239,7 +2412,7 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
 
         createdAt:$("createdAt").value||nowISO(),
         tags, colors, sizes, images, variants,
-        imagesByColor: parseImagesByColor($("imagesByColorInput").value||""),
+        imagesByColor: getImagesByColorFromRows() || parseImagesByColor($("imagesByColorInput").value||""),
         updatedAt: serverTimestamp(),
       
       fulfillmentType: (document.getElementById('pType')?.value || 'stock'),
@@ -2315,8 +2488,12 @@ $("currency").value=p.currency||"UZS";
       (p.images?.length?p.images:[""]).forEach(u=>addImage(u));
 
       if(p.imagesByColor && typeof p.imagesByColor==="object"){
-        $("imagesByColorInput").value = Object.entries(p.imagesByColor).map(([k,arr])=>`${k}=${(arr||[]).join("|")}`).join("; ");
-      }else $("imagesByColorInput").value="";
+        $("imagesByColorInput").value = stringifyImagesByColor(p.imagesByColor);
+        renderColorImagesFromObject(p.imagesByColor);
+      }else{
+        $("imagesByColorInput").value="";
+        renderColorImagesFromObject({});
+      }
 
       $("variantsContainer").innerHTML='<p class="form-text">Variant narx qo\'yilsa ishlaydi.</p>';
       (p.variants||[]).forEach(v=>addVariant(v));
@@ -2515,10 +2692,12 @@ $("viewJsonBtn").addEventListener("click",viewJson);
       $("exportJsonNav").addEventListener("click",(e)=>{e.preventDefault(); downloadJson();});
 
       $("tagsInput").addEventListener("input",updateTagsPreview);
-      $("addColorBtn").addEventListener("click",()=>addColor());
+      $("addColorBtn").addEventListener("click",()=>{ addColor(); refreshColorImageSelects(); });
       $("addSizeBtn").addEventListener("click",()=>addSize());
       $("addImageBtn").addEventListener("click",()=>addImage());
       $("addVariantBtn").addEventListener("click",()=>addVariant());
+      $("syncColorImagesBtn")?.addEventListener("click",()=>syncColorImageRows({keepExisting:true}));
+      $("addColorImageBtn")?.addEventListener("click",()=>addColorImageRow("", []));
 
       $("searchInput").addEventListener("input",()=>{
         const t=($("searchInput").value||"").toLowerCase().trim();
