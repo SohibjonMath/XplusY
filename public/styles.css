@@ -7573,3 +7573,17 @@ body{
   .ppTrustGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
   .ppTrustGrid .qvTrustItem b{font-size:9.5px!important;}
 }
+
+
+/* v31: keep delivery / stock / weight on one line in mobile product page */
+.ppTrustGrid .qvTrustItem:last-child{grid-column:auto!important;}
+@media (max-width:900px){
+  .ppTrustGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;}
+  .ppTrustGrid .qvTrustItem,
+  .ppTrustGrid .qvTrustItem:last-child{grid-column:auto!important;}
+}
+@media (max-width:380px){
+  .ppTrustGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  .ppTrustGrid .qvTrustItem,
+  .ppTrustGrid .qvTrustItem:last-child{grid-column:auto!important;}
+}
