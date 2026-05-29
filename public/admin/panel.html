@@ -1212,6 +1212,524 @@ textarea.form-control{min-height:116px;resize:vertical}
 }
 
 /* Orders/topup cards */
+.orders-suite{
+  display:block;
+  margin-bottom:18px;
+}
+.orders-hero{
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:minmax(0,1.34fr) minmax(320px,.66fr);
+  gap:18px;
+  padding:22px;
+  margin-bottom:14px;
+  border:1px solid rgba(255,255,255,.70);
+  border-radius:32px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 12% 8%,rgba(255,255,255,.22),transparent 27%),
+    radial-gradient(circle at 82% 24%,rgba(255,205,86,.24),transparent 28%),
+    linear-gradient(135deg,#111827 0%,#24113F 45%,#5B1021 100%);
+  box-shadow:0 28px 70px rgba(22,18,45,.22),0 10px 30px rgba(239,35,60,.09);
+}
+.orders-hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px),
+    linear-gradient(0deg,rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:linear-gradient(90deg,#000,transparent 86%);
+  opacity:.48;
+}
+.orders-hero-orb{
+  position:absolute;
+  width:280px;
+  height:280px;
+  right:-95px;
+  bottom:-100px;
+  border-radius:50%;
+  background:rgba(239,35,60,.30);
+  filter:blur(3px);
+}
+.orders-hero-content,.orders-hero-panel{position:relative;z-index:1}
+.orders-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 11px;
+  margin-bottom:12px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:999px;
+  color:rgba(255,255,255,.88);
+  background:rgba(255,255,255,.10);
+  backdrop-filter:blur(12px);
+  font-size:12.5px;
+  font-weight:950;
+}
+.orders-hero h3{
+  margin:0;
+  font-size:34px;
+  line-height:1.04;
+  letter-spacing:-.055em;
+  font-weight:1000;
+}
+.orders-hero p{
+  max-width:760px;
+  margin:12px 0 0;
+  color:rgba(255,255,255,.74);
+  font-size:14.5px;
+  line-height:1.65;
+}
+.orders-hero-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:17px;
+}
+.orders-hero-tags span{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 11px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;
+  color:rgba(255,255,255,.86);
+  background:rgba(255,255,255,.08);
+  font-size:12.5px;
+  font-weight:850;
+}
+.orders-hero-panel{
+  min-height:226px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:14px;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:26px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 20px 42px rgba(0,0,0,.12);
+}
+.orders-big-number{
+  font-size:56px;
+  line-height:.95;
+  letter-spacing:-.07em;
+  font-weight:1000;
+}
+.orders-live-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 11px;
+  border-radius:999px;
+  color:#0F172A;
+  background:#fff;
+  font-size:12px;
+  font-weight:1000;
+  box-shadow:0 10px 24px rgba(0,0,0,.12);
+}
+.orders-panel-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.orders-panel-grid div{
+  min-height:66px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:18px;
+  background:rgba(255,255,255,.10);
+}
+.orders-panel-grid span{
+  display:block;
+  color:rgba(255,255,255,.68);
+  font-size:11.5px;
+  font-weight:800;
+}
+.orders-panel-grid b{
+  display:block;
+  margin-top:4px;
+  color:#fff;
+  font-size:16px;
+  line-height:1.1;
+  font-weight:1000;
+}
+.orders-metrics-strip{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:14px;
+}
+.order-mini-stat{
+  min-height:86px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:rgba(255,255,255,.88);
+  backdrop-filter:blur(16px);
+  box-shadow:var(--shadow-card);
+}
+.order-mini-stat i{
+  width:46px;
+  height:46px;
+  min-width:46px;
+  display:grid;
+  place-items:center;
+  border-radius:17px;
+  font-size:17px;
+}
+.order-mini-stat b{
+  display:block;
+  margin-bottom:3px;
+  color:var(--text);
+  font-size:22px;
+  line-height:1;
+  letter-spacing:-.04em;
+  font-weight:1000;
+}
+.order-mini-stat span{
+  color:var(--muted);
+  font-size:12.5px;
+  font-weight:800;
+}
+.order-mini-stat.danger i{background:#FFF7ED;color:#B45309}
+.order-mini-stat.blue i{background:#E0F2FE;color:#0369A1}
+.order-mini-stat.success i{background:#EAF9F0;color:var(--success)}
+.order-mini-stat.muted i{background:#FEE2E2;color:#991B1B}
+.orders-workbench{
+  border-radius:30px;
+  overflow:hidden;
+}
+.orders-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px;
+  border-bottom:1px solid var(--line);
+  background:
+    radial-gradient(circle at 0% 0%,rgba(239,35,60,.08),transparent 35%),
+    linear-gradient(180deg,#fff,#FCFDFF);
+}
+.orders-toolbar-title{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:260px;
+}
+.toolbar-icon.orders{
+  background:linear-gradient(135deg,var(--danger),#991B1B);
+  box-shadow:0 16px 28px rgba(239,35,60,.20);
+}
+.orders-toolbar-title h4{
+  margin:0;
+  color:var(--text);
+  font-size:16px;
+  font-weight:1000;
+  letter-spacing:-.03em;
+}
+.orders-toolbar-title small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-weight:700;
+}
+.orders-tools{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.order-search-mini{
+  height:42px;
+  min-width:300px;
+  flex:1 1 340px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+.order-search-mini i{color:#8B94AA}
+.order-search-mini input{
+  width:100%;
+  height:100%;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--text);
+  font-size:13.5px;
+}
+.date-control{min-width:142px!important}
+.orders-table-shell{background:#fff}
+.orders-table thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#FBFCFF;
+}
+.orders-table tbody tr.order-row-premium{
+  cursor:pointer;
+  background:#fff;
+  transition:var(--transition);
+}
+.orders-table tbody tr.order-row-premium:hover{
+  background:linear-gradient(90deg,rgba(239,35,60,.045),rgba(109,74,255,.025));
+}
+.order-id-cell{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:170px;
+}
+.order-id-main{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--text);
+  font-weight:1000;
+}
+.order-id-main i{color:var(--danger)}
+.order-id-cell code{
+  width:max-content;
+  max-width:170px;
+  padding:4px 8px;
+  border:1px solid #E3E7F0;
+  border-radius:999px;
+  background:#F8FAFF;
+  color:#334155;
+  font-size:11.5px;
+}
+.order-client-cell{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:190px;
+}
+.client-avatar{
+  width:40px;
+  height:40px;
+  min-width:40px;
+  display:grid;
+  place-items:center;
+  border-radius:15px;
+  color:#fff;
+  background:linear-gradient(135deg,#111827,#6D4AFF);
+  font-size:13px;
+  font-weight:1000;
+  box-shadow:0 10px 22px rgba(15,23,42,.12);
+}
+.client-meta{min-width:0}
+.client-name{
+  color:var(--text);
+  font-weight:1000;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:190px;
+}
+.client-sub{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:750;
+}
+.status-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:1000;
+  line-height:1;
+}
+.status-pill::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:currentColor;
+}
+.status-pill.status-approved{background:#DCFCE7;color:#166534}
+.status-pill.status-pending{background:#FFF7ED;color:#B45309}
+.status-pill.status-cancelled{background:#FEE2E2;color:#991B1B}
+.order-status-select,.statusSel{
+  min-height:40px;
+  padding:0 34px 0 12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  color:var(--text);
+  background:#fff;
+  font-weight:900;
+  outline:0;
+}
+.order-money{
+  color:var(--text);
+  font-size:14px;
+  font-weight:1000;
+  letter-spacing:-.025em;
+  white-space:nowrap;
+}
+.order-muted-line{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:750;
+}
+.order-delivery-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  max-width:190px;
+  padding:7px 10px;
+  border:1px solid #E6EAF3;
+  border-radius:999px;
+  background:#F8FAFF;
+  color:#334155;
+  font-size:12px;
+  font-weight:900;
+}
+.order-delivery-pill i{color:var(--danger)}
+.order-items-mini{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:150px;
+}
+.item-stack{
+  display:flex;
+  margin-left:2px;
+}
+.item-dot{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  margin-left:-7px;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:#F2F4FA;
+  color:#64748B;
+  font-size:11px;
+  font-weight:1000;
+  box-shadow:0 8px 14px rgba(15,23,42,.08);
+}
+.item-dot:first-child{margin-left:0}
+img.item-dot{object-fit:cover}
+.premium-orders-grid{
+  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:14px;
+  padding:16px;
+  background:#FAFBFF;
+}
+.order-card{
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:24px!important;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(15,23,42,.06)!important;
+  transition:var(--transition);
+}
+.order-card::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:5px;
+  background:#F59E0B;
+}
+.order-card.card-status-approved::before{background:var(--success)}
+.order-card.card-status-cancelled::before{background:var(--danger)}
+.order-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 22px 48px rgba(15,23,42,.10)!important;
+}
+.order-card-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:16px 16px 12px 20px;
+  background:
+    radial-gradient(circle at 8% 0%,rgba(239,35,60,.08),transparent 35%),
+    linear-gradient(180deg,#fff,#FCFDFF);
+  border-bottom:1px solid #EEF1F7;
+}
+.order-card .k{
+  color:var(--muted);
+  font-size:11.5px;
+  font-weight:850;
+}
+.order-card .v{
+  margin-top:4px;
+  color:var(--text);
+  font-weight:1000;
+}
+.order-id .v code{
+  display:inline-block;
+  max-width:170px;
+  padding:5px 8px;
+  border:1px solid #E3E7F0;
+  border-radius:999px;
+  background:#F8FAFF;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.order-status-wrap{text-align:right;min-width:150px}
+.order-card-mid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:14px 16px 14px 20px;
+}
+.order-chip{
+  min-width:0;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#FAFBFF;
+}
+.order-chip .k,.order-chip .v{display:block}
+.order-chip .v{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.order-card-bottom{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+  padding:14px 16px 16px 20px;
+  border-top:1px dashed #E5E9F2;
+}
+.order-total .v{
+  color:var(--danger);
+  font-size:18px;
+  letter-spacing:-.035em;
+}
+.order-card-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
 .orders-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(310px,1fr));
@@ -1234,6 +1752,62 @@ textarea.form-control{min-height:116px;resize:vertical}
   color:var(--primary);
   font-size:32px;
 }
+.order-empty-premium{
+  padding:54px 20px!important;
+}
+.order-empty-premium i{color:var(--danger)}
+.order-items-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:12px;
+}
+.order-item-card{
+  display:flex;
+  gap:12px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#FCFDFF;
+}
+.order-item-img{
+  width:68px;
+  height:68px;
+  min-width:68px;
+  object-fit:cover;
+  border-radius:16px;
+  border:1px solid #E8ECF5;
+  background:#F4F6FB;
+}
+.order-item-info{min-width:0;flex:1}
+.order-item-title{
+  margin:0 0 8px;
+  color:var(--text);
+  font-weight:1000;
+  line-height:1.28;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.order-item-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.order-item-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:5px 8px;
+  border-radius:999px;
+  border:1px solid #E5E9F2;
+  background:#fff;
+  color:#475569;
+  font-size:11.5px;
+  font-weight:850;
+}
+.order-item-pill-copy{cursor:pointer}
+.order-item-pill-copy.copied{background:#DCFCE7;color:#166534}
 #orderMap{
   height:250px;
   overflow:hidden;
@@ -1244,6 +1818,23 @@ textarea.form-control{min-height:116px;resize:vertical}
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+}
+@media (max-width:1180px){
+  .orders-hero{grid-template-columns:1fr}
+  .orders-metrics-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .orders-toolbar{align-items:flex-start;flex-direction:column}
+  .orders-tools{width:100%;justify-content:flex-start}
+}
+@media (max-width:760px){
+  .orders-hero{padding:18px;border-radius:26px}
+  .orders-hero h3{font-size:27px}
+  .orders-big-number{font-size:42px}
+  .orders-panel-grid{grid-template-columns:1fr}
+  .orders-metrics-strip{grid-template-columns:1fr}
+  .order-search-mini{min-width:100%;flex-basis:100%}
+  .premium-orders-grid{grid-template-columns:1fr;padding:12px}
+  .orders-tools .btn{width:100%}
+  .date-control{min-width:100%!important}
 }
 
 /* JSON viewer */
@@ -1507,83 +2098,117 @@ textarea.form-control{min-height:116px;resize:vertical}
           <div class="products-cards-grid hidden" id="productsCardsGrid"></div>
         </div>
       </section>
-
-      <div class="card hidden" id="ordersView">
-        <div class="card-header">
-          <h3>Buyurtmalar</h3>
-          <div class="right-actions">
-            <span class="muted" id="ordersState">—</span>
-            <button class="btn btn-secondary" id="ordersRefresh"><i class="fas fa-rotate"></i> Yangilash</button>
+      <section class="orders-suite hidden" id="ordersView">
+        <div class="orders-hero">
+          <div class="orders-hero-orb"></div>
+          <div class="orders-hero-content">
+            <div class="orders-eyebrow"><i class="fas fa-sparkles"></i> OrzuMall buyurtmalar markazi</div>
+            <h3>Buyurtmalar boshqaruvi</h3>
+            <p>Yangi buyurtmalar, to‘lov holati, kuryer/pochta ma’lumotlari, mijoz va mahsulotlar bitta premium ish maydonida jamlandi.</p>
+            <div class="orders-hero-tags">
+              <span><i class="fas fa-bell"></i> Live kuzatuv</span>
+              <span><i class="fas fa-route"></i> Yetkazish nazorati</span>
+              <span><i class="fas fa-paper-plane"></i> Telegram xabar</span>
+              <span><i class="fas fa-receipt"></i> Chek / stiker</span>
+            </div>
+          </div>
+          <div class="orders-hero-panel">
+            <div class="hero-panel-top">
+              <div>
+                <div class="muted">Filtrlangan buyurtmalar</div>
+                <div class="orders-big-number" id="ordersTotalCount">0</div>
+              </div>
+              <div class="orders-live-badge"><i class="fas fa-signal"></i> Live</div>
+            </div>
+            <div class="orders-panel-grid">
+              <div><span>Jami savdo</span><b id="ordersRevenue">0</b></div>
+              <div><span>O‘rtacha chek</span><b id="ordersAvgOrder">0</b></div>
+              <div><span>Tovar soni</span><b id="ordersItemsCount">0</b></div>
+              <div><span>Bazadagi jami</span><b id="ordersAllCount">0</b></div>
+            </div>
           </div>
         </div>
 
-        <div class="card-body pad" id="ordersFilters">
-          <div class="form-row" style="margin-bottom:0">
-            <div class="form-group" style="min-width:220px">
-              <label>Qidiruv</label>
-              <input id="ordersSearch" class="form-control" placeholder="ID / foydalanuvchi ID / telefon / manzil">
+        <div class="orders-metrics-strip">
+          <div class="order-mini-stat danger"><i class="fas fa-hourglass-half"></i><div><b id="ordersPendingCount">0</b><span>Kutilmoqda</span></div></div>
+          <div class="order-mini-stat blue"><i class="fas fa-credit-card"></i><div><b id="ordersPaidCount">0</b><span>To‘langan</span></div></div>
+          <div class="order-mini-stat success"><i class="fas fa-truck-fast"></i><div><b id="ordersDeliveredCount">0</b><span>Yetkazildi</span></div></div>
+          <div class="order-mini-stat muted"><i class="fas fa-ban"></i><div><b id="ordersCancelledCount">0</b><span>Bekor qilindi</span></div></div>
+        </div>
+
+        <div class="card orders-workbench">
+          <div class="orders-toolbar">
+            <div class="orders-toolbar-title">
+              <div class="toolbar-icon orders"><i class="fas fa-cart-shopping"></i></div>
+              <div>
+                <h4>Buyurtmalar ro‘yxati</h4>
+                <small id="ordersState">—</small>
+              </div>
             </div>
-            <div class="form-group" style="min-width:180px">
-              <label>Holat</label>
-              <select id="ordersStatus" class="form-control">
-                <option value="">Hammasi</option>
+            <div class="orders-tools">
+              <div class="order-search-mini"><i class="fas fa-magnifying-glass"></i><input id="ordersSearch" placeholder="ID, mijoz, telefon, manzil yoki mahsulot bo‘yicha qidirish"></div>
+              <select id="ordersStatus" class="form-control compact-control" aria-label="Holat bo‘yicha filter">
+                <option value="">Barcha holatlar</option>
                 <option value="pending">Kutilmoqda</option>
                 <option value="pending_payment">To‘lov kutilmoqda</option>
                 <option value="paid">To‘langan</option>
                 <option value="delivered">Yetkazildi</option>
                 <option value="cancelled">Bekor qilindi</option>
               </select>
-            </div>
-            <div class="form-group" style="min-width:170px">
-              <label>To‘lov</label>
-              <select id="ordersProvider" class="form-control">
-                <option value="">Hammasi</option>
+              <select id="ordersProvider" class="form-control compact-control" aria-label="To‘lov bo‘yicha filter">
+                <option value="">Barcha to‘lovlar</option>
                 <option value="cash">Naqd</option>
+                <option value="balance">Balans</option>
+                <option value="payme">Payme</option>
+                <option value="click">Click</option>
+                <option value="card">Karta</option>
               </select>
-            </div>
-            <div class="form-group" style="min-width:160px">
-              <label>Sana (dan)</label>
-              <input id="ordersFrom" type="date" class="form-control">
-            </div>
-            <div class="form-group" style="min-width:160px">
-              <label>Sana (gacha)</label>
-              <input id="ordersTo" type="date" class="form-control">
+              <select id="ordersSort" class="form-control compact-control" aria-label="Saralash">
+                <option value="recent">Eng yangi</option>
+                <option value="oldest">Eng eski</option>
+                <option value="total-desc">Summa: yuqoridan</option>
+                <option value="total-asc">Summa: pastdan</option>
+                <option value="items-desc">Tovar soni: ko‘pdan</option>
+              </select>
+              <input id="ordersFrom" type="date" class="form-control compact-control date-control" title="Sanadan">
+              <input id="ordersTo" type="date" class="form-control compact-control date-control" title="Sanagacha">
+              <button class="btn btn-light btn-sm" id="ordersClear"><i class="fas fa-eraser"></i> Tozalash</button>
+              <button class="btn btn-secondary btn-sm" id="ordersRefresh"><i class="fas fa-rotate"></i> Yangilash</button>
+              <div class="view-toggle" aria-label="Buyurtmalar ko‘rinishi">
+                <button class="active" id="ordersTableMode" type="button" title="Jadval"><i class="fas fa-table-list"></i></button>
+                <button id="ordersCardMode" type="button" title="Kartalar"><i class="fas fa-grip"></i></button>
+              </div>
             </div>
           </div>
-          <div class="right-actions" style="justify-content:flex-end;margin-top:10px">
-            <button class="btn btn-light btn-sm" id="ordersClear"><i class="fas fa-eraser"></i> Tozalash</button>
+
+          <div class="table-container orders-table-shell" id="ordersTableShell">
+            <table class="table orders-table" id="ordersTable">
+              <thead>
+                <tr>
+                  <th>Buyurtma</th>
+                  <th>Mijoz</th>
+                  <th>Holat</th>
+                  <th>To‘lov</th>
+                  <th>Summa</th>
+                  <th>Yetkazish</th>
+                  <th>Tovarlar</th>
+                  <th>Vaqt</th>
+                  <th>Amal</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTbody"></tbody>
+            </table>
+          </div>
+          <div class="orders-grid premium-orders-grid hidden" id="ordersCards"></div>
+
+          <div class="empty-state order-empty-premium" id="ordersEmpty" style="display:none">
+            <i class="fas fa-receipt"></i>
+            <h3>Buyurtmalar yo‘q</h3>
+            <p>Filtrlar bo‘yicha buyurtma topilmadi yoki hali yangi buyurtmalar kelmagan.</p>
           </div>
         </div>
+      </section>
 
-        
-        <div class="orders-grid" id="ordersCards"></div>
-
-        <div class="table-wrap" style="display:none">
-          <table class="table" id="ordersTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Foydalanuvchi</th>
-                <th>Holat</th>
-                <th>To‘lov</th>
-                <th>Summa</th>
-                <th>Tovarlar</th>
-                <th>Vaqt</th>
-              </tr>
-            </thead>
-            <tbody id="ordersTbody"></tbody>
-          </table>
-        </div>
-
-
-        <div class="empty-state" id="ordersEmpty" style="display:none">
-          <i class="fas fa-receipt"></i>
-          <h3>Buyurtmalar yo‘q</h3>
-          <p>Hozircha buyurtmalar kelmagan.</p>
-        </div>
-</div>
-
-      
       <!-- Manual card top-up requests (separate) -->
       <div class="hidden" id="topupsView">
 <div class="card" id="topupReqCard" style="margin:14px 0 0 0">
@@ -4254,6 +4879,132 @@ function statusUZ(s){
       return (p && p!=="—") ? (p.charAt(0).toUpperCase()+p.slice(1)) : "—";
     }
 
+
+    function moneyUZS(n){
+      const x = Number(n || 0);
+      return (isFinite(x) ? x : 0).toLocaleString();
+    }
+
+    function orderTotal(o){
+      const candidates = [o.totalUZS, o.total, o.grandTotal, o.amount, o.sum, o.payableUZS];
+      for(const v of candidates){
+        const n = Number(v);
+        if(isFinite(n) && n > 0) return n;
+      }
+      if(Array.isArray(o.items)){
+        return o.items.reduce((s,it)=>{
+          const qty = Number(it.qty ?? it.quantity ?? it.count ?? 1) || 1;
+          const price = Number(it.priceUZS ?? it.price ?? it.unitPrice ?? 0) || 0;
+          return s + qty * price;
+        },0);
+      }
+      return 0;
+    }
+
+    function orderItemsCount(o){
+      return Array.isArray(o.items) ? o.items.reduce((s,it)=>s+(Number(it.qty ?? it.quantity ?? it.count ?? 1)||1),0) : 0;
+    }
+
+    function orderSubtotal(o){
+      if(Array.isArray(o.items)){
+        return o.items.reduce((s,it)=>{
+          const qty = Number(it.qty ?? it.quantity ?? it.count ?? 1) || 1;
+          const price = Number(it.priceUZS ?? it.price ?? it.unitPrice ?? 0) || 0;
+          return s + qty * price;
+        },0);
+      }
+      return Number(o.subtotalUZS || o.subtotal || 0) || 0;
+    }
+
+    function orderDeliveryFee(o){
+      const ship = o.shipping || {};
+      const candidates = [ship.price, ship.cost, ship.fee, ship.deliveryPrice, ship.deliveryFee, o.deliveryPrice, o.deliveryFee, o.shippingFee, o.shippingPrice];
+      for(const v of candidates){
+        const n = Number(v);
+        if(isFinite(n) && n > 0) return n;
+      }
+      return Math.max(0, orderTotal(o) - orderSubtotal(o));
+    }
+
+    function orderDiscount(o){
+      const candidates = [o.discountUZS, o.discount, o.couponDiscount, o.saleDiscount];
+      for(const v of candidates){
+        const n = Number(v);
+        if(isFinite(n) && n > 0) return n;
+      }
+      return 0;
+    }
+
+    function orderDeliveryMode(o){
+      const ship = o.shipping || {};
+      const raw = String(ship.provider || ship.type || ship.method || ship.service || o.deliveryProvider || o.deliveryType || o.shippingMethod || "").toLowerCase();
+      if(raw.includes("uzpost") || raw.includes("uz post")) return "UzPost";
+      if(raw.includes("courier") || raw.includes("kuryer") || raw.includes("kurier")) return "Kuryer";
+      if(raw.includes("post") || raw.includes("pochta")) return "Pochta";
+      if(raw.includes("pickup") || raw.includes("olib")) return "Olib ketish";
+      return raw ? raw.charAt(0).toUpperCase()+raw.slice(1) : "—";
+    }
+
+    function orderDistanceText(o){
+      const ship = o.shipping || {};
+      const km = ship.distanceKm ?? ship.km ?? o.distanceKm ?? o.deliveryKm;
+      const n = Number(km);
+      return isFinite(n) && n > 0 ? `${n.toFixed(n >= 10 ? 0 : 1)} km` : "";
+    }
+
+    function orderAddressText(o){
+      const ship = o.shipping || {};
+      return String(ship.addressText || o.addressText || o.address || ship.address || "");
+    }
+
+    function orderPhoneText(o){
+      const ship = o.shipping || {};
+      return String(ship.phone || o.phone || o.userPhone || "");
+    }
+
+    function orderCustomerName(o){
+      return String(o.userName || o.customerName || o.name || "Mijoz");
+    }
+
+    function orderInitials(o){
+      const source = orderCustomerName(o) || o.userPublicId || o.numericId || o.uid || "OM";
+      const parts = String(source).trim().split(/\s+/).filter(Boolean);
+      const s = parts.length > 1 ? (parts[0][0]+parts[1][0]) : String(source).slice(0,2);
+      return s.toUpperCase();
+    }
+
+    function orderShortId(id){
+      const s = String(id || "");
+      return s.length > 14 ? s.slice(0,7)+"…"+s.slice(-5) : s;
+    }
+
+    function orderTimeMs(o){
+      const d = toDate(o.createdAt);
+      return d ? d.getTime() : 0;
+    }
+
+    function renderOrdersMetrics(filtered, all){
+      const arr = Array.isArray(filtered) ? filtered : [];
+      const full = Array.isArray(all) ? all : [];
+      const pending = arr.filter(o=>["pending","pending_payment","pending_cash"].includes(String(o.status||"pending").toLowerCase())).length;
+      const paid = arr.filter(o=>["paid","approved","success"].includes(String(o.status||"").toLowerCase())).length;
+      const delivered = arr.filter(o=>String(o.status||"").toLowerCase()==="delivered").length;
+      const cancelled = arr.filter(o=>["cancelled","canceled","rejected","failed"].includes(String(o.status||"").toLowerCase())).length;
+      const revenue = arr.filter(o=>!["cancelled","canceled","rejected","failed"].includes(String(o.status||"").toLowerCase())).reduce((s,o)=>s+orderTotal(o),0);
+      const items = arr.reduce((s,o)=>s+orderItemsCount(o),0);
+      const avg = arr.length ? Math.round(revenue / arr.length) : 0;
+      const set = (id,val)=>{ const el=$(id); if(el) el.textContent=val; };
+      set("ordersTotalCount", arr.length.toLocaleString());
+      set("ordersAllCount", full.length.toLocaleString());
+      set("ordersPendingCount", pending.toLocaleString());
+      set("ordersPaidCount", paid.toLocaleString());
+      set("ordersDeliveredCount", delivered.toLocaleString());
+      set("ordersCancelledCount", cancelled.toLocaleString());
+      set("ordersRevenue", moneyUZS(revenue));
+      set("ordersItemsCount", items.toLocaleString());
+      set("ordersAvgOrder", moneyUZS(avg));
+    }
+
     function getOrderSearchBlob(o){
       const ship = o.shipping || {};
       const addr = ship.addressText || o.addressText || o.address || "";
@@ -4272,6 +5023,7 @@ function statusUZ(s){
       const prov = ($("ordersProvider")?.value || "").trim().toLowerCase();
       const fromV = $("ordersFrom")?.value;
       const toV = $("ordersTo")?.value;
+      const sort = ($("ordersSort")?.value || "recent").trim();
 
       const fromD = fromV ? new Date(fromV+"T00:00:00") : null;
       const toD = toV ? new Date(toV+"T23:59:59") : null;
@@ -4280,7 +5032,7 @@ function statusUZ(s){
         if(st && String(o.status||"pending") !== st) return false;
         if(prov){
           const p = formatProvider(o);
-          if(p !== prov) return false;
+          if(p !== prov && !String(p||"").toLowerCase().includes(prov)) return false;
         }
         if(q){
           const blob = getOrderSearchBlob(o);
@@ -4295,16 +5047,24 @@ function statusUZ(s){
         return true;
       });
 
+      out.sort((a,b)=>{
+        if(sort === "oldest") return orderTimeMs(a) - orderTimeMs(b);
+        if(sort === "total-desc") return orderTotal(b) - orderTotal(a);
+        if(sort === "total-asc") return orderTotal(a) - orderTotal(b);
+        if(sort === "items-desc") return orderItemsCount(b) - orderItemsCount(a);
+        return orderTimeMs(b) - orderTimeMs(a);
+      });
+
       renderOrdersAdmin(out);
     }
 
     function kvRow(k,v){
       return `<div class="mini-row"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`;
     }
-
     function statusPill(status){
       const s = String(status||"pending");
-      return `<span class="pill ${escapeHtml(s)}"><i class="fas fa-circle"></i> ${escapeHtml(s)}</span>`;
+      const cls = statusClass3(s);
+      return `<span class="status-pill status-${escapeHtml(cls)}">${escapeHtml(statusUZ(s)||s)}</span>`;
     }
 
     async function openOrderModal(order){
@@ -4321,20 +5081,27 @@ function statusUZ(s){
       $("orderKv").innerHTML = [
         kvRow("ID", order.id||""),
         kvRow("Foydalanuvchi ID", order.userPublicId || order.numericId || order.userId || "—"),
+        kvRow("Mijoz", orderCustomerName(order)),
         kvRow("Holat", ""),
         kvRow("To‘lov", providerUZ(formatProvider(order))||"—"),
-        kvRow("Summa", Number(order.totalUZS||0).toLocaleString()+" so‘m"),
+        kvRow("Mahsulotlar", moneyUZS(orderSubtotal(order))+" so‘m"),
+        kvRow("Yetkazish", orderDeliveryFee(order) ? moneyUZS(orderDeliveryFee(order))+" so‘m" : "—"),
+        kvRow("Chegirma", orderDiscount(order) ? moneyUZS(orderDiscount(order))+" so‘m" : "—"),
+        kvRow("Jami", moneyUZS(orderTotal(order))+" so‘m"),
         kvRow("Vaqt", formatTS(order.createdAt))
       ].join("");
       // inject pill into the Status row (3rd mini-row)
       try{
         const rows = $("orderKv").querySelectorAll(".mini-row");
-        if(rows[2]){
-          rows[2].querySelector(".v").innerHTML = statusPill(order.status);
+        if(rows[3]){
+          rows[3].querySelector(".v").innerHTML = statusPill(order.status);
         }
       }catch(e){}
 
       $("shipKv").innerHTML = [
+        kvRow("Yetkazish turi", orderDeliveryMode(order)),
+        kvRow("Yetkazish narxi", orderDeliveryFee(order) ? moneyUZS(orderDeliveryFee(order))+" so‘m" : "—"),
+        kvRow("Masofa", orderDistanceText(order) || "—"),
         kvRow("Manzil", addr),
         kvRow("Telefon", phone),
         kvRow("Koordinata", (lat && lng) ? `${lat}, ${lng}` : "—")
@@ -4515,52 +5282,107 @@ function statusUZ(s){
       if(tbody) tbody.innerHTML = "";
 
       const arr = Array.isArray(list) ? list : [];
-      $("ordersState").textContent = arr.length ? `${arr.length} ta buyurtma` : "—";
-      empty.style.display = arr.length ? "none" : "block";
+      renderOrdersMetrics(arr, ordersCache || []);
+      const stateEl = $("ordersState");
+      if(stateEl) stateEl.textContent = arr.length ? `${arr.length} ta buyurtma ko‘rsatilmoqda` : "Buyurtma topilmadi";
+      if(empty) empty.style.display = arr.length ? "none" : "block";
 
       for(const o of arr){
-        const itemsCount = Array.isArray(o.items) ? o.items.reduce((s,it)=>s+Number(it.qty||1),0) : 0;
+        const itemsCount = orderItemsCount(o);
         ordersById.set(o.id, o);
 
-        const oid = escapeHtml(o.id||"");
+        const rawId = o.id || "";
+        const oid = escapeHtml(rawId);
+        const shortOid = escapeHtml(orderShortId(rawId));
         const uid = escapeHtml(o.uid||"");
-        const pub = escapeHtml(o.userPublicId || o.numericId || o.userId || o.uid || "");
-        const prov = providerUZ(formatProvider(o));
+        const pubRaw = o.userPublicId || o.numericId || o.userId || o.uid || "";
+        const pub = escapeHtml(pubRaw);
+        const customer = escapeHtml(orderCustomerName(o));
+        const phone = escapeHtml(orderPhoneText(o));
+        const addr = escapeHtml(orderAddressText(o));
+        const provRaw = formatProvider(o);
+        const prov = providerUZ(provRaw);
         const created = escapeHtml(formatTS(o.createdAt));
-        const total = Number(o.totalUZS||0).toLocaleString();
+        const total = orderTotal(o);
+        const delivery = orderDeliveryMode(o);
+        const distance = orderDistanceText(o);
+        const deliveryFee = orderDeliveryFee(o);
+        const itemTitles = Array.isArray(o.items) ? o.items.slice(0,3).map(it=>it.title||it.name||it.productTitle||it.productName||it.id||"Mahsulot").join(", ") : "";
+        const firstItems = Array.isArray(o.items) ? o.items.slice(0,3) : [];
+        const itemDots = firstItems.map((it,idx)=>{
+          const img = getItemImageUrl(it);
+          if(img) return `<img class="item-dot" src="${escapeHtml(img)}" alt="">`;
+          return `<span class="item-dot">${idx+1}</span>`;
+        }).join("");
+        const moreDot = itemsCount > firstItems.length ? `<span class="item-dot">+${itemsCount-firstItems.length}</span>` : "";
+        const statusSelect = `<select class="statusSel order-status-select" data-oid="${oid}" data-uid="${uid}">
+          ${["pending","pending_payment","paid","delivered","cancelled"].map(s=>`<option value="${s}" ${String(o.status||"pending")==s?"selected":""}>${statusUZ(s)}</option>`).join("")}
+        </select>`;
 
-        // Cards UI
+        if(tbody){
+          const tr = document.createElement("tr");
+          tr.className = "order-row-premium card-status-"+statusClass3(o.status);
+          tr.dataset.oid = rawId;
+          tr.innerHTML = `
+            <td>
+              <div class="order-id-cell">
+                <div class="order-id-main"><i class="fas fa-receipt"></i> <span>#${shortOid}</span></div>
+                <code title="${oid}">${oid}</code>
+              </div>
+            </td>
+            <td>
+              <div class="order-client-cell">
+                <div class="client-avatar">${escapeHtml(orderInitials(o))}</div>
+                <div class="client-meta">
+                  <div class="client-name" title="${customer}">${customer}</div>
+                  <div class="client-sub">${pub || "—"}${phone ? " · "+phone : ""}</div>
+                </div>
+              </div>
+            </td>
+            <td>${statusSelect}<div class="order-muted-line">${statusPill(o.status)}</div></td>
+            <td><div class="order-delivery-pill"><i class="fas fa-wallet"></i> ${escapeHtml(prov||"—")}</div></td>
+            <td><div class="order-money">${moneyUZS(total)} so‘m</div><div class="order-muted-line">Yetkazish: ${deliveryFee ? moneyUZS(deliveryFee)+" so‘m" : "—"}</div></td>
+            <td><div class="order-delivery-pill" title="${addr}"><i class="fas fa-location-dot"></i> ${escapeHtml(delivery)}</div><div class="order-muted-line">${escapeHtml(distance || (addr ? addr.slice(0,32) : "—"))}</div></td>
+            <td><div class="order-items-mini"><div class="item-stack">${itemDots}${moreDot}</div><b>${itemsCount} ta</b></div><div class="order-muted-line" title="${escapeHtml(itemTitles)}">${escapeHtml(itemTitles || "—")}</div></td>
+            <td><div class="order-muted-line" style="font-weight:900;color:var(--text)">${created}</div></td>
+            <td><button class="btn btn-light btn-sm order-open" type="button"><i class="fas fa-eye"></i></button></td>
+          `;
+          tbody.appendChild(tr);
+        }
+
         if(cards){
           const card = document.createElement("div");
           card.className = "order-card card-status-"+statusClass3(o.status);
-          card.dataset.oid = o.id || "";
+          card.dataset.oid = rawId;
           card.innerHTML = `
             <div class="order-card-top">
               <div class="order-id">
                 <div class="k">Buyurtma</div>
-                <div class="v"><code>${oid}</code></div>
+                <div class="v"><code title="${oid}">#${shortOid}</code></div>
               </div>
               <div class="order-status-wrap">
                 <div class="k">Holat</div>
-                <select class="statusSel" data-oid="${oid}" data-uid="${uid}">
-                  ${["pending","pending_payment","paid","delivered","cancelled"].map(s=>`<option value="${s}" ${String(o.status||"pending")==s?"selected":""}>${statusUZ(s)}</option>`).join("")}
-                </select>
+                ${statusSelect}
               </div>
             </div>
 
             <div class="order-card-mid">
-              <div class="order-chip"><span class="k">Foydalanuvchi</span><span class="v">${pub?`<span class="mono truncate" title="${pub}">${pub}</span>`:"—"}</span></div>
+              <div class="order-chip"><span class="k">Mijoz</span><span class="v" title="${customer}">${customer}</span></div>
+              <div class="order-chip"><span class="k">Foydalanuvchi ID</span><span class="v mono truncate" title="${pub}">${pub||"—"}</span></div>
               <div class="order-chip"><span class="k">To‘lov</span><span class="v">${escapeHtml(prov||"—")}</span></div>
+              <div class="order-chip"><span class="k">Yetkazish</span><span class="v" title="${addr}">${escapeHtml(delivery)}${distance?" · "+escapeHtml(distance):""}</span></div>
               <div class="order-chip"><span class="k">Tovarlar</span><span class="v">${itemsCount} ta</span></div>
               <div class="order-chip"><span class="k">Vaqt</span><span class="v">${created}</span></div>
             </div>
 
             <div class="order-card-bottom">
               <div class="order-total">
-                <div class="k">Summa</div>
-                <div class="v">${total} <span class="muted">so‘m</span></div>
+                <div class="k">Jami summa</div>
+                <div class="v">${moneyUZS(total)} <span class="muted">so‘m</span></div>
               </div>
-              <button class="btn btn-light btn-sm order-open" type="button"><i class="fas fa-eye"></i> Batafsil</button>
+              <div class="order-card-actions">
+                <button class="btn btn-light btn-sm order-open" type="button"><i class="fas fa-eye"></i> Batafsil</button>
+              </div>
             </div>
           `;
           cards.appendChild(card);
@@ -4686,7 +5508,7 @@ function statusUZ(s){
     }
 
     // Filters
-    ["ordersSearch","ordersStatus","ordersProvider","ordersFrom","ordersTo"].forEach(id=>{
+    ["ordersSearch","ordersStatus","ordersProvider","ordersFrom","ordersTo","ordersSort"].forEach(id=>{
       const el = $(id);
       if(!el) return;
       el.addEventListener("input", applyOrdersFilters);
@@ -4698,8 +5520,23 @@ function statusUZ(s){
       setIfExists("ordersProvider","");
       setIfExists("ordersFrom","");
       setIfExists("ordersTo","");
+      setIfExists("ordersSort","recent");
       applyOrdersFilters();
     });
+
+    function setOrdersViewMode(mode){
+      const table = $("ordersTableShell");
+      const grid = $("ordersCards");
+      const tableBtn = $("ordersTableMode");
+      const cardBtn = $("ordersCardMode");
+      const isCards = mode === "cards";
+      table?.classList.toggle("hidden", isCards);
+      grid?.classList.toggle("hidden", !isCards);
+      tableBtn?.classList.toggle("active", !isCards);
+      cardBtn?.classList.toggle("active", isCards);
+    }
+    $("ordersTableMode")?.addEventListener("click", ()=>setOrdersViewMode("table"));
+    $("ordersCardMode")?.addEventListener("click", ()=>setOrdersViewMode("cards"));
 
     // Row click => detail modal
     $("ordersTbody")?.addEventListener("click", (e)=>{
