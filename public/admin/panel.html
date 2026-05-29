@@ -2715,6 +2715,36 @@ button[data-x] i{
 @media(max-width:900px){.category-admin-stats{grid-template-columns:1fr}.category-admin-grid{grid-template-columns:1fr}.products-tools #productCategoryFilter{min-width:100%}}
 </style>
 
+
+<style id="orzumall-v13-editable-categories-premium">
+/* v13: editable category management */
+.category-admin-toolbar{position:relative;display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.category-admin-toolbar .btn{background:rgba(255,255,255,.15)!important;color:#fff!important;border-color:rgba(255,255,255,.24)!important;backdrop-filter:blur(12px)}
+.category-admin-stats.v13{grid-template-columns:repeat(4,minmax(0,1fr))}
+.category-admin-meta{margin:12px 0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.category-admin-meta .hint-card{padding:12px 14px;border-radius:18px;background:#fff;border:1px solid #E7ECF5;color:#64748b;font-weight:750;box-shadow:0 10px 26px rgba(15,23,42,.04)}
+.cat-admin-card{cursor:default!important;padding-top:48px!important}
+.cat-admin-actions{position:absolute;right:14px;top:14px;display:flex;gap:7px;z-index:2}
+.cat-mini-btn{width:36px;min-width:36px;height:36px;border-radius:12px;border:1px solid #E3EAF5;background:#fff;color:#475569;display:inline-grid;place-items:center;cursor:pointer;box-shadow:0 8px 18px rgba(15,23,42,.06)}
+.cat-mini-btn:hover{transform:translateY(-1px);background:#F8FAFC;color:#6D4AFF}
+.cat-mini-btn.danger{color:#EF233C;background:#FFF5F6;border-color:#FFD5DC}
+.cat-admin-chip-row{display:flex;align-items:center;gap:7px;width:100%}
+.cat-admin-chip-row .cat-admin-chip{flex:1;justify-content:flex-start;min-width:0}
+.cat-admin-chip-row .cat-admin-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-empty-mini{padding:10px 12px;border-radius:14px;border:1px dashed #D8E0EC;color:#94A3B8;font-weight:850;background:#F8FAFC}
+.category-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.category-editor-grid .wide{grid-column:1/-1}
+.cat-icon-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px;margin-top:8px;max-height:168px;overflow:auto;padding:10px;border:1px solid #E7ECF5;border-radius:18px;background:#F8FAFC}
+.cat-icon-choice{height:42px;border-radius:14px;border:1px solid #E3EAF5;background:#fff;color:#334155;display:grid;place-items:center;cursor:pointer}
+.cat-icon-choice:hover,.cat-icon-choice.active{background:linear-gradient(135deg,#6D4AFF,#EF233C);color:#fff;border-color:transparent;box-shadow:0 12px 24px rgba(109,74,255,.18)}
+#categoryEditorModal .modal-content{max-width:780px!important}
+#categoryEditorModal .modal-header h3{display:flex;align-items:center;gap:9px}
+#categoryEditorModal .modal-footer{justify-content:space-between!important}
+.category-danger-note{display:flex;align-items:center;gap:8px;font-size:12px;color:#64748b;font-weight:750}
+@media(max-width:900px){.category-admin-stats.v13{grid-template-columns:1fr 1fr}.category-editor-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.category-admin-stats.v13{grid-template-columns:1fr}.category-admin-toolbar .btn{width:100%}.cat-admin-card{padding-top:58px!important}}
+</style>
+
 </head>
 <body style="display:none;">
   <div class="container">
@@ -2858,12 +2888,22 @@ button[data-x] i{
       <section class="categories-suite hidden" id="categoriesView">
         <div class="category-admin-hero">
           <h2><i class="fas fa-sitemap"></i> Professional kategoriyalar</h2>
-          <p>Mahsulotlar endi oddiy teglar orqali emas, aniq <b>asosiy kategoriya → ichki kategoriya</b> tizimi orqali boshqariladi. Eski mahsulotlar nomi va teglari bo‘yicha avtomatik kategoriyaga tushadi.</p>
-          <div class="category-admin-stats">
+          <p>Mahsulotlar endi oddiy teglar orqali emas, aniq <b>asosiy kategoriya → ichki kategoriya</b> tizimi orqali boshqariladi. Bu bo‘limda kategoriyani qo‘shish, tahrirlash, o‘chirish va icon tanlash mumkin.</p>
+          <div class="category-admin-stats v13">
             <div class="category-admin-stat"><span>Asosiy kategoriyalar</span><b id="categoryTotalCount">0</b></div>
+            <div class="category-admin-stat"><span>Ichki kategoriyalar</span><b id="categoryChildCount">0</b></div>
             <div class="category-admin-stat"><span>Qo‘lda biriktirilgan</span><b id="categoryAssignedCount">0</b></div>
             <div class="category-admin-stat"><span>Avto aniqlangan</span><b id="categoryAutoCount">0</b></div>
           </div>
+          <div class="category-admin-toolbar">
+            <button type="button" class="btn btn-primary" id="addMainCategoryBtn"><i class="fas fa-plus"></i> Asosiy kategoriya</button>
+            <button type="button" class="btn btn-light" id="exportCategoriesBtn"><i class="fas fa-download"></i> Export</button>
+            <button type="button" class="btn btn-light" id="resetCategoriesBtn"><i class="fas fa-rotate-left"></i> Standartga qaytarish</button>
+          </div>
+        </div>
+        <div class="category-admin-meta">
+          <div class="hint-card"><i class="fas fa-circle-info"></i> Icon uchun Font Awesome nomi ishlatiladi: masalan <b>fa-sparkles</b>, <b>fa-mobile-screen</b>.</div>
+          <div class="hint-card" id="categoryConfigStatus">Manba: <code>configs/categories</code></div>
         </div>
         <div class="category-admin-grid" id="categoryAdminGrid"></div>
       </section>
@@ -3450,6 +3490,58 @@ button[data-x] i{
         <div class="pm-footer-actions">
           <button type="button" class="btn btn-light" id="productModalCancelBtn">Bekor qilish</button>
           <button type="button" class="btn btn-primary" id="saveProductBtn">Saqlash</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Category Editor Modal -->
+  <div class="modal" id="categoryEditorModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="categoryEditorTitle"><i class="fas fa-plus"></i> Yangi kategoriya</h3>
+        <button class="btn btn-light btn-sm" id="closeCategoryEditorBtn" aria-label="Yopish"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="categoryOriginalId">
+        <div class="category-editor-grid">
+          <div class="form-group wide">
+            <label>Ota kategoriya</label>
+            <select id="categoryParentSelect" class="form-control">
+              <option value="">Asosiy kategoriya sifatida</option>
+            </select>
+            <small class="hint">Bo‘sh qoldirilsa asosiy kategoriya bo‘ladi. Tanlansa ichki kategoriya sifatida qo‘shiladi.</small>
+          </div>
+          <div class="form-group">
+            <label>Kategoriya nomi UZ *</label>
+            <input id="categoryName" class="form-control" placeholder="Masalan: Depilyatsiya">
+          </div>
+          <div class="form-group">
+            <label>Kategoriya nomi RU</label>
+            <input id="categoryRu" class="form-control" placeholder="Масалан: Депиляция">
+          </div>
+          <div class="form-group">
+            <label>Icon</label>
+            <input id="categoryIcon" class="form-control" placeholder="fa-sparkles">
+            <small class="hint">Font Awesome icon nomi: <b>fa-sparkles</b>, <b>fa-shirt</b>, <b>fa-box-open</b>.</small>
+          </div>
+          <div class="form-group">
+            <label>Kalit so‘zlar</label>
+            <input id="categoryKeywords" class="form-control" placeholder="wax, depilyatsiya, hot wax">
+            <small class="hint">Avto kategoriya aniqlash uchun vergul bilan yoziladi.</small>
+          </div>
+          <div class="form-group wide">
+            <label>Icon tanlash</label>
+            <div class="cat-icon-picker" id="categoryIconPicker"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="category-danger-note"><i class="fas fa-shield-check"></i> Saqlanganda front sayt ham shu kategoriya daraxtidan foydalanadi.</div>
+        <div class="pm-footer-actions">
+          <button type="button" class="btn btn-light" id="categoryEditorCancelBtn">Bekor</button>
+          <button type="button" class="btn btn-primary" id="saveCategoryBtn"><i class="fas fa-save"></i> Saqlash</button>
         </div>
       </div>
     </div>
@@ -4283,8 +4375,18 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     }
 
     
-    /* ===== Professional category system: independent from tags ===== */
-    const OM_ADMIN_CATEGORY_CATALOG = [
+
+    /* ===== Professional editable category system: admin-managed, independent from tags ===== */
+    const OM_ADMIN_CATEGORY_STORAGE_KEY = "orzumall_admin_categories_v13";
+    const OM_ADMIN_CATEGORY_CONFIG_DOC = ["configs", "categories"];
+    const OM_ADMIN_CATEGORY_ICONS = [
+      "fa-sparkles","fa-face-smile","fa-scissors","fa-spa","fa-wand-magic-sparkles","fa-spray-can-sparkles","fa-brush",
+      "fa-mobile-screen","fa-mobile-screen-button","fa-plug","fa-headphones","fa-clock","fa-camera","fa-gamepad",
+      "fa-house","fa-kitchen-set","fa-broom","fa-box-archive","fa-couch","fa-shirt","fa-person-dress","fa-user-tie",
+      "fa-bag-shopping","fa-gem","fa-heart-pulse","fa-hands-bubbles","fa-leaf","fa-child","fa-baby","fa-puzzle-piece",
+      "fa-box-open","fa-layer-group","fa-tags","fa-star","fa-fire","fa-gift","fa-truck-fast"
+    ];
+    const OM_ADMIN_CATEGORY_CATALOG_DEFAULT = [
       {id:"beauty", name:"Go‘zallik va parvarish", icon:"fa-sparkles", keywords:["kosmetik","beauty","go‘zallik","go'zallik","parvarish","bioaqua"], children:[
         {id:"skincare", name:"Yuz parvarishi", icon:"fa-face-smile", keywords:["yuz","face","krem","niqob","mask","aloe","rice","guruch","serum","sovun","soap"]},
         {id:"haircare", name:"Soch parvarishi", icon:"fa-scissors", keywords:["soch","hair","shampun","balzam","conditioner","taroq","raw pulp"]},
@@ -4323,15 +4425,119 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
         {id:"other-products", name:"Turli mahsulotlar", icon:"fa-layer-group", keywords:[]}
       ]}
     ];
-    function adminCatSlug(v){return String(v||"").trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g,"-").replace(/[^a-z0-9а-яёўғқҳ'\-]+/gi,"-").replace(/^-+|-+$/g,"");}
+    let OM_ADMIN_CATEGORY_CATALOG = adminCloneCategories(OM_ADMIN_CATEGORY_CATALOG_DEFAULT);
+    let categorySettingsLoaded = false;
+    let editingCategoryId = null;
+
+    function adminCloneCategories(tree){ return JSON.parse(JSON.stringify(Array.isArray(tree)?tree:[])); }
+    function adminCatSlug(v){return String(v||"").trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g,"-").replace(/[^a-z0-9а-яёўғқҳ'\-]+/gi,"-").replace(/^-+|-+$/g,"") || "category";}
+    function adminUniqId(base, excludeId=""){
+      const ids=new Set();
+      const walk=(arr)=>{(arr||[]).forEach(c=>{ if(c?.id && c.id!==excludeId) ids.add(c.id); walk(c.children||[]); });};
+      walk(OM_ADMIN_CATEGORY_CATALOG);
+      let id=adminCatSlug(base||"category"), n=2, out=id;
+      while(ids.has(out)) out=`${id}-${n++}`;
+      return out;
+    }
+    function adminSanitizeCategoryTree(tree){
+      const clean=(arr,parentId=null)=>{
+        if(!Array.isArray(arr)) return [];
+        const used=new Set();
+        return arr.map((raw,idx)=>{
+          const name=String(raw?.name||raw?.ru||`Kategoriya ${idx+1}`).trim();
+          let id=adminCatSlug(raw?.id||name);
+          let n=2, base=id;
+          while(used.has(id)) id=`${base}-${n++}`;
+          used.add(id);
+          const item={
+            id,
+            name,
+            ru:String(raw?.ru||"").trim(),
+            icon:String(raw?.icon||"fa-layer-group").replace(/^fa-solid\s+/,"").trim() || "fa-layer-group",
+            keywords:Array.isArray(raw?.keywords) ? raw.keywords.map(x=>String(x).trim()).filter(Boolean) : String(raw?.keywords||"").split(",").map(x=>x.trim()).filter(Boolean),
+            children: clean(raw?.children||[], id)
+          };
+          return item;
+        }).filter(x=>x.name);
+      };
+      const out=clean(tree);
+      if(!out.length) return adminCloneCategories(OM_ADMIN_CATEGORY_CATALOG_DEFAULT);
+      return out;
+    }
+    function adminInvalidateCategoryCache(){
+      try{ delete window.__omAdminCategoryFlat; }catch(e){ window.__omAdminCategoryFlat=null; }
+      ["productCategoryFilter","productCategory"].forEach(id=>{ const el=$(id); if(el) delete el.dataset.ready; });
+    }
+    function adminSetCategoryCatalog(tree, opts={}){
+      OM_ADMIN_CATEGORY_CATALOG = adminSanitizeCategoryTree(tree);
+      adminInvalidateCategoryCache();
+      try{ localStorage.setItem(OM_ADMIN_CATEGORY_STORAGE_KEY, JSON.stringify(OM_ADMIN_CATEGORY_CATALOG)); }catch(e){}
+      if(!opts.silent){
+        populateCategoryFilters(true);
+        try{ syncSubcategorySelect($("productSubcategory")?.value||""); }catch(e){}
+        try{ renderCategoryAdmin(); }catch(e){}
+        try{ renderTable(); }catch(e){}
+        try{ renderStatsPanels(); }catch(e){}
+      }
+    }
+    async function loadCategorySettingsAdmin(force=false){
+      if(categorySettingsLoaded && !force) return OM_ADMIN_CATEGORY_CATALOG;
+      categorySettingsLoaded = true;
+      let loaded = null;
+      try{
+        const snap = await getDoc(doc(db, OM_ADMIN_CATEGORY_CONFIG_DOC[0], OM_ADMIN_CATEGORY_CONFIG_DOC[1]));
+        if(snap.exists()){
+          const d=snap.data()||{};
+          loaded = Array.isArray(d.tree) ? d.tree : (Array.isArray(d.categories) ? d.categories : null);
+        }
+      }catch(e){ console.warn("categories config read failed", e); }
+      if(!loaded){
+        try{ loaded = JSON.parse(localStorage.getItem(OM_ADMIN_CATEGORY_STORAGE_KEY)||"null"); }catch(e){}
+      }
+      adminSetCategoryCatalog(loaded || OM_ADMIN_CATEGORY_CATALOG_DEFAULT, {silent:true});
+      return OM_ADMIN_CATEGORY_CATALOG;
+    }
+    async function saveCategorySettingsAdmin(){
+      if(!isAdmin(auth.currentUser)) return toast("Faqat admin kategoriyalarni saqlay oladi","error");
+      try{
+        const payload = {
+          tree: adminCloneCategories(OM_ADMIN_CATEGORY_CATALOG),
+          updatedAt: serverTimestamp(),
+          updatedBy: auth.currentUser?.email || auth.currentUser?.uid || "",
+          version: 13
+        };
+        await setDoc(doc(db, OM_ADMIN_CATEGORY_CONFIG_DOC[0], OM_ADMIN_CATEGORY_CONFIG_DOC[1]), payload, {merge:true});
+        try{ localStorage.setItem(OM_ADMIN_CATEGORY_STORAGE_KEY, JSON.stringify(OM_ADMIN_CATEGORY_CATALOG)); }catch(e){}
+        toast("Kategoriyalar saqlandi");
+      }catch(e){
+        console.error(e);
+        toast("Kategoriyalarni saqlashda xatolik: "+(e.message||e), "error");
+      }
+    }
     function adminCategoryFlat(){
       if(window.__omAdminCategoryFlat) return window.__omAdminCategoryFlat;
       const flat=new Map(), byName=new Map();
-      const walk=(arr,parent=null,path=[])=>{(arr||[]).forEach(def=>{const item={...def,parentId:parent?.id||null,pathIds:[...path,def.id]}; flat.set(def.id,item); [def.id,def.name].filter(Boolean).forEach(x=>byName.set(adminCatSlug(x),item)); walk(def.children||[],item,item.pathIds);});};
+      const walk=(arr,parent=null,path=[])=>{(arr||[]).forEach(def=>{const item={...def,parentId:parent?.id||null,pathIds:[...path,def.id]}; flat.set(def.id,item); [def.id,def.name,def.ru].filter(Boolean).forEach(x=>byName.set(adminCatSlug(x),item)); walk(def.children||[],item,item.pathIds);});};
       walk(OM_ADMIN_CATEGORY_CATALOG);
       window.__omAdminCategoryFlat={flat,byName}; return window.__omAdminCategoryFlat;
     }
     function adminGetCategoryDef(idOrName){const {flat,byName}=adminCategoryFlat(); const k=String(idOrName||"").trim(); return flat.get(k)||byName.get(adminCatSlug(k))||null;}
+    function adminFindCategoryParent(id){
+      let found=null;
+      const walk=(arr,parent=null)=>{ for(const c of arr||[]){ if(c.id===id){ found=parent; return true; } if(walk(c.children||[], c)) return true; } return false; };
+      walk(OM_ADMIN_CATEGORY_CATALOG);
+      return found;
+    }
+    function adminFindCategoryRaw(id, arr=OM_ADMIN_CATEGORY_CATALOG){
+      for(const c of arr||[]){ if(c.id===id) return c; const f=adminFindCategoryRaw(id,c.children||[]); if(f) return f; }
+      return null;
+    }
+    function adminRemoveCategoryRaw(id, arr=OM_ADMIN_CATEGORY_CATALOG){
+      const idx=(arr||[]).findIndex(c=>c.id===id);
+      if(idx>=0) return arr.splice(idx,1)[0];
+      for(const c of arr||[]){ const r=adminRemoveCategoryRaw(id,c.children||[]); if(r) return r; }
+      return null;
+    }
     function adminExplicitCategoryPath(p){
       const arr=p?.categoryPathIds||p?.categoryIds;
       if(Array.isArray(arr)&&arr.length){const ids=arr.map(x=>adminGetCategoryDef(x)?.id).filter(Boolean); if(ids.length) return ids;}
@@ -4356,19 +4562,19 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     function adminProductInCategory(p,catId){ if(!catId||catId==="all") return true; const path=adminProductCategoryPathIds(p); return path.includes(catId); }
     function adminCategoryPayloadFromPath(path){
       const ids=(Array.isArray(path)?path:[]).map(x=>adminGetCategoryDef(x)?.id).filter(Boolean);
-      const cat=adminGetCategoryDef(ids[0]) || adminGetCategoryDef("other");
+      const cat=adminGetCategoryDef(ids[0]) || adminGetCategoryDef("other") || (OM_ADMIN_CATEGORY_CATALOG[0]||null);
       let sub=adminGetCategoryDef(ids[1]);
       if(!sub || sub.parentId !== cat?.id){
         sub = (cat?.children||[])[0] ? adminGetCategoryDef((cat.children||[])[0].id) : null;
       }
       return {
-        categoryId: cat?.id || "other",
-        categoryName: cat?.name || "Boshqa mahsulotlar",
+        categoryId: cat?.id || "",
+        categoryName: cat?.name || "",
         subcategoryId: sub?.id || "",
         subcategoryName: sub?.name || "",
         categoryPathIds: [cat?.id, sub?.id].filter(Boolean),
         categoryPath: [cat?.name, sub?.name].filter(Boolean),
-        categorySearchText: [cat?.name,sub?.name,cat?.id,sub?.id].filter(Boolean).join(" ").toLowerCase()
+        categorySearchText: [cat?.name,sub?.name,cat?.id,sub?.id,cat?.ru,sub?.ru].filter(Boolean).join(" ").toLowerCase()
       };
     }
     function selectedCategoryPayload(){
@@ -4378,15 +4584,19 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       const draft={name:$("name")?.value,description:$("description")?.value,tags:($("tagsInput")?.value||"").split(",").map(s=>s.trim()).filter(Boolean),productType:$("productType")?.value};
       return adminCategoryPayloadFromPath(adminInferCategoryPath(draft));
     }
-    function populateCategoryFilters(){
+    function populateCategoryFilters(force=false){
       const filter=$("productCategoryFilter");
-      if(filter && filter.dataset.ready!=="1"){
+      if(filter && (force || filter.dataset.ready!=="1")){
+        const cur=filter.value || "all";
         filter.innerHTML='<option value="all">Barcha kategoriyalar</option>'+OM_ADMIN_CATEGORY_CATALOG.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option><optgroup label="${esc(c.name)}">${(c.children||[]).map(ch=>`<option value="${esc(ch.id)}">— ${esc(ch.name)}</option>`).join("")}</optgroup>`).join("");
+        if([...filter.options].some(o=>o.value===cur)) filter.value=cur;
         filter.dataset.ready="1";
       }
       const main=$("productCategory");
-      if(main && main.dataset.ready!=="1"){
+      if(main && (force || main.dataset.ready!=="1")){
+        const cur=main.value || "";
         main.innerHTML='<option value="">Kategoriya tanlang</option>'+OM_ADMIN_CATEGORY_CATALOG.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+        if([...main.options].some(o=>o.value===cur)) main.value=cur;
         main.dataset.ready="1";
       }
     }
@@ -4395,16 +4605,17 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       if(!main||!sub) return;
       const def=adminGetCategoryDef(main.value);
       const children=def?.children||[];
+      const cur=selected || sub.value || "";
       sub.innerHTML='<option value="">Ichki kategoriya tanlang</option>'+children.map(ch=>`<option value="${esc(ch.id)}">${esc(ch.name)}</option>`).join("");
-      if(selected && children.some(ch=>ch.id===selected)) sub.value=selected;
+      if(cur && children.some(ch=>ch.id===cur)) sub.value=cur;
       else if(children.length && !sub.value) sub.value=children[0].id;
       if(preview){
         const payload=selectedCategoryPayload();
-        preview.innerHTML=`<i class="fas fa-sitemap"></i> ${esc(payload.categoryPath.join(" / "))}`;
+        preview.innerHTML=`<i class="fas fa-sitemap"></i> ${esc(payload.categoryPath.join(" / ") || "Kategoriya tanlanmagan")}`;
       }
     }
     function setCategoryFormValue(path){
-      populateCategoryFilters();
+      populateCategoryFilters(true);
       const ids=(Array.isArray(path)?path:[]);
       const main=$("productCategory"), sub=$("productSubcategory");
       if(main){main.value=ids[0]||"";}
@@ -4413,34 +4624,156 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     }
     function categoryCounts(){
       const counts=new Map();
-      for(const p of state.products||[]){
-        const path=adminProductCategoryPathIds(p);
-        path.forEach(id=>counts.set(id,(counts.get(id)||0)+1));
-      }
+      for(const p of state.products||[]){ const path=adminProductCategoryPathIds(p); path.forEach(id=>counts.set(id,(counts.get(id)||0)+1)); }
       return counts;
     }
+    function adminCountForCategory(id){
+      const counts=categoryCounts();
+      let total=counts.get(id)||0;
+      const def=adminGetCategoryDef(id);
+      for(const ch of (def?.children||[])) total += 0; // parent count already includes products in children via path
+      return total;
+    }
+    function renderCategoryParentSelect(selectedParent=""){
+      const sel=$("categoryParentSelect"); if(!sel) return;
+      sel.innerHTML='<option value="">Asosiy kategoriya sifatida</option>'+OM_ADMIN_CATEGORY_CATALOG.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+      if(selectedParent && [...sel.options].some(o=>o.value===selectedParent)) sel.value=selectedParent;
+    }
+    function renderIconPicker(selected="fa-layer-group"){
+      const wrap=$("categoryIconPicker"); if(!wrap) return;
+      const val=String(selected||"fa-layer-group").replace(/^fa-solid\s+/,"");
+      wrap.innerHTML=OM_ADMIN_CATEGORY_ICONS.map(ic=>`<button type="button" class="cat-icon-choice ${ic===val?'active':''}" data-icon="${esc(ic)}"><i class="fas ${esc(ic)}"></i></button>`).join("");
+      wrap.querySelectorAll("[data-icon]").forEach(btn=>btn.addEventListener("click",()=>{
+        const icon=btn.dataset.icon; $("categoryIcon").value=icon; renderIconPicker(icon);
+      }));
+    }
+    function openCategoryEditor(id="", parentId=""){
+      if(!isAdmin(auth.currentUser)) return toast("Faqat admin kategoriyani tahrirlay oladi","error");
+      const cat=id ? adminGetCategoryDef(id) : null;
+      editingCategoryId = cat?.id || "";
+      $("categoryEditorTitle").innerHTML = cat ? '<i class="fas fa-pen"></i> Kategoriyani tahrirlash' : '<i class="fas fa-plus"></i> Yangi kategoriya';
+      $("categoryOriginalId").value = cat?.id || "";
+      $("categoryName").value = cat?.name || "";
+      $("categoryRu").value = cat?.ru || "";
+      $("categoryIcon").value = cat?.icon || "fa-layer-group";
+      $("categoryKeywords").value = Array.isArray(cat?.keywords) ? cat.keywords.join(", ") : "";
+      const p = parentId || cat?.parentId || "";
+      renderCategoryParentSelect(p);
+      if(cat && !cat.parentId) $("categoryParentSelect").value="";
+      renderIconPicker(cat?.icon || "fa-layer-group");
+      openModal("categoryEditorModal");
+      setTimeout(()=>$("categoryName")?.focus(), 100);
+    }
+    function closeCategoryEditor(){ closeModal("categoryEditorModal"); editingCategoryId=null; }
+    async function saveCategoryEditor(){
+      if(!isAdmin(auth.currentUser)) return toast("Faqat admin kategoriyani saqlay oladi","error");
+      const originalId=$("categoryOriginalId")?.value||"";
+      const name=String($("categoryName")?.value||"").trim();
+      if(!name) return toast("Kategoriya nomini kiriting","error");
+      const ru=String($("categoryRu")?.value||"").trim();
+      const icon=String($("categoryIcon")?.value||"fa-layer-group").replace(/^fa-solid\s+/,"").trim() || "fa-layer-group";
+      const keywords=String($("categoryKeywords")?.value||"").split(",").map(x=>x.trim()).filter(Boolean);
+      const parentId=$("categoryParentSelect")?.value || "";
+      let item;
+      if(originalId){
+        item=adminFindCategoryRaw(originalId);
+        if(!item) return toast("Kategoriya topilmadi","error");
+        item.name=name; item.ru=ru; item.icon=icon; item.keywords=keywords; item.children=Array.isArray(item.children)?item.children:[];
+        const currentParent=adminFindCategoryParent(originalId)?.id || "";
+        if(parentId!==currentParent){
+          if(parentId===originalId) return toast("Kategoriya o‘z ichiga ko‘chirilmaydi","error");
+          const moving=adminRemoveCategoryRaw(originalId);
+          if(!moving) return toast("Ko‘chirishda xatolik","error");
+          if(parentId){
+            const parent=adminFindCategoryRaw(parentId);
+            if(!parent) return toast("Ota kategoriya topilmadi","error");
+            parent.children=Array.isArray(parent.children)?parent.children:[];
+            parent.children.push(moving);
+          }else{
+            OM_ADMIN_CATEGORY_CATALOG.push(moving);
+          }
+        }
+      }else{
+        const id=adminUniqId(name);
+        item={id,name,ru,icon,keywords,children:[]};
+        if(parentId){
+          const parent=adminFindCategoryRaw(parentId);
+          if(!parent) return toast("Ota kategoriya topilmadi","error");
+          parent.children=Array.isArray(parent.children)?parent.children:[];
+          parent.children.push(item);
+        }else{
+          OM_ADMIN_CATEGORY_CATALOG.push(item);
+        }
+      }
+      adminSetCategoryCatalog(OM_ADMIN_CATEGORY_CATALOG);
+      await saveCategorySettingsAdmin();
+      closeCategoryEditor();
+    }
+    async function deleteCategory(id){
+      if(!isAdmin(auth.currentUser)) return toast("Faqat admin o‘chira oladi","error");
+      const cat=adminGetCategoryDef(id);
+      if(!cat) return toast("Kategoriya topilmadi","error");
+      if(id==="other" || id==="other-products") return toast("Boshqa mahsulotlar kategoriyasi tizim uchun kerak","error");
+      const count=adminCountForCategory(id);
+      const msg=count>0
+        ? `"${cat.name}" ichida ${count} ta mahsulot bor. O‘chirsangiz ular avtomatik "Boshqa mahsulotlar"ga tushadi. Davom etasizmi?`
+        : `"${cat.name}" kategoriyasini o‘chirasizmi?`;
+      if(!confirm(msg)) return;
+      adminRemoveCategoryRaw(id);
+      adminSetCategoryCatalog(OM_ADMIN_CATEGORY_CATALOG);
+      await saveCategorySettingsAdmin();
+      toast("Kategoriya o‘chirildi");
+    }
+    function exportCategories(){
+      const blob=new Blob([JSON.stringify(OM_ADMIN_CATEGORY_CATALOG,null,2)],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a"); a.href=url; a.download="orzumall-categories.json"; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),500);
+    }
+    async function resetCategoriesToDefault(){
+      if(!isAdmin(auth.currentUser)) return toast("Faqat admin reset qila oladi","error");
+      if(!confirm("Kategoriyalar standart holatga qaytarilsinmi?")) return;
+      adminSetCategoryCatalog(OM_ADMIN_CATEGORY_CATALOG_DEFAULT);
+      await saveCategorySettingsAdmin();
+      toast("Standart kategoriyalar tiklandi");
+    }
     function renderCategoryAdmin(){
-      populateCategoryFilters();
+      populateCategoryFilters(true);
       const grid=$("categoryAdminGrid"); if(!grid) return;
       const counts=categoryCounts();
       const total=(state.products||[]).length;
       const assigned=(state.products||[]).filter(p=>adminExplicitCategoryPath(p).length>0).length;
+      const childCount=OM_ADMIN_CATEGORY_CATALOG.reduce((s,c)=>s+(c.children||[]).length,0);
       if($("categoryTotalCount")) $("categoryTotalCount").textContent=String(OM_ADMIN_CATEGORY_CATALOG.length);
       if($("categoryAssignedCount")) $("categoryAssignedCount").textContent=String(assigned);
       if($("categoryAutoCount")) $("categoryAutoCount").textContent=String(Math.max(0,total-assigned));
+      if($("categoryChildCount")) $("categoryChildCount").textContent=String(childCount);
+      if($("categoryConfigStatus")) $("categoryConfigStatus").innerHTML='Manba: <code>configs/categories</code> · '+OM_ADMIN_CATEGORY_CATALOG.length+' asosiy kategoriya';
       grid.innerHTML=OM_ADMIN_CATEGORY_CATALOG.map(parent=>{
         const pc=counts.get(parent.id)||0;
-        const children=(parent.children||[]).map(ch=>`<button type="button" class="cat-admin-chip" data-cat-filter="${esc(ch.id)}"><i class="fas ${esc(ch.icon||'fa-layer-group')}"></i><span>${esc(ch.name)}</span><b>${counts.get(ch.id)||0}</b></button>`).join("");
+        const children=(parent.children||[]).map(ch=>`<div class="cat-admin-chip-row">
+          <button type="button" class="cat-admin-chip" data-cat-filter="${esc(ch.id)}"><i class="fas ${esc(ch.icon||'fa-layer-group')}"></i><span>${esc(ch.name)}</span><b>${counts.get(ch.id)||0}</b></button>
+          <button type="button" class="cat-mini-btn" data-cat-edit="${esc(ch.id)}" title="Tahrirlash"><i class="fas fa-pen"></i></button>
+          <button type="button" class="cat-mini-btn danger" data-cat-delete="${esc(ch.id)}" title="O‘chirish"><i class="fas fa-trash"></i></button>
+        </div>`).join("");
         return `<article class="cat-admin-card" data-cat-filter="${esc(parent.id)}">
-          <div class="cat-admin-top"><div class="cat-admin-icon"><i class="fas ${esc(parent.icon||'fa-folder')}"></i></div><div><h3>${esc(parent.name)}</h3><p>${pc} ta mahsulot</p></div></div>
-          <div class="cat-admin-subgrid">${children}</div>
+          <div class="cat-admin-actions">
+            <button type="button" class="cat-mini-btn" data-cat-edit="${esc(parent.id)}" title="Tahrirlash"><i class="fas fa-pen"></i></button>
+            <button type="button" class="cat-mini-btn" data-cat-add-child="${esc(parent.id)}" title="Ichki kategoriya qo‘shish"><i class="fas fa-plus"></i></button>
+            <button type="button" class="cat-mini-btn danger" data-cat-delete="${esc(parent.id)}" title="O‘chirish"><i class="fas fa-trash"></i></button>
+          </div>
+          <div class="cat-admin-top"><div class="cat-admin-icon"><i class="fas ${esc(parent.icon||'fa-folder')}"></i></div><div><h3>${esc(parent.name)}</h3><p>${pc} ta mahsulot · ${(parent.children||[]).length} ichki kategoriya</p></div></div>
+          <div class="cat-admin-subgrid">${children || '<div class="cat-empty-mini">Ichki kategoriya yo‘q</div>'}</div>
         </article>`;
       }).join("");
       grid.querySelectorAll("[data-cat-filter]").forEach(el=>el.addEventListener("click",(e)=>{e.stopPropagation(); const id=el.getAttribute("data-cat-filter"); setView("products"); if($("productCategoryFilter")) $("productCategoryFilter").value=id; renderTable();}));
+      grid.querySelectorAll("[data-cat-edit]").forEach(el=>el.addEventListener("click",(e)=>{e.stopPropagation(); openCategoryEditor(el.dataset.catEdit);}));
+      grid.querySelectorAll("[data-cat-add-child]").forEach(el=>el.addEventListener("click",(e)=>{e.stopPropagation(); openCategoryEditor("", el.dataset.catAddChild);}));
+      grid.querySelectorAll("[data-cat-delete]").forEach(el=>el.addEventListener("click",(e)=>{e.stopPropagation(); deleteCategory(el.dataset.catDelete);}));
     }
 
 
-    function productStatusPill(p){
+        function productStatusPill(p){
       const s = String(p?.status||"approved").toLowerCase();
       if(s==="pending" || s==="kutilmoqda") return `<span class="pill pending"><i class="fas fa-clock"></i> Kutilmoqda</span>`;
       if(s==="rejected" || s==="rad" || s==="cancelled" || s==="canceled") return `<span class="pill cancelled"><i class="fas fa-ban"></i> Rad etilgan</span>`;
@@ -5467,6 +5800,14 @@ $("viewJsonBtn").addEventListener("click",viewJson);
       $("addImageBtn").addEventListener("click",()=>addImage());
       $("addVariantBtn").addEventListener("click",()=>addVariant());
       $("syncColorImagesBtn")?.addEventListener("click",()=>syncColorImageRows({keepExisting:true}));
+
+      $("addMainCategoryBtn")?.addEventListener("click",()=>openCategoryEditor(""));
+      $("exportCategoriesBtn")?.addEventListener("click",exportCategories);
+      $("resetCategoriesBtn")?.addEventListener("click",resetCategoriesToDefault);
+      $("closeCategoryEditorBtn")?.addEventListener("click",closeCategoryEditor);
+      $("categoryEditorCancelBtn")?.addEventListener("click",closeCategoryEditor);
+      $("saveCategoryBtn")?.addEventListener("click",saveCategoryEditor);
+      $("categoryIcon")?.addEventListener("input",(e)=>renderIconPicker(e.target.value));
       $("addColorImageBtn")?.addEventListener("click",()=>addColorImageRow("", []));
 
       const applyProductFilters = ()=> renderTable();
@@ -5582,6 +5923,8 @@ if(e.target===$("jsonModal")) closeModal("jsonModal");
 
   // Vendor bo‘lsa: admin-only bo‘limlarni yashiramiz
   applyRoleUI();
+
+  await loadCategorySettingsAdmin();
 
   document.body.style.display = "block";
 

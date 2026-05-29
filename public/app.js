@@ -1474,7 +1474,7 @@ applyFilterSort();
 
 
 /* ===== Professional category catalog (no longer tag-based) ===== */
-const OM_CATEGORY_CATALOG = [
+let OM_CATEGORY_CATALOG = [
   {id:"beauty", name:"Go‘zallik va parvarish", ru:"Красота и уход", icon:"fa-sparkles", keywords:["kosmetik","beauty","go‘zallik","go'zallik","parvarish","bioaqua"], children:[
     {id:"skincare", name:"Yuz parvarishi", ru:"Уход за лицом", icon:"fa-face-smile", keywords:["yuz","face","крем","krem","niqob","mask","маска","aloe","aloe vera","rice","guruch","serum","sovun","soap"]},
     {id:"haircare", name:"Soch parvarishi", ru:"Уход за волосами", icon:"fa-scissors", keywords:["soch","hair","волос","shampun","shampoo","balzam","conditioner","taroq","head","maska dlya volos","raw pulp"]},
@@ -1513,6 +1513,50 @@ const OM_CATEGORY_CATALOG = [
     {id:"other-products", name:"Turli mahsulotlar", ru:"Разные товары", icon:"fa-layer-group", keywords:[]}
   ]}
 ];
+
+const OM_CATEGORY_STORAGE_KEY = "orzumall_admin_categories_v13";
+let __omCategoryCatalogLoaded = false;
+function omNormalizeCategoryTree(tree){
+  const clean=(arr)=>{
+    if(!Array.isArray(arr)) return [];
+    return arr.map((raw,idx)=>{
+      const name=String(raw?.name||raw?.ru||`Kategoriya ${idx+1}`).trim();
+      const id=String(raw?.id||name).trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g,"-").replace(/[^a-z0-9а-яёўғқҳ'\-]+/gi,"-").replace(/^-+|-+$/g,"") || `category-${idx+1}`;
+      return {
+        id,
+        name,
+        ru:String(raw?.ru||"").trim(),
+        icon:String(raw?.icon||"fa-layer-group").replace(/^fa-solid\s+/,"").trim() || "fa-layer-group",
+        keywords:Array.isArray(raw?.keywords) ? raw.keywords.map(x=>String(x).trim()).filter(Boolean) : String(raw?.keywords||"").split(",").map(x=>x.trim()).filter(Boolean),
+        children: clean(raw?.children||[])
+      };
+    }).filter(x=>x.name);
+  };
+  const out=clean(tree);
+  return out.length ? out : OM_CATEGORY_CATALOG;
+}
+function omSetCategoryCatalog(tree){
+  OM_CATEGORY_CATALOG = omNormalizeCategoryTree(tree);
+  try{ delete window.__omCategoryFlat; }catch(e){ window.__omCategoryFlat = null; }
+}
+async function omLoadCategoryCatalog(force=false){
+  if(__omCategoryCatalogLoaded && !force) return OM_CATEGORY_CATALOG;
+  __omCategoryCatalogLoaded = true;
+  let loaded = null;
+  try{
+    const snap = await getDoc(doc(db, "configs", "categories"));
+    if(snap.exists()){
+      const d=snap.data()||{};
+      loaded = Array.isArray(d.tree) ? d.tree : (Array.isArray(d.categories) ? d.categories : null);
+    }
+  }catch(e){}
+  if(!loaded){
+    try{ loaded = JSON.parse(localStorage.getItem(OM_CATEGORY_STORAGE_KEY)||"null"); }catch(e){}
+  }
+  if(loaded) omSetCategoryCatalog(loaded);
+  return OM_CATEGORY_CATALOG;
+}
+
 function omCatNorm(v){ return String(v||"").trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g," "); }
 function omCatSlug(v){ return omCatNorm(v).replace(/[^a-z0-9а-яёўғқҳ‘'\-]+/gi,"-").replace(/^-+|-+$/g,""); }
 function omCategoryLangName(def){ return omLang()==="ru" ? (def?.ru || def?.name || def?.id || "") : (def?.name || def?.ru || def?.id || ""); }
@@ -5612,6 +5656,7 @@ onAuthStateChanged(auth, async (user)=>{
   if(__appStarted) { updateBadges(); return; }
   __appStarted = true;
 
+  await omLoadCategoryCatalog();
   await omLoadDeliverySettings();
   await loadProducts();
   updateBadges();
