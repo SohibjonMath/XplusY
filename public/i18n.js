@@ -191,179 +191,46 @@
 
   const dynamicSelectors = [
     ".pname", ".cartTitle", ".favTitle", ".vName", ".catName",
-    "#imgViewerName", "#imgViewerDesc", ".miniBody", ".orderId"
+    "#imgViewerName", "#imgViewerDesc", ".miniBody"
   ];
 
-  const textOrigins = new WeakMap();
   let currentLang = normalizeLang(localStorage.getItem(STORAGE_KEY) || document.documentElement.lang || "uz");
-  let applying = false;
-  let observer = null;
-  let queueTimer = null;
-  const pending = new Map();
+  let busy = false;
 
-  function normalizeLang(lang){ return SUPPORTED.includes(String(lang).toLowerCase()) ? String(lang).toLowerCase() : "uz"; }
-  function norm(s){ return String(s == null ? "" : s).replace(/\s+/g, " ").trim(); }
-  function keepSpaces(original, translated){
-    const lead = String(original).match(/^\s*/)?.[0] || "";
-    const trail = String(original).match(/\s*$/)?.[0] || "";
-    return lead + translated + trail;
+  function normalizeLang(lang){
+    lang = String(lang || "uz").toLowerCase();
+    return SUPPORTED.includes(lang) ? lang : "uz";
   }
+  function norm(s){ return String(s == null ? "" : s).replace(/\s+/g, " ").trim(); }
   function trExact(text, lang){
     if(lang === "uz") return text;
     return exact[lang]?.[norm(text)] || null;
   }
-  function shouldSkipNode(node){
-    const p = node && node.parentElement;
-    if(!p) return true;
-    const tag = p.tagName;
-    if(["SCRIPT","STYLE","NOSCRIPT","TEXTAREA","CODE","PRE"].includes(tag)) return true;
-    if(p.closest("script,style,noscript,textarea,code,pre,.omLangSwitch")) return true;
-    return false;
-  }
-  function applyTextNode(node){
-    if(shouldSkipNode(node)) return;
-    const original = textOrigins.get(node) || node.nodeValue;
-    if(!textOrigins.has(node)) textOrigins.set(node, original);
-    const trimmed = norm(original);
-    if(!trimmed || /^[\d\s.,:+%₽$€¥-]+$/.test(trimmed)) return;
-    const translated = trExact(original, currentLang);
-    if(translated) node.nodeValue = keepSpaces(original, translated);
-    else if(currentLang === "uz") node.nodeValue = original;
-  }
-  function applyAttributes(root){
-    const attrs = ["placeholder", "title", "aria-label", "alt"];
-    const all = root.querySelectorAll ? root.querySelectorAll("[placeholder],[title],[aria-label],[alt]") : [];
-    all.forEach(el => {
-      if(el.closest && el.closest(".omLangSwitch")) return;
-      attrs.forEach(attr => {
-        if(!el.hasAttribute(attr)) return;
-        const dataKey = "omI18n" + attr.replace(/-([a-z])/g, (_,c)=>c.toUpperCase());
-        const original = el.dataset[dataKey] || el.getAttribute(attr) || "";
-        if(!el.dataset[dataKey]) el.dataset[dataKey] = original;
-        const translated = trExact(original, currentLang);
-        if(translated) el.setAttribute(attr, translated);
-        else if(currentLang === "uz") el.setAttribute(attr, original);
-      });
-    });
-  }
-  function walkText(root){
-    if(!root) return;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(node){
-        if(shouldSkipNode(node)) return NodeFilter.FILTER_REJECT;
-        if(!norm(node.nodeValue)) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-    const nodes = [];
-    while(walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(applyTextNode);
-  }
-
-  function loadCache(){
-    try { return JSON.parse(localStorage.getItem(CACHE_KEY) || "{}"); }
-    catch(_e){ return {}; }
-  }
-  function saveCache(cache){
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch(_e){}
-  }
-  function cacheKey(lang, text){ return lang + "|" + text; }
-  function isTranslatableText(text){
+  function isSafeStaticText(text){
     const t = norm(text);
-    if(t.length < 3 || t.length > 900) return false;
+    if(!t) return false;
+    if(t.length > 120) return false;
+    if(/^[-+]?\d[\d\s.,:+%()/-]*(so['‘’`]?m|сум|sum|uzs)?$/i.test(t)) return false;
+    return true;
+  }
+  function isDynamicText(text){
+    const t = norm(text);
+    if(t.length < 3 || t.length > 700) return false;
     if(/^[-+]?\d[\d\s.,:%()/-]*(so['‘’`]?m|сум|sum|uzs)?$/i.test(t)) return false;
     if(/^ID[:\s]/i.test(t)) return false;
     if(/^https?:\/\//i.test(t)) return false;
     return /[A-Za-zÀ-ÿЎўҚқҒғҲҳЁёА-Яа-я]/.test(t);
   }
-  function setElementText(el, original, translated){
-    if(!el || !document.contains(el)) return;
-    if(el.dataset.omI18nDynOrigin !== original) return;
-    el.textContent = translated;
+  function root(){ return document.body || document.documentElement; }
+  function getCache(){
+    try{ return JSON.parse(localStorage.getItem(CACHE_KEY) || "{}"); }
+    catch(_e){ return {}; }
   }
-  function queueDynamic(el, original){
-    if(currentLang === "uz") return;
-    if(!isTranslatableText(original)) return;
-    const exactTranslation = trExact(original, currentLang);
-    if(exactTranslation){ setElementText(el, original, exactTranslation); return; }
+  function setCache(cache){
+    try{ localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); }catch(_e){}
+  }
+  function cacheKey(lang, text){ return lang + "|" + text; }
 
-    const cache = loadCache();
-    const key = cacheKey(currentLang, original);
-    if(cache[key]) { setElementText(el, original, cache[key]); return; }
-
-    const entry = pending.get(original) || { text: original, elements: new Set() };
-    entry.elements.add(el);
-    pending.set(original, entry);
-    clearTimeout(queueTimer);
-    queueTimer = setTimeout(flushQueue, 180);
-  }
-  async function flushQueue(){
-    if(currentLang === "uz" || !pending.size) return;
-    const lang = currentLang;
-    const batch = Array.from(pending.values()).slice(0, 20);
-    batch.forEach(x => pending.delete(x.text));
-    const texts = batch.map(x => x.text);
-    try{
-      const res = await fetch("/.netlify/functions/deepseek-translate", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ target: lang, texts })
-      });
-      if(!res.ok) throw new Error("translate failed");
-      const data = await res.json();
-      const translations = Array.isArray(data.translations) ? data.translations : [];
-      const cache = loadCache();
-      texts.forEach((text, i) => {
-        const translated = norm(translations[i] || text);
-        if(translated && translated !== text){ cache[cacheKey(lang, text)] = translated; }
-        batch[i].elements.forEach(el => {
-          if(currentLang === lang) setElementText(el, text, translated || text);
-        });
-      });
-      saveCache(cache);
-    }catch(_e){
-      // If API key is not configured, the site still works with the built-in UI dictionary.
-    }
-    if(pending.size) queueTimer = setTimeout(flushQueue, 250);
-  }
-  function applyDynamic(root){
-    const nodes = [];
-    if(root.matches && dynamicSelectors.some(sel => root.matches(sel))) nodes.push(root);
-    if(root.querySelectorAll) nodes.push(...root.querySelectorAll(dynamicSelectors.join(",")));
-    nodes.forEach(el => {
-      if(!el || el.closest(".omLangSwitch")) return;
-      const original = el.dataset.omI18nDynOrigin || norm(el.textContent || "");
-      if(!el.dataset.omI18nDynOrigin) el.dataset.omI18nDynOrigin = original;
-      if(currentLang === "uz") { el.textContent = original; return; }
-      queueDynamic(el, original);
-    });
-  }
-  function updateButtons(){
-    document.querySelectorAll(".omLangBtn").forEach(btn => {
-      const on = btn.dataset.lang === currentLang;
-      btn.classList.toggle("active", on);
-      btn.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-  }
-  function applyAll(root){
-    if(applying) return;
-    applying = true;
-    try{
-      document.documentElement.lang = currentLang;
-      walkText(root || document.body);
-      applyAttributes(root || document.body);
-      applyDynamic(root || document.body);
-      updateButtons();
-    }finally{
-      applying = false;
-    }
-  }
-  function setLang(lang){
-    currentLang = normalizeLang(lang);
-    try{ localStorage.setItem(STORAGE_KEY, currentLang); }catch(_e){}
-    applyAll(document.body);
-    window.dispatchEvent(new CustomEvent("orzumall:languagechange", { detail:{ lang: currentLang } }));
-  }
   function createSwitcher(){
     if(document.querySelector(".omLangSwitch")) return;
     const wrap = document.createElement("div");
@@ -379,32 +246,178 @@
       b.addEventListener("click", () => setLang(lang));
       wrap.appendChild(b);
     });
-    const host = document.querySelector(".actionsRight") || document.querySelector(".topbar .actions") || null;
+    const host = document.querySelector(".actionsRight") || document.querySelector(".topbar .actions");
     if(host) host.prepend(wrap);
-    else { wrap.classList.add("omLangFloating"); document.body.appendChild(wrap); }
-  }
-  function startObserver(){
-    if(observer) observer.disconnect();
-    observer = new MutationObserver(mutations => {
-      if(applying) return;
-      for(const m of mutations){
-        m.addedNodes && m.addedNodes.forEach(node => {
-          if(node.nodeType === 1) applyAll(node);
-          else if(node.nodeType === 3) applyTextNode(node);
-        });
-        if(m.type === "characterData" && m.target) applyTextNode(m.target);
-      }
-    });
-    observer.observe(document.body, { childList:true, subtree:true, characterData:true });
+    else { wrap.classList.add("omLangFloating"); root().appendChild(wrap); }
   }
 
-  window.OM_I18N = { setLang, getLang: () => currentLang, apply: () => applyAll(document.body) };
+  function updateButtons(){
+    document.querySelectorAll(".omLangBtn").forEach(btn => {
+      const on = btn.dataset.lang === currentLang;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  function collectTextNodes(scope){
+    const out = [];
+    const walker = document.createTreeWalker(scope || root(), NodeFilter.SHOW_TEXT, {
+      acceptNode(node){
+        const p = node.parentElement;
+        if(!p) return NodeFilter.FILTER_REJECT;
+        if(p.closest("script,style,noscript,textarea,code,pre,.omLangSwitch,[data-no-i18n]")) return NodeFilter.FILTER_REJECT;
+        const t = norm(node.nodeValue);
+        if(!isSafeStaticText(t)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    while(walker.nextNode()) out.push(walker.currentNode);
+    return out;
+  }
+
+  function applyStaticText(scope){
+    const nodes = collectTextNodes(scope || root());
+    nodes.forEach(node => {
+      const p = node.parentElement;
+      if(!p) return;
+      const original = p.dataset.omI18nTextOrigin || node.nodeValue;
+      if(!p.dataset.omI18nTextOrigin) p.dataset.omI18nTextOrigin = original;
+      if(currentLang === "uz"){
+        node.nodeValue = original;
+      }else{
+        const translated = trExact(original, currentLang);
+        if(translated) node.nodeValue = translated;
+      }
+    });
+  }
+
+  function applyAttrs(scope){
+    const attrs = ["placeholder", "title", "aria-label", "alt"];
+    const all = (scope || root()).querySelectorAll ? (scope || root()).querySelectorAll("[placeholder],[title],[aria-label],[alt]") : [];
+    all.forEach(el => {
+      if(el.closest && el.closest(".omLangSwitch,[data-no-i18n]")) return;
+      attrs.forEach(attr => {
+        if(!el.hasAttribute(attr)) return;
+        const key = "omI18n" + attr.replace(/-([a-z])/g, (_,c)=>c.toUpperCase()).replace(/^./, c=>c.toUpperCase());
+        const original = el.dataset[key] || el.getAttribute(attr) || "";
+        if(!el.dataset[key]) el.dataset[key] = original;
+        if(currentLang === "uz") el.setAttribute(attr, original);
+        else {
+          const translated = trExact(original, currentLang);
+          if(translated) el.setAttribute(attr, translated);
+        }
+      });
+    });
+  }
+
+  function collectDynamicElements(){
+    const set = new Set();
+    dynamicSelectors.forEach(sel => document.querySelectorAll(sel).forEach(el => set.add(el)));
+    return Array.from(set).filter(el => el && !el.closest(".omLangSwitch,[data-no-i18n]") && isDynamicText(el.textContent));
+  }
+
+  async function translateDynamic(){
+    if(currentLang === "uz"){
+      collectDynamicElements().forEach(el => {
+        if(el.dataset.omDynOrigin) el.textContent = el.dataset.omDynOrigin;
+      });
+      return;
+    }
+    const elements = collectDynamicElements();
+    if(!elements.length) return;
+    const cache = getCache();
+    const toAsk = [];
+    const byText = new Map();
+
+    elements.forEach(el => {
+      const original = el.dataset.omDynOrigin || norm(el.textContent || "");
+      if(!el.dataset.omDynOrigin) el.dataset.omDynOrigin = original;
+      const exactTranslation = trExact(original, currentLang);
+      if(exactTranslation){ el.textContent = exactTranslation; return; }
+      const ck = cacheKey(currentLang, original);
+      if(cache[ck]){ el.textContent = cache[ck]; return; }
+      if(!byText.has(original)){
+        byText.set(original, []);
+        toAsk.push(original);
+      }
+      byText.get(original).push(el);
+    });
+
+    if(!toAsk.length) return;
+    // Translate in small chunks so the catalog never freezes.
+    for(let i=0; i<toAsk.length; i+=12){
+      const texts = toAsk.slice(i, i+12);
+      try{
+        const res = await fetch("/.netlify/functions/deepseek-translate", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ target: currentLang, texts })
+        });
+        if(!res.ok) throw new Error("translate failed");
+        const data = await res.json();
+        const translations = Array.isArray(data.translations) ? data.translations : [];
+        texts.forEach((text, idx) => {
+          const translated = norm(translations[idx] || text);
+          if(translated && translated !== text) cache[cacheKey(currentLang, text)] = translated;
+          (byText.get(text) || []).forEach(el => {
+            if(currentLang !== "uz") el.textContent = translated || text;
+          });
+        });
+        setCache(cache);
+      }catch(_e){
+        // API sozlanmagan bo'lsa ham sayt ishlashda davom etadi.
+        break;
+      }
+      await new Promise(r => setTimeout(r, 60));
+    }
+  }
+
+  function applyNow(){
+    if(busy) return;
+    busy = true;
+    try{
+      document.documentElement.lang = currentLang;
+      updateButtons();
+      if(currentLang !== "uz"){
+        applyStaticText(root());
+        applyAttrs(root());
+      }else{
+        // UZ rejimida sahifani keraksiz qayta yozmaymiz — asosiy sayt tezligi saqlanadi.
+        applyStaticText(root());
+        applyAttrs(root());
+      }
+    }finally{
+      busy = false;
+    }
+    translateDynamic();
+  }
+
+  function setLang(lang){
+    currentLang = normalizeLang(lang);
+    try{ localStorage.setItem(STORAGE_KEY, currentLang); }catch(_e){}
+    applyNow();
+    // App render qilib bo'lgandan keyin mahsulot nomlari ham tarjima bo'lishi uchun.
+    setTimeout(translateDynamic, 700);
+    setTimeout(translateDynamic, 2000);
+  }
 
   function init(){
     createSwitcher();
-    applyAll(document.body);
-    startObserver();
+    updateButtons();
+    // Eski og'ir observer yo'q: sayt qotmaydi. Tarjima faqat tanlangan tilda ishlaydi.
+    if(currentLang !== "uz"){
+      setTimeout(applyNow, 300);
+      setTimeout(applyNow, 1600);
+    }
+    document.addEventListener("click", (e)=>{
+      if(e.target && e.target.closest && e.target.closest(".omLangBtn")) return;
+      if(currentLang !== "uz") setTimeout(translateDynamic, 300);
+    }, true);
+    window.addEventListener("hashchange", ()=> currentLang !== "uz" && setTimeout(applyNow, 300));
   }
+
+  window.OM_I18N = { setLang, getLang: () => currentLang, apply: applyNow, translateVisible: translateDynamic };
+
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
