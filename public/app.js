@@ -1980,13 +1980,27 @@ function getProductType(p){
   if(["replica","copy","nusxa","fake"].includes(t)) return "replica";
   return t;
 }
+function omProductTypeIconSrc(type){
+  const t = String(type || "").toLowerCase().trim();
+  if(t === "original") return "./assets/auth-original.png";
+  if(t === "oem") return "./assets/auth-oem.png";
+  if(t === "replica") return "./assets/auth-copy.png";
+  return "";
+}
+function omProductTypeLabel(type){
+  const t = String(type || "").toLowerCase().trim();
+  if(t === "original") return omTrText("Asl mahsulot");
+  if(t === "oem") return "OEM";
+  if(t === "replica") return "Copy";
+  return omTrText(t || "Mahsulot turi");
+}
 function renderProductTypeBadge(p){
   const t = getProductType(p);
   if(!t) return "";
-  if(t==="original") return `<span class="authBadge original" title="Original"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> ${escapeHtml(omTrText("Asl mahsulot"))}</span>`;
-  if(t==="oem") return `<span class="authBadge oem" title="OEM"><i class="fa-solid fa-industry" aria-hidden="true"></i> OEM</span>`;
-  if(t==="replica") return `<span class="authBadge replica" title="Copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> Copy</span>`;
-  return `<span class="authBadge other" title="${escapeHtml(omTrText("Mahsulot turi"))}"><i class="fa-solid fa-tag" aria-hidden="true"></i> ${escapeHtml(omTrText(t))}</span>`;
+  const label = escapeHtml(omProductTypeLabel(t));
+  const iconSrc = omProductTypeIconSrc(t);
+  const icon = iconSrc ? `<img class="authBadgeImg" src="${iconSrc}" alt="${label}" loading="lazy">` : `<i class="fa-solid fa-tag" aria-hidden="true"></i>`;
+  return `<span class="authBadge ${escapeHtml(t)}" title="${label}">${icon}<span>${label}</span></span>`;
 }
 
 function discountPct(price, oldPrice){
@@ -3148,6 +3162,7 @@ function renderProductPage(){
           <div class="ppHeadCard">
             <div class="ppCatTrail">${catTrail}</div>
             ${tagsHtml?`<div class="ppTags">${tagsHtml}</div>`:""}
+            ${renderProductTypeBadge(p)?`<div class="ppAuthRow">${renderProductTypeBadge(p)}</div>`:""}
             <h1>${escapeHtml(omProductText(p,"name",p.name||"Nomsiz mahsulot"))}</h1>
             <div class="ppPriceLine"><strong>${moneyUZS(pricing.price||0)}</strong>${pricing.oldPrice?`<del>${moneyUZS(pricing.oldPrice)}</del>`:""}</div>
           </div>
