@@ -7477,3 +7477,75 @@ body{
   .imgViewer .qvTrustItem b{font-size:10px!important;}
   .imgViewer .qvTagsTop .qvTag{max-width:98px!important;font-size:9px!important;}
 }
+
+/* v29: product detail as a separate page, not modal */
+.product-detail-view{
+  min-height:calc(100dvh - 74px);
+  background:linear-gradient(180deg,#f8fafc 0%,#ffffff 42%,#fff 100%);
+  padding:14px 14px calc(92px + env(safe-area-inset-bottom));
+}
+.productPage{max-width:1180px;margin:0 auto;color:#0f172a;}
+.productPageTop{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;gap:12px;
+  padding:10px 0 14px;
+  background:linear-gradient(180deg,rgba(248,250,252,.98),rgba(248,250,252,.86));
+  backdrop-filter:blur(12px);
+}
+.productBackBtn,.productShareBtn{
+  width:44px;height:44px;min-width:44px;border-radius:16px;border:1px solid #e5e7eb;background:#fff;color:#0f172a;
+  display:grid;place-items:center;box-shadow:0 10px 26px rgba(15,23,42,.06);font-weight:900;
+}
+.productShareBtn{margin-left:auto;}
+.productPageTitle{display:grid;gap:2px;min-width:0;}
+.productPageTitle strong{font-size:18px;line-height:1.1;font-weight:1000;letter-spacing:-.035em;}
+.productPageTitle span{font-size:12px;color:#64748b;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.productPageLoading,.productPageEmpty{
+  min-height:52vh;display:grid;place-items:center;text-align:center;border:1px solid #e5e7eb;border-radius:26px;background:#fff;color:#64748b;font-weight:900;
+}
+.ppShell{display:block;}
+.ppGrid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(420px,1.05fr);gap:18px;align-items:start;}
+.ppGallery,.ppInfo,.ppHeadCard,.ppCategoryCard,.ppVariantCard,.ppDesc{
+  background:#fff;border:1px solid #e7edf5;border-radius:28px;box-shadow:0 18px 50px rgba(15,23,42,.065);
+}
+.ppGallery{padding:16px;position:sticky;top:76px;}
+.ppMainImage{
+  min-height:480px;border-radius:24px;background:radial-gradient(circle at 30% 20%,#fff 0%,#f8fafc 50%,#f1f5f9 100%);
+  display:grid;place-items:center;overflow:hidden;border:1px solid #eef2f7;
+}
+.ppMainImage img{max-width:96%;max-height:460px;object-fit:contain;filter:drop-shadow(0 18px 38px rgba(15,23,42,.12));}
+.ppThumbs{display:flex;gap:10px;overflow:auto;padding:12px 2px 0;scrollbar-width:none;}
+.ppThumbs::-webkit-scrollbar{display:none;}
+.ppThumb{width:64px;height:64px;min-width:64px;border:1px solid #e5e7eb;background:#fff;border-radius:18px;padding:4px;display:grid;place-items:center;box-shadow:0 8px 20px rgba(15,23,42,.04);}
+.ppThumb.active{border-color:#ef233c;box-shadow:0 0 0 3px rgba(239,35,60,.10);}
+.ppThumb img{width:100%;height:100%;object-fit:contain;border-radius:13px;}
+.ppInfo{padding:16px;display:grid;gap:12px;box-shadow:none;border:0;background:transparent;}
+.ppHeadCard{padding:16px;display:grid;gap:10px;background:linear-gradient(180deg,#fff,#fbfdff);}
+.ppCatTrail{display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.ppCatTrail .qvCrumb{height:30px;padding:0 10px;border-radius:999px;background:#f8fafc;border:1px solid #e8edf5;color:#475569;font-size:12px;font-weight:900;display:inline-flex;align-items:center;gap:6px;}
+.ppCatTrail .qvCrumbBtn{cursor:pointer}.ppCatTrail .qvCrumbSep{color:#cbd5e1;font-weight:1000;}
+.ppTags{display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.ppTag{height:24px;max-width:145px;display:inline-flex;align-items:center;gap:6px;padding:0 7px 0 9px;border-radius:999px;border:1px solid #fed7aa;background:#fff7ed;color:#be123c;font-size:10.5px;font-weight:950;}
+.ppTag:before{content:"";width:5px;height:5px;min-width:5px;border-radius:999px;background:#ef233c;}
+.ppTag span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ppTag b{height:16px;min-width:16px;padding:0 5px;border-radius:999px;background:#fff;border:1px solid #fed7aa;color:#ea580c;font-size:8px;line-height:16px;}
+.ppHeadCard h1{margin:0;font-size:30px;line-height:1.12;font-weight:1000;letter-spacing:-.045em;color:#0f172a;}
+.ppPriceLine{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.ppPriceLine strong{font-size:32px;line-height:1;color:#ef233c;font-weight:1000;letter-spacing:-.05em;}
+.ppPriceLine del{font-size:14px;color:#94a3b8;font-weight:900;}
+.ppMetrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+.ppMetrics > span{min-height:52px;padding:8px;border-radius:16px;border:1px solid #e8edf5;background:#fff;display:grid;place-items:center;text-align:center;gap:2px;box-shadow:0 8px 22px rgba(15,23,42,.045);}
+.ppMetrics i{font-size:13px}.ppMetrics b{font-size:12px;line-height:1;font-weight:1000}.ppMetrics small{font-size:9px;color:#64748b;font-weight:900;}
+.ppMetrics .qvMetricType,.ppMetrics .qvMetricId{display:none;}
+.ppCategoryCard{padding:0;overflow:hidden;}.ppCategoryCard .qvCatCardBtn{width:100%;border:0;background:linear-gradient(180deg,#fff,#f8fafc);padding:12px 14px;display:flex;align-items:center;gap:12px;text-align:left;}.ppCategoryCard .qvCatHeroIcon{width:46px;height:46px;min-width:46px;border-radius:16px;background:#fff1f2;display:grid;place-items:center;color:#ef233c;}.ppCategoryCard .qvCatHeroText{display:grid;gap:2px;min-width:0}.ppCategoryCard .qvCatHeroText span{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:1000}.ppCategoryCard .qvCatHeroText strong{font-size:13px;line-height:1.25;color:#0f172a}.ppCategoryCard .qvCatHeroText em{font-size:11px;color:#64748b;font-style:normal;font-weight:800}.ppCategoryCard .qvCatArrow{margin-left:auto;color:#94a3b8;}
+.ppVariantCard{padding:12px;}.ppVariantCard .qvVarEmpty{border-radius:16px;background:#f0fdf4;color:#15803d;font-weight:950;padding:11px 12px;display:flex;align-items:center;gap:8px;}.ppVariantCard .qvVarGroup{display:grid;gap:8px;margin-bottom:10px}.ppVariantCard .qvVarGroup:last-child{margin-bottom:0}.ppVariantCard .qvVarGroup>span{font-size:11px;color:#64748b;font-weight:1000;text-transform:uppercase}.ppVariantCard .qvSwatches,.ppVariantCard .qvSizeList{display:flex;gap:7px;flex-wrap:wrap}.ppVariantCard .qvSwatch{width:24px;height:24px;border-radius:999px;border:2px solid #fff;background:var(--qvc,#e5e7eb);box-shadow:0 0 0 1px #dbe4f0}.ppVariantCard .qvSizeList b{padding:6px 9px;border-radius:999px;background:#f8fafc;border:1px solid #e8edf5;font-size:12px;}
+.ppTrustGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}.ppTrustGrid .qvTrustItem{min-height:58px;padding:10px 8px;border-radius:17px;background:#fff;border:1px solid #e8edf5;display:grid;place-items:center;text-align:center;gap:3px;box-shadow:0 8px 22px rgba(15,23,42,.045);}.ppTrustGrid .qvTrustItem i{color:#ef233c;font-size:15px}.ppTrustGrid .qvTrustItem span{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.035em;font-weight:1000}.ppTrustGrid .qvTrustItem b{font-size:11.5px;font-weight:1000;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.ppActionGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}.ppAction{min-height:46px;border-radius:16px;background:#fff;border:1px solid #e8edf5;color:#334155;display:flex;align-items:center;justify-content:center;gap:7px;font-weight:950;font-size:12px;box-shadow:0 8px 22px rgba(15,23,42,.045);}.ppAction i{color:#ef233c}.ppAction.active{background:#fff1f2;border-color:#fecdd3;color:#be123c;}
+.ppDesc{padding:0;overflow:hidden;}.ppDesc summary{cursor:pointer;list-style:none;padding:14px 16px;font-size:13px;font-weight:1000;color:#0f172a}.ppDesc summary::-webkit-details-marker{display:none}.ppDesc p{margin:0;padding:0 16px 16px;color:#475569;font-size:13px;line-height:1.55;}
+.ppStickyBuy{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));z-index:25;margin-top:14px;padding:10px;border-radius:24px;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border:1px solid #e8edf5;box-shadow:0 20px 60px rgba(15,23,42,.14);display:flex;align-items:center;gap:12px;}.ppStickyBuy>div{display:grid;gap:2px;padding-left:8px;min-width:120px}.ppStickyBuy span{font-size:11px;color:#64748b;font-weight:900}.ppStickyBuy strong{font-size:18px;color:#ef233c;font-weight:1000;white-space:nowrap}.ppStickyBuy button{flex:1;height:50px;border:0;border-radius:18px;color:#fff;background:linear-gradient(135deg,#2a1324,#ef233c);box-shadow:0 14px 30px rgba(239,35,60,.22);font-weight:1000;font-size:14px;display:flex;align-items:center;justify-content:center;gap:9px;}
+@media (max-width:900px){
+  .product-detail-view{padding:10px 10px calc(96px + env(safe-area-inset-bottom));}
+  .productPageTop{padding:8px 0 10px}.productBackBtn,.productShareBtn{width:40px;height:40px;min-width:40px;border-radius:14px}.productPageTitle strong{font-size:16px}.productPageTitle span{font-size:11px}
+  .ppGrid{grid-template-columns:1fr;gap:10px}.ppGallery{position:relative;top:auto;padding:10px;border-radius:24px}.ppMainImage{min-height:300px;border-radius:20px}.ppMainImage img{max-height:286px}.ppThumb{width:52px;height:52px;min-width:52px;border-radius:15px}.ppInfo{padding:0;gap:9px}.ppHeadCard{padding:12px;border-radius:22px;gap:8px}.ppHeadCard h1{font-size:20px;line-height:1.18}.ppPriceLine strong{font-size:25px}.ppPriceLine del{font-size:12px}.ppCatTrail .qvCrumb{height:27px;font-size:10.5px;padding:0 8px}.ppTag{height:22px;max-width:108px;font-size:9px}.ppMetrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.ppMetrics .qvMetricBuy{display:none}.ppMetrics>span{min-height:46px;border-radius:14px}.ppCategoryCard .qvCatHeroText em{display:none}.ppTrustGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.ppTrustGrid .qvTrustItem{min-height:50px;padding:7px 4px;border-radius:14px}.ppTrustGrid .qvTrustItem span{display:none}.ppTrustGrid .qvTrustItem b{font-size:10px}.ppActionGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.ppAction{min-height:42px;font-size:0}.ppAction i{font-size:15px}.ppStickyBuy{bottom:calc(74px + env(safe-area-inset-bottom));border-radius:22px;margin-top:10px}.ppStickyBuy>div{min-width:96px}.ppStickyBuy strong{font-size:15px}.ppStickyBuy button{height:48px;border-radius:16px;font-size:13px}
+}
+@media (max-width:380px){.ppMainImage{min-height:260px}.ppMainImage img{max-height:248px}.ppMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ppTrustGrid{grid-template-columns:repeat(3,minmax(0,1fr))}.ppStickyBuy>div{display:none}.ppActionGrid{grid-template-columns:repeat(4,minmax(0,1fr))}}

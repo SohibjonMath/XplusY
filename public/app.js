@@ -57,6 +57,7 @@ window.addEventListener("om-i18n-updated", ()=>{
       if(activeTab === "categories") renderCategoriesPage();
       if(activeTab === "fav") renderFavPage();
       if(activeTab === "cart") renderCartPage();
+      if(activeTab === "product") renderProductPage();
     }catch(_e){}
   }, 90);
 });
@@ -483,6 +484,10 @@ const els = {
 
   // SPA views
   viewHome: document.getElementById("view-home"),
+  viewProduct: document.getElementById("view-product"),
+  productPageContent: document.getElementById("productPageContent"),
+  productBackBtn: document.getElementById("productBackBtn"),
+  productShareBtn: document.getElementById("productShareBtn"),
   viewCategories: document.getElementById("view-categories"),
   viewFav: document.getElementById("view-fav"),
   viewCart: document.getElementById("view-cart"),
@@ -2180,29 +2185,7 @@ const authHTML = renderProductTypeBadge(p);
 
     
 const openQuickView = ()=>{
-  const selNow = getSel(p);
-  const imgs = getImagesFor(p, selNow);
-  if(!imgs.length) return;
-
-  const stQV = getStats(p.id);
-
-  openImageViewer({
-    imageOnly: true,
-    productId: p.id,
-    title: omProductText(p, "name", p.name || "Rasm"),
-    desc: omProductText(p, "description", p.description || p.desc || ""),
-    pricing: getVariantPricing(p, selNow),
-    rating: Number(stQV.avg || 0),
-    reviewsCount: Number(stQV.count || 0),
-    tags: omProductTags(p),
-    badge: omProductText(p, "badge", p.badge || ""),
-    images: imgs,
-    startIndex: selNow.imgIdx || 0,
-    onSelect: (i)=>{
-      setImageIndex(p, i);
-      setCardImage(imgEl, p, getSel(p));
-    }
-  });
+  openProductPage(p.id);
 };
 
     // Open fullscreen viewer on image click
@@ -2864,6 +2847,7 @@ function toggleCollapsed(cardEl, bodyEl){
 
 /* ===== Mobile SPA Router (Android-like pages) ===== */
 let activeTab = "home";
+let activeProductId = "";
 let activeCatPath = []; // array of strings
 let appliedCatPath = []; // applied category filter (prefix path)
 
@@ -2877,6 +2861,7 @@ function setActiveNav(tab){
 function showView(tab){
   const map = {
     home: els.viewHome,
+    product: els.viewProduct,
     categories: els.viewCategories,
     fav: els.viewFav,
     cart: els.viewCart,
@@ -2890,7 +2875,7 @@ function showView(tab){
   activeTab = tab;
   setActiveNav(tab);
   try{
-    const cls = ["om-view-home","om-view-categories","om-view-fav","om-view-cart","om-view-profile"];
+    const cls = ["om-view-home","om-view-product","om-view-categories","om-view-fav","om-view-cart","om-view-profile"];
     document.documentElement.classList.remove(...cls);
     document.body && document.body.classList.remove(...cls);
     const nowCls = "om-view-" + tab;
@@ -2899,6 +2884,7 @@ function showView(tab){
   }catch(e){}
 
   // render pages on enter
+  if(tab === "product") renderProductPage();
   if(tab === "categories") renderCategoriesPage();
   if(tab === "fav") renderFavPage();
   if(tab === "cart") renderCartPage();
@@ -2926,12 +2912,34 @@ function goTab(tab){
 
 function handleHash(){
   const h = (location.hash || "#home").replace("#","");
+  if(h.startsWith("product/")){
+    activeProductId = decodeURIComponent(h.slice("product/".length) || "");
+    showView("product");
+    return;
+  }
   const tab = h || "home";
   showView(tab);
 }
 
 
 window.addEventListener("hashchange", handleHash);
+
+els.productBackBtn?.addEventListener("click", ()=>{
+  try{
+    if(history.length > 1) history.back();
+    else goTab("home");
+  }catch(_e){ goTab("home"); }
+});
+els.productShareBtn?.addEventListener("click", async ()=>{
+  const p = findProductById(activeProductId);
+  const url = location.origin + location.pathname + "#product/" + encodeURIComponent(activeProductId || "");
+  const title = p ? omProductText(p,"name",p.name||"OrzuMall mahsuloti") : "OrzuMall mahsuloti";
+  try{
+    if(navigator.share) await navigator.share({title, url});
+    else { await navigator.clipboard.writeText(url); toast("Havola nusxalandi"); }
+  }catch(_e){}
+});
+
 
 (function(){
   const btn = document.getElementById("pcCatBtn");
@@ -3031,6 +3039,175 @@ function closePanel(){
 }
 
 
+
+
+
+// ---------- Product detail page (separate page instead of modal) ----------
+const omProductPageFetches = new Set();
+const omProductPageViewed = new Set();
+
+function findProductById(id){
+  const key = String(id || "");
+  return (products || []).find(x=>String(x?.id)===key || String(x?._docId)===key) || null;
+}
+
+function openProductPage(productId){
+  const id = String(productId || "").trim();
+  if(!id){ toast("Mahsulot topilmadi."); return; }
+  activeProductId = id;
+  const target = "#product/" + encodeURIComponent(id);
+  if(location.hash === target){ showView("product"); }
+  else location.hash = target;
+}
+
+async function omFetchProductForPage(id){
+  const key = String(id || "").trim();
+  if(!key || omProductPageFetches.has(key)) return;
+  omProductPageFetches.add(key);
+  try{
+    const snap = await getDoc(doc(db, "products", key));
+    if(snap.exists()){
+      const data = snap.data() || {};
+      const price = (data.price ?? data.priceUZS ?? data.uzs ?? data.amount);
+      const created = (data.createdAt ?? data.created_at ?? data.created ?? data.updatedAt ?? data.updated_at ?? data.updated);
+      const prod = {
+        id: String(data.id || snap.id),
+        weightKg: Number(data.weightKg ?? data.weight_kg ?? data.weight ?? data.massKg ?? 0) || 0,
+        fulfillmentType: (data.fulfillmentType || data.fulfillment || (data.isCargo ? 'cargo' : 'stock') || 'stock'),
+        deliveryMinDays: (data.deliveryMinDays ?? (data.fulfillmentType==='cargo'||data.fulfillment==='cargo'||data.isCargo ? 15 : 1)),
+        deliveryMaxDays: (data.deliveryMaxDays ?? (data.fulfillmentType==='cargo'||data.fulfillment==='cargo'||data.isCargo ? 30 : 7)),
+        prepayRequired: (data.prepayRequired ?? ((data.fulfillmentType==='cargo'||data.fulfillment==='cargo'||data.isCargo) ? true : false)),
+        ...data,
+        _docId: snap.id,
+        _price: parseUZS(price),
+        _created: toMillis(created),
+      };
+      const exists = findProductById(prod.id) || findProductById(prod._docId);
+      if(!exists) products.push(prod);
+      omI18nProductsReady();
+      buildTagCounts();
+      buildCategoryTree();
+      try{ await preloadProductMetrics([prod.id]); }catch(_e){}
+    }
+  }catch(e){ console.warn("Product page fetch failed", e); }
+  finally{
+    omProductPageFetches.delete(key);
+    if(activeTab === "product") renderProductPage();
+  }
+}
+
+function omProductPageTagsHtml(p){
+  const raw = omProductTags(p).map(t=>String(t||"").trim()).filter(Boolean);
+  const tags = [...new Map(raw.map(t=>[t.toLowerCase(), t])).values()].slice(0,6);
+  if(!tags.length) return "";
+  return tags.map(t=>{
+    const cnt = tagCounts?.get?.(t.toLowerCase()) || 0;
+    const count = cnt ? (cnt>99 ? "99+" : String(cnt)) : "";
+    return `<button type="button" class="ppTag" data-pp-tag="${escapeHtml(t)}" title="${escapeHtml(t)} tegidagi mahsulotlar"><span>${escapeHtml(t)}</span>${count?`<b>${escapeHtml(count)}</b>`:""}</button>`;
+  }).join("");
+}
+
+function omProductPageGalleryHtml(p, imgs){
+  const main = imgs[0] || "";
+  return `<div class="ppGallery">
+    <div class="ppMainImage"><img id="productPageImg" src="${escapeHtml(main)}" alt="${escapeHtml(omProductText(p,"name",p.name||"Mahsulot"))}" loading="eager"></div>
+    <div class="ppThumbs" id="productPageThumbs">
+      ${imgs.map((src,i)=>`<button type="button" class="ppThumb ${i===0?"active":""}" data-pp-img="${escapeHtml(src)}"><img src="${escapeHtml(src)}" alt="thumb" loading="lazy"></button>`).join("")}
+    </div>
+  </div>`;
+}
+
+function renderProductPage(){
+  const root = els.productPageContent;
+  if(!root) return;
+  const id = String(activeProductId || "").trim();
+  if(!id){ root.innerHTML = `<div class="productPageEmpty">Mahsulot tanlanmagan.</div>`; return; }
+  const p = findProductById(id);
+  if(!p){
+    root.innerHTML = `<div class="productPageLoading"><i class="fa-solid fa-spinner fa-spin"></i> Mahsulot yuklanmoqda...</div>`;
+    omFetchProductForPage(id);
+    return;
+  }
+  if(!omProductPageViewed.has(String(p.id))){
+    omProductPageViewed.add(String(p.id));
+    try{ omRecordProductInteraction(p.id, "view", 1); }catch(_e){}
+  }
+  const sel = getSel(p);
+  const imgs = getImagesFor(p, sel);
+  const pricing = getVariantPricing(p, sel);
+  const desc = omProductText(p, "description", p.description || p.desc || "");
+  const favOn = favs.has(p.id);
+  const catTrail = omQVCatTrailHtml(p);
+  const catCard = omQVCatCardHtml(p);
+  const tagsHtml = omProductPageTagsHtml(p);
+  root.innerHTML = `
+    <div class="ppShell">
+      <div class="ppGrid">
+        ${omProductPageGalleryHtml(p, imgs)}
+        <article class="ppInfo">
+          <div class="ppHeadCard">
+            <div class="ppCatTrail">${catTrail}</div>
+            ${tagsHtml?`<div class="ppTags">${tagsHtml}</div>`:""}
+            <h1>${escapeHtml(omProductText(p,"name",p.name||"Nomsiz mahsulot"))}</h1>
+            <div class="ppPriceLine"><strong>${moneyUZS(pricing.price||0)}</strong>${pricing.oldPrice?`<del>${moneyUZS(pricing.oldPrice)}</del>`:""}</div>
+          </div>
+          <div class="ppMetrics">${omQVMetricHtml(p)}</div>
+          ${catCard?`<div class="ppCategoryCard">${catCard}</div>`:""}
+          <div class="ppVariantCard">${omQVVariantHtml(p)}</div>
+          <div class="ppTrustGrid">${omQVTrustHtml(p)}</div>
+          <div class="ppActionGrid">
+            <button type="button" class="ppAction" data-pp-info><i class="fa-solid fa-circle-info"></i><span>Tavsif</span></button>
+            <button type="button" class="ppAction" data-pp-video><i class="fa-brands fa-youtube"></i><span>Video</span></button>
+            <button type="button" class="ppAction" data-pp-reviews><i class="fa-solid fa-message"></i><span>Sharhlar</span></button>
+            <button type="button" class="ppAction ${favOn?"active":""}" data-pp-fav><i class="fa-${favOn?"solid":"regular"} fa-heart"></i><span>Sevimli</span></button>
+          </div>
+          ${desc?`<details class="ppDesc"><summary>Tavsifni ko‘rish</summary><p>${escapeHtml(desc)}</p></details>`:""}
+        </article>
+      </div>
+      <div class="ppStickyBuy">
+        <div><span>Jami</span><strong>${moneyUZS(pricing.price||0)}</strong></div>
+        <button type="button" id="productPageCartBtn"><i class="fa-solid fa-cart-shopping"></i> Savatga qo‘shish</button>
+      </div>
+    </div>`;
+  bindProductPage(p);
+  try{ omI18nRefresh(40); }catch(_e){}
+}
+
+function bindProductPage(p){
+  const root = els.productPageContent;
+  if(!root || !p) return;
+  root.querySelectorAll("[data-qv-cat-path]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      omOpenCategoryFromQuickView(omCatPathFromAttr(btn.getAttribute("data-qv-cat-path")));
+    });
+  });
+  root.querySelectorAll("[data-pp-tag]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      omOpenTagFromQuickView(btn.getAttribute("data-pp-tag") || btn.textContent || "");
+    });
+  });
+  root.querySelectorAll(".ppThumb").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const src = btn.getAttribute("data-pp-img") || "";
+      const img = root.querySelector("#productPageImg");
+      if(img) img.src = src;
+      root.querySelectorAll(".ppThumb").forEach(x=>x.classList.toggle("active", x===btn));
+    });
+  });
+  root.querySelector("#productPageCartBtn")?.addEventListener("click", ()=> handleAddToCart(p, { openCartAfter:false }));
+  root.querySelector("[data-pp-info]")?.addEventListener("click", ()=> openMini("info", p.id));
+  root.querySelector("[data-pp-video]")?.addEventListener("click", ()=> openMini("video", p.id));
+  root.querySelector("[data-pp-reviews]")?.addEventListener("click", ()=> openMini("reviews", p.id));
+  root.querySelector("[data-pp-fav]")?.addEventListener("click", (e)=>{
+    e.preventDefault();
+    if(favs.has(p.id)) favs.delete(p.id); else { favs.add(p.id); logEvent('favorite', p.id); }
+    saveLS(LS.favs, Array.from(favs));
+    updateBadges();
+    renderProductPage();
+  });
+}
 
 // ---------- Premium product quick view helpers ----------
 function omQVProduct(){
@@ -3267,24 +3444,9 @@ function openImageViewer({productId, title, desc, pricing, rating, reviewsCount,
 }
 
 
-// Compatibility helper: some cards call openViewer(productId)
+// Compatibility helper: cards and old buttons now open the product detail page.
 function openViewer(productId){
-  const p = (products || []).find(x=>String(x.id)===String(productId));
-  if(!p){ toast("Mahsulot topilmadi."); return; }
-  const images = (p.images && p.images.length ? p.images : (p.imagesByColor?.[0]?.images || [])).filter(Boolean);
-  openImageViewer({
-    imageOnly: true,
-    productId: p.id,
-    title: omProductText(p, "name", p.name || "Mahsulot"),
-    desc: omProductText(p, "description", p.description || ""),
-    pricing: { price: p.price, oldPrice: p.oldPrice, currency: p.currency || "UZS" },
-    rating: p.rating || 0,
-    reviewsCount: p.reviewsCount || 0,
-    tags: omProductTags(p),
-    badge: omProductText(p, "badge", p.badge || ""),
-    images,
-    startIndex: 0,
-  });
+  openProductPage(productId);
 }
 
 function closeImageViewer(){
@@ -4668,7 +4830,8 @@ async function loadProductsPage(){
     buildTagCounts();
     buildCategoryTree();
     applyFilterSort();
-    preloadProductMetrics(arr.map(p=>p.id)).then(()=>{ try{ applyFilterSort(); if(activeTab==="categories") renderCategoriesPage(); }catch(e){} });
+    if(activeTab==="product") renderProductPage();
+    preloadProductMetrics(arr.map(p=>p.id)).then(()=>{ try{ applyFilterSort(); if(activeTab==="categories") renderCategoriesPage(); if(activeTab==="product") renderProductPage(); }catch(e){} });
     if(activeTab==="categories") renderCategoriesPage();
 
     // If fewer than page size, we reached the end
@@ -6515,3 +6678,5 @@ window.addEventListener('load', ()=>setTimeout(orzuMoveProfileSocialToBottom, 12
   tabOrders.addEventListener('click', ()=> setProfileActivityTab('orders'));
   setProfileActivityTab('money');
 })();
+
+try{ window.openProductPage = openProductPage; }catch(_e){}
