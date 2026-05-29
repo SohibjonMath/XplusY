@@ -107,7 +107,10 @@
       "Yuklanmoqda...":"Загрузка...",
       "Hozircha sharh yo‘q.":"Отзывов пока нет.",
       "Bu mahsulot uchun video link qo‘shilmagan.":"Для этого товара видео-ссылка не добавлена.",
-      "ta":"шт."
+      "ta":"шт.",
+      "Hammasi yuklandi":"Всё загружено",
+      "Nomsiz":"Без названия",
+      "Rasm":"Фото"
     },
     en: {
       "Qidiruv":"Search",
@@ -209,7 +212,10 @@
       "Yuklanmoqda...":"Loading...",
       "Hozircha sharh yo‘q.":"No reviews yet.",
       "Bu mahsulot uchun video link qo‘shilmagan.":"No video link has been added for this product.",
-      "ta":"pcs"
+      "ta":"pcs",
+      "Hammasi yuklandi":"All loaded",
+      "Nomsiz":"Untitled",
+      "Rasm":"Image"
     }
   };
 
@@ -403,6 +409,194 @@
     }
   }
 
+
+  // ===== Direct product/data translation layer =====
+  // DOM kuzatish doim ham mahsulotlarni ushlamaydi. Shuning uchun app.js mahsulot nomlarini
+  // bevosita shu API orqali oladi. Avval cache/Firestoredagi tayyor maydonlar, keyin DeepSeek.
+  let pendingTexts = new Set();
+  let queueTimer = null;
+  let queueBusy = false;
+  let apiDisabledUntil = 0;
+  let lastError = "";
+
+  function cap(s){ s = String(s||""); return s ? s[0].toUpperCase() + s.slice(1) : s; }
+  function langCap(lang){ return lang === "ru" ? "Ru" : lang === "en" ? "En" : cap(lang); }
+
+  function maybeNested(p, lang, field){
+    const bags = [p?.translations, p?.translation, p?.i18n, p?.lang, p?.langs, p?.locale, p?.locales];
+    for(const bag of bags){
+      if(!bag || typeof bag !== "object") continue;
+      const x = bag[lang] || bag[langCap(lang)] || bag[lang.toUpperCase()];
+      if(x && typeof x === "object"){
+        const v = x[field] ?? x[cap(field)] ?? (field === "description" ? (x.desc ?? x.fullDesc ?? x.shortDesc) : undefined);
+        if(typeof v === "string" && norm(v)) return norm(v);
+        if(Array.isArray(v) && v.length) return v.map(norm).filter(Boolean);
+      }
+    }
+    return null;
+  }
+
+  function fieldCandidates(field, lang){
+    const L = langCap(lang), U = lang.toUpperCase();
+    const base = String(field||"");
+    const B = cap(base);
+    const list = [
+      `${base}_${lang}`, `${base}_${U}`, `${base}${L}`, `${base}${U}`,
+      `${lang}_${base}`, `${U}_${base}`, `${lang}${B}`, `${U}${B}`
+    ];
+    if(base === "name") list.push(`title_${lang}`, `title${L}`, `productName_${lang}`, `productName${L}`, `nom_${lang}`);
+    if(base === "description") list.push(`desc_${lang}`, `desc${L}`, `shortDescription_${lang}`, `shortDescription${L}`, `longDescription_${lang}`, `longDescription${L}`, `tasnif_${lang}`);
+    if(base === "tags") list.push(`tags_${lang}`, `tags${L}`, `categories_${lang}`, `categories${L}`);
+    return list;
+  }
+
+  function explicitLocalized(p, field, lang){
+    if(!p || typeof p !== "object") return null;
+    const nested = maybeNested(p, lang, field);
+    if(nested) return nested;
+    for(const k of fieldCandidates(field, lang)){
+      const v = p[k];
+      if(typeof v === "string" && norm(v)) return norm(v);
+      if(Array.isArray(v) && v.length) return v.map(norm).filter(Boolean);
+    }
+    return null;
+  }
+
+  function baseProductValue(p, field, fallback){
+    if(field === "name") return norm(p?.name || p?.title || p?.productName || fallback || "");
+    if(field === "description") return norm(p?.description || p?.desc || p?.shortDescription || p?.longDescription || fallback || "");
+    if(field === "badge") return norm(p?.badge || fallback || "");
+    if(field === "tags") return Array.isArray(p?.tags) ? p.tags.map(norm).filter(Boolean) : [];
+    return norm(p?.[field] || fallback || "");
+  }
+
+  async function requestTranslations(texts, target){
+    target = normalizeLang(target || currentLang);
+    texts = Array.from(new Set((texts||[]).map(norm).filter(isDynamicText))).slice(0, 20);
+    if(target === "uz" || !texts.length) return [];
+    const now = Date.now();
+    if(now < apiDisabledUntil) throw new Error(lastError || "translation_temporarily_disabled");
+
+    const res = await fetch("/.netlify/functions/deepseek-translate", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ target, texts })
+    });
+    const raw = await res.text();
+    let data = {};
+    try{ data = JSON.parse(raw); }catch(_e){}
+    if(!res.ok){
+      lastError = data?.error || data?.details || ("translate_http_" + res.status);
+      apiDisabledUntil = Date.now() + 45000;
+      throw new Error(lastError);
+    }
+    const translations = Array.isArray(data.translations) ? data.translations : [];
+    return texts.map((t,i)=> norm(translations[i] || t) || t);
+  }
+
+  function dispatchUpdated(){
+    try{ window.dispatchEvent(new CustomEvent("om-i18n-updated", { detail:{ lang: currentLang } })); }catch(_e){}
+  }
+
+  function queueText(text){
+    if(currentLang === "uz") return;
+    const t = norm(text);
+    if(!isDynamicText(t)) return;
+    if(trExact(t, currentLang)) return;
+    const cache = getCache();
+    if(cache[cacheKey(currentLang, t)]) return;
+    pendingTexts.add(t);
+    clearTimeout(queueTimer);
+    queueTimer = setTimeout(processQueue, 160);
+  }
+
+  async function processQueue(){
+    if(queueBusy || currentLang === "uz" || !pendingTexts.size) return;
+    queueBusy = true;
+    const lang = currentLang;
+    try{
+      while(pendingTexts.size && currentLang === lang){
+        const texts = Array.from(pendingTexts).slice(0, 12);
+        texts.forEach(t=>pendingTexts.delete(t));
+        let translations = [];
+        try{
+          translations = await requestTranslations(texts, lang);
+        }catch(_e){
+          // API ishlamasa sayt to'xtamaydi; keyingi urinish 45 soniyadan keyin.
+          break;
+        }
+        const cache = getCache();
+        texts.forEach((t,i)=>{
+          const translated = norm(translations[i] || t);
+          if(translated && translated !== t) cache[cacheKey(lang, t)] = translated;
+        });
+        setCache(cache);
+        dispatchUpdated();
+        await new Promise(r=>setTimeout(r, 80));
+      }
+    }finally{
+      queueBusy = false;
+      if(pendingTexts.size && currentLang !== "uz") queueTimer = setTimeout(processQueue, 1200);
+    }
+  }
+
+  function translateTextSync(text){
+    const original = norm(text);
+    if(currentLang === "uz" || !original) return String(text == null ? "" : text);
+    const exactTranslation = trExact(original, currentLang);
+    if(exactTranslation) return exactTranslation;
+    const cache = getCache();
+    const cached = cache[cacheKey(currentLang, original)];
+    if(cached) return cached;
+    queueText(original);
+    return String(text == null ? "" : text);
+  }
+
+  function productText(p, field, fallback){
+    const original = baseProductValue(p, field, fallback);
+    if(currentLang === "uz") return original;
+    const ready = explicitLocalized(p, field, currentLang);
+    if(typeof ready === "string" && ready) return ready;
+    const exactTranslation = trExact(original, currentLang);
+    if(exactTranslation) return exactTranslation;
+    const cache = getCache();
+    const ck = cacheKey(currentLang, original);
+    if(cache[ck]) return cache[ck];
+    queueText(original);
+    return original;
+  }
+
+  function productTags(p){
+    const orig = baseProductValue(p, "tags", []);
+    if(currentLang === "uz") return orig;
+    const ready = explicitLocalized(p, "tags", currentLang);
+    if(Array.isArray(ready) && ready.length) return ready;
+    return orig.map(t => translateTextSync(t));
+  }
+
+  function ensureProducts(products){
+    if(currentLang === "uz" || !Array.isArray(products)) return;
+    const texts = [];
+    products.slice(0, 80).forEach(p=>{
+      const n = baseProductValue(p, "name", "");
+      const d = baseProductValue(p, "description", "");
+      const b = baseProductValue(p, "badge", "");
+      if(n) texts.push(n);
+      if(d) texts.push(d);
+      if(b) texts.push(b);
+      baseProductValue(p, "tags", []).forEach(t=>texts.push(t));
+      if(Array.isArray(p?.badges)) p.badges.forEach(t=>texts.push(norm(t)));
+    });
+    texts.forEach(queueText);
+  }
+
+  function countText(n){
+    n = Number(n || 0);
+    if(currentLang === "ru") return `${n} шт.`;
+    if(currentLang === "en") return `${n} pcs`;
+    return `${n} ta`;
+  }
+
   function scheduleApply(scope){
     if(currentLang === "uz") return;
     clearTimeout(applyTimer);
@@ -463,10 +657,11 @@
     currentLang = normalizeLang(lang);
     try{ localStorage.setItem(STORAGE_KEY, currentLang); }catch(_e){}
     applyNow();
+    dispatchUpdated();
     // App render qilib bo'lgandan keyin mahsulot nomlari ham tarjima bo'lishi uchun.
-    setTimeout(applyNow, 700);
-    setTimeout(applyNow, 2000);
-    setTimeout(applyNow, 4500);
+    setTimeout(()=>{ applyNow(); dispatchUpdated(); }, 700);
+    setTimeout(()=>{ applyNow(); dispatchUpdated(); }, 2000);
+    setTimeout(()=>{ applyNow(); dispatchUpdated(); }, 4500);
   }
 
   function init(){
@@ -491,7 +686,14 @@
     getLang: () => currentLang,
     apply: applyNow,
     translateVisible: translateDynamic,
-    notify: (scope) => scheduleApply(scope || root())
+    notify: (scope) => scheduleApply(scope || root()),
+    text: translateTextSync,
+    productText,
+    productTags,
+    ensureProducts,
+    countText,
+    requestTranslations,
+    getLastError: () => lastError
   };
 
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

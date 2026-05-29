@@ -27,6 +27,41 @@ function omI18nRefresh(delay = 0){
 }
 
 
+function omLang(){
+  try{ return window.OM_I18N?.getLang?.() || "uz"; }catch(_e){ return "uz"; }
+}
+function omTrText(text){
+  try{ return window.OM_I18N?.text?.(text) || String(text == null ? "" : text); }catch(_e){ return String(text == null ? "" : text); }
+}
+function omCount(n){
+  try{ return window.OM_I18N?.countText?.(n) || `${Number(n||0)} ta`; }catch(_e){ return `${Number(n||0)} ta`; }
+}
+function omProductText(p, field, fallback=""){
+  try{ return window.OM_I18N?.productText?.(p, field, fallback) || String(fallback || ""); }
+  catch(_e){ return String(fallback || ""); }
+}
+function omProductTags(p){
+  try{ return window.OM_I18N?.productTags?.(p) || (Array.isArray(p?.tags) ? p.tags : []); }
+  catch(_e){ return Array.isArray(p?.tags) ? p.tags : []; }
+}
+function omI18nProductsReady(){
+  try{ window.OM_I18N?.ensureProducts?.(products || []); }catch(_e){}
+}
+let __omI18nRerenderTimer = null;
+window.addEventListener("om-i18n-updated", ()=>{
+  clearTimeout(__omI18nRerenderTimer);
+  __omI18nRerenderTimer = setTimeout(()=>{
+    try{
+      buildCategoryTree();
+      applyFilterSort();
+      if(activeTab === "categories") renderCategoriesPage();
+      if(activeTab === "fav") renderFavPage();
+      if(activeTab === "cart") renderCartPage();
+    }catch(_e){}
+  }, 90);
+});
+
+
 /* ========= TELEGRAM ADMIN NOTIFY (NO FUNCTIONS) =========
    Sends a lightweight notification to admin chat when a new order is created.
    Uses GET (Image beacon) and/or no-cors POST to avoid CORS issues.
@@ -1242,7 +1277,7 @@ function renderCategoriesPage(){
   const homeCr = document.createElement("button");
   homeCr.className = "crumb";
   homeCr.type = "button";
-  homeCr.textContent = "Barchasi";
+  homeCr.textContent = omTrText("Barchasi");
   homeCr.addEventListener("click", ()=>{ activeCatPath = []; renderCategoriesPage(); });
   els.catCrumbs.appendChild(homeCr);
 
@@ -1252,7 +1287,7 @@ function renderCategoriesPage(){
     const b = document.createElement("button");
     b.className = "crumb";
     b.type = "button";
-    b.textContent = part;
+    b.textContent = omTrText(part);
     const snap = acc.slice();
     b.addEventListener("click", ()=>{ activeCatPath = snap; renderCategoriesPage(); });
     els.catCrumbs.appendChild(b);
@@ -1268,7 +1303,7 @@ function renderCategoriesPage(){
     const item = document.createElement("div");
     item.className = "catItem";
     item.innerHTML = `
-      <div class="catName">${escapeHtml(ch.name)}</div>
+      <div class="catName">${escapeHtml(omTrText(ch.name))}</div>
       <div class="catMeta">
         <div class="catCount">${ch.count}</div>
         <div class="catArrow">›</div>
@@ -1308,7 +1343,7 @@ function applyFilterSort(){
 
   if(query){
     arr = arr.filter(p=>{
-      const hay = `${p.name} ${(p.tags||[]).join(" ")}`.toLowerCase();
+      const hay = `${p.name} ${omProductText(p, "name", p.name||"")} ${(p.tags||[]).join(" ")} ${omProductTags(p).join(" ")}`.toLowerCase();
       return hay.includes(query);
     });
   }
@@ -1364,8 +1399,9 @@ function renderDeliveryBadge(p){
   const cls = d.type === "cargo" ? "shipBadge cargo" : "shipBadge stock";
   const flagSrc = d.type === "cargo" ? "assets/flags/cn.png" : "assets/flags/uz.png";
   const flagAlt = d.type === "cargo" ? "CN" : "UZ";
+  const dayWord = omLang()==="ru" ? "дн." : (omLang()==="en" ? "days" : "kun");
   // Use local PNG flags to avoid emoji font issues (UZ/CN text fallback).
-  return `<span class="${cls}"><img class="omFlag" src="${flagSrc}" alt="${flagAlt}" loading="lazy"> <span class="omTruck">🚚</span> (${d.min}–${d.max} kun)</span>`;
+  return `<span class="${cls}"><img class="omFlag" src="${flagSrc}" alt="${flagAlt}" loading="lazy"> <span class="omTruck">🚚</span> (${d.min}–${d.max} ${dayWord})</span>`;
 }
 
 function getProductType(p){
@@ -1379,10 +1415,10 @@ function getProductType(p){
 function renderProductTypeBadge(p){
   const t = getProductType(p);
   if(!t) return "";
-  if(t==="original") return `<span class="authBadge original" title="Original"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Asl mahsulot</span>`;
+  if(t==="original") return `<span class="authBadge original" title="Original"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> ${escapeHtml(omTrText("Asl mahsulot"))}</span>`;
   if(t==="oem") return `<span class="authBadge oem" title="OEM"><i class="fa-solid fa-industry" aria-hidden="true"></i> OEM</span>`;
   if(t==="replica") return `<span class="authBadge replica" title="Copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> Copy</span>`;
-  return `<span class="authBadge other" title="Mahsulot turi"><i class="fa-solid fa-tag" aria-hidden="true"></i> ${escapeHtml(t)}</span>`;
+  return `<span class="authBadge other" title="${escapeHtml(omTrText("Mahsulot turi"))}"><i class="fa-solid fa-tag" aria-hidden="true"></i> ${escapeHtml(omTrText(t))}</span>`;
 }
 
 function discountPct(price, oldPrice){
@@ -1483,7 +1519,7 @@ function render(arr){
   els.grid.innerHTML = "";
   if (els.productsCount) {
     const n = Array.isArray(arr) ? arr.length : 0;
-    els.productsCount.textContent = `${n} ta`;
+    els.productsCount.textContent = omCount(n);
   }
   els.empty.hidden = arr.length !== 0;
 
@@ -1509,7 +1545,7 @@ for(const b of adminBadges.slice(0,3)){
   const t = String(b||"").trim();
   if(!t) continue;
   if(/^-?\d+\s*%$/.test(t)) continue;
-  badgeHtmlParts.push(`<div class="pbadge meta">${escapeHtml(t)}</div>`);
+  badgeHtmlParts.push(`<div class="pbadge meta">${escapeHtml(omTrText(t))}</div>`);
 }
 // Prepay badge moved to cart (not shown on cards)
 
@@ -1522,7 +1558,7 @@ const authHTML = renderProductTypeBadge(p);
 
     card.innerHTML = `
       <div class="pmedia">
-        <img class="pimg" src="${currentImg || ""}" alt="${escapeHtml(p.name || "product")}" loading="lazy"/>
+        <img class="pimg" src="${currentImg || ""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy"/>
         ${badgeHTML}
         ${authHTML?`<div class="authOnImg">${authHTML}</div>`:""}
         <button class="favBtn ${isFav ? "active" : ""}" title="Sevimli" aria-label="Sevimli" aria-pressed="${isFav ? "true" : "false"}"><i class="fa-${isFav ? "solid" : "regular"} fa-heart" aria-hidden="true"></i></button>
@@ -1536,7 +1572,7 @@ const authHTML = renderProductTypeBadge(p);
 
         <div class="pinstall" style="display:none"></div>
 
-        <div class="pname clamp2">${escapeHtml(p.name || "Nomsiz")}</div>
+        <div class="pname clamp2">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         ${showCount ? `<div class="pratingInline compact"><i class="fa-solid fa-star" aria-hidden="true"></i> ${Number(showAvg).toFixed(1)} <span>(${showCount})</span></div>` : ""}
 
         <div class="pcardFoot">
@@ -1581,13 +1617,13 @@ const openQuickView = ()=>{
   openImageViewer({
     imageOnly: true,
     productId: p.id,
-    title: p.name || "Rasm",
-    desc: p.description || p.desc || "",
+    title: omProductText(p, "name", p.name || "Rasm"),
+    desc: omProductText(p, "description", p.description || p.desc || ""),
     pricing: getVariantPricing(p, selNow),
     rating: Number(stQV.avg || 0),
     reviewsCount: Number(stQV.count || 0),
-    tags: Array.isArray(p.tags) ? p.tags : [],
-    badge: p.badge || "",
+    tags: omProductTags(p),
+    badge: omProductText(p, "badge", p.badge || ""),
     images: imgs,
     startIndex: selNow.imgIdx || 0,
     onSelect: (i)=>{
@@ -1654,6 +1690,7 @@ try{
   }
 }catch(e){}
 
+  omI18nProductsReady();
   omI18nRefresh(80);
   omI18nRefresh(650);
 }
@@ -1735,7 +1772,7 @@ function renderVariantModal(){
   const sizes = normSizes(p);
   const sel = vState.sel || {color:null,size:null};
 
-  if(els.vName) els.vName.textContent = p.name || "—";
+  if(els.vName) els.vName.textContent = omProductText(p, "name", p.name || "—");
   const pricing = getVariantPricing(p, sel);
   if(els.vPrice) els.vPrice.textContent = moneyUZS(pricing.price || 0);
   if(els.vQty) els.vQty.textContent = String(vState.qty || 1);
@@ -2522,13 +2559,13 @@ function openViewer(productId){
   openImageViewer({
     imageOnly: true,
     productId: p.id,
-    title: p.name || "Mahsulot",
-    desc: p.description || "",
+    title: omProductText(p, "name", p.name || "Mahsulot"),
+    desc: omProductText(p, "description", p.description || ""),
     pricing: { price: p.price, oldPrice: p.oldPrice, currency: p.currency || "UZS" },
     rating: p.rating || 0,
     reviewsCount: p.reviewsCount || 0,
-    tags: p.tags || [],
-    badge: p.badge || "",
+    tags: omProductTags(p),
+    badge: omProductText(p, "badge", p.badge || ""),
     images,
     startIndex: 0,
   });
@@ -2641,7 +2678,7 @@ async function openMini(kind, productId){
 
   // content
   if(kind === "info"){
-    const desc = (p.description || p.desc || "").toString().trim();
+    const desc = omProductText(p, "description", p.description || p.desc || "").toString().trim();
     els.miniBody.innerHTML = `
       <div class="miniDesc">${desc ? escapeHtml(desc) : `<span class="muted">Tavsif kiritilmagan.</span>`}</div>
     `;
@@ -2888,10 +2925,10 @@ function renderPanel(mode){
     const item = document.createElement("div");
     item.className = "cartItem cartPremiumItem";
     item.innerHTML = `
-      <img class="cartImg" src="${imgSrc||""}" alt="${p.name||"product"}" />
+      <img class="cartImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
       <div class="cartMeta">
         ${mode==="cart" ? `<label class="cartPick"><input type="checkbox" class="cartPickBox" data-pick="${escapeHtml(row.ci.key)}" ${cartSelected.has(row.ci.key) ? "checked" : ""} /><span></span></label>` : ""}
-        <div class="cartTitle">${p.name||"Nomsiz"}</div>
+        <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         ${mode==="cart" ? (renderVariantLine(row.ci) + (((_normPType(p)==="cargo" || p.prepayRequired===true)) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Oldindan to‘lov</span></div>` : ``)) : ""}
         <div class="cartRow">
           <div class="price">${moneyUZS(getVariantPricing(p, {color: row.ci?.color || null, size: row.ci?.size || null}).price||0)}</div>
@@ -3002,7 +3039,7 @@ function renderFavPage(){
     item.className = "favPremiumCard";
     item.innerHTML = `
       <div class="favImgWrap">
-        <img class="favCardImg" src="${imgSrc||""}" alt="${escapeHtml(p.name||"product")}" />
+        <img class="favCardImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
         <button class="favRemoveBtn" title="Sevimlidan olib tashlash" aria-label="Sevimlidan olib tashlash"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
       </div>
       <div class="favContent">
@@ -3010,7 +3047,7 @@ function renderFavPage(){
           ${ratingHtml}
           <span class="favMiniBadge">Sevimli</span>
         </div>
-        <div class="favTitle">${escapeHtml(p.name||"Nomsiz")}</div>
+        <div class="favTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         <div class="favPriceRow">
           <div class="favPrice">${moneyUZS(priceObj.price||0)}</div>
           <div class="favShip">${renderDeliveryBadge(p)}</div>
@@ -3086,13 +3123,13 @@ function renderCartPage(){
     const item = document.createElement("div");
     item.className = "cartItem";
     item.innerHTML = `
-      <img class="cartImg" src="${imgSrc||""}" alt="${p.name||"product"}" />
+      <img class="cartImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
       <div class="cartMeta">
         <label class="cartPick">
           <input type="checkbox" class="cartPickBox" data-pick="${escapeHtml(ci.key)}" ${cartSelected.has(ci.key) ? "checked" : ""} />
           <span></span>
         </label>
-        <div class="cartTitle">${p.name||"Nomsiz"}</div>
+        <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         ${renderVariantLine(ci)}
         <div class="cartShip">${renderDeliveryBadge(p)}</div>
         ${(_normPType(p)==="cargo" || p.prepayRequired===true) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Oldindan to‘lov</span></div>` : ``}
@@ -3761,7 +3798,7 @@ function resetProductsPaging(){
     if(pager) pager.hidden = false;
     if(btn){
       btn.disabled = false;
-      btn.textContent = "Yana yuklash";
+      btn.textContent = omTrText("Yana yuklash");
       btn.style.display = "";
     }
   }catch(e){}
@@ -3778,7 +3815,7 @@ async function loadProductsPage(){
   const btn = document.getElementById("loadMoreBtn");
   if(btn){
     btn.disabled = true;
-    btn.textContent = "Yuklanmoqda...";
+    btn.textContent = omTrText("Yuklanmoqda...");
   }
 
   try{
@@ -3836,7 +3873,7 @@ async function loadProductsPage(){
     if(snap.empty){
       productsDone = true;
       if(btn){
-        btn.textContent = "Hammasi yuklandi";
+        btn.textContent = omTrText("Hammasi yuklandi");
         btn.style.display = "none";
       }
       return;
@@ -3873,6 +3910,7 @@ async function loadProductsPage(){
       }
     }
 
+    omI18nProductsReady();
     buildTagCounts();
     buildCategoryTree();
     applyFilterSort();
@@ -3890,7 +3928,7 @@ async function loadProductsPage(){
     productsLoading = false;
     if(btn && !productsDone){
       btn.disabled = false;
-      btn.textContent = "Yana yuklash";
+      btn.textContent = omTrText("Yana yuklash");
     }
   }
 }
