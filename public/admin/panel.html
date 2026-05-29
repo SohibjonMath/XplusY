@@ -4466,6 +4466,8 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     let OM_ADMIN_CATEGORY_CATALOG = adminCloneCategories(OM_ADMIN_CATEGORY_CATALOG_DEFAULT);
     let categorySettingsLoaded = false;
     let editingCategoryId = null;
+    // v15 hotfix: module scripts run in strict mode; v14 assigned this later without declaring it.
+    let setProductCategorySelects = function(path){ try{ setCategoryFormValue(path); }catch(e){} };
 
     function adminCloneCategories(tree){ return JSON.parse(JSON.stringify(Array.isArray(tree)?tree:[])); }
     function adminCatSlug(v){return String(v||"").trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g,"-").replace(/[^a-z0-9а-яёўғқҳ'\-]+/gi,"-").replace(/^-+|-+$/g,"") || "category";}
@@ -5946,7 +5948,7 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
       $("youtubeUrl").value=p.youtubeUrl||p.videoUrl||"";
 $("currency").value=p.currency||"UZS";
       if(document.getElementById("productType")) document.getElementById("productType").value = (p.productType||"");
-      try{ setCategoryFormValue(adminProductCategoryPathIds(p)); }catch(e){}
+      try{ setProductCategorySelects(adminProductCategoryPathIds(p)); }catch(e){ try{ setCategoryFormValue(adminProductCategoryPathIds(p)); }catch(_){} }
       $("tagsInput").value=(p.tags||[]).join(", ");
       updateTagsPreview();
 
