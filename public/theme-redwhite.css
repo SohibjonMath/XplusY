@@ -4619,3 +4619,15 @@ body select{
   .savedAddressItemText b{font-size:12px;}
   .savedAddressItemText span{font-size:10.5px;}
 }
+
+/* Auto-only delivery note */
+.deliveryAutoOnlyNote{
+  padding:10px 12px;
+  border-radius:14px;
+  background:#f8fafc;
+  border:1px dashed rgba(17,24,39,.18);
+  color:#374151;
+  font-size:12px;
+  font-weight:800;
+  line-height:1.45;
+}

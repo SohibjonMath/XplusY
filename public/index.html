@@ -270,41 +270,27 @@
                 <span class="deliveryOptionIcon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></span>
                 <span class="deliveryOptionText">
                   <b>Yetkazib berish</b>
-                  <small>Manzil yoki lokatsiya kerak</small>
+                  <small>Faqat avto lokatsiya orqali</small>
                 </span>
               </label>
             </div>
 
             <div class="deliveryAddressBox" id="deliveryAddressBox" hidden>
-              <div class="savedAddressCheckout" id="savedAddressCheckoutWrap" hidden>
-                <div class="savedAddressCheckoutTop">
-                  <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                  <span>Saqlangan manzillar</span>
-                </div>
-                <select id="savedDeliveryAddressSelect">
-                  <option value="">Saqlangan manzilni tanlang</option>
-                </select>
-              </div>
               <button class="locateBtn" id="deliveryLocateBtn" type="button">
                 <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
                 <span>Avto aniqlash</span>
               </button>
-              <div class="deliveryLocationStatus" id="deliveryLocationStatus">Joylashuv hali olinmagan.</div>
+              <div class="deliveryLocationStatus" id="deliveryLocationStatus">Joylashuv hali olinmagan. Avto aniqlash majburiy.</div>
               <div class="omDeliveryCalcBox" id="deliveryEstimateBox" hidden>
                 <div class="omDeliveryCalcHead">
                   <i class="fa-solid fa-route" aria-hidden="true"></i>
                   <span>Yetkazib berish hisob-kitobi</span>
                 </div>
-                <div id="deliveryEstimateContent" class="omDeliveryCalcContent">Manzil aniqlangandan keyin hisoblanadi.</div>
+                <div id="deliveryEstimateContent" class="omDeliveryCalcContent">Avto lokatsiya aniqlangandan keyin hisoblanadi.</div>
               </div>
-              <label class="deliveryField">
-                <span>Manzilni qo‘lda yozing</span>
-                <input id="deliveryAddressInput" type="text" placeholder="Mahalla, ko‘cha, uy, mo‘ljal..." />
-              </label>
-              <label class="deliveryField">
-                <span>Qo‘shimcha izoh</span>
-                <input id="deliveryNoteInput" type="text" placeholder="Masalan: 2-qavat, eshik kodi, mo‘ljal..." />
-              </label>
+              <div class="deliveryAutoOnlyNote">
+                Qo‘lda manzil kiritish o‘chirilgan. Buyurtma uchun faqat telefon/brauzer orqali olingan lokatsiya ishlatiladi.
+              </div>
             </div>
           </div>
 
@@ -378,19 +364,18 @@
           <div class="savedAddressHead">
             <div>
               <div class="profileCardTitle">Yetkazib berish manzillari</div>
-              <div class="profileCardSub">Uy, ish yoki boshqa lokatsiyalarni saqlab qo‘ying.</div>
+              <div class="profileCardSub">Faqat avto lokatsiya orqali saqlanadi.</div>
             </div>
             <div class="savedAddressIcon"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i></div>
           </div>
           <div class="savedAddressForm">
             <input id="savedAddressName" type="text" placeholder="Masalan: Uyim / Ishim" />
-            <input id="savedAddressText" type="text" placeholder="Manzil izohi: mahalla, ko‘cha, uy..." />
             <button class="btn primary" id="savedAddressDetectSave" type="button">
               <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
               <span>Avto aniqlab saqlash</span>
             </button>
           </div>
-          <div class="savedAddressStatus" id="savedAddressStatus">Saqlangan manzillar buyurtma berishda ko‘rinadi.</div>
+          <div class="savedAddressStatus" id="savedAddressStatus">Manzil qo‘lda yozilmaydi, faqat avto lokatsiya saqlanadi.</div>
           <div class="savedAddressList" id="savedAddressList"></div>
         </div>
 

@@ -117,6 +117,13 @@
     .json-viewer{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:var(--border-radius);overflow-x:auto;max-height:520px;font-size:13px}
     .json-key{color:#9cdcfe}.json-string{color:#ce9178}.json-number{color:#b5cea8}.json-boolean{color:#569cd6}.json-null{color:#dcdcaa}
 
+
+    .deliverySettingsBox{margin-top:22px;padding:18px;border:1px solid var(--gray-light);border-radius:var(--border-radius);background:#fbfcff}
+    .tariffTableWrap{overflow-x:auto;border:1px solid var(--gray-light);border-radius:var(--border-radius);background:#fff}
+    .tariffTable{width:100%;min-width:560px}
+    .tariffTable td,.tariffTable th{padding:10px}
+    .tariffTable input.form-control{padding:9px 10px;font-size:.95rem}
+
     /* Helpers */
     .hidden{display:none !important}
     .muted{color:var(--gray);font-size:.9rem}
@@ -732,6 +739,56 @@
           </div></div>
 
           <button class="btn btn-primary" id="saveSettingsBtn"><i class="fas fa-save"></i> Saqlash</button>
+
+
+          <div class="deliverySettingsBox">
+            <div class="form-section" style="border-bottom:none;margin-bottom:0;padding-bottom:0">
+              <h4><i class="fas fa-truck-fast"></i> Yetkazib berish tariflari</h4>
+              <p class="form-text">Bu narxlar mijoz checkoutida kuryer va UzPost tavsiyasini hisoblashda ishlatiladi. O‘zgartirsangiz asosiy sayt avtomatik yangi tarifni o‘qiydi.</p>
+
+              <div class="form-row">
+                <div class="form-group"><label>Kuryer maksimal masofa (km)</label><input id="deliveryCourierMaxKm" type="number" min="1" step="1" class="form-control" placeholder="30"></div>
+                <div class="form-group"><label>20 km dan keyin har 1 km narxi</label><input id="deliveryCourierPerKm" type="number" min="0" step="100" class="form-control" placeholder="3000"></div>
+              </div>
+
+              <div class="tariffTableWrap">
+                <table class="tariffTable">
+                  <thead><tr><th>Zona</th><th>Pullik narx</th><th>Bepul yetkazish limiti</th></tr></thead>
+                  <tbody>
+                    <tr><td>0–3 km</td><td><input id="courierFee3" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree3" type="number" min="0" step="1000" class="form-control"></td></tr>
+                    <tr><td>3–7 km</td><td><input id="courierFee7" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree7" type="number" min="0" step="1000" class="form-control"></td></tr>
+                    <tr><td>7–12 km</td><td><input id="courierFee12" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree12" type="number" min="0" step="1000" class="form-control"></td></tr>
+                    <tr><td>12–20 km</td><td><input id="courierFee20" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree20" type="number" min="0" step="1000" class="form-control"></td></tr>
+                    <tr><td>20–30 km baza</td><td><input id="courierFee30Base" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree30" type="number" min="0" step="1000" class="form-control"></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h4 style="margin-top:18px"><i class="fas fa-box"></i> UzPost tariflari</h4>
+              <div class="form-row">
+                <div class="form-group"><label>1 kg gacha narx</label><input id="uzpostFirstKgFee" type="number" min="0" step="100" class="form-control" placeholder="15000"></div>
+                <div class="form-group"><label>Keyingi har 1 kg narxi</label><input id="uzpostExtraKgFee" type="number" min="0" step="100" class="form-control" placeholder="3000"></div>
+                <div class="form-group"><label>Yetkazish muddati</label><input id="uzpostEtaText" class="form-control" placeholder="2–5 kun"></div>
+              </div>
+              <div class="tariffTableWrap">
+                <table class="tariffTable">
+                  <thead><tr><th>Og‘irlik</th><th>Bepul yetkazish limiti</th></tr></thead>
+                  <tbody>
+                    <tr><td>1 kg gacha</td><td><input id="uzpostFree1" type="number" min="0" step="1000" class="form-control"></td></tr>
+                    <tr><td>3 kg gacha</td><td><input id="uzpostFree3" type="number" min="0" step="1000" class="form-control"></td></tr>
+                    <tr><td>5 kg gacha</td><td><input id="uzpostFree5" type="number" min="0" step="1000" class="form-control"></td></tr>
+                    <tr><td>10 kg gacha</td><td><input id="uzpostFree10" type="number" min="0" step="1000" class="form-control"></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="form-row" style="margin-top:16px;align-items:center">
+                <button class="btn btn-primary" id="saveDeliverySettingsBtn" type="button"><i class="fas fa-save"></i> Yetkazish tariflarini saqlash</button>
+                <button class="btn btn-light" id="resetDeliverySettingsBtn" type="button"><i class="fas fa-rotate-left"></i> Standart tarifni qo‘yish</button>
+                <small class="form-text" id="deliverySettingsStatus">Firestore: <code>configs/delivery</code></small>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -1149,6 +1206,119 @@
       }catch(e){
         console.error(e);
         toast("Saqlashda xatolik: "+(e.message||e), "error");
+      }
+    }
+
+
+    const DELIVERY_SETTINGS_DEFAULT = {
+      version: 1,
+      courier: {
+        enabled: true,
+        maxKm: 30,
+        zones: [
+          { id:"z1", fromKm:0, maxKm:3, feeUZS:10000, freeFromUZS:99000, etaText:"Bugun / 1 kun" },
+          { id:"z2", fromKm:3, maxKm:7, feeUZS:15000, freeFromUZS:199000, etaText:"Bugun / 1 kun" },
+          { id:"z3", fromKm:7, maxKm:12, feeUZS:25000, freeFromUZS:299000, etaText:"Bugun / 1 kun" },
+          { id:"z4", fromKm:12, maxKm:20, feeUZS:35000, freeFromUZS:499000, etaText:"1–2 kun" },
+          { id:"z5", fromKm:20, maxKm:30, baseFeeUZS:35000, perKmUZS:3000, freeFromUZS:899000, etaText:"1–2 kun" }
+        ]
+      },
+      uzpost: {
+        enabled: true,
+        firstKgFeeUZS: 15000,
+        extraKgFeeUZS: 3000,
+        etaText: "2–5 kun",
+        freeRules: [
+          { maxKg:1, freeFromUZS:249000 },
+          { maxKg:3, freeFromUZS:399000 },
+          { maxKg:5, freeFromUZS:599000 },
+          { maxKg:10, freeFromUZS:999000 }
+        ]
+      }
+    };
+    let deliverySettingsLoaded = false;
+    function numVal(id, fallback=0){
+      const v = Number((document.getElementById(id)?.value || '').toString().replace(/[^0-9.-]/g,''));
+      return Number.isFinite(v) ? v : fallback;
+    }
+    function setVal(id, value){ const el = document.getElementById(id); if(el) el.value = value ?? ''; }
+    function deliveryDefaultClone(){ try{ return (typeof structuredClone === "function") ? structuredClone(DELIVERY_SETTINGS_DEFAULT) : JSON.parse(JSON.stringify(DELIVERY_SETTINGS_DEFAULT)); }catch(e){ return JSON.parse(JSON.stringify(DELIVERY_SETTINGS_DEFAULT)); } }
+    function fillDeliverySettingsForm(cfg){
+      const d = cfg || deliveryDefaultClone();
+      const z = d.courier?.zones || DELIVERY_SETTINGS_DEFAULT.courier.zones;
+      setVal('deliveryCourierMaxKm', d.courier?.maxKm ?? 30);
+      setVal('deliveryCourierPerKm', z[4]?.perKmUZS ?? 3000);
+      setVal('courierFee3', z[0]?.feeUZS ?? 10000); setVal('courierFree3', z[0]?.freeFromUZS ?? 99000);
+      setVal('courierFee7', z[1]?.feeUZS ?? 15000); setVal('courierFree7', z[1]?.freeFromUZS ?? 199000);
+      setVal('courierFee12', z[2]?.feeUZS ?? 25000); setVal('courierFree12', z[2]?.freeFromUZS ?? 299000);
+      setVal('courierFee20', z[3]?.feeUZS ?? 35000); setVal('courierFree20', z[3]?.freeFromUZS ?? 499000);
+      setVal('courierFee30Base', z[4]?.baseFeeUZS ?? z[4]?.feeUZS ?? 35000); setVal('courierFree30', z[4]?.freeFromUZS ?? 899000);
+      setVal('uzpostFirstKgFee', d.uzpost?.firstKgFeeUZS ?? 15000);
+      setVal('uzpostExtraKgFee', d.uzpost?.extraKgFeeUZS ?? 3000);
+      setVal('uzpostEtaText', d.uzpost?.etaText ?? '2–5 kun');
+      const r = d.uzpost?.freeRules || DELIVERY_SETTINGS_DEFAULT.uzpost.freeRules;
+      setVal('uzpostFree1', r[0]?.freeFromUZS ?? 249000);
+      setVal('uzpostFree3', r[1]?.freeFromUZS ?? 399000);
+      setVal('uzpostFree5', r[2]?.freeFromUZS ?? 599000);
+      setVal('uzpostFree10', r[3]?.freeFromUZS ?? 999000);
+    }
+    function readDeliverySettingsForm(){
+      const perKm = numVal('deliveryCourierPerKm', 3000);
+      return {
+        version: 1,
+        courier: {
+          enabled: true,
+          maxKm: numVal('deliveryCourierMaxKm', 30),
+          zones: [
+            { id:'z1', fromKm:0, maxKm:3, feeUZS:numVal('courierFee3',10000), freeFromUZS:numVal('courierFree3',99000), etaText:'Bugun / 1 kun' },
+            { id:'z2', fromKm:3, maxKm:7, feeUZS:numVal('courierFee7',15000), freeFromUZS:numVal('courierFree7',199000), etaText:'Bugun / 1 kun' },
+            { id:'z3', fromKm:7, maxKm:12, feeUZS:numVal('courierFee12',25000), freeFromUZS:numVal('courierFree12',299000), etaText:'Bugun / 1 kun' },
+            { id:'z4', fromKm:12, maxKm:20, feeUZS:numVal('courierFee20',35000), freeFromUZS:numVal('courierFree20',499000), etaText:'1–2 kun' },
+            { id:'z5', fromKm:20, maxKm:30, baseFeeUZS:numVal('courierFee30Base',35000), perKmUZS:perKm, freeFromUZS:numVal('courierFree30',899000), etaText:'1–2 kun' }
+          ]
+        },
+        uzpost: {
+          enabled: true,
+          firstKgFeeUZS: numVal('uzpostFirstKgFee',15000),
+          extraKgFeeUZS: numVal('uzpostExtraKgFee',3000),
+          etaText: (document.getElementById('uzpostEtaText')?.value || '2–5 kun').trim(),
+          freeRules: [
+            { maxKg:1, freeFromUZS:numVal('uzpostFree1',249000) },
+            { maxKg:3, freeFromUZS:numVal('uzpostFree3',399000) },
+            { maxKg:5, freeFromUZS:numVal('uzpostFree5',599000) },
+            { maxKg:10, freeFromUZS:numVal('uzpostFree10',999000) }
+          ]
+        },
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.email || auth.currentUser?.uid || ''
+      };
+    }
+    async function loadDeliverySettingsAdmin(){
+      if(deliverySettingsLoaded) return;
+      deliverySettingsLoaded = true;
+      try{
+        const snap = await getDoc(doc(db, 'configs', 'delivery'));
+        fillDeliverySettingsForm(snap.exists() ? snap.data() : deliveryDefaultClone());
+        const st = document.getElementById('deliverySettingsStatus');
+        if(st) st.innerHTML = snap.exists() ? 'Tariflar yuklandi: <code>configs/delivery</code>' : 'Standart tariflar ko‘rsatildi. Saqlasangiz Firestore’ga yoziladi.';
+      }catch(e){
+        fillDeliverySettingsForm(deliveryDefaultClone());
+        const st = document.getElementById('deliverySettingsStatus');
+        if(st) st.textContent = 'Tariflarni yuklashda xatolik. Standart qiymatlar ko‘rsatildi.';
+      }
+    }
+    async function saveDeliverySettingsAdmin(){
+      if(!isAdmin(auth.currentUser)) return toast('Faqat admin yetkazish tariflarini saqlay oladi','error');
+      const cfg = readDeliverySettingsForm();
+      try{
+        await setDoc(doc(db, 'configs', 'delivery'), cfg, { merge:true });
+        try{ localStorage.setItem('orzumall_delivery_settings_v1', JSON.stringify({...cfg, updatedAt: Date.now()})); }catch(e){}
+        toast('Yetkazish tariflari saqlandi');
+        const st = document.getElementById('deliverySettingsStatus');
+        if(st) st.innerHTML = 'Saqlandi: <code>configs/delivery</code>';
+      }catch(e){
+        console.error(e);
+        toast('Yetkazish tariflarini saqlashda xatolik: '+(e.message||e), 'error');
       }
     }
 
@@ -1612,7 +1782,7 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
       if(view==="orders"){ try{ subscribeOrdersAdmin(); }catch(e){} }
       if(view==="topups"){ try{ subscribeTopupReq(); }catch(e){} }
       if(view==="turnover"){ try{ subscribeTurnover(); }catch(e){} }
-      if(view==="settings"){ try{ loadAccessLists(); }catch(e){} }
+      if(view==="settings"){ try{ loadAccessLists(); }catch(e){} try{ loadDeliverySettingsAdmin(); }catch(e){} }
     }
 
     function renderStatsPanels(){
@@ -2290,6 +2460,9 @@ if(e.target===$("jsonModal")) closeModal("jsonModal");
     }
 
     let __bound = false;
+
+    document.getElementById("saveDeliverySettingsBtn")?.addEventListener("click", saveDeliverySettingsAdmin);
+    document.getElementById("resetDeliverySettingsBtn")?.addEventListener("click", ()=>{ fillDeliverySettingsForm(deliveryDefaultClone()); toast('Standart tariflar qo‘yildi. Saqlashni unutmang.'); });
 
     onAuthStateChanged(auth, async (user)=>{
   // GUARD (admin yoki sotuvchi)

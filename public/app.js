@@ -1091,7 +1091,89 @@ const OM_STORE_LOCATION = Object.freeze({
   lng: 71.55482525265317,
   title: "OrzuMall do‘koni"
 });
+
+const OM_DELIVERY_SETTINGS_DEFAULT = Object.freeze({
+  version: 1,
+  courier: {
+    enabled: true,
+    maxKm: 30,
+    zones: [
+      { id: "z1", fromKm: 0, maxKm: 3, feeUZS: 10000, freeFromUZS: 99000, etaText: "Bugun / 1 kun" },
+      { id: "z2", fromKm: 3, maxKm: 7, feeUZS: 15000, freeFromUZS: 199000, etaText: "Bugun / 1 kun" },
+      { id: "z3", fromKm: 7, maxKm: 12, feeUZS: 25000, freeFromUZS: 299000, etaText: "Bugun / 1 kun" },
+      { id: "z4", fromKm: 12, maxKm: 20, feeUZS: 35000, freeFromUZS: 499000, etaText: "1–2 kun" },
+      { id: "z5", fromKm: 20, maxKm: 30, baseFeeUZS: 35000, perKmUZS: 3000, freeFromUZS: 899000, etaText: "1–2 kun" }
+    ]
+  },
+  uzpost: {
+    enabled: true,
+    firstKgFeeUZS: 15000,
+    extraKgFeeUZS: 3000,
+    etaText: "2–5 kun",
+    freeRules: [
+      { maxKg: 1, freeFromUZS: 249000 },
+      { maxKg: 3, freeFromUZS: 399000 },
+      { maxKg: 5, freeFromUZS: 599000 },
+      { maxKg: 10, freeFromUZS: 999000 }
+    ]
+  }
+});
+let omDeliverySettings = (typeof structuredClone === "function") ? structuredClone(OM_DELIVERY_SETTINGS_DEFAULT) : JSON.parse(JSON.stringify(OM_DELIVERY_SETTINGS_DEFAULT));
 let omDeliveryQuote = null;
+
+function omDeliveryCloneDefault(){
+  try{ return (typeof structuredClone === "function") ? structuredClone(OM_DELIVERY_SETTINGS_DEFAULT) : JSON.parse(JSON.stringify(OM_DELIVERY_SETTINGS_DEFAULT)); }catch(_e){ return JSON.parse(JSON.stringify(OM_DELIVERY_SETTINGS_DEFAULT)); }
+}
+function omMoneyNum(v, fallback=0){
+  const n = typeof v === "number" ? v : Number(String(v ?? "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? n : fallback;
+}
+function omNormalizeDeliverySettings(raw){
+  const d = omDeliveryCloneDefault();
+  const src = raw && typeof raw === "object" ? raw : {};
+  const courier = src.courier && typeof src.courier === "object" ? src.courier : {};
+  d.courier.enabled = courier.enabled !== false;
+  d.courier.maxKm = Math.max(1, omMoneyNum(courier.maxKm, d.courier.maxKm));
+  if(Array.isArray(courier.zones) && courier.zones.length){
+    d.courier.zones = courier.zones.map((z, i)=>({
+      id: String(z.id || `z${i+1}`),
+      fromKm: Math.max(0, omMoneyNum(z.fromKm, i ? d.courier.zones[Math.min(i, d.courier.zones.length-1)]?.fromKm || 0 : 0)),
+      maxKm: Math.max(1, omMoneyNum(z.maxKm, d.courier.zones[Math.min(i, d.courier.zones.length-1)]?.maxKm || 3)),
+      feeUZS: Math.max(0, Math.round(omMoneyNum(z.feeUZS, d.courier.zones[Math.min(i, d.courier.zones.length-1)]?.feeUZS || 0))),
+      baseFeeUZS: Math.max(0, Math.round(omMoneyNum(z.baseFeeUZS, d.courier.zones[Math.min(i, d.courier.zones.length-1)]?.baseFeeUZS || z.feeUZS || 0))),
+      perKmUZS: Math.max(0, Math.round(omMoneyNum(z.perKmUZS, d.courier.zones[Math.min(i, d.courier.zones.length-1)]?.perKmUZS || 0))),
+      freeFromUZS: Math.max(0, Math.round(omMoneyNum(z.freeFromUZS, d.courier.zones[Math.min(i, d.courier.zones.length-1)]?.freeFromUZS || 0))),
+      etaText: String(z.etaText || d.courier.zones[Math.min(i, d.courier.zones.length-1)]?.etaText || "1–2 kun")
+    })).sort((a,b)=>a.maxKm-b.maxKm).slice(0, 12);
+  }
+  const uzpost = src.uzpost && typeof src.uzpost === "object" ? src.uzpost : {};
+  d.uzpost.enabled = uzpost.enabled !== false;
+  d.uzpost.firstKgFeeUZS = Math.max(0, Math.round(omMoneyNum(uzpost.firstKgFeeUZS, d.uzpost.firstKgFeeUZS)));
+  d.uzpost.extraKgFeeUZS = Math.max(0, Math.round(omMoneyNum(uzpost.extraKgFeeUZS, d.uzpost.extraKgFeeUZS)));
+  d.uzpost.etaText = String(uzpost.etaText || d.uzpost.etaText);
+  if(Array.isArray(uzpost.freeRules) && uzpost.freeRules.length){
+    d.uzpost.freeRules = uzpost.freeRules.map((r, i)=>({
+      maxKg: Math.max(1, omMoneyNum(r.maxKg, d.uzpost.freeRules[Math.min(i, d.uzpost.freeRules.length-1)]?.maxKg || 1)),
+      freeFromUZS: Math.max(0, Math.round(omMoneyNum(r.freeFromUZS, d.uzpost.freeRules[Math.min(i, d.uzpost.freeRules.length-1)]?.freeFromUZS || 0)))
+    })).sort((a,b)=>a.maxKg-b.maxKg).slice(0, 12);
+  }
+  return d;
+}
+async function omLoadDeliverySettings(){
+  try{
+    const cached = localStorage.getItem("orzumall_delivery_settings_v1");
+    if(cached) omDeliverySettings = omNormalizeDeliverySettings(JSON.parse(cached));
+  }catch(_e){}
+  try{
+    const snap = await getDoc(doc(db, "configs", "delivery"));
+    if(snap.exists()){
+      omDeliverySettings = omNormalizeDeliverySettings(snap.data());
+      try{ localStorage.setItem("orzumall_delivery_settings_v1", JSON.stringify(omDeliverySettings)); }catch(_e){}
+    }
+  }catch(_e){ /* Firestore qoidasi ruxsat bermasa default tariflar ishlaydi */ }
+  try{ omRenderDeliveryEstimate(); }catch(_e){}
+  return omDeliverySettings;
+}
 
 function omNum(v, fallback=0){
   const n = Number(v);
@@ -1116,37 +1198,41 @@ function omHaversineKm(lat1, lng1, lat2, lng2){
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 function omCourierQuote(orderTotal, distanceKm){
+  const settings = omNormalizeDeliverySettings(omDeliverySettings).courier;
+  if(settings.enabled === false) return null;
   const km = Math.ceil(Math.max(0, omNum(distanceKm, 0)));
-  if(!Number.isFinite(km)) return null;
-  let fee = 0, freeFrom = 0, label = "Kuryer";
-  if(km <= 3){ fee = 10000; freeFrom = 99000; }
-  else if(km <= 7){ fee = 15000; freeFrom = 199000; }
-  else if(km <= 12){ fee = 25000; freeFrom = 299000; }
-  else if(km <= 20){ fee = 35000; freeFrom = 499000; }
-  else if(km <= 30){ fee = 35000 + ((km - 20) * 3000); freeFrom = 899000; }
-  else return null;
-  const isFree = omNum(orderTotal, 0) >= freeFrom;
+  if(!Number.isFinite(km) || km > omNum(settings.maxKm, 30)) return null;
+  const zone = (settings.zones || []).find(z => km <= omNum(z.maxKm, 0));
+  if(!zone) return null;
+  let rawFee = 0;
+  if(omNum(zone.perKmUZS, 0) > 0){
+    rawFee = omNum(zone.baseFeeUZS, omNum(zone.feeUZS, 0)) + Math.max(0, km - omNum(zone.fromKm, 0)) * omNum(zone.perKmUZS, 0);
+  }else{
+    rawFee = omNum(zone.feeUZS, 0);
+  }
+  rawFee = Math.max(0, Math.round(rawFee));
+  const freeFrom = Math.max(0, Math.round(omNum(zone.freeFromUZS, 0)));
+  const isFree = freeFrom > 0 && omNum(orderTotal, 0) >= freeFrom;
   return {
     service: "courier",
-    label,
+    label: "Kuryer",
     distanceKm: Number(distanceKm),
     billedKm: km,
-    feeUZS: isFree ? 0 : fee,
-    rawFeeUZS: fee,
-    freeFromUZS: freeFrom,
+    feeUZS: isFree ? 0 : rawFee,
+    rawFeeUZS: rawFee,
+    freeFromUZS: freeFrom || null,
     isFree,
-    etaText: km <= 12 ? "Bugun / 1 kun" : "1–2 kun",
+    etaText: zone.etaText || (km <= 12 ? "Bugun / 1 kun" : "1–2 kun"),
     note: `${km} km zona`
   };
 }
 function omUzPostQuote(orderTotal, weightKg){
+  const settings = omNormalizeDeliverySettings(omDeliverySettings).uzpost;
+  if(settings.enabled === false) return null;
   const kg = Math.max(1, Math.ceil(Math.max(0, omNum(weightKg, 0))));
-  const rawFee = 15000 + Math.max(0, kg - 1) * 3000;
-  let freeFrom = null;
-  if(kg <= 1) freeFrom = 249000;
-  else if(kg <= 3) freeFrom = 399000;
-  else if(kg <= 5) freeFrom = 599000;
-  else if(kg <= 10) freeFrom = 999000;
+  const rawFee = Math.max(0, Math.round(omNum(settings.firstKgFeeUZS, 15000) + Math.max(0, kg - 1) * omNum(settings.extraKgFeeUZS, 3000)));
+  const rule = (settings.freeRules || []).find(r => kg <= omNum(r.maxKg, 0));
+  const freeFrom = rule ? Math.max(0, Math.round(omNum(rule.freeFromUZS, 0))) : null;
   const isFree = !!freeFrom && omNum(orderTotal, 0) >= freeFrom;
   return {
     service: "uzpost",
@@ -1157,7 +1243,7 @@ function omUzPostQuote(orderTotal, weightKg){
     rawFeeUZS: rawFee,
     freeFromUZS: freeFrom,
     isFree,
-    etaText: "2–5 kun",
+    etaText: settings.etaText || "2–5 kun",
     note: `${kg} kg bo‘yicha`
   };
 }
@@ -1169,7 +1255,8 @@ function omBuildDeliveryQuote(orderTotal, weightKg, location){
     const cq = omCourierQuote(orderTotal, distanceKm);
     if(cq) opts.push(cq);
   }
-  opts.push(omUzPostQuote(orderTotal, weightKg));
+  const uq = omUzPostQuote(orderTotal, weightKg);
+  if(uq) opts.push(uq);
   opts.sort((a,b)=>{
     if((a.feeUZS||0) !== (b.feeUZS||0)) return (a.feeUZS||0) - (b.feeUZS||0);
     if(a.service === "courier" && b.service !== "courier" && Number(distanceKm) <= 20) return -1;
@@ -1218,10 +1305,9 @@ function omRenderDeliveryEstimate(){
         <div class="omDeliveryCalcCell"><div class="k">Tanlangan summa</div><div class="v">${moneyUZS(built.totalUZS)}</div></div>
         <div class="omDeliveryCalcCell"><div class="k">Umumiy vazn</div><div class="v">${omFormatKg(weightKg)}</div></div>
       </div>
-      <div class="omDeliveryWarn">Kuryer masofasini hisoblash uchun “Avto aniqlash” tugmasini bosing. Joylashuvsiz UzPost narxi taxminan hisoblanadi.</div>
-      <div class="omDeliveryRecommend">UzPost taxminiy: ${moneyUZS(omUzPostQuote(built.totalUZS, weightKg).feeUZS)}<small>1 kg: 15 000 so‘m, keyingi har kg: 3 000 so‘m.</small></div>
+      <div class="omDeliveryWarn">Yetkazib berish narxini hisoblash uchun “Avto aniqlash” tugmasini bosing. Qo‘lda manzil kiritish o‘chirildi.</div>
     `;
-    omDeliveryQuote = omBuildDeliveryQuote(built.totalUZS, weightKg, null);
+    omDeliveryQuote = null;
     return;
   }
   omDeliveryQuote = omBuildDeliveryQuote(built.totalUZS, weightKg, omDeliveryLocation);
@@ -3456,8 +3542,8 @@ async function detectDeliveryLocation(){
   }catch(e){
     omDeliveryLocation = null;
     try{ omRenderDeliveryEstimate(); }catch(_e){}
-    setDeliveryLocationStatus('Joylashuv olinmadi. Ruxsat bering yoki manzilni qo‘lda yozing.');
-    toast('Joylashuv olinmadi. Manzilni qo‘lda kiriting.');
+    setDeliveryLocationStatus('Joylashuv olinmadi. Brauzer/telefon lokatsiyasiga ruxsat bering va qayta urinib ko‘ring.');
+    toast('Joylashuv olinmadi. Lokatsiyaga ruxsat bering.');
   }finally{
     if(btn){
       btn.disabled = false;
@@ -3483,10 +3569,8 @@ function getCheckoutDeliveryInfo(){
       }
     };
   }
-  const address = (document.getElementById('deliveryAddressInput')?.value || '').trim();
-  const note = (document.getElementById('deliveryNoteInput')?.value || '').trim();
-  if(!address && !omDeliveryLocation){
-    return { ok:false, reason:'Yetkazib berish uchun manzil yozing yoki joylashuvni aniqlang.' };
+  if(!omDeliveryLocation){
+    return { ok:false, reason:'Yetkazib berish uchun “Avto aniqlash” tugmasini bosing va lokatsiyaga ruxsat bering.' };
   }
   if(!built || !built.ok){
     return { ok:false, reason:'Tanlangan mahsulotlar topilmadi.' };
@@ -3497,7 +3581,7 @@ function getCheckoutDeliveryInfo(){
   const rec = quote.recommended || null;
   const mapUrl = omDeliveryLocation?.mapUrl || '';
   const coordText = omDeliveryLocation ? `${omDeliveryLocation.lat.toFixed(6)}, ${omDeliveryLocation.lng.toFixed(6)}` : '';
-  const addressText = [address, coordText ? `Koordinata: ${coordText}` : ''].filter(Boolean).join(' • ');
+  const addressText = coordText ? `Avto lokatsiya: ${coordText}` : '';
   return {
     ok: true,
     data: {
@@ -3505,8 +3589,8 @@ function getCheckoutDeliveryInfo(){
       methodLabel: omQuoteLabel(quote),
       service: rec?.service || 'uzpost',
       serviceLabel: rec?.label || 'UzPost pochta',
-      address: address,
-      note: note,
+      address: '',
+      note: '',
       addressText: addressText,
       lat: omDeliveryLocation?.lat ?? null,
       lng: omDeliveryLocation?.lng ?? null,
@@ -3594,7 +3678,7 @@ function renderSavedAddressesUI(){
     }
   }
   if(status){
-    status.textContent = arr.length ? `${arr.length} ta manzil saqlandi.` : "Saqlangan manzillar buyurtma berishda ko‘rinadi.";
+    status.textContent = arr.length ? `${arr.length} ta manzil saqlandi.` : "Manzil qo‘lda yozilmaydi, faqat avto lokatsiya saqlanadi.";
   }
 
   const wrap = document.getElementById("savedAddressCheckoutWrap");
@@ -3711,12 +3795,12 @@ function initCheckoutDeliveryUI(){
     inp.addEventListener('change', updateDeliveryMethodUI);
   });
   document.getElementById('deliveryLocateBtn')?.addEventListener('click', detectDeliveryLocation);
-  document.getElementById('deliveryAddressInput')?.addEventListener('input', ()=>{ try{ omRenderDeliveryEstimate(); }catch(_e){} });
   updateDeliveryMethodUI();
   try{ renderSavedAddressesUI(); }catch(_){}
 }
 initCheckoutDeliveryUI();
 initSavedAddressUI();
+omLoadDeliverySettings().catch(()=>{});
 
 
 function applyPayTypeRules(){
@@ -5406,6 +5490,7 @@ onAuthStateChanged(auth, async (user)=>{
   if(__appStarted) { updateBadges(); return; }
   __appStarted = true;
 
+  await omLoadDeliverySettings();
   await loadProducts();
   updateBadges();
 });
