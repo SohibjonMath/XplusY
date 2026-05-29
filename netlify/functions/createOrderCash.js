@@ -105,6 +105,8 @@ exports.handler = async (event) => {
     }
 
     const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+    const deliveryFeeUZS = Math.max(0, Math.min(500000, Number(shipping?.deliveryFeeUZS || body.deliveryFeeUZS || 0) || 0));
+    const productsTotalUZS = Math.max(0, Number(body.productsTotalUZS || shipping?.productsTotalUZS || (totalUZS - deliveryFeeUZS)) || 0);
 
     // --- Pull user fields for nice order record ---
     let userName = decoded.name || decoded.email || "User";
@@ -160,8 +162,11 @@ exports.handler = async (event) => {
       status: "pending_cash",
       items: normItems,
       totalUZS,
+      productsTotalUZS,
+      deliveryFeeUZS,
       amountTiyin: null,
       provider: "cash",
+      pricing: { subtotalUZS: productsTotalUZS || Math.max(0, totalUZS - deliveryFeeUZS), deliveryFeeUZS, discountUZS: 0, totalUZS },
       shipping: shippingFinal,
       orderType: "checkout",
       createdAt: now,

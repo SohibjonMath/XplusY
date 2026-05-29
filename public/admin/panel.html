@@ -467,7 +467,7 @@
           <table id="productsTable">
             <thead>
               <tr>
-                <th>ID</th><th>Nomi</th><th>Narxi</th><th>Turi</th><th>Teglar</th><th>Ranglar</th><th>O'lchamlar</th><th>Ommaboplik</th><th>Harakatlar</th>
+                <th>ID</th><th>Nomi</th><th>Narxi</th><th>Vazn</th><th>Turi</th><th>Teglar</th><th>Ranglar</th><th>O'lchamlar</th><th>Ommaboplik</th><th>Harakatlar</th>
               </tr>
             </thead>
             <tbody id="productsTableBody"></tbody>
@@ -803,6 +803,7 @@
             <div class="form-row">
               <div class="form-group"><label>Narx (UZS) *</label><input id="price" type="number" class="form-control" required></div>
               <div class="form-group"><label>Eski narx</label><input id="oldPrice" type="number" class="form-control" value="0"></div>
+              <div class="form-group"><label>Vazn (kg)</label><input id="weightKg" type="number" step="0.01" min="0" class="form-control" placeholder="Masalan: 0.35"><small class="hint">Yetkazib berish va UzPost hisobida ishlatiladi.</small></div>
             </div>
             <div class="form-row">
               <div class="form-group"><label>Popular (0-100)</label><input id="popularScore" type="number" class="form-control" min="0" max="100" value="50"></div>
@@ -1451,7 +1452,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       // cards + table
       if(!filtered.length){
         if(tbody){
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">Hech narsa topilmadi</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--gray)">Hech narsa topilmadi</td></tr>`;
         }
         return;
       }
@@ -1539,7 +1540,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       const body = $("productsTableBody");
       body.innerHTML="";
       if(!data.length){
-        body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray)">Hech narsa topilmadi</td></tr>`;
+        body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--gray)">Hech narsa topilmadi</td></tr>`;
         return;
       }
       data.forEach(p=>{
@@ -1560,6 +1561,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
           <td><span class="product-id">${esc(p.id)}</span></td>
           <td><div class="product-name" title="${esc(p.name||"")}">${esc(p.name||"")}</div>${p.subtitle?`<div style="font-size:.85rem;color:var(--gray);margin-top:5px">${esc(p.subtitle)}</div>`:""}<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">${productStatusPill(p)}${renderProductTypePill(p)}<span class="tag" title="Sotilganlar soni"><i class="fas fa-bag-shopping"></i> ${Number(p.soldCount||0)} ta</span>${(state.role==="admin" && p.ownerEmail)?`<span class="tag" style="background:rgba(114,9,183,.10)"><i class="fas fa-user"></i> ${esc(p.ownerEmail)}</span>`:""}</div></td>
           <td class="price-cell">${formatPrice(p.price)} ${old}<div style="font-size:.85rem;color:var(--gray)">${esc(p.currency||"UZS")}</div></td>
+          <td><span class="tag" title="Mahsulot vazni"><i class="fas fa-weight-hanging"></i> ${Number(p.weightKg ?? p.weight ?? 0) ? (Number(p.weightKg ?? p.weight ?? 0).toFixed(2).replace(/\.00$/,'')) : '—'} kg</span></td>
           <td>${renderFulfillmentPill(p)}</td>
           <td><div class="tags-container">${tags}</div></td>
           <td>${colors}</td>
@@ -1637,6 +1639,7 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
       addColor(); addSize(); addImage();
       $("imagesByColorInput").value="";
       if(document.getElementById("productType")) document.getElementById("productType").value="";
+      if(document.getElementById("weightKg")) document.getElementById("weightKg").value="";
       ["name_ru","name_en","description_ru","description_en"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
       if(document.getElementById("pType")) document.getElementById("pType").value="stock";
       if(document.getElementById("pMinDays")) document.getElementById("pMinDays").value="";
@@ -1944,6 +1947,7 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
         youtubeUrl:$("youtubeUrl").value||"",
         price:Number(price),
         oldPrice:Number($("oldPrice").value||0),
+        weightKg:Number(document.getElementById("weightKg")?.value || 0),
         popularScore:Number($("popularScore").value||0),
         currency:$("currency").value||"UZS",
         productType: (document.getElementById("productType")?.value || ""),
@@ -2004,6 +2008,7 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
       (document.getElementById("subtitle")||{value:""}).value=p.subtitle||"";
       $("price").value=Number(p.price||0);
       $("oldPrice").value=Number(p.oldPrice||0);
+      if(document.getElementById("weightKg")) document.getElementById("weightKg").value = Number(p.weightKg ?? p.weight ?? p.massKg ?? 0) || "";
       $("popularScore").value=Number(p.popularScore||0);
       $("createdAt").value=p.createdAt||nowISO();
       $("description").value=p.description||"";

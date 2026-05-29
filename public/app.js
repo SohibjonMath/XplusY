@@ -1084,6 +1084,166 @@ function moneyUZS(n){
   catch { return `${x} UZS`; }
 }
 
+
+/* ===== OrzuMall smart delivery engine ===== */
+const OM_STORE_LOCATION = Object.freeze({
+  lat: 41.11310047928018,
+  lng: 71.55482525265317,
+  title: "OrzuMall do‘koni"
+});
+let omDeliveryQuote = null;
+
+function omNum(v, fallback=0){
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+function omProductWeightKg(p){
+  const n = omNum(p?.weightKg ?? p?.weight_kg ?? p?.weight ?? p?.massKg ?? p?.shippingWeightKg, 0);
+  return Math.max(0, n);
+}
+function omFormatKg(kg){
+  const n = Math.max(0, omNum(kg, 0));
+  if(n <= 0) return "0 kg";
+  if(n < 1) return `${Math.round(n * 1000)} g`;
+  return `${n.toFixed(n >= 10 ? 1 : 2).replace(/\.00$/, "").replace(/0$/, "")} kg`;
+}
+function omHaversineKm(lat1, lng1, lat2, lng2){
+  const R = 6371;
+  const toRad = d => Number(d) * Math.PI / 180;
+  const dLat = toRad(lat2-lat1);
+  const dLng = toRad(lng2-lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function omCourierQuote(orderTotal, distanceKm){
+  const km = Math.ceil(Math.max(0, omNum(distanceKm, 0)));
+  if(!Number.isFinite(km)) return null;
+  let fee = 0, freeFrom = 0, label = "Kuryer";
+  if(km <= 3){ fee = 10000; freeFrom = 99000; }
+  else if(km <= 7){ fee = 15000; freeFrom = 199000; }
+  else if(km <= 12){ fee = 25000; freeFrom = 299000; }
+  else if(km <= 20){ fee = 35000; freeFrom = 499000; }
+  else if(km <= 30){ fee = 35000 + ((km - 20) * 3000); freeFrom = 899000; }
+  else return null;
+  const isFree = omNum(orderTotal, 0) >= freeFrom;
+  return {
+    service: "courier",
+    label,
+    distanceKm: Number(distanceKm),
+    billedKm: km,
+    feeUZS: isFree ? 0 : fee,
+    rawFeeUZS: fee,
+    freeFromUZS: freeFrom,
+    isFree,
+    etaText: km <= 12 ? "Bugun / 1 kun" : "1–2 kun",
+    note: `${km} km zona`
+  };
+}
+function omUzPostQuote(orderTotal, weightKg){
+  const kg = Math.max(1, Math.ceil(Math.max(0, omNum(weightKg, 0))));
+  const rawFee = 15000 + Math.max(0, kg - 1) * 3000;
+  let freeFrom = null;
+  if(kg <= 1) freeFrom = 249000;
+  else if(kg <= 3) freeFrom = 399000;
+  else if(kg <= 5) freeFrom = 599000;
+  else if(kg <= 10) freeFrom = 999000;
+  const isFree = !!freeFrom && omNum(orderTotal, 0) >= freeFrom;
+  return {
+    service: "uzpost",
+    label: "UzPost pochta",
+    weightKg: Number(weightKg) || 0,
+    billedKg: kg,
+    feeUZS: isFree ? 0 : rawFee,
+    rawFeeUZS: rawFee,
+    freeFromUZS: freeFrom,
+    isFree,
+    etaText: "2–5 kun",
+    note: `${kg} kg bo‘yicha`
+  };
+}
+function omBuildDeliveryQuote(orderTotal, weightKg, location){
+  const opts = [];
+  let distanceKm = null;
+  if(location && Number.isFinite(Number(location.lat)) && Number.isFinite(Number(location.lng))){
+    distanceKm = omHaversineKm(OM_STORE_LOCATION.lat, OM_STORE_LOCATION.lng, Number(location.lat), Number(location.lng));
+    const cq = omCourierQuote(orderTotal, distanceKm);
+    if(cq) opts.push(cq);
+  }
+  opts.push(omUzPostQuote(orderTotal, weightKg));
+  opts.sort((a,b)=>{
+    if((a.feeUZS||0) !== (b.feeUZS||0)) return (a.feeUZS||0) - (b.feeUZS||0);
+    if(a.service === "courier" && b.service !== "courier" && Number(distanceKm) <= 20) return -1;
+    if(b.service === "courier" && a.service !== "courier" && Number(distanceKm) <= 20) return 1;
+    return 0;
+  });
+  const recommended = opts[0] || null;
+  return {
+    store: OM_STORE_LOCATION,
+    orderTotalUZS: omNum(orderTotal, 0),
+    weightKg: omNum(weightKg, 0),
+    distanceKm,
+    options: opts,
+    recommended,
+    deliveryFeeUZS: recommended ? omNum(recommended.feeUZS, 0) : 0,
+    totalWithDeliveryUZS: omNum(orderTotal, 0) + (recommended ? omNum(recommended.feeUZS, 0) : 0)
+  };
+}
+function omQuoteLabel(q){
+  if(!q) return "Yetkazib berish";
+  const rec = q.recommended;
+  if(!rec) return "Yetkazib berish";
+  return rec.service === "courier" ? "Kuryer orqali yetkazish" : "UzPost orqali yetkazish";
+}
+function omRenderDeliveryEstimate(){
+  const box = document.getElementById("deliveryEstimateBox");
+  const content = document.getElementById("deliveryEstimateContent");
+  if(!box || !content) return;
+  const method = typeof getDeliveryMethod === "function" ? getDeliveryMethod() : "pickup";
+  if(method !== "delivery"){
+    box.hidden = true;
+    omDeliveryQuote = null;
+    return;
+  }
+  box.hidden = false;
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  if(!built || !built.ok){
+    content.innerHTML = `<div class="omDeliveryWarn">Hisoblash uchun savatda tanlangan mahsulot bo‘lishi kerak.</div>`;
+    omDeliveryQuote = null;
+    return;
+  }
+  const weightKg = Number(built.totalWeightKg || 0);
+  if(!omDeliveryLocation){
+    content.innerHTML = `
+      <div class="omDeliveryCalcGrid">
+        <div class="omDeliveryCalcCell"><div class="k">Tanlangan summa</div><div class="v">${moneyUZS(built.totalUZS)}</div></div>
+        <div class="omDeliveryCalcCell"><div class="k">Umumiy vazn</div><div class="v">${omFormatKg(weightKg)}</div></div>
+      </div>
+      <div class="omDeliveryWarn">Kuryer masofasini hisoblash uchun “Avto aniqlash” tugmasini bosing. Joylashuvsiz UzPost narxi taxminan hisoblanadi.</div>
+      <div class="omDeliveryRecommend">UzPost taxminiy: ${moneyUZS(omUzPostQuote(built.totalUZS, weightKg).feeUZS)}<small>1 kg: 15 000 so‘m, keyingi har kg: 3 000 so‘m.</small></div>
+    `;
+    omDeliveryQuote = omBuildDeliveryQuote(built.totalUZS, weightKg, null);
+    return;
+  }
+  omDeliveryQuote = omBuildDeliveryQuote(built.totalUZS, weightKg, omDeliveryLocation);
+  const rec = omDeliveryQuote.recommended;
+  const dist = omDeliveryQuote.distanceKm;
+  const optHtml = (omDeliveryQuote.options||[]).map(o=>{
+    const k = o.service === "courier" ? `${o.billedKm || 0} km` : `${o.billedKg || 1} kg`;
+    const free = o.isFree ? "Bepul" : moneyUZS(o.feeUZS);
+    return `<div class="omDeliveryCalcCell"><div class="k">${o.label} • ${k}</div><div class="v">${free}</div></div>`;
+  }).join("");
+  content.innerHTML = `
+    <div class="omDeliveryCalcGrid">
+      <div class="omDeliveryCalcCell"><div class="k">Do‘kondan masofa</div><div class="v">${dist == null ? "—" : dist.toFixed(1) + " km"}</div></div>
+      <div class="omDeliveryCalcCell"><div class="k">Umumiy vazn</div><div class="v">${omFormatKg(weightKg)}</div></div>
+      <div class="omDeliveryCalcCell"><div class="k">Mahsulotlar jami</div><div class="v">${moneyUZS(built.totalUZS)}</div></div>
+      <div class="omDeliveryCalcCell"><div class="k">Yetkazish bilan</div><div class="v">${moneyUZS(omDeliveryQuote.totalWithDeliveryUZS)}</div></div>
+      ${optHtml}
+    </div>
+    <div class="omDeliveryRecommend">Tavsiya: ${rec ? rec.label : "Operator bilan kelishiladi"} — ${rec ? (rec.isFree ? "Bepul" : moneyUZS(rec.feeUZS)) : "—"}<small>${rec ? `${rec.etaText}. ${rec.freeFromUZS ? moneyUZS(rec.freeFromUZS) + " dan bepul limit." : "Bepul limit yo‘q."}` : "Manzilni aniqlang."}</small></div>
+  `;
+}
+
 // Accept numbers or strings like: "349 000", "349,000 so'm", "349000 UZS"
 function parsePrice(v){
   if(typeof v === "number") return Number.isFinite(v) ? v : 0;
@@ -3112,11 +3272,12 @@ function renderCartPage(){
 
   let total = 0;
   let selectedCount = 0;
+  let selectedWeightKg = 0;
 
   for(const row of list){
     const {p, qty, ci} = row;
     const vp = getVariantPricing(p, {color: ci?.color||null, size: ci?.size||null});
-    if(cartSelected.has(ci.key)) { total += (vp.price||0) * qty; selectedCount += qty; }
+    if(cartSelected.has(ci.key)) { total += (vp.price||0) * qty; selectedCount += qty; selectedWeightKg += omProductWeightKg(p) * qty; }
 
     const imgSrc = ci?.image || getCurrentImage(p, {color: ci?.color||null, size: ci?.size||null, imgIdx:0});
 
@@ -3130,6 +3291,7 @@ function renderCartPage(){
           <span></span>
         </label>
         <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
+        <div class="cartWeightMini"><i class="fa-solid fa-weight-hanging" aria-hidden="true"></i> ${omFormatKg(omProductWeightKg(p))} × ${qty} = ${omFormatKg(omProductWeightKg(p) * qty)}</div>
         ${renderVariantLine(ci)}
         <div class="cartShip">${renderDeliveryBadge(p)}</div>
         ${(_normPType(p)==="cargo" || p.prepayRequired===true) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Oldindan to‘lov</span></div>` : ``}
@@ -3183,7 +3345,8 @@ function renderCartPage(){
 
   if(els.cartTotalPage) els.cartTotalPage.textContent = moneyUZS(total);
   if(selectedInfoEl) selectedInfoEl.textContent = `${selectedCount} ta tanlangan`;
-  if(summaryNoteEl) summaryNoteEl.textContent = list.length ? `Savatchada ${list.length} ta mahsulot bor.` : "Savatcha bo‘sh.";
+  if(summaryNoteEl) summaryNoteEl.textContent = list.length ? `Savatchada ${list.length} ta mahsulot bor. Tanlangan vazn: ${omFormatKg(selectedWeightKg)}.` : "Savatcha bo‘sh.";
+  try{ omRenderDeliveryEstimate(); }catch(_e){}
 
   // select all checkbox state
   if(els.cartSelectAllPage){
@@ -3248,6 +3411,7 @@ function updateDeliveryMethodUI(){
   });
   const box = document.getElementById('deliveryAddressBox');
   if(box) box.hidden = method !== 'delivery';
+  try{ omRenderDeliveryEstimate(); }catch(_e){}
 }
 
 function setDeliveryLocationStatus(text, ok=false){
@@ -3287,9 +3451,11 @@ async function detectDeliveryLocation(){
       mapUrl: `https://maps.google.com/?q=${lat},${lng}`
     };
     setDeliveryLocationStatus(`Joylashuv olindi: ${lat.toFixed(6)}, ${lng.toFixed(6)}${accuracy ? ` • ±${accuracy} m` : ''}`, true);
+    try{ omRenderDeliveryEstimate(); }catch(_e){}
     toast('Joylashuv qo‘shildi.');
   }catch(e){
     omDeliveryLocation = null;
+    try{ omRenderDeliveryEstimate(); }catch(_e){}
     setDeliveryLocationStatus('Joylashuv olinmadi. Ruxsat bering yoki manzilni qo‘lda yozing.');
     toast('Joylashuv olinmadi. Manzilni qo‘lda kiriting.');
   }finally{
@@ -3302,13 +3468,18 @@ async function detectDeliveryLocation(){
 
 function getCheckoutDeliveryInfo(){
   const method = getDeliveryMethod();
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
   if(method === 'pickup'){
+    omDeliveryQuote = null;
     return {
       ok: true,
       data: {
         method: 'pickup',
         methodLabel: 'Do‘kondan olib ketish',
-        addressText: 'Do‘kondan olib ketish'
+        addressText: 'Do‘kondan olib ketish',
+        deliveryFeeUZS: 0,
+        service: 'pickup',
+        totalWithDeliveryUZS: built?.totalUZS || 0
       }
     };
   }
@@ -3317,6 +3488,13 @@ function getCheckoutDeliveryInfo(){
   if(!address && !omDeliveryLocation){
     return { ok:false, reason:'Yetkazib berish uchun manzil yozing yoki joylashuvni aniqlang.' };
   }
+  if(!built || !built.ok){
+    return { ok:false, reason:'Tanlangan mahsulotlar topilmadi.' };
+  }
+  const weightKg = Number(built.totalWeightKg || 0);
+  const quote = omBuildDeliveryQuote(built.totalUZS, weightKg, omDeliveryLocation || null);
+  omDeliveryQuote = quote;
+  const rec = quote.recommended || null;
   const mapUrl = omDeliveryLocation?.mapUrl || '';
   const coordText = omDeliveryLocation ? `${omDeliveryLocation.lat.toFixed(6)}, ${omDeliveryLocation.lng.toFixed(6)}` : '';
   const addressText = [address, coordText ? `Koordinata: ${coordText}` : ''].filter(Boolean).join(' • ');
@@ -3324,7 +3502,9 @@ function getCheckoutDeliveryInfo(){
     ok: true,
     data: {
       method: 'delivery',
-      methodLabel: 'Yetkazib berish',
+      methodLabel: omQuoteLabel(quote),
+      service: rec?.service || 'uzpost',
+      serviceLabel: rec?.label || 'UzPost pochta',
       address: address,
       note: note,
       addressText: addressText,
@@ -3334,11 +3514,22 @@ function getCheckoutDeliveryInfo(){
       mapUrl: mapUrl,
       savedAddressId: omDeliveryLocation?.savedAddressId || "",
       savedAddressTitle: omDeliveryLocation?.savedAddressTitle || "",
-      location: omDeliveryLocation ? { ...omDeliveryLocation } : null
+      location: omDeliveryLocation ? { ...omDeliveryLocation } : null,
+      storeLocation: { ...OM_STORE_LOCATION },
+      distanceKm: quote.distanceKm,
+      totalWeightKg: quote.weightKg,
+      billedKg: rec?.billedKg || null,
+      billedKm: rec?.billedKm || null,
+      deliveryFeeUZS: quote.deliveryFeeUZS,
+      deliveryRawFeeUZS: rec?.rawFeeUZS || quote.deliveryFeeUZS,
+      deliveryFreeFromUZS: rec?.freeFromUZS || null,
+      deliveryIsFree: !!rec?.isFree,
+      productsTotalUZS: built.totalUZS,
+      totalWithDeliveryUZS: quote.totalWithDeliveryUZS,
+      deliveryQuote: quote
     }
   };
 }
-
 
 
 const OM_SAVED_ADDR_KEY = "orzumall_saved_delivery_addresses_v1";
@@ -3447,6 +3638,7 @@ function applySavedAddressToCheckout(id){
   }else{
     setDeliveryLocationStatus(`Saqlangan manzil tanlandi: ${omAddressTitle(a)}`, true);
   }
+  try{ omRenderDeliveryEstimate(); }catch(_e){}
 }
 
 async function saveCurrentAddressFromProfile(){
@@ -3519,6 +3711,7 @@ function initCheckoutDeliveryUI(){
     inp.addEventListener('change', updateDeliveryMethodUI);
   });
   document.getElementById('deliveryLocateBtn')?.addEventListener('click', detectDeliveryLocation);
+  document.getElementById('deliveryAddressInput')?.addEventListener('input', ()=>{ try{ omRenderDeliveryEstimate(); }catch(_e){} });
   updateDeliveryMethodUI();
   try{ renderSavedAddressesUI(); }catch(_){}
 }
@@ -3669,8 +3862,10 @@ async function createOrderFromCheckout(){
   __omOrderSubmitting = true;
   showOrderWaitOverlay();
 
+  const deliveryFeeUZS = Number(deliveryInfo.data?.deliveryFeeUZS || 0);
+  const grandTotalUZS = Number(deliveryInfo.data?.totalWithDeliveryUZS || (built.totalUZS + deliveryFeeUZS));
   const orderId = null; // server will allocate unique short id
-  const amountTiyin = Math.round(built.totalUZS * 100);
+  const amountTiyin = Math.round(grandTotalUZS * 100);
 
   // Shipping/profile snapshot (viloyat/tuman/pochta) for order + Telegram
   let shippingSnap = null;
@@ -3701,7 +3896,9 @@ async function createOrderFromCheckout(){
     provider: payType === 'balance' ? 'balance' : 'cash',
     status: payType === 'balance' ? 'paid' : 'pending_cash',
     items: built.items,
-    totalUZS: built.totalUZS,
+    totalUZS: grandTotalUZS,
+    productsTotalUZS: built.totalUZS,
+    deliveryFeeUZS,
     amountTiyin: null,
     shipping: shippingSnap
   };
@@ -3889,6 +4086,7 @@ async function loadProductsPage(){
       const created = (data.createdAt ?? data.created_at ?? data.created ?? data.updatedAt ?? data.updated_at ?? data.updated);
       return {
         id: String(data.id || d.id),
+        weightKg: Number(data.weightKg ?? data.weight_kg ?? data.weight ?? data.massKg ?? 0) || 0,
         fulfillmentType: (data.fulfillmentType || data.fulfillment || (data.isCargo ? 'cargo' : 'stock') || 'stock'),
         deliveryMinDays: (data.deliveryMinDays ?? (data.fulfillmentType==='cargo'||data.fulfillment==='cargo'||data.isCargo ? 15 : 1)),
         deliveryMaxDays: (data.deliveryMaxDays ?? (data.fulfillmentType==='cargo'||data.fulfillment==='cargo'||data.isCargo ? 30 : 7)),
@@ -4244,17 +4442,24 @@ els.clearBtn?.addEventListener("click", ()=>{
 });
 function buildSelectedItems(){
   const _selCart = selectedCartItems();
-  if(_selCart.length === 0) return { ok:false, reason:"Hech narsa tanlanmagan.", sel:[], items:[], totalUZS:0 };
+  if(_selCart.length === 0) return { ok:false, reason:"Hech narsa tanlanmagan.", sel:[], items:[], totalUZS:0, totalWeightKg:0 };
+  let totalWeightKg = 0;
   const items = _selCart.map(ci=>{
     const p = products.find(x=>x.id===ci.id);
     const pr = p ? getVariantPricing(p, {color: ci.color||null, size: ci.size||null}) : {price:0};
+    const qty = Number(ci.qty||1);
+    const weightKg = omProductWeightKg(p);
+    const lineWeightKg = weightKg * qty;
+    totalWeightKg += lineWeightKg;
     return {
       productId: ci.id,
       name: p?.name || "",
       color: ci.color || null,
       size: ci.size || null,
-      qty: Number(ci.qty||1),
+      qty,
       priceUZS: Number(pr.price||0),
+      weightKg,
+      lineWeightKg,
       fulfillmentType: (p?.fulfillmentType || "stock"),
       deliveryMinDays: Number(p?.deliveryMinDays ?? (p?.fulfillmentType==="cargo"?15:1)),
       deliveryMaxDays: Number(p?.deliveryMaxDays ?? (p?.fulfillmentType==="cargo"?30:7)),
@@ -4262,8 +4467,8 @@ function buildSelectedItems(){
     };
   });
   const totalUZS = items.reduce((s,it)=> s + (it.priceUZS||0) * (it.qty||0), 0);
-  if(!Number.isFinite(totalUZS) || totalUZS <= 0) return { ok:false, reason:"Jami summa noto‘g‘ri.", sel:_selCart, items, totalUZS:0 };
-  return { ok:true, reason:"", sel:_selCart, items, totalUZS };
+  if(!Number.isFinite(totalUZS) || totalUZS <= 0) return { ok:false, reason:"Jami summa noto‘g‘ri.", sel:_selCart, items, totalUZS:0, totalWeightKg };
+  return { ok:true, reason:"", sel:_selCart, items, totalUZS, totalWeightKg };
 }
 
 async function createOrderDoc({orderId, provider, status, items, totalUZS, amountTiyin, shipping, orderType="checkout"}){

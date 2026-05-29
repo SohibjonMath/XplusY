@@ -95,6 +95,13 @@ function getBalance(u) {
   return firstPrice(u?.balanceUZS, u?.balance, u?.walletUZS, u?.wallet, 0);
 }
 
+function parseDeliveryFee(shipping) {
+  if (!shipping || typeof shipping !== "object") return 0;
+  const n = parsePrice(shipping.deliveryFeeUZS ?? shipping.feeUZS ?? shipping.delivery?.feeUZS ?? 0);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, 500000);
+}
+
 exports.handler = async (event) => {
   try {
     initAdmin();
@@ -174,6 +181,7 @@ exports.handler = async (event) => {
 
       const lineTotal = unitPriceUZS * item.qty;
       subtotalUZS += lineTotal;
+      const weightKg = Number(product?.weightKg ?? product?.weight ?? item.weightKg ?? 0) || 0;
 
       lines.push({
         productId: item.productId,
@@ -186,6 +194,8 @@ exports.handler = async (event) => {
         priceUZS: unitPriceUZS,
         unitPriceUZS,
         lineTotalUZS: lineTotal,
+        weightKg,
+        lineWeightKg: weightKg * item.qty,
         image: item.image || product?.image || product?.imageUrl || null,
         fulfillmentType: item.fulfillmentType || product?.fulfillmentType || "stock",
         deliveryMinDays: item.deliveryMinDays ?? product?.deliveryMinDays ?? null,
@@ -194,17 +204,18 @@ exports.handler = async (event) => {
       });
     }
 
-    let totalUZS = subtotalUZS;
+    const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+    const deliveryFeeUZS = parseDeliveryFee(shipping);
+    let totalUZS = subtotalUZS + deliveryFeeUZS;
     const clientTotal = parsePrice(body.totalUZS);
-    // If price schema was client-driven, keep client total when it matches reasonably.
-    if (clientTotal > 0 && Math.abs(clientTotal - subtotalUZS) <= Math.max(3000, subtotalUZS * 0.08)) {
+    // Keep client total only when it matches subtotal + delivery fee reasonably.
+    if (clientTotal > 0 && Math.abs(clientTotal - totalUZS) <= Math.max(3000, totalUZS * 0.08)) {
       totalUZS = clientTotal;
     }
     if (!Number.isFinite(totalUZS) || totalUZS <= 0) {
       return json(400, { ok: false, error: "totalUZS xato" });
     }
 
-    const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
     const note = (typeof body.note === "string" && body.note.length <= 500) ? body.note.trim() : "";
 
     const userRef = db.doc(`users/${uid}`);
@@ -265,7 +276,7 @@ exports.handler = async (event) => {
         items: lines,
         pricing: {
           subtotalUZS,
-          deliveryFeeUZS: 0,
+          deliveryFeeUZS,
           discountUZS: 0,
           totalUZS,
         },
