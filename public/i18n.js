@@ -354,6 +354,10 @@
   }
 
   async function translateDynamic(){
+    // FRONTEND AUTO-TRANSLATE OFF.
+    // Mijoz tomonida DeepSeek chaqirilmaydi. Faqat tayyor statik lug‘atdagi matnlar
+    // almashtiriladi; mahsulotlar esa app.js orqali name_ru/name_en/description_ru/description_en
+    // maydonlaridan olinadi.
     if(currentLang === "uz"){
       collectDynamicElements().forEach(el => {
         if(el.dataset.omDynOrigin) setText(el, el.dataset.omDynOrigin);
@@ -361,52 +365,13 @@
       return;
     }
     const elements = collectDynamicElements();
-    if(!elements.length) return;
-    const cache = getCache();
-    const toAsk = [];
-    const byText = new Map();
-
     elements.forEach(el => {
       const original = el.dataset.omDynOrigin || norm(el.textContent || "");
       if(!el.dataset.omDynOrigin) el.dataset.omDynOrigin = original;
       const exactTranslation = trExact(original, currentLang);
-      if(exactTranslation){ setText(el, exactTranslation); return; }
-      const ck = cacheKey(currentLang, original);
-      if(cache[ck]){ setText(el, cache[ck]); return; }
-      if(!byText.has(original)){
-        byText.set(original, []);
-        toAsk.push(original);
-      }
-      byText.get(original).push(el);
+      if(exactTranslation) setText(el, exactTranslation);
+      // DeepSeek fetch YO‘Q: tayyor field bo‘lmasa o‘zbekcha matn qoldiriladi.
     });
-
-    if(!toAsk.length) return;
-    // Translate in small chunks so the catalog never freezes.
-    for(let i=0; i<toAsk.length; i+=12){
-      const texts = toAsk.slice(i, i+12);
-      try{
-        const res = await fetch("/.netlify/functions/deepseek-translate", {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ target: currentLang, texts })
-        });
-        if(!res.ok) throw new Error("translate failed");
-        const data = await res.json();
-        const translations = Array.isArray(data.translations) ? data.translations : [];
-        texts.forEach((text, idx) => {
-          const translated = norm(translations[idx] || text);
-          if(translated && translated !== text) cache[cacheKey(currentLang, text)] = translated;
-          (byText.get(text) || []).forEach(el => {
-            if(currentLang !== "uz") setText(el, translated || text);
-          });
-        });
-        setCache(cache);
-      }catch(_e){
-        // API sozlanmagan bo'lsa ham sayt ishlashda davom etadi.
-        break;
-      }
-      await new Promise(r => setTimeout(r, 60));
-    }
   }
 
 
@@ -471,86 +436,38 @@
   }
 
   async function requestTranslations(texts, target){
-    target = normalizeLang(target || currentLang);
-    texts = Array.from(new Set((texts||[]).map(norm).filter(isDynamicText))).slice(0, 20);
-    if(target === "uz" || !texts.length) return [];
-    const now = Date.now();
-    if(now < apiDisabledUntil) throw new Error(lastError || "translation_temporarily_disabled");
-
-    const res = await fetch("/.netlify/functions/deepseek-translate", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ target, texts })
-    });
-    const raw = await res.text();
-    let data = {};
-    try{ data = JSON.parse(raw); }catch(_e){}
-    if(!res.ok){
-      lastError = data?.error || data?.details || ("translate_http_" + res.status);
-      apiDisabledUntil = Date.now() + 45000;
-      throw new Error(lastError);
-    }
-    const translations = Array.isArray(data.translations) ? data.translations : [];
-    return texts.map((t,i)=> norm(translations[i] || t) || t);
+    // FRONTEND AUTO-TRANSLATE OFF.
+    // Bu export mijoz tarafida API chaqirmasligi uchun bo‘sh qoldirildi.
+    // Admin paneldagi “UZ dan RU/EN yaratish” tugmasi alohida fetch bilan ishlaydi.
+    return [];
   }
+
 
   function dispatchUpdated(){
     try{ window.dispatchEvent(new CustomEvent("om-i18n-updated", { detail:{ lang: currentLang } })); }catch(_e){}
   }
 
   function queueText(text){
-    if(currentLang === "uz") return;
-    const t = norm(text);
-    if(!isDynamicText(t)) return;
-    if(trExact(t, currentLang)) return;
-    const cache = getCache();
-    if(cache[cacheKey(currentLang, t)]) return;
-    pendingTexts.add(t);
-    clearTimeout(queueTimer);
-    queueTimer = setTimeout(processQueue, 160);
+    // DeepSeek xarajat chiqmasligi uchun frontend queue o‘chirildi.
+    return;
   }
 
+
   async function processQueue(){
-    if(queueBusy || currentLang === "uz" || !pendingTexts.size) return;
-    queueBusy = true;
-    const lang = currentLang;
-    try{
-      while(pendingTexts.size && currentLang === lang){
-        const texts = Array.from(pendingTexts).slice(0, 12);
-        texts.forEach(t=>pendingTexts.delete(t));
-        let translations = [];
-        try{
-          translations = await requestTranslations(texts, lang);
-        }catch(_e){
-          // API ishlamasa sayt to'xtamaydi; keyingi urinish 45 soniyadan keyin.
-          break;
-        }
-        const cache = getCache();
-        texts.forEach((t,i)=>{
-          const translated = norm(translations[i] || t);
-          if(translated && translated !== t) cache[cacheKey(lang, t)] = translated;
-        });
-        setCache(cache);
-        dispatchUpdated();
-        await new Promise(r=>setTimeout(r, 80));
-      }
-    }finally{
-      queueBusy = false;
-      if(pendingTexts.size && currentLang !== "uz") queueTimer = setTimeout(processQueue, 1200);
-    }
+    // Frontendda avto tarjima ishlamaydi.
+    return;
   }
+
 
   function translateTextSync(text){
     const original = norm(text);
     if(currentLang === "uz" || !original) return String(text == null ? "" : text);
     const exactTranslation = trExact(original, currentLang);
     if(exactTranslation) return exactTranslation;
-    const cache = getCache();
-    const cached = cache[cacheKey(currentLang, original)];
-    if(cached) return cached;
-    queueText(original);
+    // Dynamic/mahsulot matnlari DeepSeek bilan jonli tarjima qilinmaydi.
     return String(text == null ? "" : text);
   }
+
 
   function productText(p, field, fallback){
     const original = baseProductValue(p, field, fallback);
@@ -559,36 +476,26 @@
     if(typeof ready === "string" && ready) return ready;
     const exactTranslation = trExact(original, currentLang);
     if(exactTranslation) return exactTranslation;
-    const cache = getCache();
-    const ck = cacheKey(currentLang, original);
-    if(cache[ck]) return cache[ck];
-    queueText(original);
+    // Muhim: tayyor name_ru/name_en/description_ru/description_en bo‘lmasa,
+    // mijoz tomonida API chaqirilmaydi va asl o‘zbekcha matn qoladi.
     return original;
   }
+
 
   function productTags(p){
     const orig = baseProductValue(p, "tags", []);
     if(currentLang === "uz") return orig;
     const ready = explicitLocalized(p, "tags", currentLang);
     if(Array.isArray(ready) && ready.length) return ready;
-    return orig.map(t => translateTextSync(t));
+    return orig.map(t => trExact(t, currentLang) || t);
   }
 
+
   function ensureProducts(products){
-    if(currentLang === "uz" || !Array.isArray(products)) return;
-    const texts = [];
-    products.slice(0, 80).forEach(p=>{
-      const n = baseProductValue(p, "name", "");
-      const d = baseProductValue(p, "description", "");
-      const b = baseProductValue(p, "badge", "");
-      if(n) texts.push(n);
-      if(d) texts.push(d);
-      if(b) texts.push(b);
-      baseProductValue(p, "tags", []).forEach(t=>texts.push(t));
-      if(Array.isArray(p?.badges)) p.badges.forEach(t=>texts.push(norm(t)));
-    });
-    texts.forEach(queueText);
+    // Avto tarjima o‘chirilgan: mahsulotlar oldindan admin panelda tarjima qilinadi.
+    return;
   }
+
 
   function countText(n){
     n = Number(n || 0);
@@ -674,10 +581,7 @@
       setTimeout(applyNow, 4200);
       startLightObserver();
     }
-    document.addEventListener("click", (e)=>{
-      if(e.target && e.target.closest && e.target.closest(".omLangBtn")) return;
-      if(currentLang !== "uz") setTimeout(translateDynamic, 300);
-    }, true);
+    // Oddiy kliklarda DeepSeek/avto tarjima chaqirilmaydi.
     window.addEventListener("hashchange", ()=> currentLang !== "uz" && setTimeout(applyNow, 300));
   }
 
