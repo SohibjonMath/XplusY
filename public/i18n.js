@@ -268,10 +268,9 @@
   }
   function cacheKey(lang, text){ return lang + "|" + text; }
 
-  function createSwitcher(){
-    if(document.querySelector(".omLangSwitch")) return;
+  function buildSwitcher(extraClass){
     const wrap = document.createElement("div");
-    wrap.className = "omLangSwitch";
+    wrap.className = "omLangSwitch" + (extraClass ? " " + extraClass : "");
     wrap.setAttribute("role", "group");
     wrap.setAttribute("aria-label", "Til / Language");
     SUPPORTED.forEach(lang => {
@@ -283,9 +282,32 @@
       b.addEventListener("click", () => setLang(lang));
       wrap.appendChild(b);
     });
-    const host = document.querySelector(".actionsRight") || document.querySelector(".topbar .actions");
-    if(host) host.prepend(wrap);
-    else { wrap.classList.add("omLangFloating"); root().appendChild(wrap); }
+    return wrap;
+  }
+
+  function createSwitcher(){
+    // Desktop header ichida alohida, mobile header ichida alohida ko‘rinadi.
+    // Sabab: theme-redwhite.css mobile'da .actionsRight ni yashiradi.
+    if(!document.querySelector(".omLangDesktop")){
+      const desktop = buildSwitcher("omLangDesktop");
+      const host = document.querySelector(".actionsRight") || document.querySelector(".topbar .actions");
+      if(host) host.prepend(desktop);
+      else { desktop.classList.add("omLangFloating"); root().appendChild(desktop); }
+    }
+
+    if(!document.querySelector(".omLangMobile")){
+      const mobile = buildSwitcher("omLangMobile");
+      const mobileHead = document.querySelector(".mobileSearchHead");
+      const topbar = document.querySelector(".topbar");
+      if(mobileHead){
+        mobileHead.appendChild(mobile);
+      }else if(topbar){
+        topbar.appendChild(mobile);
+      }else{
+        mobile.classList.add("omLangMobileFloat");
+        root().appendChild(mobile);
+      }
+    }
   }
 
   function updateButtons(){
