@@ -601,6 +601,448 @@ tbody tr:hover{
   background:linear-gradient(90deg,var(--danger),var(--warning),var(--success));
 }
 
+
+/* ============ Premium products section ============ */
+.products-suite{
+  display:block;
+  margin-bottom:18px;
+}
+.products-hero{
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);
+  gap:18px;
+  padding:22px;
+  margin-bottom:14px;
+  border:1px solid rgba(255,255,255,.68);
+  border-radius:32px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(255,255,255,.22), transparent 26%),
+    radial-gradient(circle at 92% 18%, rgba(255,64,92,.42), transparent 24%),
+    linear-gradient(135deg,#171227 0%,#25144D 48%,#5B1932 100%);
+  box-shadow:0 28px 70px rgba(31,18,75,.22),0 10px 30px rgba(239,35,60,.08);
+}
+.products-hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px),
+    linear-gradient(0deg,rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:42px 42px;
+  mask-image:linear-gradient(90deg,#000,transparent 85%);
+  opacity:.55;
+}
+.products-hero-glow{
+  position:absolute;
+  width:260px;
+  height:260px;
+  right:-82px;
+  bottom:-88px;
+  border-radius:50%;
+  background:rgba(255,64,92,.28);
+  filter:blur(4px);
+}
+.products-hero-content,.products-hero-panel{position:relative;z-index:1}
+.products-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 11px;
+  margin-bottom:12px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:999px;
+  color:rgba(255,255,255,.88);
+  background:rgba(255,255,255,.10);
+  backdrop-filter:blur(12px);
+  font-size:12.5px;
+  font-weight:950;
+}
+.products-hero h3{
+  margin:0;
+  font-size:34px;
+  line-height:1.04;
+  letter-spacing:-.055em;
+  font-weight:1000;
+}
+.products-hero p{
+  max-width:760px;
+  margin:12px 0 0;
+  color:rgba(255,255,255,.74);
+  font-size:14.5px;
+  line-height:1.65;
+}
+.products-hero-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:17px;
+}
+.products-hero-tags span{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 11px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;
+  color:rgba(255,255,255,.86);
+  background:rgba(255,255,255,.08);
+  font-size:12.5px;
+  font-weight:850;
+}
+.products-hero-panel{
+  min-height:222px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:14px;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:26px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 20px 42px rgba(0,0,0,.12);
+}
+.hero-panel-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.products-hero-panel .muted{color:rgba(255,255,255,.70)}
+.hero-big-number{
+  font-size:54px;
+  line-height:.95;
+  letter-spacing:-.07em;
+  font-weight:1000;
+}
+.hero-caption{
+  margin-top:-8px;
+  color:rgba(255,255,255,.68);
+  font-size:13px;
+  font-weight:750;
+}
+.hero-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.product-metrics-strip{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:14px;
+}
+.product-mini-stat{
+  min-height:86px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:rgba(255,255,255,.86);
+  backdrop-filter:blur(16px);
+  box-shadow:var(--shadow-card);
+}
+.product-mini-stat i{
+  width:46px;
+  height:46px;
+  min-width:46px;
+  display:grid;
+  place-items:center;
+  border-radius:17px;
+  font-size:17px;
+}
+.product-mini-stat b{
+  display:block;
+  margin-bottom:3px;
+  color:var(--text);
+  font-size:22px;
+  line-height:1;
+  letter-spacing:-.04em;
+  font-weight:1000;
+}
+.product-mini-stat span{
+  color:var(--muted);
+  font-size:12.5px;
+  font-weight:800;
+}
+.product-mini-stat.danger i{background:#FFF1F3;color:var(--danger)}
+.product-mini-stat.success i{background:#EAF9F0;color:var(--success)}
+.product-mini-stat.purple i{background:#F0ECFF;color:var(--primary)}
+.product-mini-stat.gold i{background:#FFF4DF;color:var(--warning)}
+.products-workbench{
+  border-radius:30px;
+  overflow:hidden;
+}
+.products-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px;
+  border-bottom:1px solid var(--line);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(109,74,255,.09), transparent 35%),
+    linear-gradient(180deg,#fff,#FCFDFF);
+}
+.products-toolbar-title{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:245px;
+}
+.toolbar-icon{
+  width:48px;
+  height:48px;
+  min-width:48px;
+  display:grid;
+  place-items:center;
+  border-radius:18px;
+  color:#fff;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  box-shadow:0 16px 28px rgba(109,74,255,.20);
+}
+.products-toolbar-title h4{
+  margin:0;
+  color:var(--text);
+  font-size:16px;
+  font-weight:1000;
+  letter-spacing:-.03em;
+}
+.products-toolbar-title small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-weight:700;
+}
+.products-tools{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.product-search-mini{
+  height:42px;
+  min-width:280px;
+  flex:1 1 310px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+.product-search-mini i{color:#8B94AA}
+.product-search-mini input{
+  width:100%;
+  height:100%;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--text);
+  font-size:13.5px;
+}
+.compact-control{
+  min-height:42px!important;
+  width:auto!important;
+  min-width:154px;
+  padding:0 34px 0 12px!important;
+  border-radius:15px!important;
+  font-size:13px!important;
+  font-weight:800;
+}
+.view-toggle{
+  height:42px;
+  display:inline-grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  padding:4px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:#F4F6FB;
+}
+.view-toggle button{
+  width:34px;
+  height:32px;
+  border:0;
+  border-radius:11px;
+  color:#6B7280;
+  background:transparent;
+  cursor:pointer;
+  transition:var(--transition);
+}
+.view-toggle button.active{
+  color:#fff;
+  background:linear-gradient(135deg,var(--danger),#B70E22);
+  box-shadow:0 8px 16px rgba(239,35,60,.18);
+}
+.products-table-shell{
+  background:#fff;
+}
+#productsTable thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#FBFCFF;
+}
+#productsTable tbody tr.om-product-row{
+  background:#fff;
+}
+#productsTable tbody tr.om-product-row:hover{
+  background:linear-gradient(90deg,rgba(109,74,255,.045),rgba(239,35,60,.025));
+}
+.om-product-cell{min-width:350px}
+.om-thumb{
+  width:62px;
+  height:62px;
+  min-width:62px;
+  border-radius:20px;
+  box-shadow:0 12px 26px rgba(15,23,42,.10);
+}
+.om-product-meta .product-name{font-size:14.5px;max-width:390px}
+.product-id{
+  background:#F7F8FC;
+  border-color:#E3E7F0;
+  color:#4B5563;
+}
+.price-cell{
+  font-size:14px;
+  letter-spacing:-.02em;
+}
+.color-preview{
+  width:22px;
+  height:22px;
+  margin-right:-4px;
+  box-shadow:0 0 0 2px #fff,0 0 0 3px #DDE2EE,0 8px 14px rgba(15,23,42,.10);
+}
+.actions .btn{
+  border-radius:13px;
+}
+.products-cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:14px;
+  padding:16px;
+  background:#FAFBFF;
+}
+.product-card-premium{
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(15,23,42,.06);
+  transition:var(--transition);
+}
+.product-card-premium:hover{
+  transform:translateY(-2px);
+  box-shadow:0 20px 46px rgba(15,23,42,.09);
+}
+.product-card-cover{
+  position:relative;
+  height:170px;
+  padding:12px;
+  background:
+    radial-gradient(circle at 20% 5%,rgba(109,74,255,.14),transparent 30%),
+    linear-gradient(135deg,#F8FAFF,#FFF4F6);
+}
+.product-card-cover img,.product-card-cover .om-thumb-fallback{
+  width:100%;
+  height:100%;
+  border-radius:20px;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 12px 26px rgba(15,23,42,.08);
+}
+.product-card-status{
+  position:absolute;
+  top:18px;
+  left:18px;
+}
+.product-card-body{
+  padding:14px;
+}
+.product-card-title{
+  min-height:40px;
+  margin-bottom:10px;
+  color:var(--text);
+  font-size:15px;
+  font-weight:1000;
+  line-height:1.25;
+  letter-spacing:-.025em;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.product-card-meta{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:12px;
+}
+.product-card-meta div{
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#FAFBFF;
+}
+.product-card-meta span{
+  display:block;
+  color:var(--muted);
+  font-size:11.5px;
+  font-weight:800;
+}
+.product-card-meta b{
+  display:block;
+  margin-top:3px;
+  color:var(--text);
+  font-size:13px;
+  font-weight:1000;
+}
+.product-card-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding-top:12px;
+  border-top:1px dashed #E5E9F2;
+}
+.product-empty-premium{
+  padding:54px 20px!important;
+  text-align:center!important;
+  color:var(--muted)!important;
+}
+.product-empty-premium i{
+  display:block;
+  margin-bottom:12px;
+  color:var(--primary);
+  font-size:34px;
+}
+@media (max-width:1180px){
+  .products-hero{grid-template-columns:1fr}
+  .product-metrics-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .products-toolbar{align-items:flex-start;flex-direction:column}
+  .products-tools{width:100%;justify-content:flex-start}
+}
+@media (max-width:760px){
+  .products-hero{padding:18px;border-radius:26px}
+  .products-hero h3{font-size:27px}
+  .hero-big-number{font-size:42px}
+  .product-metrics-strip{grid-template-columns:1fr}
+  .product-search-mini{min-width:100%;flex-basis:100%}
+  .compact-control{width:100%!important;min-width:100%}
+  .products-cards-grid{grid-template-columns:1fr;padding:12px}
+}
+
 /* ============ Forms / modals ============ */
 .modal{
   display:none;
@@ -980,25 +1422,91 @@ textarea.form-control{min-height:116px;resize:vertical}
         <div class="stat-card"><div class="stat-icon tags"><i class="fas fa-tag"></i></div><div class="stat-info"><h3 id="totalTags">0</h3><p>Jami teglar</p></div></div>
       </div>
 
-      <div class="card" id="productsView">
-        <div class="card-header">
-          <h3 id="productsTitle">Mahsulotlar katalogi</h3>
-          <div class="right-actions">
-            <span class="muted" id="syncState">—</span>
-            <button class="btn btn-light btn-sm" id="refreshBtn"><i class="fas fa-sync-alt"></i> Yangilash</button>
+      <section class="products-suite" id="productsView">
+        <div class="products-hero">
+          <div class="products-hero-glow"></div>
+          <div class="products-hero-content">
+            <div class="products-eyebrow"><i class="fas fa-crown"></i> OrzuMall katalog markazi</div>
+            <h3 id="productsTitle">Mahsulotlar bo‘limi</h3>
+            <p>Rasm, narx, vazn, holat, rang va teglarni bitta premium ish maydonida boshqaring. Tez qidiruv, saralash va karta ko‘rinishi qo‘shildi.</p>
+            <div class="products-hero-tags">
+              <span><i class="fas fa-database"></i> Firestore Live</span>
+              <span><i class="fas fa-shield-halved"></i> Admin nazorat</span>
+              <span><i class="fas fa-bolt"></i> Tez boshqaruv</span>
+            </div>
+          </div>
+          <div class="products-hero-panel">
+            <div class="hero-panel-top">
+              <span class="muted" id="syncState">—</span>
+              <button class="btn btn-light btn-sm" id="refreshBtn"><i class="fas fa-sync-alt"></i> Yangilash</button>
+            </div>
+            <div class="hero-big-number" id="productActiveCount">0</div>
+            <div class="hero-caption">ko‘rsatilayotgan mahsulot</div>
+            <div class="hero-actions">
+              <button class="btn btn-primary" id="productAddHeroBtn"><i class="fas fa-plus"></i> Mahsulot qo‘shish</button>
+              <button class="btn btn-light" id="productImportHeroBtn"><i class="fas fa-file-import"></i> Import</button>
+              <button class="btn btn-light" id="productExportHeroBtn"><i class="fas fa-download"></i> Export</button>
+            </div>
           </div>
         </div>
-        <div class="table-container">
-          <table id="productsTable">
-            <thead>
-              <tr>
-                <th>Mahsulot</th><th>ID</th><th>Narx</th><th>Vazn</th><th>Turi</th><th>Teglar</th><th>Ranglar</th><th>O‘lcham</th><th>Ball</th><th>Amallar</th>
-              </tr>
-            </thead>
-            <tbody id="productsTableBody"></tbody>
-          </table>
+
+        <div class="product-metrics-strip">
+          <div class="product-mini-stat danger"><i class="fas fa-clock"></i><div><b id="productPendingCount">0</b><span>Kutilmoqda</span></div></div>
+          <div class="product-mini-stat success"><i class="fas fa-circle-check"></i><div><b id="productApprovedCount">0</b><span>Tasdiqlangan</span></div></div>
+          <div class="product-mini-stat purple"><i class="fas fa-chart-line"></i><div><b id="productAvgScoreInline">0</b><span>O‘rtacha ball</span></div></div>
+          <div class="product-mini-stat gold"><i class="fas fa-sack-dollar"></i><div><b id="productCatalogValue">0</b><span>Katalog qiymati</span></div></div>
         </div>
-      </div>
+
+        <div class="card products-workbench">
+          <div class="products-toolbar">
+            <div class="products-toolbar-title">
+              <div class="toolbar-icon"><i class="fas fa-boxes-stacked"></i></div>
+              <div>
+                <h4>Katalog ro‘yxati</h4>
+                <small id="productViewHint">Barcha mahsulotlar ko‘rsatilmoqda</small>
+              </div>
+            </div>
+            <div class="products-tools">
+              <div class="product-search-mini"><i class="fas fa-magnifying-glass"></i><input id="productSectionSearch" placeholder="Mahsulot, ID, teg, tavsif bo‘yicha qidirish"></div>
+              <select id="productStatusFilter" class="form-control compact-control" aria-label="Holat bo‘yicha filter">
+                <option value="all">Barcha holatlar</option>
+                <option value="approved">Tasdiqlangan</option>
+                <option value="pending">Kutilmoqda</option>
+                <option value="rejected">Rad etilgan</option>
+              </select>
+              <select id="productFulfillmentFilter" class="form-control compact-control" aria-label="Turi bo‘yicha filter">
+                <option value="all">Barcha turlar</option>
+                <option value="stock">Omborda bor</option>
+                <option value="cargo">Cargo / buyurtma</option>
+              </select>
+              <select id="productSort" class="form-control compact-control" aria-label="Saralash">
+                <option value="default">Standart tartib</option>
+                <option value="price-desc">Narx: yuqoridan</option>
+                <option value="price-asc">Narx: pastdan</option>
+                <option value="score-desc">Ball: yuqoridan</option>
+                <option value="sold-desc">Sotilgan: ko‘pdan</option>
+                <option value="name-asc">Nomi: A-Z</option>
+              </select>
+              <button class="btn btn-light btn-sm" id="productFiltersClear"><i class="fas fa-eraser"></i> Tozalash</button>
+              <div class="view-toggle" aria-label="Ko‘rinish turi">
+                <button class="active" id="productTableMode" type="button" title="Jadval"><i class="fas fa-table-list"></i></button>
+                <button id="productCardMode" type="button" title="Kartalar"><i class="fas fa-grip"></i></button>
+              </div>
+            </div>
+          </div>
+          <div class="table-container products-table-shell" id="productsTableShell">
+            <table id="productsTable">
+              <thead>
+                <tr>
+                  <th>Mahsulot</th><th>ID</th><th>Narx</th><th>Vazn</th><th>Turi</th><th>Teglar</th><th>Ranglar</th><th>O‘lcham</th><th>Ball</th><th>Amallar</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody"></tbody>
+            </table>
+          </div>
+          <div class="products-cards-grid hidden" id="productsCardsGrid"></div>
+        </div>
+      </section>
 
       <div class="card hidden" id="ordersView">
         <div class="card-header">
@@ -2335,21 +2843,154 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     
     function productStatusPill(p){
       const s = String(p?.status||"approved").toLowerCase();
-      if(s==="pending" || s==="kutilmoqda") return `<span class="pill pending">Kutilmoqda</span>`;
-      if(s==="rejected" || s==="rad" || s==="cancelled" || s==="canceled") return `<span class="pill cancelled">Rad etilgan</span>`;
-      return `<span class="pill paid">Tasdiqlandi</span>`;
+      if(s==="pending" || s==="kutilmoqda") return `<span class="pill pending"><i class="fas fa-clock"></i> Kutilmoqda</span>`;
+      if(s==="rejected" || s==="rad" || s==="cancelled" || s==="canceled") return `<span class="pill cancelled"><i class="fas fa-ban"></i> Rad etilgan</span>`;
+      return `<span class="pill paid"><i class="fas fa-circle-check"></i> Tasdiqlandi</span>`;
+    }
+
+    function getProductStatusKey(p){
+      const s = String(p?.status||"approved").toLowerCase();
+      if(s==="pending" || s==="kutilmoqda") return "pending";
+      if(s==="rejected" || s==="rad" || s==="cancelled" || s==="canceled") return "rejected";
+      return "approved";
+    }
+
+    function getProductFulfillmentKey(p){
+      const t = String(p?.pType || p?.fulfillment || p?.fulfillmentType || "stock").toLowerCase();
+      if(t.includes("cargo") || t.includes("order") || t.includes("buyurt")) return "cargo";
+      return "stock";
+    }
+
+    function productMatchesQuery(p, q){
+      if(!q) return true;
+      const hay = [
+        p?.id, p?.name, p?.subtitle, p?.description, p?.currency, p?.ownerEmail,
+        p?.productType, p?.pType, p?.fulfillment,
+        ...(Array.isArray(p?.tags)?p.tags:[]),
+        ...(Array.isArray(p?.sizes)?p.sizes:[])
+      ].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(q);
+    }
+
+    function getProductFilteredSortedList(base=null){
+      const q = (($("productSectionSearch")?.value || $("searchInput")?.value || "").toLowerCase().trim());
+      const status = $("productStatusFilter")?.value || "all";
+      const fulfillment = $("productFulfillmentFilter")?.value || "all";
+      const sort = $("productSort")?.value || "default";
+      let data = [...(base || state.products)];
+      data = data.filter(p=>{
+        if(!productMatchesQuery(p,q)) return false;
+        if(status!=="all" && getProductStatusKey(p)!==status) return false;
+        if(fulfillment!=="all" && getProductFulfillmentKey(p)!==fulfillment) return false;
+        return true;
+      });
+      const byNumber = (k)=>(a,b)=>Number(b?.[k]||0)-Number(a?.[k]||0);
+      if(sort==="price-desc") data.sort(byNumber("price"));
+      else if(sort==="price-asc") data.sort((a,b)=>Number(a?.price||0)-Number(b?.price||0));
+      else if(sort==="score-desc") data.sort(byNumber("popularScore"));
+      else if(sort==="sold-desc") data.sort(byNumber("soldCount"));
+      else if(sort==="name-asc") data.sort((a,b)=>String(a?.name||a?.id||"").localeCompare(String(b?.name||b?.id||""),"uz"));
+      return data;
+    }
+
+    function updateProductPremiumCounters(data){
+      const all = state.products || [];
+      const approved = all.filter(p=>getProductStatusKey(p)==="approved").length;
+      const pending = all.filter(p=>getProductStatusKey(p)==="pending").length;
+      const avgScore = all.length ? Math.round(all.reduce((s,p)=>s+Number(p.popularScore||0),0)/all.length) : 0;
+      const catalogValue = all.reduce((s,p)=>s+Number(p.price||0),0);
+      if($("productActiveCount")) $("productActiveCount").textContent = data.length;
+      if($("productPendingCount")) $("productPendingCount").textContent = pending;
+      if($("productApprovedCount")) $("productApprovedCount").textContent = approved;
+      if($("productAvgScoreInline")) $("productAvgScoreInline").textContent = avgScore;
+      if($("productCatalogValue")) $("productCatalogValue").textContent = formatPrice(catalogValue).replace(" so‘m","");
+      const hint = $("productViewHint");
+      if(hint){
+        const q = ($("productSectionSearch")?.value || $("searchInput")?.value || "").trim();
+        hint.textContent = q ? `${data.length} ta natija: “${q}”` : `${data.length} ta mahsulot ko‘rsatilmoqda`;
+      }
+    }
+
+    function getProductImageHtml(p, cls="om-thumb"){
+      const img = (typeof getItemImageUrl==="function" ? getItemImageUrl(p) : "") || "";
+      const letter = esc(String(p?.name||p?.id||"O").trim().slice(0,1).toUpperCase() || "O");
+      if(img) return `<img class="${cls}" src="${esc(img)}" alt="${esc(p?.name||"Mahsulot")}" loading="lazy" onerror="this.outerHTML='<div class=&quot;${cls} om-thumb-fallback&quot;>${letter}</div>'">`;
+      return `<div class="${cls} om-thumb-fallback">${letter}</div>`;
+    }
+
+    function renderProductCards(data){
+      const grid = $("productsCardsGrid");
+      if(!grid) return;
+      if(!data.length){
+        grid.innerHTML = `<div class="product-empty-premium" style="grid-column:1/-1"><i class="fas fa-box-open"></i><b>Mahsulot topilmadi</b><br><span>Qidiruv yoki filterlarni tozalab qayta urinib ko‘ring.</span></div>`;
+        return;
+      }
+      grid.innerHTML = data.map(p=>{
+        const popular = Math.max(0, Math.min(100, Number(p.popularScore||0)));
+        const weight = Number(p.weightKg ?? p.weight ?? 0);
+        const weightText = weight ? `${weight.toFixed(2).replace(/\.00$/,'')} kg` : '— kg';
+        const colors = (p.colors||[]).slice(0,5).map(c=>{
+          const hex = (typeof c==="string") ? c : (c.hex || c.value || c.color || c.code || c.bg || "");
+          const bg = /^#|rgb|hsl/i.test(String(hex)) ? hex : "#eef1f7";
+          return `<span class="color-preview" style="background:${esc(bg)}"></span>`;
+        }).join("");
+        return `<article class="product-card-premium" data-pid="${esc(p.id||"")}">
+          <div class="product-card-cover">
+            ${getProductImageHtml(p, "")}
+            <div class="product-card-status">${productStatusPill(p)}</div>
+          </div>
+          <div class="product-card-body">
+            <div class="product-card-title" title="${esc(p.name||"")}">${esc(p.name||"Nomsiz mahsulot")}</div>
+            <div class="product-card-meta">
+              <div><span>ID</span><b>${esc(p.id||"—")}</b></div>
+              <div><span>Narx</span><b>${formatPrice(p.price)}</b></div>
+              <div><span>Vazn</span><b>${weightText}</b></div>
+              <div><span>Sotilgan</span><b>${Number(p.soldCount||0)} ta</b></div>
+            </div>
+            <div class="om-subline" style="margin-bottom:12px">${renderFulfillmentPill(p)} ${renderProductTypePill(p)} ${colors || `<span class="muted">Rang yo‘q</span>`}</div>
+            <div class="product-card-bottom">
+              <div style="display:flex;align-items:center;gap:9px;min-width:120px"><div class="om-score"><span style="width:${popular}%"></span></div><b>${popular}</b></div>
+              <div class="actions">
+                ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn btn-primary btn-sm approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash"><i class="fas fa-check"></i></button><button class="btn btn-light btn-sm reject-btn" data-id="${esc(p.id)}" title="Rad etish"><i class="fas fa-xmark"></i></button>`:""}
+                <button class="btn btn-light btn-sm edit-btn" data-id="${esc(p.id)}" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light btn-sm del-btn" data-id="${esc(p.id)}" title="O‘chirish"><i class="fas fa-trash"></i></button>`:""}
+              </div>
+            </div>
+          </div>
+        </article>`;
+      }).join("");
+    }
+
+    function setProductViewMode(mode){
+      state.productViewMode = mode;
+      const isCards = mode === "cards";
+      $("productsTableShell")?.classList.toggle("hidden", isCards);
+      $("productsCardsGrid")?.classList.toggle("hidden", !isCards);
+      $("productTableMode")?.classList.toggle("active", !isCards);
+      $("productCardMode")?.classList.toggle("active", isCards);
+    }
+
+    function bindProductRowActions(){
+      document.querySelectorAll(".edit-btn").forEach(b=>b.addEventListener("click",(e)=>{e.stopPropagation(); openEdit(b.dataset.id);}));
+      document.querySelectorAll(".del-btn").forEach(b=>b.addEventListener("click",(e)=>{e.stopPropagation(); removeProduct(b.dataset.id);}));
+      document.querySelectorAll(".approve-btn").forEach(b=>b.addEventListener("click",(e)=>{e.stopPropagation(); updateProductStatus(b.dataset.id,"approved");}));
+      document.querySelectorAll(".reject-btn").forEach(b=>b.addEventListener("click",(e)=>{e.stopPropagation(); updateProductStatus(b.dataset.id,"rejected");}));
     }
 
     function renderTable(list=null){
-      const data = list || state.products;
+      const data = Array.isArray(list) ? getProductFilteredSortedList(list) : getProductFilteredSortedList();
+      updateProductPremiumCounters(data);
+      renderProductCards(data);
+      setProductViewMode(state.productViewMode || "table");
       const body = $("productsTableBody");
       body.innerHTML="";
       if(!data.length){
-        body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:44px;color:var(--muted)">Hech narsa topilmadi</td></tr>`;
+        body.innerHTML = `<tr><td colspan="10" class="product-empty-premium"><i class="fas fa-box-open"></i><b>Mahsulot topilmadi</b><br><span>Qidiruv yoki filterlarni tozalab qayta urinib ko‘ring.</span></td></tr>`;
         return;
       }
       data.forEach(p=>{
         const tr = document.createElement("tr");
+        tr.className = "om-product-row";
         tr.style.cursor="pointer";
         tr.dataset.pid = p.id || "";
 
@@ -2363,19 +3004,13 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
         }).join("") || `<span style="color:var(--muted)">—</span>`;
         const sizes = (p.sizes||[]).slice(0,3).map(s=>`<span class="tag" style="background:#EEF6FF;color:#2563EB;border-color:#BFDBFE">${esc(s)}</span>`).join(" ") || `<span style="color:var(--muted)">—</span>`;
         const popular = Math.max(0, Math.min(100, Number(p.popularScore||0)));
-        const img = (typeof getItemImageUrl==="function" ? getItemImageUrl(p) : "") || "";
-        const letter = esc(String(p.name||p.id||"O").trim().slice(0,1).toUpperCase() || "O");
-        const imgHtml = img
-          ? `<img class="om-thumb" src="${esc(img)}" alt="${esc(p.name||"Mahsulot")}" loading="lazy" onerror="this.outerHTML='<div class=&quot;om-thumb om-thumb-fallback&quot;>${letter}</div>'">`
-          : `<div class="om-thumb om-thumb-fallback">${letter}</div>`;
-
         const weight = Number(p.weightKg ?? p.weight ?? 0);
         const weightText = weight ? `${weight.toFixed(2).replace(/\.00$/,'')} kg` : '— kg';
 
         tr.innerHTML = `
           <td>
             <div class="om-product-cell">
-              ${imgHtml}
+              ${getProductImageHtml(p)}
               <div class="om-product-meta">
                 <div class="product-name" title="${esc(p.name||"")}">${esc(p.name||"Nomsiz mahsulot")}</div>
                 ${p.subtitle?`<div style="font-size:12.5px;color:var(--muted);margin-top:3px">${esc(p.subtitle)}</div>`:""}
@@ -2411,10 +3046,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
         `;
         body.appendChild(tr);
       });
-      document.querySelectorAll(".edit-btn").forEach(b=>b.addEventListener("click",()=>openEdit(b.dataset.id)));
-      document.querySelectorAll(".del-btn").forEach(b=>b.addEventListener("click",()=>removeProduct(b.dataset.id)));
-      document.querySelectorAll(".approve-btn").forEach(b=>b.addEventListener("click",(e)=>{e.stopPropagation(); updateProductStatus(b.dataset.id,"approved");}));
-      document.querySelectorAll(".reject-btn").forEach(b=>b.addEventListener("click",(e)=>{e.stopPropagation(); updateProductStatus(b.dataset.id,"rejected");}));
+      bindProductRowActions();
     }
 
     function renderStats(){
@@ -3225,16 +3857,34 @@ $("viewJsonBtn").addEventListener("click",viewJson);
       $("syncColorImagesBtn")?.addEventListener("click",()=>syncColorImageRows({keepExisting:true}));
       $("addColorImageBtn")?.addEventListener("click",()=>addColorImageRow("", []));
 
+      const applyProductFilters = ()=> renderTable();
       $("searchInput").addEventListener("input",()=>{
-        const t=($("searchInput").value||"").toLowerCase().trim();
-        if(!t) return renderTable();
-        const filtered=state.products.filter(p=>
-          (p.name||"").toLowerCase().includes(t) || (p.id||"").toLowerCase().includes(t) ||
-          (p.subtitle||"").toLowerCase().includes(t) || (p.description||"").toLowerCase().includes(t) ||
-          (p.tags||[]).some(x=>(x||"").toLowerCase().includes(t))
-        );
-        renderTable(filtered);
+        const ps = $("productSectionSearch");
+        if(ps && document.activeElement !== ps) ps.value = $("searchInput").value || "";
+        applyProductFilters();
       });
+      $("productSectionSearch")?.addEventListener("input",()=>{
+        const globalSearch = $("searchInput");
+        if(globalSearch && document.activeElement !== globalSearch) globalSearch.value = $("productSectionSearch").value || "";
+        applyProductFilters();
+      });
+      ["productStatusFilter","productFulfillmentFilter","productSort"].forEach(id=>{
+        const el = $(id);
+        if(el){ el.addEventListener("input", applyProductFilters); el.addEventListener("change", applyProductFilters); }
+      });
+      $("productFiltersClear")?.addEventListener("click",()=>{
+        if($("productSectionSearch")) $("productSectionSearch").value="";
+        if($("searchInput")) $("searchInput").value="";
+        if($("productStatusFilter")) $("productStatusFilter").value="all";
+        if($("productFulfillmentFilter")) $("productFulfillmentFilter").value="all";
+        if($("productSort")) $("productSort").value="default";
+        renderTable();
+      });
+      $("productTableMode")?.addEventListener("click",()=>setProductViewMode("table"));
+      $("productCardMode")?.addEventListener("click",()=>setProductViewMode("cards"));
+      $("productAddHeroBtn")?.addEventListener("click",()=>$("addProductBtn")?.click());
+      $("productImportHeroBtn")?.addEventListener("click",()=>$("importJsonBtn")?.click());
+      $("productExportHeroBtn")?.addEventListener("click",()=>downloadJson());
 
       $("loginBtn").addEventListener("click",login);
       $("logoutBtn").addEventListener("click",logout);
