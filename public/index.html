@@ -592,30 +592,19 @@
     <div class="imgViewerShell qvShell qvShellSolo" role="dialog" aria-modal="true" aria-label="Rasm ko‘rish">
       <button class="qvClose" id="imgViewerClose" title="Yopish" aria-label="Yopish">✕</button>
 
-      <div class="qvMedia qvMediaSolo">
-        <div class="qvStage">
-          <button class="navBtn navPrev" id="imgPrev" title="Oldingi" aria-label="Oldingi">◀</button>
-          <img class="imgViewerImg qvImg" id="imgViewerImg" alt="product" />
-          <button class="navBtn navNext" id="imgNext" title="Keyingi" aria-label="Keyingi">▶</button>
-        </div>
-        <div class="thumbRow qvThumbs" id="imgThumbs"></div>
-        <div class="qvMovedActions" id="qvMovedActions" aria-label="Mahsulot amallari">
-          <button class="qvMovedBtn" id="qvInfoBtn" type="button" title="Tavsif" aria-label="Tavsif">
-            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-            <span>Tavsif</span>
-          </button>
-          <button class="qvMovedBtn" id="qvVideoBtn" type="button" title="Video" aria-label="Video">
-            <i class="fa-brands fa-youtube" aria-hidden="true"></i>
-            <span>Video</span>
-          </button>
-          <button class="qvMovedBtn" id="qvReviewsBtn" type="button" title="Sharhlar" aria-label="Sharhlar">
-            <i class="fa-solid fa-message" aria-hidden="true"></i>
-            <span>Sharhlar</span>
-          </button>
+      <div class="qvMedia qvMediaSolo qvProLayout">
+        <div class="qvGalleryPane">
+          <div class="qvStage">
+            <button class="navBtn navPrev" id="imgPrev" title="Oldingi" aria-label="Oldingi">◀</button>
+            <img class="imgViewerImg qvImg" id="imgViewerImg" alt="product" />
+            <button class="navBtn navNext" id="imgNext" title="Keyingi" aria-label="Keyingi">▶</button>
+          </div>
+          <div class="thumbRow qvThumbs" id="imgThumbs"></div>
         </div>
 
-        <div class="qvInfoCard" id="qvInfoCard">
-          <div class="qvInfoTop">
+        <aside class="qvProductPane" aria-label="Mahsulot ma'lumotlari">
+          <div class="qvProHead">
+            <div class="qvCategoryTrail" id="qvCategoryTrail"></div>
             <div class="qvTopMeta">
               <span class="qvBadge" id="qvBadge"></span>
               <span class="qvRating" id="qvRating"></span>
@@ -625,16 +614,38 @@
               <div class="qvPrice" id="qvPrice"></div>
               <div class="qvOldPrice" id="qvOldPrice"></div>
             </div>
-            <div class="qvTags" id="qvTags"></div>
-            <p class="qvDesc" id="imgViewerDesc"></p>
           </div>
+
+          <div class="qvProMetrics" id="qvProMetrics"></div>
+          <div class="qvCategoryCard" id="qvCategoryCard"></div>
+          <div class="qvVariantBox" id="qvVariantBox"></div>
+          <div class="qvTags" id="qvTags"></div>
+          <p class="qvDesc" id="imgViewerDesc"></p>
+
+          <div class="qvTrustGrid" id="qvTrustGrid"></div>
+
+          <div class="qvMovedActions" id="qvMovedActions" aria-label="Mahsulot amallari">
+            <button class="qvMovedBtn" id="qvInfoBtn" type="button" title="Tavsif" aria-label="Tavsif">
+              <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              <span>Tavsif</span>
+            </button>
+            <button class="qvMovedBtn" id="qvVideoBtn" type="button" title="Video" aria-label="Video">
+              <i class="fa-brands fa-youtube" aria-hidden="true"></i>
+              <span>Video</span>
+            </button>
+            <button class="qvMovedBtn" id="qvReviewsBtn" type="button" title="Sharhlar" aria-label="Sharhlar">
+              <i class="fa-solid fa-message" aria-hidden="true"></i>
+              <span>Sharhlar</span>
+            </button>
+          </div>
+
           <div class="qvInfoBottom">
             <button class="qvMainCta" id="viewerCart" type="button">
               <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
               <span>Savatga qo‘shish</span>
             </button>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   </div>

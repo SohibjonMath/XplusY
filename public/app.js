@@ -2918,6 +2918,72 @@ function closePanel(){
 }
 
 
+
+// ---------- Premium product quick view helpers ----------
+function omQVProduct(){
+  try{ return (viewer && viewer.product) || (products || []).find(x=>String(x.id)===String(viewer?.productId)); }catch(e){ return null; }
+}
+function omQVCatTrailHtml(p){
+  const ids = omProductCategoryPathIds(p);
+  if(!ids.length) return `<span class="qvCrumb muted">Kategoriya tanlanmagan</span>`;
+  return ids.map((id,idx)=>{
+    const def=omGetCategoryDef(id);
+    const icon = idx===0 ? omCategoryIconHtml(def) : "";
+    const name=escapeHtml(omCategoryLangName(def)||id);
+    return `<span class="qvCrumb">${icon}<span>${name}</span></span>${idx<ids.length-1?`<span class="qvCrumbSep">›</span>`:""}`;
+  }).join("");
+}
+function omQVCatCardHtml(p){
+  const ids = omProductCategoryPathIds(p);
+  if(!ids.length) return "";
+  const leaf = omGetCategoryDef(ids[ids.length-1]);
+  const root = omGetCategoryDef(ids[0]);
+  const path = ids.map(id=>escapeHtml(omCategoryLangName(omGetCategoryDef(id))||id)).join(" <b>›</b> ");
+  return `<div class="qvCatHeroIcon">${omCategoryIconHtml(leaf||root)}</div><div class="qvCatHeroText"><span>Kategoriya yo‘li</span><strong>${path}</strong><em>${ids.length} darajali katalog</em></div>`;
+}
+function omQVVariantHtml(p){
+  const colors = normColors(p||{});
+  const sizes = normSizes(p||{});
+  const parts=[];
+  if(colors.length){
+    parts.push(`<div class="qvVarGroup"><span>Ranglar</span><div class="qvSwatches">${colors.slice(0,12).map(c=>`<i class="qvSwatch" title="${escapeHtml(c.name)}" style="${c.hex?`--qvc:${escapeHtml(c.hex)}`:""}"></i>`).join("")}${colors.length>12?`<b>+${colors.length-12}</b>`:""}</div></div>`);
+  }
+  if(sizes.length){
+    parts.push(`<div class="qvVarGroup"><span>O‘lchamlar</span><div class="qvSizeList">${sizes.slice(0,10).map(s=>`<b>${escapeHtml(s)}</b>`).join("")}${sizes.length>10?`<b>+${sizes.length-10}</b>`:""}</div></div>`);
+  }
+  return parts.length ? parts.join("") : `<div class="qvVarEmpty"><i class="fa-solid fa-check"></i> Variant tanlash shart emas</div>`;
+}
+function omQVTrustHtml(p){
+  const t = String(p?.fulfillmentType || p?.pType || p?.deliveryType || "stock").toLowerCase();
+  const weight = Number(p?.weightKg ?? p?.weight ?? p?.massKg ?? 0) || 0;
+  const min = Number(p?.deliveryMinDays || p?.pMinDays || 0) || 0;
+  const max = Number(p?.deliveryMaxDays || p?.pMaxDays || 0) || 0;
+  const eta = max ? `${min||1}–${max} kun` : (t.includes("cargo") ? "15–30 kun" : "Tez yetkazish");
+  return `
+    <div class="qvTrustItem"><i class="fa-solid fa-truck-fast"></i><span>Yetkazish</span><b>${eta}</b></div>
+    <div class="qvTrustItem"><i class="fa-solid fa-box"></i><span>Holati</span><b>${t.includes("cargo") ? "Keltirib beramiz" : "O‘zimizda"}</b></div>
+    <div class="qvTrustItem"><i class="fa-solid fa-weight-hanging"></i><span>Vazn</span><b>${weight ? `${weight} kg` : "—"}</b></div>`;
+}
+function omQVMetricHtml(p){
+  const type = String(p?.productType || p?.authType || "").trim();
+  const id = String(p?.id || p?._docId || "").trim();
+  const score = Number(p?.popularScore||0) || 0;
+  const arr=[];
+  if(type) arr.push(`<span><i class="fa-solid fa-certificate"></i>${escapeHtml(type.toUpperCase())}</span>`);
+  if(id) arr.push(`<span><i class="fa-solid fa-barcode"></i>${escapeHtml(id)}</span>`);
+  arr.push(`<span><i class="fa-solid fa-chart-line"></i>Ball: ${score}</span>`);
+  return arr.join("");
+}
+function omRenderQuickViewPro(){
+  const p = omQVProduct();
+  const byId=(id)=>document.getElementById(id);
+  const trail=byId("qvCategoryTrail"); if(trail) trail.innerHTML = p ? omQVCatTrailHtml(p) : "";
+  const catCard=byId("qvCategoryCard"); if(catCard){ catCard.innerHTML = p ? omQVCatCardHtml(p) : ""; catCard.style.display = p ? "" : "none"; }
+  const variant=byId("qvVariantBox"); if(variant){ variant.innerHTML = p ? omQVVariantHtml(p) : ""; }
+  const trust=byId("qvTrustGrid"); if(trust){ trust.innerHTML = p ? omQVTrustHtml(p) : ""; }
+  const metrics=byId("qvProMetrics"); if(metrics){ metrics.innerHTML = p ? omQVMetricHtml(p) : ""; metrics.style.display = p ? "" : "none"; }
+}
+
 // ---------- Image viewer (fullscreen gallery) ----------
 function renderViewer(){
   if(!els.imgViewer || !els.imgViewerImg || !els.imgThumbs) return;
@@ -2951,6 +3017,9 @@ function renderViewer(){
     els.qvTags.innerHTML = tagsArr.slice(0,12).map(t=>`<span class="qvTag">${escapeHtml(String(t))}</span>`).join("");
     els.qvTags.style.display = tagsArr.length ? "" : "none";
   }
+
+  // Premium quick-view category/product system
+  omRenderQuickViewPro();
 
   // Description
   if(els.imgViewerDesc) els.imgViewerDesc.textContent = viewer.desc || "";
@@ -2990,12 +3059,14 @@ function openImageViewer({productId, title, desc, pricing, rating, reviewsCount,
     reviewsCount: Number.isFinite(+reviewsCount) ? +reviewsCount : 0,
     tags: Array.isArray(tags) ? tags : [],
     badge: badge || "",
+    product: (products || []).find(x=>String(x.id)===String(productId)) || null,
     images: (images||[]).filter(Boolean),
     idx: startIndex || 0,
     onSelect: onSelect || null,
     imageOnly: !!imageOnly
   };
   if(els.imgViewerShell) els.imgViewerShell.classList.toggle("imageOnly", !!imageOnly);
+  try{ els.imgViewer?.classList.toggle("imageOnly", !!imageOnly); }catch(e){}
   showOverlay(els.imgViewer);
   renderViewer();
 
@@ -3034,6 +3105,7 @@ function closeImageViewer(){
   if(!els.imgViewer) return;
   viewer.open = false;
   if(els.imgViewerShell) els.imgViewerShell.classList.remove("imageOnly");
+  try{ els.imgViewer?.classList.remove("imageOnly"); }catch(e){}
   cleanupReviewSubscriptions();
   hideOverlay(els.imgViewer);
 }
