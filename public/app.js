@@ -517,6 +517,7 @@ const els = {
   checkoutClose: document.getElementById("checkoutClose"),
   checkoutSubmit: document.getElementById("checkoutSubmit"),
   checkoutCompactSummary: document.getElementById("checkoutCompactSummary"),
+  cartDeliverySummary: document.getElementById("cartDeliverySummary"),
   shipAddress: document.getElementById("shipAddress"),
   shipPhone: document.getElementById("shipPhone"),
   useProfilePhone: document.getElementById("useProfilePhone"),
@@ -1343,6 +1344,13 @@ async function omLoadDeliverySettings(){
     }
   }catch(_e){ /* Firestore qoidasi ruxsat bermasa default tariflar ishlaydi */ }
   try{ omRenderDeliveryEstimate(); }catch(_e){}
+  try{
+    const deliverySummary = omRenderCartDeliverySummary();
+    if(deliverySummary?.totalWithDeliveryUZS && els.cartTotalPage) els.cartTotalPage.textContent = moneyUZS(deliverySummary.totalWithDeliveryUZS);
+    if(deliverySummary?.totalWithDeliveryUZS && els.checkoutCompactSummary){
+      els.checkoutCompactSummary.innerHTML = `<span>${selectedCount} ta • ${omFormatKg(selectedWeightKg)} • yetkazish bilan</span><b>${moneyUZS(deliverySummary.totalWithDeliveryUZS)}</b>`;
+    }
+  }catch(_e){}
   return omDeliverySettings;
 }
 
@@ -1452,6 +1460,79 @@ function omQuoteLabel(q){
   if(!rec) return "Yetkazib berish";
   return rec.service === "courier" ? "Kuryer orqali yetkazish" : "UzPost orqali yetkazish";
 }
+
+function omBestSavedAddress(){
+  try{
+    const arr = omReadSavedAddresses();
+    return arr.find(a=>Number.isFinite(Number(a.lat)) && Number.isFinite(Number(a.lng))) || arr[0] || null;
+  }catch(_){ return null; }
+}
+function omLocationFromSavedAddress(a){
+  if(!a) return null;
+  const lat = Number(a.lat), lng = Number(a.lng);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return {
+    lat, lng,
+    accuracy: Number(a.accuracy || 0),
+    mapUrl: a.mapUrl || `https://maps.google.com/?q=${lat},${lng}`,
+    savedAddressId: a.id || "",
+    savedAddressTitle: omAddressTitle(a)
+  };
+}
+function omGetEffectiveDeliveryLocation(){
+  if(omDeliveryLocation && Number.isFinite(Number(omDeliveryLocation.lat)) && Number.isFinite(Number(omDeliveryLocation.lng))) return omDeliveryLocation;
+  return omLocationFromSavedAddress(omBestSavedAddress());
+}
+function omFreeDeliveryInfo(totalUZS, quote, weightKg){
+  const total = Number(totalUZS || 0);
+  const candidates = [];
+  const rec = quote?.recommended || null;
+  if(rec?.freeFromUZS) candidates.push({freeFromUZS:Number(rec.freeFromUZS), service:rec.label || "Yetkazish"});
+  try{
+    const uq = omUzPostQuote(total, weightKg || 0);
+    if(uq?.freeFromUZS) candidates.push({freeFromUZS:Number(uq.freeFromUZS), service:uq.label || "UzPost"});
+  }catch(_e){}
+  try{
+    for(const z of (omNormalizeDeliverySettings(omDeliverySettings).courier.zones || [])){
+      if(z.freeFromUZS) candidates.push({freeFromUZS:Number(z.freeFromUZS), service:"Kuryer"});
+    }
+  }catch(_e){}
+  const valid = candidates.filter(x=>Number.isFinite(x.freeFromUZS) && x.freeFromUZS > 0).sort((a,b)=>Math.max(0,a.freeFromUZS-total)-Math.max(0,b.freeFromUZS-total));
+  if(!valid.length) return null;
+  const best = valid[0];
+  return { ...best, remaining: Math.max(0, best.freeFromUZS - total), reached: total >= best.freeFromUZS };
+}
+function omRenderCartDeliverySummary(){
+  const el = els.cartDeliverySummary || document.getElementById("cartDeliverySummary");
+  if(!el) return;
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  if(!built || !built.ok){ el.innerHTML = ""; el.hidden = true; return; }
+  el.hidden = false;
+  const loc = omGetEffectiveDeliveryLocation();
+  const quote = omBuildDeliveryQuote(built.totalUZS, built.totalWeightKg || 0, loc);
+  const rec = quote.recommended || null;
+  const fee = Number(quote.deliveryFeeUZS || 0);
+  const totalWithDelivery = Number(quote.totalWithDeliveryUZS || built.totalUZS + fee);
+  const free = omFreeDeliveryInfo(built.totalUZS, quote, built.totalWeightKg || 0);
+  const locText = loc ? (loc.savedAddressTitle ? `Manzil: ${loc.savedAddressTitle}` : "Manzil: avto lokatsiya") : "Manzil yo‘q: narx manzil bilan aniq bo‘ladi";
+  const freeText = free ? (free.reached ? "Bepul yetkazish limiti bajarildi" : `Bepul yetkazishgacha ${moneyUZS(free.remaining)} qoldi`) : "Bepul yetkazish limiti yo‘q";
+  el.innerHTML = `
+    <div class="cartDeliveryHead"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yetkazib berish hisob-kitobi</span><button type="button" id="cartDeliveryChangeBtn">Manzil</button></div>
+    <div class="cartDeliveryGrid">
+      <div><span>Mahsulotlar</span><b>${moneyUZS(built.totalUZS)}</b></div>
+      <div><span>Yetkazish</span><b>${rec ? (fee ? moneyUZS(fee) : "Bepul") : "—"}</b></div>
+      <div><span>Jami</span><b>${moneyUZS(totalWithDelivery)}</b></div>
+    </div>
+    <div class="cartDeliveryFree ${free?.reached ? "ok" : ""}"><span>${freeText}</span><small>${rec ? `${rec.label} • ${rec.etaText || ""}` : locText}</small></div>
+  `;
+  document.getElementById("cartDeliveryChangeBtn")?.addEventListener("click", ()=>{
+    openCheckout();
+    const rb = document.querySelector('input[name="deliveryMethod"][value="delivery"]');
+    if(rb){ rb.checked = true; updateDeliveryMethodUI(); }
+  }, {once:true});
+  return { productsTotalUZS: built.totalUZS, deliveryFeeUZS: fee, totalWithDeliveryUZS: totalWithDelivery, quote };
+}
+
 function omRenderDeliveryEstimate(){
   const box = document.getElementById("deliveryEstimateBox");
   const content = document.getElementById("deliveryEstimateContent");
@@ -1471,12 +1552,22 @@ function omRenderDeliveryEstimate(){
   }
   const weightKg = Number(built.totalWeightKg || 0);
   if(!omDeliveryLocation){
+    const saved = omBestSavedAddress();
+    const loc = omLocationFromSavedAddress(saved);
+    if(loc){
+      omDeliveryLocation = loc;
+      const sel = document.getElementById("savedDeliveryAddressSelect");
+      if(sel && saved?.id) sel.value = String(saved.id);
+    }
+  }
+  if(!omDeliveryLocation){
+    const free = omFreeDeliveryInfo(built.totalUZS, null, weightKg);
     content.innerHTML = `
       <div class="omDeliveryCalcGrid">
         <div class="omDeliveryCalcCell"><div class="k">Tanlangan summa</div><div class="v">${moneyUZS(built.totalUZS)}</div></div>
         <div class="omDeliveryCalcCell"><div class="k">Umumiy vazn</div><div class="v">${omFormatKg(weightKg)}</div></div>
       </div>
-      <div class="omDeliveryWarn">Yetkazib berish narxini hisoblash uchun “Avto aniqlash” tugmasini bosing. Qo‘lda manzil kiritish o‘chirildi.</div>
+      <div class="omDeliveryWarn">Aniq narx uchun “Avto aniqlash”ni bosing. ${free ? (free.reached ? "Bepul yetkazish limiti bajarilgan bo‘lishi mumkin." : `Bepul yetkazishgacha taxminan ${moneyUZS(free.remaining)} qoldi.`) : ""}</div>
     `;
     omDeliveryQuote = null;
     return;
@@ -1489,6 +1580,8 @@ function omRenderDeliveryEstimate(){
     const free = o.isFree ? "Bepul" : moneyUZS(o.feeUZS);
     return `<div class="omDeliveryCalcCell"><div class="k">${o.label} • ${k}</div><div class="v">${free}</div></div>`;
   }).join("");
+  const freeInfo = omFreeDeliveryInfo(built.totalUZS, omDeliveryQuote, weightKg);
+  const freeText = freeInfo ? (freeInfo.reached ? "Bepul yetkazish limiti bajarildi." : `Bepul yetkazishgacha ${moneyUZS(freeInfo.remaining)} qoldi.`) : "Bepul limit yo‘q.";
   content.innerHTML = `
     <div class="omDeliveryCalcGrid">
       <div class="omDeliveryCalcCell"><div class="k">Do‘kondan masofa</div><div class="v">${dist == null ? "—" : dist.toFixed(1) + " km"}</div></div>
@@ -1497,7 +1590,7 @@ function omRenderDeliveryEstimate(){
       <div class="omDeliveryCalcCell"><div class="k">Yetkazish bilan</div><div class="v">${moneyUZS(omDeliveryQuote.totalWithDeliveryUZS)}</div></div>
       ${optHtml}
     </div>
-    <div class="omDeliveryRecommend">Tavsiya: ${rec ? rec.label : "Operator bilan kelishiladi"} — ${rec ? (rec.isFree ? "Bepul" : moneyUZS(rec.feeUZS)) : "—"}<small>${rec ? `${rec.etaText}. ${rec.freeFromUZS ? moneyUZS(rec.freeFromUZS) + " dan bepul limit." : "Bepul limit yo‘q."}` : "Manzilni aniqlang."}</small></div>
+    <div class="omDeliveryRecommend">Tavsiya: ${rec ? rec.label : "Operator bilan kelishiladi"} — ${rec ? (rec.isFree ? "Bepul" : moneyUZS(rec.feeUZS)) : "—"}<small>${rec ? `${rec.etaText}. ${freeText}` : "Manzilni aniqlang."}</small></div>
   `;
 }
 
@@ -4085,6 +4178,7 @@ function renderCartPage(){
     els.checkoutCompactSummary.innerHTML = `<span>${selectedCount} ta tanlangan • ${omFormatKg(selectedWeightKg)}</span><b>${moneyUZS(total)}</b>`;
   }
   try{ omRenderDeliveryEstimate(); }catch(_e){}
+    try{ omRenderCartDeliverySummary(); }catch(_e){}
 
   // select all checkbox state
   if(els.cartSelectAllPage){
@@ -4106,6 +4200,13 @@ function openCheckout(){
   if(!els.checkoutSheet) return;
   els.checkoutSheet.hidden = false;
   try{ els.checkoutSheet.classList.add("isOpen"); }catch(_e){}
+  try{
+    renderSavedAddressesUI();
+    const saved = omBestSavedAddress();
+    const sel = document.getElementById("savedDeliveryAddressSelect");
+    if(saved && sel && !sel.value) sel.value = String(saved.id || "");
+    if(getDeliveryMethod() === "delivery" && saved && !omDeliveryLocation) applySavedAddressToCheckout(saved.id);
+  }catch(_e){}
   try{ updateDeliveryMethodUI(); }catch(_e){}
 
   // Require completed profile before checkout
@@ -4152,6 +4253,7 @@ function updateDeliveryMethodUI(){
   const box = document.getElementById('deliveryAddressBox');
   if(box) box.hidden = method !== 'delivery';
   try{ omRenderDeliveryEstimate(); }catch(_e){}
+    try{ omRenderCartDeliverySummary(); }catch(_e){}
 }
 
 function setDeliveryLocationStatus(text, ok=false){
@@ -4159,6 +4261,31 @@ function setDeliveryLocationStatus(text, ok=false){
   if(!el) return;
   el.textContent = text;
   el.classList.toggle('ok', !!ok);
+}
+
+
+function omSaveDeliveryLocationOnce(loc, title="Asosiy manzil"){
+  try{
+    if(!loc || !Number.isFinite(Number(loc.lat)) || !Number.isFinite(Number(loc.lng))) return null;
+    const lat = Number(loc.lat), lng = Number(loc.lng);
+    const arr = omReadSavedAddresses();
+    const near = arr.find(a=>Math.abs(Number(a.lat)-lat)<0.00003 && Math.abs(Number(a.lng)-lng)<0.00003);
+    if(near) return near;
+    const item = {
+      id: "addr_" + Date.now(),
+      title,
+      address: loc.address || "Avto aniqlangan manzil",
+      lat, lng,
+      accuracy: Number(loc.accuracy || 0),
+      mapUrl: loc.mapUrl || `https://maps.google.com/?q=${lat},${lng}`,
+      createdAt: new Date().toISOString(),
+      source: "checkout"
+    };
+    arr.unshift(item);
+    omWriteSavedAddresses(arr.slice(0, 10));
+    renderSavedAddressesUI();
+    return item;
+  }catch(_e){ return null; }
 }
 
 async function detectDeliveryLocation(){
@@ -4190,12 +4317,21 @@ async function detectDeliveryLocation(){
       accuracy,
       mapUrl: `https://maps.google.com/?q=${lat},${lng}`
     };
+    const saved = omSaveDeliveryLocationOnce(omDeliveryLocation, "Asosiy manzil");
+    if(saved){
+      omDeliveryLocation.savedAddressId = saved.id;
+      omDeliveryLocation.savedAddressTitle = omAddressTitle(saved);
+      const sel = document.getElementById("savedDeliveryAddressSelect");
+      if(sel) sel.value = String(saved.id || "");
+    }
     setDeliveryLocationStatus(`Joylashuv olindi: ${lat.toFixed(6)}, ${lng.toFixed(6)}${accuracy ? ` • ±${accuracy} m` : ''}`, true);
     try{ omRenderDeliveryEstimate(); }catch(_e){}
-    toast('Joylashuv qo‘shildi.');
+    try{ omRenderCartDeliverySummary(); }catch(_e){}
+    toast(saved ? 'Manzil saqlandi va yetkazish hisoblandi.' : 'Joylashuv qo‘shildi.');
   }catch(e){
     omDeliveryLocation = null;
     try{ omRenderDeliveryEstimate(); }catch(_e){}
+    try{ omRenderCartDeliverySummary(); }catch(_e){}
     setDeliveryLocationStatus('Joylashuv olinmadi. Brauzer/telefon lokatsiyasiga ruxsat bering va qayta urinib ko‘ring.');
     toast('Joylashuv olinmadi. Lokatsiyaga ruxsat bering.');
   }finally{
@@ -4224,6 +4360,11 @@ function getCheckoutDeliveryInfo(){
     };
   }
   if(!omDeliveryLocation){
+    const saved = omBestSavedAddress();
+    const loc = omLocationFromSavedAddress(saved);
+    if(loc){ omDeliveryLocation = loc; }
+  }
+  if(!omDeliveryLocation){
     return { ok:false, reason:'Yetkazib berish uchun “Avto aniqlash” tugmasini bosing va lokatsiyaga ruxsat bering.' };
   }
   if(!built || !built.ok){
@@ -4235,7 +4376,8 @@ function getCheckoutDeliveryInfo(){
   const rec = quote.recommended || null;
   const mapUrl = omDeliveryLocation?.mapUrl || '';
   const coordText = omDeliveryLocation ? `${omDeliveryLocation.lat.toFixed(6)}, ${omDeliveryLocation.lng.toFixed(6)}` : '';
-  const addressText = coordText ? `Avto lokatsiya: ${coordText}` : '';
+  const savedTitle = omDeliveryLocation?.savedAddressTitle || "";
+  const addressText = coordText ? `${savedTitle ? savedTitle + ": " : "Avto lokatsiya: "}${coordText}` : (savedTitle || "");
   return {
     ok: true,
     data: {
@@ -4346,6 +4488,7 @@ function renderSavedAddressesUI(){
       return `<option value="${escapeHtml(id)}">${escapeHtml(txt)}</option>`;
     }).join("");
     if(current && arr.some(a=>String(a.id)===current)) sel.value = current;
+    else if(!current && arr[0]?.id) sel.value = String(arr[0].id);
   }
 }
 
@@ -4377,6 +4520,7 @@ function applySavedAddressToCheckout(id){
     setDeliveryLocationStatus(`Saqlangan manzil tanlandi: ${omAddressTitle(a)}`, true);
   }
   try{ omRenderDeliveryEstimate(); }catch(_e){}
+    try{ omRenderCartDeliverySummary(); }catch(_e){}
 }
 
 async function saveCurrentAddressFromProfile(){
@@ -4449,6 +4593,7 @@ function initCheckoutDeliveryUI(){
     inp.addEventListener('change', updateDeliveryMethodUI);
   });
   document.getElementById('deliveryLocateBtn')?.addEventListener('click', detectDeliveryLocation);
+  document.getElementById('deliveryUseNewLocation')?.addEventListener('click', detectDeliveryLocation);
   updateDeliveryMethodUI();
   try{ renderSavedAddressesUI(); }catch(_){}
 }
@@ -4693,6 +4838,9 @@ async function createOrderFromCheckout(){
       try{ tgNotifyOrderCreated(payload.orderId); }catch(_e){}
     }
 
+    if(payload.shipping?.method === "delivery" && payload.shipping?.lat && payload.shipping?.lng){
+      try{ omSaveDeliveryLocationOnce(payload.shipping, payload.shipping.savedAddressTitle || "Asosiy manzil"); }catch(_e){}
+    }
     omRecordPurchaseMetrics(built.items);
     removePurchasedFromCart(built.sel);
     updateBadges();

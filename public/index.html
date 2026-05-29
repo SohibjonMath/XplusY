@@ -20,14 +20,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260529_v34_min_checkout_full_tag_text" />
+  <link rel="stylesheet" href="./styles.css?v=20260529_v35_smart_checkout" />
 
   <meta name="theme-color" content="#dc2626" />
 
 
 
 
-<link rel="stylesheet" href="/theme-redwhite.css?v=20260529_v34_min_checkout_full_tag_text">
+<link rel="stylesheet" href="/theme-redwhite.css?v=20260529_v35_smart_checkout">
   <link rel="stylesheet" href="./i18n.css?v=20260529_mobile_lang_fix" />
 </head>
 <body class="om-view-home">
@@ -252,6 +252,7 @@
         <div class="total" id="cartTotalPage">0 so‘m</div>
       </div>
       <div class="cartSummaryNote" id="cartSummaryNote">Buyurtma berishda tanlangan mahsulotlar hisoblanadi.</div>
+      <div class="cartDeliverySummary" id="cartDeliverySummary"></div>
       <div class="panelActions">
         <button class="btn primary" id="orderBtnPage" type="button"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Buyurtma berish</button>
       </div>
@@ -259,7 +260,7 @@
         <div class="checkoutHead">
           <div>
             <div class="checkoutTitle">Buyurtmani rasmiylashtirish</div>
-            <div class="checkoutSub">Minimal shakl: to‘lov turini tanlang, kerak bo‘lsa yetkazishni yoqing va tasdiqlang.</div>
+            <div class="checkoutSub">Manzil saqlanadi, keyingi buyurtmada avtomatik chiqadi. Kerak bo‘lsa o‘zgartirasiz.</div>
           </div>
           <button class="iconBtn checkoutCloseBtn" id="checkoutClose" type="button" aria-label="Yopish">✕</button>
         </div>
@@ -305,6 +306,16 @@
             </div>
 
             <div class="deliveryAddressBox" id="deliveryAddressBox" hidden>
+              <div class="savedAddressCheckout" id="savedAddressCheckoutWrap" hidden>
+                <div class="savedAddressCheckoutTop">
+                  <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                  <span>Saqlangan manzil</span>
+                </div>
+                <div class="savedAddressCheckoutRow">
+                  <select id="savedDeliveryAddressSelect"></select>
+                  <button class="savedAddressChangeBtn" id="deliveryUseNewLocation" type="button">O‘zgartirish</button>
+                </div>
+              </div>
               <button class="locateBtn" id="deliveryLocateBtn" type="button">
                 <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
                 <span>Avto aniqlash</span>
@@ -609,7 +620,7 @@
   <script type="module" src="./cardpay-config.js"></script>
   <script src="./telegram-config.js"></script>
 <script src="./i18n.js?v=20260529_mobile_lang_fix"></script>
-<script type="module" src="./app.js?v=20260529_v34_min_checkout_full_tag_text"></script>
+<script type="module" src="./app.js?v=20260529_v35_smart_checkout"></script>
 
   
 
