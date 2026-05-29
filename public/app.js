@@ -3258,7 +3258,7 @@ function openImageViewer({productId, title, desc, pricing, rating, reviewsCount,
 
   // Make scroll stable across devices (some browsers need an explicit reset)
   try{
-    const panel = els.imgViewer.querySelector('.qvPanel');
+    const panel = els.imgViewer.querySelector('.qvProductPane') || els.imgViewer.querySelector('.qvPanel');
     if(panel){
       panel.scrollTop = 0;
       panel.style.webkitOverflowScrolling = 'touch';
