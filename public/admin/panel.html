@@ -2619,6 +2619,79 @@ button[data-x] i{
 }
 </style>
 
+
+<style id="orzumall-v11-product-modal-button-visibility-fix">
+/* v11: product modal button visibility + no sticky delivery card */
+#productModal .pm-sticky-card{position:relative!important;top:auto!important}
+#productModal .pm-section-head{flex-wrap:wrap}
+#productModal .pm-section-head .btn,
+#productModal .dynamic-list .btn,
+#productModal .color-image-builder .btn,
+#productModal #variantsContainer .btn,
+#productModal .pm-inline-tools .btn,
+#productModal .pm-footer-actions .btn,
+#productModal .list-item .btn,
+#productModal button[data-x]{
+  opacity:1!important;
+  visibility:visible!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  flex:0 0 auto!important;
+}
+#productModal .btn-light{
+  color:#334155!important;
+  background:#fff!important;
+  border:1px solid #dbe4f0!important;
+  box-shadow:0 8px 18px rgba(15,23,42,.06)!important;
+}
+#productModal .btn-light:hover{
+  background:#f8fafc!important;
+  border-color:#cbd5e1!important;
+}
+#productModal .btn-light i,
+#productModal .btn-primary i,
+#productModal .btn-danger i,
+#productModal .btn-success i{
+  color:inherit!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+#productModal #addColorBtn,
+#productModal #addSizeBtn,
+#productModal #addImageBtn,
+#productModal #closeModalBtn,
+#productModal .rm,
+#productModal .up,
+#productModal .ciRemove,
+#productModal button[data-x]{
+  width:40px!important;
+  min-width:40px!important;
+  height:40px!important;
+  min-height:40px!important;
+  padding:0!important;
+  border-radius:13px!important;
+}
+#productModal .ciUpload,
+#productModal .ciUseMain,
+#productModal #syncColorImagesBtn,
+#productModal #addColorImageBtn,
+#productModal #addVariantBtn,
+#productModal #productModalCancelBtn,
+#productModal #saveProductBtn{
+  min-height:40px!important;
+}
+#productModal .dynamic-list,
+#productModal .color-image-builder,
+#productModal #variantsContainer{overflow:visible!important}
+#productModal .list-item{flex-wrap:wrap!important}
+#productModal .list-item > *{min-width:0}
+@media (max-width:760px){
+  #productModal .pm-section-head .btn{width:auto!important;min-width:40px!important;padding:0 12px!important}
+}
+</style>
+
 </head>
 <body style="display:none;">
   <div class="container">
