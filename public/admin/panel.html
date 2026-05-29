@@ -824,6 +824,22 @@
               </div>
             </div>
             <div class="form-row"><div class="form-group"><label>Tavsif</label><textarea id="description" class="form-control" rows="3"></textarea></div></div>
+
+            <div class="form-section" style="border:1px solid rgba(220,38,38,.14);background:linear-gradient(180deg,#fff,#fff7f7);box-shadow:none;margin-top:10px">
+              <h4><i class="fas fa-language"></i> RU / EN tarjima</h4>
+              <div class="form-row">
+                <div class="form-group"><label>Nomi RU</label><input id="name_ru" class="form-control" placeholder="Ruscha nomi"></div>
+                <div class="form-group"><label>Nomi EN</label><input id="name_en" class="form-control" placeholder="English product name"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Tavsif RU</label><textarea id="description_ru" class="form-control" rows="3" placeholder="Ruscha tavsif"></textarea></div>
+                <div class="form-group"><label>Tavsif EN</label><textarea id="description_en" class="form-control" rows="3" placeholder="English description"></textarea></div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <button type="button" class="btn btn-primary btn-sm" id="autoTranslateBtn"><i class="fas fa-wand-magic-sparkles"></i> UZ dan RU/EN yaratish</button>
+                <small class="hint"><i class="fas fa-circle-info"></i> Avval o‘zbekcha nom va tavsifni yozing, keyin bosing. API ishlamasa maydonlarni qo‘lda to‘ldirish mumkin.</small>
+              </div>
+            </div>
           
             <div class="form-row">
               <div class="form-group">
@@ -1621,6 +1637,7 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
       addColor(); addSize(); addImage();
       $("imagesByColorInput").value="";
       if(document.getElementById("productType")) document.getElementById("productType").value="";
+      ["name_ru","name_en","description_ru","description_en"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
       if(document.getElementById("pType")) document.getElementById("pType").value="stock";
       if(document.getElementById("pMinDays")) document.getElementById("pMinDays").value="";
       if(document.getElementById("pMaxDays")) document.getElementById("pMaxDays").value="";
@@ -1812,6 +1829,56 @@ ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light 
       return await genSeqId(prefix);
     }
 
+
+    async function translateUzTextsForAdmin(texts, target){
+      const clean = (texts||[]).map(v=>String(v||"").trim());
+      const nonEmpty = clean.map((text, index)=>({text,index})).filter(x=>x.text);
+      const out = clean.map(()=>"");
+      if(!nonEmpty.length) return out;
+      const res = await fetch("/.netlify/functions/deepseek-translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, texts: nonEmpty.map(x=>x.text) })
+      });
+      const raw = await res.text();
+      let data = {};
+      try{ data = JSON.parse(raw); }catch(_e){}
+      if(!res.ok){
+        const msg = String(data?.details || data?.error || raw || ("HTTP " + res.status));
+        if(res.status === 402) throw new Error("DeepSeek hisobida balans/to‘lov muammosi bor: 402 Payment Required");
+        if(res.status === 500 && msg.includes("DEEPSEEK_API_KEY")) throw new Error("Netlify’da DEEPSEEK_API_KEY sozlanmagan");
+        throw new Error(msg.slice(0, 240));
+      }
+      const tr = Array.isArray(data.translations) ? data.translations : [];
+      nonEmpty.forEach((x,i)=>{ out[x.index] = String(tr[i] || x.text).trim(); });
+      return out;
+    }
+
+    async function autoTranslateProductFields(){
+      const btn = document.getElementById("autoTranslateBtn");
+      const uzName = ($("name")?.value || "").trim();
+      const uzDesc = ($("description")?.value || "").trim();
+      if(!uzName && !uzDesc) return toast("Avval o‘zbekcha nom yoki tavsif yozing", "error");
+      const oldHtml = btn ? btn.innerHTML : "";
+      try{
+        if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tarjima qilinmoqda...'; }
+        const [ru, en] = await Promise.all([
+          translateUzTextsForAdmin([uzName, uzDesc], "ru"),
+          translateUzTextsForAdmin([uzName, uzDesc], "en")
+        ]);
+        if(document.getElementById("name_ru") && ru[0]) document.getElementById("name_ru").value = ru[0];
+        if(document.getElementById("description_ru") && ru[1]) document.getElementById("description_ru").value = ru[1];
+        if(document.getElementById("name_en") && en[0]) document.getElementById("name_en").value = en[0];
+        if(document.getElementById("description_en") && en[1]) document.getElementById("description_en").value = en[1];
+        toast("RU va EN tarjimalar tayyor");
+      }catch(e){
+        console.error(e);
+        toast("Tarjima xatosi: " + (e.message || e), "error");
+      }finally{
+        if(btn){ btn.disabled = false; btn.innerHTML = oldHtml || '<i class="fas fa-wand-magic-sparkles"></i> UZ dan RU/EN yaratish'; }
+      }
+    }
+
     async function saveProduct(){
       const user=auth.currentUser;
       const isA = isAdmin(user);
@@ -1855,8 +1922,12 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
 
       const data={
         name,
+        name_ru: ($("name_ru")?.value || "").trim(),
+        name_en: ($("name_en")?.value || "").trim(),
 
         description:$("description").value||"",
+        description_ru: ($("description_ru")?.value || "").trim(),
+        description_en: ($("description_en")?.value || "").trim(),
         youtubeUrl:$("youtubeUrl").value||"",
         price:Number(price),
         oldPrice:Number($("oldPrice").value||0),
@@ -1923,6 +1994,10 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
       $("popularScore").value=Number(p.popularScore||0);
       $("createdAt").value=p.createdAt||nowISO();
       $("description").value=p.description||"";
+      if(document.getElementById("name_ru")) document.getElementById("name_ru").value = p.name_ru || p.nameRu || p.ru?.name || p.locales?.ru?.name || "";
+      if(document.getElementById("name_en")) document.getElementById("name_en").value = p.name_en || p.nameEn || p.en?.name || p.locales?.en?.name || "";
+      if(document.getElementById("description_ru")) document.getElementById("description_ru").value = p.description_ru || p.descriptionRu || p.desc_ru || p.ru?.description || p.locales?.ru?.description || "";
+      if(document.getElementById("description_en")) document.getElementById("description_en").value = p.description_en || p.descriptionEn || p.desc_en || p.en?.description || p.locales?.en?.description || "";
       $("youtubeUrl").value=p.youtubeUrl||p.videoUrl||"";
 $("currency").value=p.currency||"UZS";
       if(document.getElementById("productType")) document.getElementById("productType").value = (p.productType||"");
@@ -2125,6 +2200,7 @@ $("currency").value=p.currency||"UZS";
       document.querySelectorAll(".nav-link[data-view]").forEach(a=>a.addEventListener("click",(e)=>{e.preventDefault(); setView(a.dataset.view);}));  
       $("addProductBtn").addEventListener("click",()=>{ resetForm(); openModal("productModal"); });
       $("saveProductBtn").addEventListener("click",(e)=>{ e.preventDefault(); e.stopPropagation(); saveProduct(); });
+      $("autoTranslateBtn")?.addEventListener("click",(e)=>{ e.preventDefault(); e.stopPropagation(); autoTranslateProductFields(); });
       $("closeModalBtn").addEventListener("click",()=>{ closeModal("productModal"); resetForm(); });
 $("viewJsonBtn").addEventListener("click",viewJson);
       $("closeJsonModalBtn").addEventListener("click",()=>closeModal("jsonModal"));
