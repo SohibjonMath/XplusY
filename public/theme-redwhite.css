@@ -6383,3 +6383,106 @@ body select{
   .qvProMetrics span small{display:none!important;}.qvProMetrics span{gap:4px!important;}
   .imgViewer .qvTag{max-width:96px!important;}
 }
+
+
+/* v37: header balance plus button redesign - centered premium circle */
+.balGroup{
+  align-items:center!important;
+  gap:8px!important;
+}
+#balTopupQuick.balPlus,
+.balPlus#balTopupQuick,
+.balPlus{
+  width:42px!important;
+  min-width:42px!important;
+  max-width:42px!important;
+  height:42px!important;
+  min-height:42px!important;
+  max-height:42px!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:999px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  vertical-align:middle!important;
+  position:relative!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  border:1px solid rgba(255,255,255,.28)!important;
+  outline:1px solid rgba(220,38,38,.20)!important;
+  outline-offset:0!important;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255,255,255,.30) 0 16%, transparent 38%),
+    linear-gradient(145deg,#351426 0%, #8f1422 48%, #dc2626 100%)!important;
+  box-shadow:
+    0 14px 28px rgba(220,38,38,.22),
+    0 5px 12px rgba(17,24,39,.12),
+    inset 0 1px 0 rgba(255,255,255,.26)!important;
+}
+#balTopupQuick.balPlus::after,
+.balPlus#balTopupQuick::after,
+.balPlus::after{
+  content:""!important;
+  position:absolute!important;
+  inset:4px!important;
+  width:auto!important;
+  height:auto!important;
+  border-radius:999px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  transform:none!important;
+  left:4px!important;
+  right:4px!important;
+  top:4px!important;
+  bottom:4px!important;
+  pointer-events:none!important;
+  box-sizing:border-box!important;
+}
+#balTopupQuick.balPlus::before,
+.balPlus#balTopupQuick::before,
+.balPlus::before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  border-radius:inherit!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.18),transparent 46%)!important;
+  pointer-events:none!important;
+}
+#balTopupQuick.balPlus i,
+.balPlus#balTopupQuick i,
+.balPlus i{
+  position:relative!important;
+  z-index:2!important;
+  display:block!important;
+  width:18px!important;
+  height:18px!important;
+  line-height:18px!important;
+  text-align:center!important;
+  margin:0!important;
+  padding:0!important;
+  color:#fff!important;
+  font-size:17px!important;
+  font-weight:900!important;
+  transform:none!important;
+}
+#balTopupQuick.balPlus:hover,
+.balPlus#balTopupQuick:hover,
+.balPlus:hover{
+  transform:translateY(-1px)!important;
+  box-shadow:
+    0 18px 34px rgba(220,38,38,.28),
+    0 8px 18px rgba(17,24,39,.13),
+    inset 0 1px 0 rgba(255,255,255,.28)!important;
+}
+#balTopupQuick.balPlus:active,
+.balPlus#balTopupQuick:active,
+.balPlus:active{
+  transform:translateY(0) scale(.98)!important;
+}
+@media(max-width:640px){
+  #balTopupQuick.balPlus,.balPlus#balTopupQuick,.balPlus{
+    width:40px!important;min-width:40px!important;max-width:40px!important;
+    height:40px!important;min-height:40px!important;max-height:40px!important;
+  }
+  #balTopupQuick.balPlus i,.balPlus#balTopupQuick i,.balPlus i{font-size:16px!important;}
+}
