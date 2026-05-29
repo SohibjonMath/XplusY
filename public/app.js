@@ -3136,12 +3136,12 @@ function omQVMetricHtml(p){
   const id = String(p?.id || p?._docId || "").trim();
   const m = omGetProductMetrics(p);
   const arr=[];
-  if(type) arr.push(`<span><i class="fa-solid fa-certificate"></i>${escapeHtml(type.toUpperCase())}</span>`);
-  if(id) arr.push(`<span><i class="fa-solid fa-barcode"></i>${escapeHtml(id)}</span>`);
+  if(type) arr.push(`<span class="qvMetricType"><i class="fa-solid fa-certificate"></i><b>${escapeHtml(type.toUpperCase())}</b><small>turi</small></span>`);
+  if(id) arr.push(`<span class="qvMetricId"><i class="fa-solid fa-barcode"></i><b>${escapeHtml(id)}</b><small>ID</small></span>`);
   arr.push(`<span class="qvMetricViews"><i class="fa-regular fa-eye"></i><b>${omCount(m.views||0)}</b><small>ko‘rish</small></span>`);
-  arr.push(`<span><i class="fa-solid fa-cart-shopping"></i><b>${omCount(m.cartAdds||0)}</b><small>savat</small></span>`);
-  arr.push(`<span><i class="fa-solid fa-heart"></i><b>${omCount(m.favoriteAdds||0)}</b><small>sevimli</small></span>`);
-  arr.push(`<span><i class="fa-solid fa-bag-shopping"></i><b>${omCount(m.purchases||0)}</b><small>sotuv</small></span>`);
+  arr.push(`<span class="qvMetricCart"><i class="fa-solid fa-cart-shopping"></i><b>${omCount(m.cartAdds||0)}</b><small>savat</small></span>`);
+  arr.push(`<span class="qvMetricFav"><i class="fa-solid fa-heart"></i><b>${omCount(m.favoriteAdds||0)}</b><small>sevimli</small></span>`);
+  arr.push(`<span class="qvMetricBuy"><i class="fa-solid fa-bag-shopping"></i><b>${omCount(m.purchases||0)}</b><small>sotuv</small></span>`);
   arr.push(`<span class="qvMetricScore"><i class="fa-solid fa-fire"></i><b>${omCount(m.score||0)}</b><small>ball</small></span>`);
   return arr.join("");
 }
