@@ -1485,22 +1485,44 @@ function omGetEffectiveDeliveryLocation(){
 }
 function omFreeDeliveryInfo(totalUZS, quote, weightKg){
   const total = Number(totalUZS || 0);
-  const candidates = [];
+  const make = (q)=>{
+    if(!q || !Number.isFinite(Number(q.freeFromUZS)) || Number(q.freeFromUZS) <= 0) return null;
+    const limit = Number(q.freeFromUZS);
+    return {
+      freeFromUZS: limit,
+      service: q.label || "Yetkazish",
+      source: q.service || "delivery",
+      distanceKm: Number.isFinite(Number(q.distanceKm)) ? Number(q.distanceKm) : null,
+      billedKm: q.billedKm || null,
+      weightKg: Number.isFinite(Number(q.weightKg)) ? Number(q.weightKg) : null,
+      billedKg: q.billedKg || null,
+      remaining: Math.max(0, limit - total),
+      reached: total >= limit
+    };
+  };
+
+  // Muhim: bepul yetkazish limiti faqat real tavsiya qilingan xizmat bo‘yicha olinadi.
+  // Masalan mijoz 421 km uzoqda bo‘lsa, 0–3 km kuryer zonasi (99 000 so‘m) hech qachon ishlatilmasin.
   const rec = quote?.recommended || null;
-  if(rec?.freeFromUZS) candidates.push({freeFromUZS:Number(rec.freeFromUZS), service:rec.label || "Yetkazish"});
+  const fromRecommended = make(rec);
+  if(fromRecommended) return fromRecommended;
+
+  // Agar quote bor, lekin recommended limit bermagan bo‘lsa, faqat mavjud real optionlardan qaraymiz.
+  if(quote && Array.isArray(quote.options) && quote.options.length){
+    const valid = quote.options.map(make).filter(Boolean);
+    if(valid.length){
+      valid.sort((a,b)=>a.remaining-b.remaining);
+      return valid[0];
+    }
+    return null;
+  }
+
+  // Manzil hali yo‘q bo‘lsa, faqat UzPost vazn qoidasi bo‘yicha taxminiy limit ko‘rsatiladi.
+  // Kuryer zonalarini manzilsiz aralashtirmaymiz.
   try{
     const uq = omUzPostQuote(total, weightKg || 0);
-    if(uq?.freeFromUZS) candidates.push({freeFromUZS:Number(uq.freeFromUZS), service:uq.label || "UzPost"});
-  }catch(_e){}
-  try{
-    for(const z of (omNormalizeDeliverySettings(omDeliverySettings).courier.zones || [])){
-      if(z.freeFromUZS) candidates.push({freeFromUZS:Number(z.freeFromUZS), service:"Kuryer"});
-    }
-  }catch(_e){}
-  const valid = candidates.filter(x=>Number.isFinite(x.freeFromUZS) && x.freeFromUZS > 0).sort((a,b)=>Math.max(0,a.freeFromUZS-total)-Math.max(0,b.freeFromUZS-total));
-  if(!valid.length) return null;
-  const best = valid[0];
-  return { ...best, remaining: Math.max(0, best.freeFromUZS - total), reached: total >= best.freeFromUZS };
+    return make(uq);
+  }catch(_e){ return null; }
 }
 function omRenderCartDeliverySummary(){
   const el = els.cartDeliverySummary || document.getElementById("cartDeliverySummary");
@@ -1515,7 +1537,8 @@ function omRenderCartDeliverySummary(){
   const totalWithDelivery = Number(quote.totalWithDeliveryUZS || built.totalUZS + fee);
   const free = omFreeDeliveryInfo(built.totalUZS, quote, built.totalWeightKg || 0);
   const locText = loc ? (loc.savedAddressTitle ? `Manzil: ${loc.savedAddressTitle}` : "Manzil: avto lokatsiya") : "Manzil yo‘q: narx manzil bilan aniq bo‘ladi";
-  const freeText = free ? (free.reached ? "Bepul yetkazish limiti bajarildi" : `Bepul yetkazishgacha ${moneyUZS(free.remaining)} qoldi`) : "Bepul yetkazish limiti yo‘q";
+  const freeDetail = free ? (free.source === "courier" && free.distanceKm != null ? ` (${Number(free.distanceKm).toFixed(1)} km zona)` : (free.source === "uzpost" ? ` (${free.billedKg || 1} kg UzPost)` : "")) : "";
+  const freeText = free ? (free.reached ? `${free.service} bepul yetkazish limiti bajarildi${freeDetail}` : `${free.service} bepul yetkazishgacha ${moneyUZS(free.remaining)} qoldi${freeDetail}`) : "Bepul yetkazish limiti yo‘q";
   el.innerHTML = `
     <div class="cartDeliveryHead"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yetkazib berish hisob-kitobi</span><button type="button" id="cartDeliveryChangeBtn">Manzil</button></div>
     <div class="cartDeliveryGrid">
@@ -1567,7 +1590,7 @@ function omRenderDeliveryEstimate(){
         <div class="omDeliveryCalcCell"><div class="k">Tanlangan summa</div><div class="v">${moneyUZS(built.totalUZS)}</div></div>
         <div class="omDeliveryCalcCell"><div class="k">Umumiy vazn</div><div class="v">${omFormatKg(weightKg)}</div></div>
       </div>
-      <div class="omDeliveryWarn">Aniq narx uchun “Avto aniqlash”ni bosing. ${free ? (free.reached ? "Bepul yetkazish limiti bajarilgan bo‘lishi mumkin." : `Bepul yetkazishgacha taxminan ${moneyUZS(free.remaining)} qoldi.`) : ""}</div>
+      <div class="omDeliveryWarn">Aniq kuryer masofasi uchun “Avto aniqlash”ni bosing. ${free ? (free.reached ? `${free.service} bepul yetkazish limiti taxminan bajarilgan.` : `${free.service} bo‘yicha bepul yetkazishgacha taxminan ${moneyUZS(free.remaining)} qoldi.`) : ""}</div>
     `;
     omDeliveryQuote = null;
     return;
@@ -1581,7 +1604,8 @@ function omRenderDeliveryEstimate(){
     return `<div class="omDeliveryCalcCell"><div class="k">${o.label} • ${k}</div><div class="v">${free}</div></div>`;
   }).join("");
   const freeInfo = omFreeDeliveryInfo(built.totalUZS, omDeliveryQuote, weightKg);
-  const freeText = freeInfo ? (freeInfo.reached ? "Bepul yetkazish limiti bajarildi." : `Bepul yetkazishgacha ${moneyUZS(freeInfo.remaining)} qoldi.`) : "Bepul limit yo‘q.";
+  const freeDetail = freeInfo ? (freeInfo.source === "courier" && freeInfo.distanceKm != null ? ` (${Number(freeInfo.distanceKm).toFixed(1)} km zona)` : (freeInfo.source === "uzpost" ? ` (${freeInfo.billedKg || 1} kg UzPost)` : "")) : "";
+  const freeText = freeInfo ? (freeInfo.reached ? `${freeInfo.service} bepul yetkazish limiti bajarildi${freeDetail}.` : `${freeInfo.service} bepul yetkazishgacha ${moneyUZS(freeInfo.remaining)} qoldi${freeDetail}.`) : "Bepul limit yo‘q.";
   content.innerHTML = `
     <div class="omDeliveryCalcGrid">
       <div class="omDeliveryCalcCell"><div class="k">Do‘kondan masofa</div><div class="v">${dist == null ? "—" : dist.toFixed(1) + " km"}</div></div>
