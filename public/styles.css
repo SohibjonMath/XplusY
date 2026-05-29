@@ -7722,3 +7722,75 @@ body{
     line-height:10px!important;
   }
 }
+
+
+/* v34 minimal professional checkout */
+.panelSecondaryActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.panelSecondaryActions .btn{height:38px!important;font-size:12px!important;font-weight:800!important;border-radius:12px!important;box-shadow:none!important}
+.checkoutInline{
+  margin-top:14px!important;
+  border-radius:20px!important;
+  border:1px solid #eceef3!important;
+  background:#ffffff!important;
+  box-shadow:0 10px 32px rgba(15,23,42,.06)!important;
+}
+.checkoutInline.isOpen{animation:checkoutFadeIn .18s ease}
+@keyframes checkoutFadeIn{from{opacity:.0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.checkoutHead{align-items:flex-start!important;gap:10px!important}
+.checkoutTitle{font-size:16px!important;font-weight:900!important;color:#111827!important}
+.checkoutSub{margin-top:4px!important;font-size:12px!important;line-height:1.45!important;color:#6b7280!important;max-width:58ch}
+.checkoutCloseBtn{width:32px!important;height:32px!important;min-width:32px!important;border-radius:10px!important;color:#6b7280!important}
+.checkoutCompactSummary{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-radius:16px;border:1px solid #eceef3;background:linear-gradient(180deg,#fff,#fafafa);
+}
+.checkoutCompactSummary span{font-size:12px;font-weight:700;color:#6b7280}
+.checkoutCompactSummary b{font-size:15px;font-weight:900;color:#111827}
+.checkoutBody{gap:10px!important}
+.checkoutBody .payType,
+.checkoutBody .deliveryTypeBox{
+  margin:0!important;
+  border-radius:16px!important;
+  border:1px solid #eceef3!important;
+  background:#fcfcfd!important;
+  box-shadow:none!important;
+}
+.checkoutBody .payTitle{font-size:13px!important;font-weight:900!important;color:#111827!important;margin-bottom:8px!important}
+.checkoutBody .payType{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:8px!important;
+  padding:12px!important;
+}
+.checkoutBody .payType .payTitle,
+.checkoutBody .payType #payRuleNote{grid-column:1 / -1}
+.checkoutBody .radio{
+  position:relative;
+  min-height:56px!important;
+  align-items:flex-start!important;
+  padding:12px!important;
+  border:1px solid #e7eaf1!important;
+  border-radius:14px!important;
+  background:#fff!important;
+}
+.checkoutBody .radio input{margin-top:2px}
+.checkoutBody .radio span{font-size:12.5px!important;line-height:1.35!important;font-weight:800!important;color:#111827!important}
+.checkoutBody .radio:has(input:checked){border-color:#111827!important;background:#f8fafc!important;box-shadow:0 0 0 2px rgba(17,24,39,.04) inset!important}
+.deliveryTypeBox{padding:12px!important}
+.deliveryTypeGrid{margin-top:8px!important}
+.deliveryAddressBox{padding:12px!important;border-radius:14px!important;background:#fff!important;border:1px dashed #e5e7eb!important}
+.deliveryAutoOnlyNote{font-size:11px!important;line-height:1.45!important;color:#6b7280!important}
+.locateBtn{min-height:44px!important;border-radius:14px!important;font-weight:900!important}
+#checkoutSubmit{width:100%!important;height:46px!important;border-radius:16px!important;font-weight:900!important;box-shadow:0 14px 32px rgba(220,38,38,.16)!important}
+#view-cart .panelBottom{padding:12px!important}
+#view-cart .panelActions{margin-top:0!important}
+#view-cart #orderBtnPage{height:48px!important}
+@media (max-width:640px){
+  .panelSecondaryActions{grid-template-columns:1fr 1fr}
+  .checkoutBody .payType{grid-template-columns:1fr!important}
+  .checkoutHead{padding:12px!important}
+  .checkoutBody{padding:12px!important}
+  .checkoutCompactSummary{padding:11px 12px!important}
+  .checkoutCompactSummary b{font-size:14px!important}
+  .checkoutBody .radio{min-height:50px!important;padding:11px!important}
+}

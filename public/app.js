@@ -516,6 +516,7 @@ const els = {
   checkoutSheet: document.getElementById("checkoutSheet"),
   checkoutClose: document.getElementById("checkoutClose"),
   checkoutSubmit: document.getElementById("checkoutSubmit"),
+  checkoutCompactSummary: document.getElementById("checkoutCompactSummary"),
   shipAddress: document.getElementById("shipAddress"),
   shipPhone: document.getElementById("shipPhone"),
   useProfilePhone: document.getElementById("useProfilePhone"),
@@ -4080,6 +4081,9 @@ function renderCartPage(){
   if(els.cartTotalPage) els.cartTotalPage.textContent = moneyUZS(total);
   if(selectedInfoEl) selectedInfoEl.textContent = `${selectedCount} ta tanlangan`;
   if(summaryNoteEl) summaryNoteEl.textContent = list.length ? `Savatchada ${list.length} ta mahsulot bor. Tanlangan vazn: ${omFormatKg(selectedWeightKg)}.` : "Savatcha bo‘sh.";
+  if(els.checkoutCompactSummary){
+    els.checkoutCompactSummary.innerHTML = `<span>${selectedCount} ta tanlangan • ${omFormatKg(selectedWeightKg)}</span><b>${moneyUZS(total)}</b>`;
+  }
   try{ omRenderDeliveryEstimate(); }catch(_e){}
 
   // select all checkbox state
@@ -4101,6 +4105,7 @@ function renderCartPage(){
 function openCheckout(){
   if(!els.checkoutSheet) return;
   els.checkoutSheet.hidden = false;
+  try{ els.checkoutSheet.classList.add("isOpen"); }catch(_e){}
   try{ updateDeliveryMethodUI(); }catch(_e){}
 
   // Require completed profile before checkout
@@ -4122,6 +4127,7 @@ function openCheckout(){
 
 function closeCheckout(){
   if(!els.checkoutSheet) return;
+  try{ els.checkoutSheet.classList.remove("isOpen"); }catch(_e){}
   els.checkoutSheet.hidden = true;
 }
 
@@ -5676,7 +5682,9 @@ async function shareOrderTelegram(){
 
 els.paymeBtn?.addEventListener("click", ()=>{
   if(cart.length === 0){ toast("Savatcha bo'sh."); return; }
-  openCheckout();
+  try{ closePanel(); }catch(_e){}
+  try{ goTab("cart"); }catch(_e){}
+  setTimeout(()=>{ openCheckout(); }, 120);
 });
 els.paymeBtnPage?.addEventListener("click", ()=>{
   if(cart.length === 0){ toast("Savatcha bo'sh."); return; }

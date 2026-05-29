@@ -20,14 +20,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260529_v33_full_tag_text" />
+  <link rel="stylesheet" href="./styles.css?v=20260529_v34_min_checkout_full_tag_text" />
 
   <meta name="theme-color" content="#dc2626" />
 
 
 
 
-<link rel="stylesheet" href="/theme-redwhite.css?v=20260529_v33_full_tag_text">
+<link rel="stylesheet" href="/theme-redwhite.css?v=20260529_v34_min_checkout_full_tag_text">
   <link rel="stylesheet" href="./i18n.css?v=20260529_mobile_lang_fix" />
 </head>
 <body class="om-view-home">
@@ -255,13 +255,20 @@
       <div class="panelActions">
         <button class="btn primary" id="orderBtnPage" type="button"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Buyurtma berish</button>
       </div>
-      <div class="checkoutSheet" id="checkoutSheet" hidden>
+      <div class="checkoutSheet checkoutInline" id="checkoutSheet" hidden>
         <div class="checkoutHead">
-          <div class="checkoutTitle">Buyurtma berish</div>
-          <button class="iconBtn" id="checkoutClose" type="button" aria-label="Yopish">✕</button>
+          <div>
+            <div class="checkoutTitle">Buyurtmani rasmiylashtirish</div>
+            <div class="checkoutSub">Minimal shakl: to‘lov turini tanlang, kerak bo‘lsa yetkazishni yoqing va tasdiqlang.</div>
+          </div>
+          <button class="iconBtn checkoutCloseBtn" id="checkoutClose" type="button" aria-label="Yopish">✕</button>
         </div>
 
         <div class="checkoutBody">
+          <div class="checkoutCompactSummary" id="checkoutCompactSummary">
+            <span>0 ta tanlangan</span>
+            <b>0 so‘m</b>
+          </div>
 
           <div class="payType">
             <div class="payTitle">To‘lov turi</div>
@@ -602,7 +609,7 @@
   <script type="module" src="./cardpay-config.js"></script>
   <script src="./telegram-config.js"></script>
 <script src="./i18n.js?v=20260529_mobile_lang_fix"></script>
-<script type="module" src="./app.js?v=20260529_v33_full_tag_text"></script>
+<script type="module" src="./app.js?v=20260529_v34_min_checkout_full_tag_text"></script>
 
   
 
@@ -701,9 +708,11 @@
         <div class="muted">Jami</div>
         <div class="total" id="cartTotal">0 so‘m</div>
       </div>
-      <button class="btn" id="paymeBtn"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Buyurtma berish</button>
-      <button class="btn ghost" id="tgShareBtn">📩 Telegramga yuborish</button>
-      <button class="btn ghost" id="clearBtn">Tozalash</button>
+      <button class="btn" id="paymeBtn"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Rasmiylashtirish</button>
+      <div class="panelSecondaryActions">
+        <button class="btn ghost" id="tgShareBtn">Telegramga yuborish</button>
+        <button class="btn ghost" id="clearBtn">Tozalash</button>
+      </div>
     </div>
   </aside>
 
