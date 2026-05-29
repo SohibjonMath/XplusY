@@ -2386,6 +2386,118 @@ body{
 @media(max-width:1120px){.click-balance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.click-filter-grid{grid-template-columns:1fr 1fr}.click-filter-grid .form-group:first-child{grid-column:1/-1}.click-filter-grid button{width:100%}}@media(max-width:760px){#productsTable th:nth-child(10),#productsTable td:nth-child(10){position:static!important;box-shadow:none!important;min-width:190px!important}.actions{justify-content:flex-start!important;flex-wrap:wrap!important}.click-balance-hero{padding:18px;border-radius:26px}.click-balance-hero-top{flex-direction:column}.click-balance-stats{grid-template-columns:1fr}.click-filter-grid{grid-template-columns:1fr}.click-topup-grid{grid-template-columns:1fr;padding:12px}.topup-card-body{grid-template-columns:1fr}.topup-card-foot{align-items:flex-start;flex-direction:column}.topup-actions{justify-content:flex-start}.click-balance-title h2{font-size:23px}}
 </style>
 
+
+
+
+<style id="orzumall-v9-icon-actions-modal-close-fix">
+/* v9: edit/delete icon-only, always visible */
+.actions .edit-btn.action-btn,
+.actions .del-btn.action-btn,
+.product-card-bottom .edit-btn.action-btn,
+.product-card-bottom .del-btn.action-btn{
+  width:42px!important;
+  min-width:42px!important;
+  max-width:42px!important;
+  height:42px!important;
+  min-height:42px!important;
+  padding:0!important;
+  border-radius:15px!important;
+  gap:0!important;
+  flex:0 0 42px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  opacity:1!important;
+  visibility:visible!important;
+  overflow:visible!important;
+}
+.actions .edit-btn.action-btn span,
+.actions .del-btn.action-btn span,
+.product-card-bottom .edit-btn.action-btn span,
+.product-card-bottom .del-btn.action-btn span{
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  overflow:hidden!important;
+}
+.actions .edit-btn.action-btn i,
+.actions .del-btn.action-btn i,
+.product-card-bottom .edit-btn.action-btn i,
+.product-card-bottom .del-btn.action-btn i{
+  margin:0!important;
+  font-size:16px!important;
+  line-height:1!important;
+}
+#productsTable th:nth-child(10),
+#productsTable td:nth-child(10){
+  width:118px!important;
+  min-width:118px!important;
+}
+#productsTable .actions{justify-content:center!important;min-width:96px!important;}
+.product-card-bottom .actions{justify-content:flex-end!important;min-width:auto!important;}
+
+/* v9: modal close X must be visible everywhere */
+.modal .modal-header button[id^="close"],
+#closeOrderModalBtn,
+#closeModalBtn,
+#closeJsonModalBtn,
+#closeImportModalBtn,
+button[data-x]{
+  width:44px!important;
+  min-width:44px!important;
+  max-width:44px!important;
+  height:44px!important;
+  min-height:44px!important;
+  padding:0!important;
+  border-radius:16px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 44px!important;
+  color:#fff!important;
+  background:linear-gradient(135deg,#EF233C,#9F1024)!important;
+  border:1px solid rgba(255,255,255,.42)!important;
+  box-shadow:0 14px 34px rgba(239,35,60,.30)!important;
+  opacity:1!important;
+  visibility:visible!important;
+  position:relative!important;
+  z-index:10050!important;
+}
+.modal .modal-header button[id^="close"] i,
+#closeOrderModalBtn i,
+#closeModalBtn i,
+#closeJsonModalBtn i,
+#closeImportModalBtn i,
+button[data-x] i{
+  color:#fff!important;
+  opacity:1!important;
+  visibility:visible!important;
+  font-size:18px!important;
+  line-height:1!important;
+  margin:0!important;
+}
+.modal .modal-header{
+  position:sticky!important;
+  top:0!important;
+  z-index:10020!important;
+  background:rgba(255,255,255,.96)!important;
+  backdrop-filter:blur(16px)!important;
+}
+.modal-actions{display:flex!important;align-items:center!important;gap:9px!important;flex-wrap:nowrap!important;}
+.modal-actions #closeOrderModalBtn{margin-left:4px!important;}
+#orderModal .modal-content,
+#jsonModal .modal-content,
+#importModal .modal-content,
+#productModal .modal-content{overflow:auto!important;}
+#productModal .modal-content.pm-fullscreen{overflow:hidden!important;}
+#productModal .modal-header{padding-right:22px!important;}
+@media(max-width:760px){
+  #productsTable th:nth-child(10),#productsTable td:nth-child(10){width:112px!important;min-width:112px!important;}
+  .actions .edit-btn.action-btn,.actions .del-btn.action-btn{width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;}
+  .modal .modal-header button[id^="close"],#closeOrderModalBtn,#closeModalBtn,#closeJsonModalBtn,#closeImportModalBtn,button[data-x]{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;}
+}
+</style>
+
 </head>
 <body style="display:none;">
   <div class="container">
@@ -3988,8 +4100,8 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
               <div style="display:flex;align-items:center;gap:9px;min-width:120px"><div class="om-score"><span style="width:${popular}%"></span></div><b>${popular}</b></div>
               <div class="actions">
                 ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn action-btn approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash"><i class="fas fa-check"></i><span>OK</span></button><button class="btn action-btn reject-btn" data-id="${esc(p.id)}" title="Rad etish"><i class="fas fa-xmark"></i><span>Rad</span></button>`:""}
-                <button class="btn action-btn edit-btn" data-id="${esc(p.id)}" title="Tahrirlash"><i class="fas fa-pen-to-square"></i><span>Tahrir</span></button>
-                ${(state.role==="admin" || state.role==="vendor")?`<button class="btn action-btn del-btn" data-id="${esc(p.id)}" title="O‘chirish"><i class="fas fa-trash-can"></i><span>O‘chir</span></button>`:""}
+                <button class="btn action-btn edit-btn" data-id="${esc(p.id)}" title="Tahrirlash" aria-label="Tahrirlash"><i class="fas fa-pen-to-square"></i></button>
+                ${(state.role==="admin" || state.role==="vendor")?`<button class="btn action-btn del-btn" data-id="${esc(p.id)}" title="O‘chirish" aria-label="O‘chirish"><i class="fas fa-trash-can"></i></button>`:""}
               </div>
             </div>
           </div>
@@ -4075,8 +4187,8 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
           <td>
             <div class="actions">
               ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn action-btn approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash"><i class="fas fa-check"></i><span>OK</span></button><button class="btn action-btn reject-btn" data-id="${esc(p.id)}" title="Rad etish"><i class="fas fa-xmark"></i><span>Rad</span></button>`:""}
-              <button class="btn action-btn edit-btn" data-id="${esc(p.id)}" title="Tahrirlash"><i class="fas fa-pen-to-square"></i><span>Tahrir</span></button>
-              ${(state.role==="admin" || state.role==="vendor")?`<button class="btn action-btn del-btn" data-id="${esc(p.id)}" title="O‘chirish"><i class="fas fa-trash-can"></i><span>O‘chir</span></button>`:""}
+              <button class="btn action-btn edit-btn" data-id="${esc(p.id)}" title="Tahrirlash" aria-label="Tahrirlash"><i class="fas fa-pen-to-square"></i></button>
+              ${(state.role==="admin" || state.role==="vendor")?`<button class="btn action-btn del-btn" data-id="${esc(p.id)}" title="O‘chirish" aria-label="O‘chirish"><i class="fas fa-trash-can"></i></button>`:""}
             </div>
           </td>
         `;
@@ -6528,7 +6640,9 @@ document.addEventListener('click', async (e)=>{
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chek ${orderId}</title>
-<style>${css}</style></head>
+<style>${css}</style>
+
+</head>
 <body>
   <div class="paper">
     <div class="top">
