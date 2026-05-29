@@ -3185,12 +3185,13 @@ function renderViewer(){
     els.qvBadge.style.display = b ? "" : "none";
   }
   if(els.qvTags){
-    const tagsArr = Array.isArray(viewer.tags) ? viewer.tags : [];
-    els.qvTags.innerHTML = tagsArr.slice(0,14).map(t=>{
+    const tagsArr = (Array.isArray(viewer.tags) ? viewer.tags : []).map(t=>String(t||"").trim()).filter(Boolean);
+    const shownTags = tagsArr.slice(0,9);
+    els.qvTags.innerHTML = shownTags.map(t=>{
       const label = String(t || "").trim();
       const cnt = tagCounts?.get?.(label.toLowerCase()) || 0;
-      return `<button type="button" class="qvTag" data-qv-tag="${escapeHtml(label)}" title="${escapeHtml(label)} tegidagi mahsulotlarni ko‘rish"><i class="fa-solid fa-hashtag"></i>${escapeHtml(label)}${cnt?`<em>${omCount(cnt)}</em>`:""}</button>`;
-    }).join("");
+      return `<button type="button" class="qvTag" data-qv-tag="${escapeHtml(label)}" title="${escapeHtml(label)} tegidagi mahsulotlarni ko‘rish"><i class="fa-solid fa-hashtag"></i><span>${escapeHtml(label)}</span>${cnt?`<em>${omCount(cnt)}</em>`:""}</button>`;
+    }).join("") + (tagsArr.length > shownTags.length ? `<span class="qvMoreTags" title="Yana ${tagsArr.length-shownTags.length} ta teg bor">+${tagsArr.length-shownTags.length}</span>` : "");
     els.qvTags.style.display = tagsArr.length ? "" : "none";
   }
 
@@ -3198,8 +3199,8 @@ function renderViewer(){
   omRenderQuickViewPro();
   omBindQvTagClicks();
 
-  // Description
-  if(els.imgViewerDesc) els.imgViewerDesc.textContent = viewer.desc || "";
+  // Description is opened from the Tavsif/Tasnif button; keep inline quick-view compact.
+  if(els.imgViewerDesc) els.imgViewerDesc.textContent = "";
 
   els.imgViewerImg.src = imgs[idx] || "";
 
