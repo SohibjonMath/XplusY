@@ -421,6 +421,183 @@
     .color-image-row textarea{min-height:54px;font-size:.86rem}
     @media (max-width:700px){.color-image-head{align-items:stretch}.color-image-actions .btn{flex:1}.color-image-head select{min-width:100%}}
 
+
+
+    /* ===== Premium Compact Redesign Override ===== */
+    :root{
+      --bg:#f6f7fb;
+      --panel:#ffffff;
+      --panel-2:#fbfbfe;
+      --line:#e9ebf4;
+      --text:#151b2f;
+      --muted2:#727b94;
+      --purple:#6d4aff;
+      --purple-2:#8c67ff;
+      --purple-soft:rgba(109,74,255,.10);
+      --green:#22c55e;
+      --orange:#f59e0b;
+      --red:#ef4444;
+      --blue:#3b82f6;
+      --shadow:0 14px 38px rgba(22,28,45,.06), 0 2px 8px rgba(22,28,45,.04);
+      --radius:22px;
+      --radius-sm:14px;
+    }
+    html,body{background:var(--bg); color:var(--text)}
+    body{font-family:Inter,Segoe UI,Tahoma,Geneva,Verdana,sans-serif}
+    .container{background:var(--bg)}
+    .sidebar{
+      width:260px;
+      background:rgba(255,255,255,.92);
+      backdrop-filter: blur(14px);
+      color:var(--text);
+      border-right:1px solid var(--line);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset;
+      padding:18px 14px;
+    }
+    .logo{padding:0 10px 18px; margin-bottom:16px; border-bottom:1px solid var(--line)}
+    .logo h1{font-size:1.45rem; font-weight:900; gap:10px; color:var(--text)}
+    .logo h1 i{
+      width:42px;height:42px;border-radius:14px;display:grid;place-items:center;
+      background:linear-gradient(135deg,#ff5b5b,#ff2f59); color:#fff; box-shadow:0 10px 24px rgba(255,47,89,.22)
+    }
+    .logo h1 span{letter-spacing:-.02em}
+    .nav-menu{display:flex; flex-direction:column; gap:4px}
+    .nav-item{margin:0}
+    .nav-link{
+      color:#5b647d; border-radius:14px; padding:12px 14px; gap:12px; font-weight:800;
+      border:1px solid transparent;
+    }
+    .nav-link i{width:20px;font-size:1rem;color:#7c85a1}
+    .nav-link:hover{background:#f7f7fd;color:var(--text); border-color:#eff0f8; padding-left:14px}
+    .nav-link.active{
+      background:var(--purple-soft); color:var(--purple); border:1px solid rgba(109,74,255,.12);
+      box-shadow: inset 0 0 0 1px rgba(109,74,255,.04);
+      padding-left:14px; border-left:none;
+    }
+    .nav-link.active i{color:var(--purple)}
+    .sidebar-footer{border-top:1px solid var(--line); padding:16px 10px 4px}
+    .admin-avatar{background:linear-gradient(135deg,var(--purple),var(--purple-2)); color:#fff; box-shadow:0 10px 24px rgba(109,74,255,.22)}
+    .admin-name{font-size:.95rem; color:var(--text)}
+    .admin-email,.sidebar-note{color:var(--muted2)}
+    .sidebar-actions .btn{flex:1; justify-content:center}
+
+    .main-content{margin-left:260px; padding:22px 24px 28px}
+    .header{
+      position:sticky; top:0; z-index:50;
+      margin-bottom:22px; padding:14px 18px; border:1px solid var(--line);
+      background:rgba(255,255,255,.82); backdrop-filter:blur(14px);
+      border-radius:22px; box-shadow:var(--shadow)
+    }
+    .header h2{font-size:1.28rem; font-weight:900; letter-spacing:-.02em; display:flex; align-items:center; gap:10px}
+    .header h2 i{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--purple-soft);color:var(--purple);font-size:1.05rem}
+    .header-actions{gap:10px; justify-content:flex-end}
+    .search-box{
+      min-width:330px; height:48px; padding:0 14px; border-radius:16px; border:1px solid var(--line); background:#fff;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.9)
+    }
+    .search-box i{color:#8f97ad}
+    .search-box input{font-size:.96rem}
+
+    .btn{
+      height:44px; padding:0 14px; border-radius:14px; font-weight:800; font-size:.93rem;
+      box-shadow:none; border:1px solid transparent
+    }
+    .btn-sm{height:36px; padding:0 12px; border-radius:12px; font-size:.86rem}
+    .btn-primary{background:linear-gradient(135deg,var(--purple),#5f3fff); color:#fff; box-shadow:0 12px 24px rgba(109,74,255,.18)}
+    .btn-primary:hover{background:linear-gradient(135deg,#5f3fff,#5132f1)}
+    .btn-light{background:#fff; color:var(--text); border:1px solid var(--line)}
+    .btn-light:hover{background:#fafaff}
+    .btn-secondary{background:#f3f4f8;color:var(--text);border:1px solid var(--line)}
+
+    .stats-cards{grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:22px}
+    .stat-card{
+      border-radius:22px; border:1px solid var(--line); box-shadow:var(--shadow); padding:20px; min-height:116px;
+      align-items:flex-start; background:linear-gradient(180deg,#fff,#fcfcff)
+    }
+    .stat-card:hover{transform:translateY(-2px)}
+    .stat-icon{width:52px; height:52px; border-radius:18px}
+    .stat-info h3{font-size:1.85rem; line-height:1.1; letter-spacing:-.03em}
+    .stat-info p{font-size:.9rem; color:var(--muted2); margin-top:4px}
+
+    .card{border-radius:24px; border:1px solid var(--line); box-shadow:var(--shadow); background:var(--panel); overflow:hidden; margin-bottom:18px}
+    .card-header{padding:16px 18px; background:linear-gradient(180deg,#fff,#fcfcff); border-bottom:1px solid var(--line)}
+    .card-header h3{font-size:1.05rem; font-weight:900; letter-spacing:-.02em}
+    .card-body.pad{padding:18px}
+    .right-actions{gap:8px}
+    .muted{color:var(--muted2)}
+
+    table{font-size:.94rem}
+    thead{background:#fafbff}
+    th{padding:13px 14px; color:#6b748d; font-size:.83rem; text-transform:none; letter-spacing:0; font-weight:800}
+    td{padding:13px 14px; vertical-align:middle}
+    tbody tr:hover{background:#faf9ff}
+    .table-container{padding:0 2px 2px}
+    .product-id{background:#f4f5fb; color:#56607d; border:1px solid #ebedf5; border-radius:999px; padding:5px 10px; font-size:.78rem; font-weight:700}
+    .product-name{font-weight:800; color:var(--text)}
+    .price-cell{color:var(--purple)}
+    .tag{background:#f3efff; color:var(--purple); border:1px solid rgba(109,74,255,.08)}
+    .actions .btn{height:34px; min-width:34px; padding:0 10px}
+    .pill{border-radius:999px; font-size:.77rem; font-weight:800; padding:6px 10px}
+
+    .form-control, .statusSel{height:46px; border-radius:14px; border:1px solid var(--line); background:#fff; color:var(--text)}
+    textarea.form-control{height:auto; min-height:120px}
+    .form-control:focus{border-color:rgba(109,74,255,.45); box-shadow:0 0 0 4px rgba(109,74,255,.10)}
+    .form-group label{font-size:.9rem; margin-bottom:8px; color:#47506a}
+    .form-section{border:1px solid var(--line); border-radius:20px; box-shadow:0 10px 26px rgba(17,24,39,.04)}
+    .form-section h4{color:var(--purple)}
+    .dynamic-list,.mini-card,.deliverySettingsBox{border:1px solid var(--line); background:#fbfbfe; border-radius:18px}
+
+    .json-viewer{border-radius:20px}
+    .toast{border-radius:18px; box-shadow:var(--shadow)}
+
+    .orders-grid{
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; padding:18px;
+    }
+    .orders-grid > *{border-radius:20px}
+    .empty-state{padding:30px 20px; text-align:center; color:var(--muted2)}
+    .empty-state i{font-size:2rem; margin-bottom:10px; color:var(--purple)}
+
+    .deliverySettingsBox{margin-top:16px; padding:16px; background:linear-gradient(180deg,#fcfcff,#f8f9ff)}
+    .tariffTableWrap{border-radius:18px; border:1px solid var(--line)}
+    .tariffTable td,.tariffTable th{padding:11px 10px}
+
+    .mini-title{font-size:.98rem; font-weight:900}
+    .mini-row{padding:10px 0; border-bottom:1px dashed #eceef6}
+    .mini-row:last-child{border-bottom:none}
+    .mini-row .k{color:#606a86}
+    .mini-row .v{color:var(--text)}
+
+    @media (max-width:1280px){
+      .stats-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:1024px){
+      .sidebar{width:84px; padding:16px 10px}
+      .logo{padding:0 4px 16px}
+      .logo h1 i{width:44px;height:44px;margin:0 auto}
+      .main-content{margin-left:84px; padding:18px}
+      .header{padding:14px}
+      .logo h1 span,.nav-link span,.admin-meta,.sidebar-note{display:none}
+      .nav-link{justify-content:center;padding:12px}
+      .nav-link.active,.nav-link:hover{padding-left:12px}
+      .sidebar-actions{flex-direction:column}
+    }
+    @media (max-width:840px){
+      .header{position:static}
+      .header-actions{width:100%; justify-content:flex-start}
+      .search-box{min-width:100%; width:100%; order:10}
+      .stats-cards{grid-template-columns:1fr}
+    }
+    @media (max-width:640px){
+      .main-content{padding:14px; margin-left:0}
+      .sidebar{position:static; width:100%; height:auto; border-right:none; border-bottom:1px solid var(--line)}
+      .container{flex-direction:column}
+      .nav-menu{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px}
+      .sidebar-footer{padding-bottom:10px}
+      .header h2{font-size:1.1rem}
+      .header-actions .btn{flex:1 1 auto}
+      .card-header{flex-direction:column; align-items:flex-start}
+    }
+
 </style>
   <script src="../telegram-config.js"></script>
 
@@ -458,12 +635,12 @@
 
     <main class="main-content">
       <div class="header">
-        <h2><i class="fas fa-box-open"></i> Mahsulotlar Boshqaruvi</h2>
+        <h2><i class="fas fa-grid-2"></i> OrzuMall boshqaruv paneli</h2>
         <div class="header-actions">
         <a class="btn btn-primary" href="./productstat.html"><i class="fa-solid fa-boxes-stacked"></i> Ombor</a>
         <a class="btn btn-light" href="./addproduct.html"><i class="fa-solid fa-plus"></i> Add Product</a>
         <a class="btn btn-light" href="./kassa.html"><i class="fa-solid fa-cash-register"></i> Kassa</a>
-          <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Mahsulot qidirish..."></div>
+          <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Qidirish (mahsulot, buyurtma, mijoz...)"></div>
           <button class="btn btn-light" id="importJsonBtn"><i class="fas fa-file-import"></i> Import JSON</button>
           <button class="btn btn-primary" id="addProductBtn"><i class="fas fa-plus"></i> Yangi mahsulot</button>
           <button class="btn btn-light" id="viewJsonBtn"><i class="fas fa-code"></i> JSON ko'rish</button>
