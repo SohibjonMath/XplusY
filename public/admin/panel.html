@@ -2361,6 +2361,31 @@ body{
   <script src="../telegram-config.js"></script>
 
 <link rel="stylesheet" href="/theme-redwhite.css">
+<style id="orzumall-v8-actions-click-overrides">
+:root{--om-red:#EF233C;--om-red-dark:#9F1024;--om-click:#7B2CFF;--om-click2:#00B8FF;--om-ink:#0F172A;--om-muted:#64748B;--om-line:#E8EEF7;}
+#productsTable th:nth-child(10),#productsTable td:nth-child(10){width:220px!important;min-width:220px!important;position:sticky!important;right:0!important;z-index:3!important;background:linear-gradient(90deg,rgba(255,255,255,.94),#fff 35%)!important;box-shadow:-18px 0 28px rgba(15,23,42,.055)!important;}
+#productsTable thead th:nth-child(10){z-index:5!important;background:#F8FAFC!important;}
+.actions,.product-card-bottom .actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:nowrap!important;min-width:max-content!important;}
+.actions .btn,.actions .action-btn{width:auto!important;min-width:0!important;height:38px!important;min-height:38px!important;padding:0 12px!important;border-radius:14px!important;font-size:12px!important;font-weight:950!important;opacity:1!important;visibility:visible!important;}
+.actions .btn i,.actions .action-btn i{font-size:13px!important;opacity:1!important;visibility:visible!important;}
+.action-btn span{display:inline!important;line-height:1!important;}
+.edit-btn.action-btn,.edit-btn{color:#0F172A!important;background:linear-gradient(135deg,#FFFFFF,#F6F8FC)!important;border:1px solid #D9E1EE!important;box-shadow:0 10px 22px rgba(15,23,42,.07)!important;}
+.edit-btn.action-btn i,.edit-btn i{color:#2563EB!important;}
+.del-btn.action-btn,.del-btn{color:#fff!important;background:linear-gradient(135deg,#FF405C,#B70E22)!important;border:1px solid rgba(183,14,34,.25)!important;box-shadow:0 12px 24px rgba(239,35,60,.22)!important;}
+.del-btn.action-btn i,.del-btn i{color:#fff!important;}
+.approve-btn.action-btn,.approve-btn{color:#fff!important;background:linear-gradient(135deg,#18B566,#047857)!important;border:1px solid rgba(4,120,87,.22)!important;box-shadow:0 10px 22px rgba(22,163,74,.18)!important;}
+.reject-btn.action-btn,.reject-btn{color:#9F1024!important;background:#FFF1F3!important;border:1px solid #FFD1D8!important;}
+.btn-success{color:#fff!important;background:linear-gradient(135deg,#18B566,#047857)!important;border:1px solid rgba(4,120,87,.2)!important;box-shadow:0 12px 24px rgba(22,163,74,.18)!important;}
+.btn-danger{color:#fff!important;background:linear-gradient(135deg,#FF405C,#B70E22)!important;border:1px solid rgba(183,14,34,.25)!important;box-shadow:0 12px 24px rgba(239,35,60,.22)!important;}
+.product-card-bottom{align-items:flex-end!important;gap:12px!important}.product-card-bottom .actions{justify-content:flex-start!important;flex-wrap:wrap!important}.product-card-premium,.product-card-body{overflow:visible!important;}
+.click-balance-suite{display:flex;flex-direction:column;gap:16px;margin-top:10px}.click-balance-hero{position:relative;overflow:hidden;border-radius:34px;padding:24px;color:#fff;background:radial-gradient(circle at 8% 0%,rgba(255,255,255,.28),transparent 30%),radial-gradient(circle at 88% 12%,rgba(0,184,255,.35),transparent 36%),linear-gradient(135deg,#25104F 0%,#7B2CFF 48%,#00A7F5 100%);box-shadow:0 28px 78px rgba(69,38,171,.26)}.click-balance-hero:after{content:"";position:absolute;width:310px;height:310px;right:-120px;bottom:-155px;border-radius:50%;border:54px solid rgba(255,255,255,.12)}
+.click-balance-hero-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.click-balance-title{display:flex;align-items:center;gap:15px;min-width:0}.click-logo-mini{width:58px;height:58px;min-width:58px;border-radius:22px;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 18px 40px rgba(0,0,0,.16);font-weight:1000;font-size:22px;letter-spacing:-.04em}.click-balance-title h2{font-size:28px;line-height:1.05;margin:0 0 6px;font-weight:1000;letter-spacing:-.04em;color:#fff!important}.click-balance-title p{margin:0;color:rgba(255,255,255,.82);font-weight:750}.click-balance-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.click-balance-actions .btn{background:rgba(255,255,255,.16)!important;color:#fff!important;border-color:rgba(255,255,255,.22)!important;backdrop-filter:blur(12px)}.click-balance-actions .btn i{color:#fff!important}
+.click-balance-stats{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}.click-stat-card{min-height:105px;border-radius:24px;padding:16px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.20);box-shadow:inset 0 1px 0 rgba(255,255,255,.16);backdrop-filter:blur(14px)}.click-stat-card .k{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:rgba(255,255,255,.72)}.click-stat-card .v{margin-top:8px;font-size:24px;font-weight:1000;letter-spacing:-.035em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.click-stat-card .s{margin-top:4px;font-size:12px;font-weight:800;color:rgba(255,255,255,.72)}
+.click-filter-panel{border-radius:30px;background:#fff;border:1px solid var(--om-line);box-shadow:0 20px 58px rgba(15,23,42,.07);overflow:hidden}.click-filter-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 20px;border-bottom:1px solid #EEF2F7}.click-filter-head h3{margin:0;font-size:18px;font-weight:1000;letter-spacing:-.03em;color:#0F172A;display:flex;gap:10px;align-items:center}.click-filter-head h3 i{color:#7B2CFF}.click-filter-grid{display:grid;grid-template-columns:minmax(260px,2fr) minmax(145px,.9fr) minmax(145px,.9fr) minmax(145px,.9fr) minmax(145px,.9fr) auto;gap:10px;padding:16px 18px;align-items:end}.click-filter-grid .form-group{min-width:0!important;margin:0!important}.click-filter-grid label{font-size:12px;font-weight:950;color:#64748B;margin-bottom:7px;display:block}.click-filter-grid .form-control{height:44px!important;border-radius:16px!important;background:#F8FAFC!important;border:1px solid #E5EAF3!important;box-shadow:none!important}
+.click-topup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(390px,1fr));gap:16px;padding:18px;background:linear-gradient(180deg,#FBFCFF,#F6F8FC);border-top:1px solid #EEF2F7}.topup-card-v8{position:relative;overflow:hidden;border-radius:28px;background:#fff;border:1px solid #E7ECF5;box-shadow:0 18px 48px rgba(15,23,42,.075);padding:0}.topup-card-v8:before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,#7B2CFF,#00B8FF)}.topup-card-v8.manual:before{background:linear-gradient(180deg,#EF233C,#F59E0B)}.topup-card-v8.paid:before,.topup-card-v8.approved:before{background:linear-gradient(180deg,#18B566,#22C55E)}.topup-card-v8.rejected:before,.topup-card-v8.cancelled:before,.topup-card-v8.error:before{background:linear-gradient(180deg,#EF233C,#991B1B)}.topup-card-head{padding:17px 18px 13px 24px;display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF2F7}.topup-ref{min-width:0}.topup-ref .k,.topup-mini .k,.topup-total .k{font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.045em;color:#94A3B8}.topup-ref .v{margin-top:4px;font-size:14px;font-weight:1000;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:235px}.gateway-pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:1000;white-space:nowrap}.gateway-click{background:#F1ECFF;color:#6D28D9;border:1px solid #DDD1FF}.gateway-payme{background:#E8FAFF;color:#027A93;border:1px solid #BDEFFF}.gateway-manual{background:#FFF5F5;color:#B70E22;border:1px solid #FFD5DC}.topup-card-body{padding:15px 18px 15px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.topup-mini{min-width:0;border-radius:18px;background:#F8FAFC;border:1px solid #EEF2F7;padding:10px 11px}.topup-mini .v{display:block;margin-top:4px;font-size:13px;font-weight:900;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.topup-card-foot{padding:15px 18px 18px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-top:1px solid #EEF2F7}.topup-total .v{margin-top:3px;font-size:22px;font-weight:1000;letter-spacing:-.035em;color:#0F172A}.topup-final-note{font-size:12px;color:#64748B;margin-top:3px;font-weight:750}.topup-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}.topup-actions .btn{height:38px!important;min-height:38px!important;border-radius:14px!important}.status-pill.status-paid,.status-pill.status-approved{background:#DCFCE7!important;color:#166534!important;border:1px solid #BBF7D0!important}.status-pill.status-pending,.status-pill.status-pending_payment{background:#FEF3C7!important;color:#92400E!important;border:1px solid #FDE68A!important}.status-pill.status-rejected,.status-pill.status-cancelled,.status-pill.status-error{background:#FEE2E2!important;color:#991B1B!important;border:1px solid #FECACA!important}.status-pill.status-other{background:#E0F2FE!important;color:#075985!important;border:1px solid #BAE6FD!important}
+@media(max-width:1120px){.click-balance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.click-filter-grid{grid-template-columns:1fr 1fr}.click-filter-grid .form-group:first-child{grid-column:1/-1}.click-filter-grid button{width:100%}}@media(max-width:760px){#productsTable th:nth-child(10),#productsTable td:nth-child(10){position:static!important;box-shadow:none!important;min-width:190px!important}.actions{justify-content:flex-start!important;flex-wrap:wrap!important}.click-balance-hero{padding:18px;border-radius:26px}.click-balance-hero-top{flex-direction:column}.click-balance-stats{grid-template-columns:1fr}.click-filter-grid{grid-template-columns:1fr}.click-topup-grid{grid-template-columns:1fr;padding:12px}.topup-card-body{grid-template-columns:1fr}.topup-card-foot{align-items:flex-start;flex-direction:column}.topup-actions{justify-content:flex-start}.click-balance-title h2{font-size:23px}}
+</style>
+
 </head>
 <body style="display:none;">
   <div class="container">
@@ -2609,61 +2634,45 @@ body{
         </div>
       </section>
 
-      <!-- Manual card top-up requests (separate) -->
+      <!-- Click / balance top-up requests -->
       <div class="hidden" id="topupsView">
-<div class="card" id="topupReqCard" style="margin:14px 0 0 0">
-        <div class="card-header">
-          <h3><i class="fas fa-wallet"></i> Balans to‘ldirish so‘rovlari</h3>
-          <div class="right-actions">
-            <span class="muted" id="topupReqState">—</span>
-            <button class="btn btn-light btn-sm" id="topupReqRefresh"><i class="fas fa-sync-alt"></i> Yangilash</button>
-          </div>
-        </div>
-
-        <div class="card-body pad">
-          <div class="form-row" style="margin-bottom:0">
-            <div class="form-group" style="min-width:240px">
-              <label>Qidiruv</label>
-              <input id="topupReqSearch" class="form-control" placeholder="ID / foydalanuvchi ID / telefon / karta oxiri">
+        <section class="click-balance-suite">
+          <div class="click-balance-hero">
+            <div class="click-balance-hero-top">
+              <div class="click-balance-title">
+                <div class="click-logo-mini">C</div>
+                <div>
+                  <h2>Click balans to‘lovlari</h2>
+                  <p>Click, Payme va qo‘lda balans to‘ldirish so‘rovlarini bitta joyda nazorat qiling.</p>
+                </div>
+              </div>
+              <div class="click-balance-actions">
+                <button class="btn btn-light btn-sm" id="topupReqRefresh"><i class="fas fa-rotate"></i> Yangilash</button>
+                <button class="btn btn-light btn-sm" id="topupReqClear"><i class="fas fa-filter-circle-xmark"></i> Filtrni tozalash</button>
+              </div>
             </div>
-            <div class="form-group" style="min-width:180px">
-              <label>Holat</label>
-              <select id="topupReqStatus" class="form-control">
-                <option value="">Hammasi</option>
-                <option value="pending">Kutilmoqda</option>
-                <option value="approved">Tasdiqlandi</option>
-                <option value="cancelled">Bekor qilindi</option>
-              </select>
-            </div>
-            <div class="form-group" style="min-width:160px">
-              <label>Sana (dan)</label>
-              <input id="topupReqFrom" type="date" class="form-control">
-            </div>
-            <div class="form-group" style="min-width:160px">
-              <label>Sana (gacha)</label>
-              <input id="topupReqTo" type="date" class="form-control">
-            </div>
-            <div class="form-group" style="margin:0;display:flex;align-items:flex-end;justify-content:flex-end">
-              <button class="btn btn-light btn-sm" id="topupReqClear"><i class="fas fa-eraser"></i> Tozalash</button>
+            <div class="click-balance-stats">
+              <div class="click-stat-card"><div class="k">Click to‘langan</div><div class="v" id="topupClickAmount">0</div><div class="s">Avto to‘lovlar</div></div>
+              <div class="click-stat-card"><div class="k">Jami tushum</div><div class="v" id="topupTotalPaid">0</div><div class="s">Tasdiqlangan / to‘langan</div></div>
+              <div class="click-stat-card"><div class="k">Kutilmoqda</div><div class="v" id="topupPendingCount">0</div><div class="s">Tekshirish kerak</div></div>
+              <div class="click-stat-card"><div class="k">Tranzaksiyalar</div><div class="v" id="topupReqCount">0</div><div class="s">Oxirgi yozuvlar</div></div>
             </div>
           </div>
-        </div>
-
-        
-        <div class="orders-grid" id="topupReqCards"></div>
-        <div class="empty-state" id="topupReqEmpty" style="display:none">
-          <i class="fas fa-circle-plus"></i>
-          <h3>So‘rovlar yo‘q</h3>
-          <p>Hozircha balans to‘ldirish so‘rovlari kelmagan.</p>
-        </div>
-
-
-</div>
-
-<!-- Payme transactions (admin) -->
-
-      <!-- Manual card top-up requests -->
-</div>
+          <div class="click-filter-panel" id="topupReqCard">
+            <div class="click-filter-head"><h3><i class="fas fa-wallet"></i> Balans oynasi</h3><span class="muted" id="topupReqState">—</span></div>
+            <div class="click-filter-grid">
+              <div class="form-group"><label>Qidiruv</label><input id="topupReqSearch" class="form-control" placeholder="Click ID / order ID / foydalanuvchi / telefon / karta oxiri"></div>
+              <div class="form-group"><label>To‘lov tizimi</label><select id="topupReqProvider" class="form-control"><option value="">Hammasi</option><option value="click">Click</option><option value="payme">Payme</option><option value="manual">Qo‘lda / karta</option></select></div>
+              <div class="form-group"><label>Holat</label><select id="topupReqStatus" class="form-control"><option value="">Hammasi</option><option value="paid">To‘langan</option><option value="pending">Kutilmoqda</option><option value="approved">Tasdiqlangan</option><option value="rejected">Rad etilgan</option><option value="cancelled">Bekor qilingan</option><option value="error">Xatolik</option></select></div>
+              <div class="form-group"><label>Sana (dan)</label><input id="topupReqFrom" type="date" class="form-control"></div>
+              <div class="form-group"><label>Sana (gacha)</label><input id="topupReqTo" type="date" class="form-control"></div>
+              <button class="btn btn-primary btn-sm" id="topupReqRefreshInline" type="button"><i class="fas fa-sync-alt"></i> Tekshirish</button>
+            </div>
+            <div class="click-topup-grid" id="topupReqCards"></div>
+            <div class="empty-state" id="topupReqEmpty" style="display:none"><i class="fas fa-circle-plus"></i><h3>To‘lovlar yo‘q</h3><p>Click yoki balans to‘ldirish so‘rovlari topilmadi.</p></div>
+          </div>
+        </section>
+      </div>
 
 <div class="hidden" id="turnoverView">
 
@@ -3978,9 +3987,9 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
             <div class="product-card-bottom">
               <div style="display:flex;align-items:center;gap:9px;min-width:120px"><div class="om-score"><span style="width:${popular}%"></span></div><b>${popular}</b></div>
               <div class="actions">
-                ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn btn-primary btn-sm approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash"><i class="fas fa-check"></i></button><button class="btn btn-light btn-sm reject-btn" data-id="${esc(p.id)}" title="Rad etish"><i class="fas fa-xmark"></i></button>`:""}
-                <button class="btn btn-light btn-sm edit-btn" data-id="${esc(p.id)}" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-                ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light btn-sm del-btn" data-id="${esc(p.id)}" title="O‘chirish"><i class="fas fa-trash"></i></button>`:""}
+                ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn action-btn approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash"><i class="fas fa-check"></i><span>OK</span></button><button class="btn action-btn reject-btn" data-id="${esc(p.id)}" title="Rad etish"><i class="fas fa-xmark"></i><span>Rad</span></button>`:""}
+                <button class="btn action-btn edit-btn" data-id="${esc(p.id)}" title="Tahrirlash"><i class="fas fa-pen-to-square"></i><span>Tahrir</span></button>
+                ${(state.role==="admin" || state.role==="vendor")?`<button class="btn action-btn del-btn" data-id="${esc(p.id)}" title="O‘chirish"><i class="fas fa-trash-can"></i><span>O‘chir</span></button>`:""}
               </div>
             </div>
           </div>
@@ -4065,9 +4074,9 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
           </td>
           <td>
             <div class="actions">
-              ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn btn-primary btn-sm approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash"><i class="fas fa-check"></i></button><button class="btn btn-light btn-sm reject-btn" data-id="${esc(p.id)}" title="Rad etish"><i class="fas fa-xmark"></i></button>`:""}
-              <button class="btn btn-light btn-sm edit-btn" data-id="${esc(p.id)}" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-              ${(state.role==="admin" || state.role==="vendor")?`<button class="btn btn-light btn-sm del-btn" data-id="${esc(p.id)}" title="O‘chirish"><i class="fas fa-trash"></i></button>`:""}
+              ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn action-btn approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash"><i class="fas fa-check"></i><span>OK</span></button><button class="btn action-btn reject-btn" data-id="${esc(p.id)}" title="Rad etish"><i class="fas fa-xmark"></i><span>Rad</span></button>`:""}
+              <button class="btn action-btn edit-btn" data-id="${esc(p.id)}" title="Tahrirlash"><i class="fas fa-pen-to-square"></i><span>Tahrir</span></button>
+              ${(state.role==="admin" || state.role==="vendor")?`<button class="btn action-btn del-btn" data-id="${esc(p.id)}" title="O‘chirish"><i class="fas fa-trash-can"></i><span>O‘chir</span></button>`:""}
             </div>
           </td>
         `;
@@ -6604,6 +6613,60 @@ document.addEventListener('click', async (e)=>{
       }); }catch(e){}
 
   try{ document.getElementById("saveSettingsBtn")?.addEventListener("click", saveAccessLists); }catch(e){}
+
+
+/* === OrzuMall Admin v8: Click balance override + safe action controls === */
+(()=>{
+  let clickOrdersUnsubV8 = null;
+  let manualRawV8 = [];
+  let clickRawV8 = [];
+  const val = (id)=>($(id)?.value || '').trim();
+  const ms = (ts)=>{ try{ if(!ts) return 0; if(ts.toMillis) return ts.toMillis(); if(ts.toDate) return ts.toDate().getTime(); if(ts.seconds) return Number(ts.seconds)*1000; if(typeof ts==='number') return ts>9999999999?ts:ts*1000; const d=new Date(ts); return isNaN(+d)?0:d.getTime(); }catch(e){ return 0; } };
+  const time = (ts)=>{ const n=ms(ts); return n?new Date(n).toLocaleString():'—'; };
+  const providerKey = (r)=>{ const p=String(r?.provider||r?.paymentProvider||r?.paymentType||r?.gateway||r?.method||r?.paymentMethod||'').toLowerCase(); const hasClick=!!(r?.click_trans_id||r?.clickTransId||r?.click_paydoc_id||r?.clickPaydocId||r?.merchant_trans_id||r?.merchantTransId||r?.service_id||r?.serviceId); if(p.includes('click')||hasClick) return 'click'; if(p.includes('payme')||p.includes('paycom')||r?.paymeId||r?.paycomId) return 'payme'; if(p.includes('card')||p.includes('manual')||p.includes('karta')||p.includes('transfer')) return 'manual'; return r?.__src==='orders'?(p||'click'):'manual'; };
+  const providerLabel = (k)=>k==='click'?'Click':(k==='payme'?'Payme':'Qo‘lda');
+  const statusKey = (r)=>{ const st=String(r?.status||r?.paymentStatus||r?.state||'pending').toLowerCase(); if(['paid','success','successful','completed','confirmed','done'].includes(st)) return 'paid'; if(['approved','accepted'].includes(st)) return 'approved'; if(['pending_payment','waiting','wait','created','new','processing','pending'].includes(st)) return 'pending'; if(['rejected','reject','declined','failed'].includes(st)) return 'rejected'; if(['cancelled','canceled','cancel'].includes(st)) return 'cancelled'; if(['error','timeout'].includes(st)) return 'error'; return st||'pending'; };
+  const statusLabel = (k)=>({paid:'To‘langan',approved:'Tasdiqlangan',pending:'Kutilmoqda',rejected:'Rad etilgan',cancelled:'Bekor qilingan',error:'Xatolik'}[k] || statusUZ(k) || k);
+  const amountBase = (r)=>Number(r?.amountUZS ?? r?.amount ?? r?.summa ?? r?.price ?? r?.total ?? r?.totalUZS ?? 0)||0;
+  const amountFinal = (r)=>Number(r?.finalAmountUZS ?? r?.finalAmount ?? r?.creditedAmountUZS ?? r?.creditAmountUZS ?? r?.totalUZS ?? r?.amountUZS ?? r?.amount ?? 0)||0;
+  const clickRef = (r)=>String(r?.click_paydoc_id||r?.clickPaydocId||r?.click_trans_id||r?.clickTransId||r?.payment_id||r?.paymentId||r?.merchant_trans_id||r?.merchantTransId||r?.orderId||r?.id||'—');
+  const merchantRef = (r)=>String(r?.merchant_trans_id||r?.merchantTransId||r?.merchant_prepare_id||r?.merchantPrepareId||r?.merchant_confirm_id||r?.merchantConfirmId||r?.orderId||'—');
+  const receipt = (r)=>String(r?.receiptUrl||r?.receipt_url||r?.checkUrl||r?.chequeUrl||r?.payLink||r?.paymentUrl||'');
+  const cardMasked = (r)=>String(r?.payerCardMasked||r?.cardMasked||(r?.payerCardLast4?('**** '+r.payerCardLast4):(r?.cardLast4?('**** '+r.cardLast4):'—')));
+  const badge = (r)=>{ const k=statusKey(r); return `<span class="status-pill status-${escapeHtml(k)}">${escapeHtml(statusLabel(k))}</span>`; };
+  const merged = ()=>{
+    const manual=(manualRawV8||[]).map(r=>({...r,__src:'topup_requests'}));
+    const click=(clickRawV8||[]).filter(o=>{ const p=providerKey(o); const t=String(o?.orderType||o?.type||'').toLowerCase(); return p==='click'||p==='payme'||t==='topup'||t.includes('balance'); }).map(o=>({...o,__src:'orders',id:o.id||o.orderId,amountUZS:o.amountUZS??o.amount??o.totalUZS,finalAmountUZS:o.finalAmountUZS??o.creditedAmountUZS??o.totalUZS??o.amountUZS??o.amount,provider:o.provider||o.paymentProvider||o.paymentType||'click'}));
+    const seen=new Set();
+    return [...manual,...click].filter(r=>{ const key=`${providerKey(r)}::${r.__src||''}::${r.id||r.orderId||clickRef(r)}`; if(seen.has(key)) return false; seen.add(key); return true; }).sort((a,b)=>Math.max(ms(b.createdAt),ms(b.paidAt),ms(b.updatedAt))-Math.max(ms(a.createdAt),ms(a.paidAt),ms(a.updatedAt)));
+  };
+  const updateStats=(arr)=>{ let total=0,click=0,pending=0; (arr||[]).forEach(r=>{ const st=statusKey(r), p=providerKey(r), a=amountFinal(r)||amountBase(r); if(st==='paid'||st==='approved'){ total+=a; if(p==='click') click+=a; } if(st==='pending') pending++; }); if($('topupTotalPaid')) $('topupTotalPaid').textContent=total.toLocaleString(); if($('topupClickAmount')) $('topupClickAmount').textContent=click.toLocaleString(); if($('topupPendingCount')) $('topupPendingCount').textContent=String(pending); if($('topupReqCount')) $('topupReqCount').textContent=String((arr||[]).length); };
+  renderTopupReq = function(list){
+    const cards=$('topupReqCards'), empty=$('topupReqEmpty'); if(cards) cards.innerHTML=''; const arr=Array.isArray(list)?list:[]; if($('topupReqState')) $('topupReqState').textContent=arr.length?`${arr.length} ta yozuv`:'—'; if(empty) empty.style.display=arr.length?'none':'block'; updateStats(arr);
+    for(const r of arr.slice(0,300)){
+      const id=String(r.id||r.orderId||clickRef(r)||''), p=providerKey(r), st=statusKey(r), userId=String(r.userPublicId||r.numericId||r.uid||'—'), phone=String(r.userPhone||r.phone||r.userPhoneNumber||'—'), userName=String(r.userName||r.name||'—');
+      const base=amountBase(r), final=amountFinal(r)||base, baseText=base.toLocaleString()+" so‘m", finalText=final.toLocaleString()+" so‘m"; const rec=receipt(r), cref=clickRef(r), mref=merchantRef(r), note=String(r.adminNote||r.error_note||r.errorNote||r.message||''); const canAct=(r.__src==='topup_requests')&&st==='pending'&&p!=='click';
+      const div=document.createElement('div'); div.className=`topup-card-v8 ${p} ${st}`; div.dataset.topupId=id;
+      div.innerHTML=`<div class="topup-card-head"><div class="topup-ref"><div class="k">${p==='click'?'Click tranzaksiya':'Balans so‘rovi'}</div><div class="v" title="${escapeHtml(cref)}">${escapeHtml(cref)}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px"><span class="gateway-pill gateway-${escapeHtml(p)}"><i class="fas ${p==='click'?'fa-bolt':(p==='payme'?'fa-credit-card':'fa-user-check')}"></i> ${escapeHtml(providerLabel(p))}</span>${badge(r)}</div></div><div class="topup-card-body"><div class="topup-mini"><span class="k">Foydalanuvchi</span><span class="v" title="${escapeHtml(userName)}">${escapeHtml(userName)}</span></div><div class="topup-mini"><span class="k">User ID</span><span class="v" title="${escapeHtml(userId)}">${escapeHtml(userId)}</span></div><div class="topup-mini"><span class="k">Telefon</span><span class="v">${escapeHtml(phone)}</span></div><div class="topup-mini"><span class="k">Karta</span><span class="v">${escapeHtml(cardMasked(r))}</span></div><div class="topup-mini"><span class="k">Merchant ID</span><span class="v" title="${escapeHtml(mref)}">${escapeHtml(mref)}</span></div><div class="topup-mini"><span class="k">Vaqt</span><span class="v">${escapeHtml(time(r.paidAt||r.confirmedAt||r.updatedAt||r.createdAt))}</span></div>${note?`<div class="topup-mini" style="grid-column:1/-1"><span class="k">Izoh / xabar</span><span class="v" title="${escapeHtml(note)}">${escapeHtml(note)}</span></div>`:''}</div><div class="topup-card-foot"><div class="topup-total"><div class="k">Summa</div><div class="v">${escapeHtml(baseText)}</div>${final&&base&&final!==base?`<div class="topup-final-note">Balansga: <b>${escapeHtml(finalText)}</b></div>`:''}</div><div class="topup-actions">${rec?`<a class="btn btn-light btn-sm" href="${escapeHtml(rec)}" target="_blank" rel="noopener"><i class="fas fa-receipt"></i> Chek</a>`:''}${canAct?`<button class="btn btn-success btn-sm" data-topup-act="approve" data-topup-id="${escapeHtml(id)}"><i class="fas fa-check"></i> Tasdiqlash</button><button class="btn btn-danger btn-sm" data-topup-act="cancel" data-topup-id="${escapeHtml(id)}"><i class="fas fa-xmark"></i> Rad etish</button>`:''}${!canAct&&!rec?`<span class="muted" style="font-weight:800">Avto nazorat</span>`:''}</div></div>`;
+      cards?.appendChild(div);
+    }
+  };
+  applyTopupReqFilters = function(){
+    const q=val('topupReqSearch').toLowerCase(), st=val('topupReqStatus'), prov=val('topupReqProvider'), fromV=val('topupReqFrom'), toV=val('topupReqTo'); const from=fromV?new Date(fromV+'T00:00:00').getTime():null, to=toV?new Date(toV+'T23:59:59').getTime():null;
+    const out=(topupReqCache||[]).filter(r=>{ if(prov&&providerKey(r)!==prov) return false; if(st&&statusKey(r)!==st) return false; if(q){ const hay=[r.id,r.orderId,r.uid,r.userPublicId,r.numericId,r.userName,r.userPhone,r.phone,r.payerCardLast4,r.cardLast4,r.payerCardMasked,r.cardMasked,clickRef(r),merchantRef(r),r.error_note,r.errorNote,r.adminNote].map(x=>String(x||'').toLowerCase()).join(' '); if(!hay.includes(q)) return false; } if(from||to){ const n=Math.max(ms(r.createdAt),ms(r.paidAt),ms(r.updatedAt)); if(n){ if(from&&n<from) return false; if(to&&n>to) return false; } } return true; }); renderTopupReq(out);
+  };
+  async function refreshMerged(){ const m=merged(); try{ topupReqCache=await enrichTopupReqWithUsers(m); }catch(e){ topupReqCache=m; } applyTopupReqFilters(); }
+  subscribeTopupReq = function(){
+    if(!db) return; try{ topupReqUnsub?.(); }catch(e){} try{ clickOrdersUnsubV8?.(); }catch(e){} if($('topupReqState')) $('topupReqState').textContent='Yuklanmoqda...';
+    topupReqUnsub=onSnapshot(query(collection(db,'topup_requests'),orderBy('createdAt','desc'),limit(250)),snap=>{ manualRawV8=snap.docs.map(d=>({id:d.id,...d.data(),__src:'topup_requests'})); refreshMerged(); },err=>{ console.warn('topup_requests subscribe error',err); manualRawV8=[]; refreshMerged(); });
+    clickOrdersUnsubV8=onSnapshot(query(collection(db,'orders'),orderBy('createdAt','desc'),limit(500)),snap=>{ clickRawV8=snap.docs.map(d=>({id:d.id,...d.data(),__src:'orders'})); refreshMerged(); },err=>{ console.warn('orders click/topup subscribe error',err); clickRawV8=[]; refreshMerged(); });
+  };
+  setTimeout(()=>{
+    $('topupReqRefresh')?.addEventListener('click',()=>subscribeTopupReq()); $('topupReqRefreshInline')?.addEventListener('click',()=>subscribeTopupReq());
+    ['topupReqSearch','topupReqProvider','topupReqStatus','topupReqFrom','topupReqTo'].forEach(id=>{ const el=$(id); if(!el) return; el.addEventListener('input',applyTopupReqFilters); el.addEventListener('change',applyTopupReqFilters); });
+    $('topupReqClear')?.addEventListener('click',()=>{ setIfExists('topupReqSearch',''); setIfExists('topupReqProvider',''); setIfExists('topupReqStatus',''); setIfExists('topupReqFrom',''); setIfExists('topupReqTo',''); applyTopupReqFilters(); });
+  },0);
+})();
 </script>
 
 <script>
