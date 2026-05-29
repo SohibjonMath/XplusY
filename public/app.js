@@ -1527,6 +1527,7 @@ function omNormalizeCategoryTree(tree){
         name,
         ru:String(raw?.ru||"").trim(),
         icon:String(raw?.icon||"fa-layer-group").replace(/^fa-solid\s+/,"").trim() || "fa-layer-group",
+        iconImage:String(raw?.iconImage || raw?.iconUrl || raw?.image || raw?.svg || "").trim(),
         keywords:Array.isArray(raw?.keywords) ? raw.keywords.map(x=>String(x).trim()).filter(Boolean) : String(raw?.keywords||"").split(",").map(x=>x.trim()).filter(Boolean),
         children: clean(raw?.children||[])
       };
@@ -1646,7 +1647,7 @@ function normalizeTag(t){
 function buildCategoryTree(){
   const root = { id:"root", name:"root", count:0, children:new Map() };
   const addDef=(def,parent)=>{
-    const node = { id:def.id, key:def.id, name:def.name, ru:def.ru, icon:def.icon, count:0, children:new Map(), def };
+    const node = { id:def.id, key:def.id, name:def.name, ru:def.ru, icon:def.icon, iconImage:def.iconImage, count:0, children:new Map(), def };
     parent.children.set(def.id,node);
     (def.children||[]).forEach(ch=>addDef(ch,node));
     return node;
@@ -1737,6 +1738,52 @@ function productMatchesCategory(p, path){
     if(prodPath[i] !== usePath[i]) return false;
   }
   return true;
+}
+
+
+
+/* ===== v14 frontend category overrides: 4-level tree + PNG/SVG icon support ===== */
+function omCategoryIconHtml(def){
+  const img=String(def?.iconImage || def?.iconUrl || def?.image || def?.svg || "").trim();
+  if(img) return `<img class="catIconImg" src="${escapeHtml(img)}" alt="" loading="lazy">`;
+  return `<i class="fa-solid ${escapeHtml(def?.icon||"fa-layer-group")}" aria-hidden="true"></i>`;
+}
+function omInferCategoryPath(p){
+  const explicit = omExplicitProductCategoryPath(p);
+  if(explicit.length) return explicit;
+  const hay = [p?.name,p?.name_ru,p?.name_en,p?.description,p?.description_ru,p?.productType,p?.fulfillmentType,...(Array.isArray(p?.tags)?p.tags:[])].filter(Boolean).join(" ").toLowerCase();
+  let best=null;
+  const scoreDef=(def)=>{ let score=0; for(const kw of (def.keywords||[])){ const k=String(kw).toLowerCase(); if(k && hay.includes(k)) score += k.length>6 ? 3 : 2; } return score; };
+  const walk=(arr,path=[],carry=0)=>{ (arr||[]).forEach(def=>{ const next=[...path,def.id]; const sc=carry+scoreDef(def); if(sc && (!best || sc>best.score || (sc===best.score && next.length>best.path.length))) best={score:sc,path:next}; walk(def.children||[], next, sc); }); };
+  walk(OM_CATEGORY_CATALOG, [], 0);
+  return best?.path || [omGetCategoryDef("other")?.id, omGetCategoryDef("other-products")?.id].filter(Boolean);
+}
+function renderCategoriesPage(){
+  if(!els.catList || !els.catCrumbs) return;
+  buildCategoryTree();
+  const node = getNodeByPath(activeCatPath) || catTree;
+  els.catCrumbs.innerHTML = "";
+  const homeCr = document.createElement("button");
+  homeCr.className = "crumb"; homeCr.type = "button"; homeCr.textContent = omTrText("Barchasi");
+  homeCr.addEventListener("click", ()=>{ activeCatPath = []; renderCategoriesPage(); });
+  els.catCrumbs.appendChild(homeCr);
+  let acc=[];
+  for(const part of (activeCatPath||[])){
+    const def=omGetCategoryDef(part); const id=def?.id||part; acc.push(id);
+    const b=document.createElement("button"); b.className="crumb"; b.type="button"; b.textContent=omCategoryLangName(def)||omTrText(part);
+    const snap=acc.slice(); b.addEventListener("click",()=>{activeCatPath=snap; renderCategoriesPage();}); els.catCrumbs.appendChild(b);
+  }
+  const children = Array.from((node?.children || new Map()).values()).sort((a,b)=> (b.count||0)-(a.count||0) || String(omCategoryLangName(a)).localeCompare(String(omCategoryLangName(b)), omLang()==="ru"?"ru":"uz"));
+  els.catList.innerHTML=""; if(els.catEmpty) els.catEmpty.hidden = children.length !== 0;
+  for(const ch of children){
+    const item=document.createElement("div");
+    item.className="catItem" + ((ch.count||0)===0 ? " catItemEmpty" : "");
+    const hasChildren=(ch.children && ch.children.size>0);
+    item.innerHTML = `<div class="catName">${omCategoryIconHtml(ch)}<span>${escapeHtml(omCategoryLangName(ch))}</span></div><div class="catMeta"><div class="catCount">${omCount(ch.count||0)}</div><div class="catArrow">${hasChildren?'›':'✓'}</div></div>`;
+    item.addEventListener("click",()=>{ activeCatPath=[...(activeCatPath||[]), ch.id]; renderCategoriesPage(); });
+    els.catList.appendChild(item);
+  }
+  omI18nRefresh(80);
 }
 
 function applyFilterSort(){

@@ -5539,3 +5539,10 @@ body{
 .catName{display:flex;align-items:center;gap:10px;min-width:0}
 .catName i{width:34px;height:34px;min-width:34px;border-radius:13px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#6D4AFF,#EF233C);box-shadow:0 10px 22px rgba(109,74,255,.18)}
 .catItemEmpty{opacity:.72}.catItemEmpty .catName i{background:#CBD5E1;box-shadow:none}.catItemEmpty .catCount{color:#94A3B8}
+
+
+/* v14 category image icons */
+.catName .catIconImg{
+  width:34px;height:34px;min-width:34px;border-radius:13px;display:block;object-fit:contain;background:#fff;border:1px solid rgba(15,23,42,.10);padding:4px;box-shadow:0 10px 22px rgba(109,74,255,.12)
+}
+.catItemEmpty .catName .catIconImg{filter:grayscale(1);opacity:.7;box-shadow:none}
