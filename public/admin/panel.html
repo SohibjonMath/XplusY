@@ -120,9 +120,12 @@
 
     .deliverySettingsBox{margin-top:22px;padding:18px;border:1px solid var(--gray-light);border-radius:var(--border-radius);background:#fbfcff}
     .tariffTableWrap{overflow-x:auto;border:1px solid var(--gray-light);border-radius:var(--border-radius);background:#fff}
-    .tariffTable{width:100%;min-width:560px}
-    .tariffTable td,.tariffTable th{padding:10px}
+    .tariffTable{width:100%;min-width:760px}
+    .tariffTable td,.tariffTable th{padding:10px;vertical-align:middle}
     .tariffTable input.form-control{padding:9px 10px;font-size:.95rem}
+    .tariffTable .zoneIndex{font-weight:900;color:var(--primary);white-space:nowrap}
+    .tariffTable .zoneDeleteBtn{padding:8px 10px;border-radius:10px}
+    .deliveryZoneActions{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px;align-items:center}
 
     /* Helpers */
     .hidden{display:none !important}
@@ -751,16 +754,27 @@
                 <div class="form-group"><label>20 km dan keyin har 1 km narxi</label><input id="deliveryCourierPerKm" type="number" min="0" step="100" class="form-control" placeholder="3000"></div>
               </div>
 
+              <div class="deliveryZoneActions">
+                <button class="btn btn-light btn-sm" id="addCourierZoneBtn" type="button"><i class="fas fa-plus"></i> Zona qo‘shish</button>
+                <button class="btn btn-light btn-sm" id="normalizeCourierZonesBtn" type="button"><i class="fas fa-wand-magic-sparkles"></i> Zonalarni tartiblash</button>
+                <small class="form-text">Endi km chegaralari ham tahrirlanadi: masalan 0–5, 5–10, 10–25 km kabi.</small>
+              </div>
+
               <div class="tariffTableWrap">
                 <table class="tariffTable">
-                  <thead><tr><th>Zona</th><th>Pullik narx</th><th>Bepul yetkazish limiti</th></tr></thead>
-                  <tbody>
-                    <tr><td>0–3 km</td><td><input id="courierFee3" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree3" type="number" min="0" step="1000" class="form-control"></td></tr>
-                    <tr><td>3–7 km</td><td><input id="courierFee7" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree7" type="number" min="0" step="1000" class="form-control"></td></tr>
-                    <tr><td>7–12 km</td><td><input id="courierFee12" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree12" type="number" min="0" step="1000" class="form-control"></td></tr>
-                    <tr><td>12–20 km</td><td><input id="courierFee20" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree20" type="number" min="0" step="1000" class="form-control"></td></tr>
-                    <tr><td>20–30 km baza</td><td><input id="courierFee30Base" type="number" min="0" step="100" class="form-control"></td><td><input id="courierFree30" type="number" min="0" step="1000" class="form-control"></td></tr>
-                  </tbody>
+                  <thead>
+                    <tr>
+                      <th>Zona</th>
+                      <th>Boshlanish km</th>
+                      <th>Tugash km</th>
+                      <th>Pullik narx / baza</th>
+                      <th>Har 1 km narxi</th>
+                      <th>Bepul limiti</th>
+                      <th>Muddat</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="deliveryCourierZonesBody"></tbody>
                 </table>
               </div>
 
@@ -1237,22 +1251,122 @@
       }
     };
     let deliverySettingsLoaded = false;
-    function numVal(id, fallback=0){
-      const v = Number((document.getElementById(id)?.value || '').toString().replace(/[^0-9.-]/g,''));
+    function cleanNum(raw, fallback=0){
+      const v = Number((raw ?? '').toString().replace(/[^0-9.-]/g,''));
       return Number.isFinite(v) ? v : fallback;
     }
+    function numVal(id, fallback=0){ return cleanNum(document.getElementById(id)?.value, fallback); }
+    function numFrom(el, fallback=0){ return cleanNum(el?.value, fallback); }
     function setVal(id, value){ const el = document.getElementById(id); if(el) el.value = value ?? ''; }
     function deliveryDefaultClone(){ try{ return (typeof structuredClone === "function") ? structuredClone(DELIVERY_SETTINGS_DEFAULT) : JSON.parse(JSON.stringify(DELIVERY_SETTINGS_DEFAULT)); }catch(e){ return JSON.parse(JSON.stringify(DELIVERY_SETTINGS_DEFAULT)); } }
+
+    function sanitizeCourierZones(zones){
+      const defaults = DELIVERY_SETTINGS_DEFAULT.courier.zones;
+      const src = Array.isArray(zones) && zones.length ? zones : defaults;
+      return src.map((z, i)=>{
+        const fallback = defaults[Math.min(i, defaults.length-1)] || defaults[defaults.length-1];
+        const fromKm = Math.max(0, cleanNum(z?.fromKm, fallback.fromKm || 0));
+        const maxKm = Math.max(fromKm + 0.1, cleanNum(z?.maxKm, fallback.maxKm || fromKm + 3));
+        return {
+          id: String(z?.id || `z${i+1}`),
+          fromKm,
+          maxKm,
+          feeUZS: Math.max(0, Math.round(cleanNum(z?.feeUZS ?? z?.baseFeeUZS, fallback.feeUZS ?? fallback.baseFeeUZS ?? 0))),
+          baseFeeUZS: Math.max(0, Math.round(cleanNum(z?.baseFeeUZS ?? z?.feeUZS, fallback.baseFeeUZS ?? fallback.feeUZS ?? 0))),
+          perKmUZS: Math.max(0, Math.round(cleanNum(z?.perKmUZS, fallback.perKmUZS || 0))),
+          freeFromUZS: Math.max(0, Math.round(cleanNum(z?.freeFromUZS, fallback.freeFromUZS || 0))),
+          etaText: String(z?.etaText || fallback.etaText || '1–2 kun')
+        };
+      }).sort((a,b)=>a.fromKm-b.fromKm || a.maxKm-b.maxKm).slice(0, 20);
+    }
+
+    function renderCourierZones(zones){
+      const body = document.getElementById('deliveryCourierZonesBody');
+      if(!body) return;
+      const list = sanitizeCourierZones(zones);
+      body.innerHTML = list.map((z, i)=>`
+        <tr class="courierZoneRow" data-index="${i}">
+          <td class="zoneIndex">${i+1}</td>
+          <td><input type="number" min="0" step="0.1" class="form-control zoneFromKm" value="${z.fromKm}"></td>
+          <td><input type="number" min="0.1" step="0.1" class="form-control zoneMaxKm" value="${z.maxKm}"></td>
+          <td><input type="number" min="0" step="100" class="form-control zoneFee" value="${z.baseFeeUZS || z.feeUZS || 0}"></td>
+          <td><input type="number" min="0" step="100" class="form-control zonePerKm" value="${z.perKmUZS || 0}" placeholder="0"></td>
+          <td><input type="number" min="0" step="1000" class="form-control zoneFree" value="${z.freeFromUZS || 0}"></td>
+          <td><input class="form-control zoneEta" value="${String(z.etaText || '1–2 kun').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}"></td>
+          <td><button type="button" class="btn btn-light btn-sm zoneDeleteBtn" title="Zonani o‘chirish"><i class="fas fa-trash"></i></button></td>
+        </tr>
+      `).join('');
+      body.querySelectorAll('.zoneDeleteBtn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const rows = [...body.querySelectorAll('.courierZoneRow')];
+          if(rows.length <= 1){ toast('Kamida bitta zona qolishi kerak', 'error'); return; }
+          btn.closest('tr')?.remove();
+          normalizeCourierZonesUI(false);
+        });
+      });
+    }
+
+    function readCourierZonesFromUI(){
+      const rows = [...document.querySelectorAll('#deliveryCourierZonesBody .courierZoneRow')];
+      const zones = rows.map((row, i)=>{
+        const fromKm = Math.max(0, numFrom(row.querySelector('.zoneFromKm'), i ? 0 : 0));
+        const maxKm = Math.max(fromKm + 0.1, numFrom(row.querySelector('.zoneMaxKm'), fromKm + 3));
+        const fee = Math.max(0, Math.round(numFrom(row.querySelector('.zoneFee'), 0)));
+        const perKm = Math.max(0, Math.round(numFrom(row.querySelector('.zonePerKm'), 0)));
+        return {
+          id: `z${i+1}`,
+          fromKm,
+          maxKm,
+          feeUZS: fee,
+          baseFeeUZS: fee,
+          perKmUZS: perKm,
+          freeFromUZS: Math.max(0, Math.round(numFrom(row.querySelector('.zoneFree'), 0))),
+          etaText: (row.querySelector('.zoneEta')?.value || '1–2 kun').trim()
+        };
+      }).filter(z=>z.maxKm > z.fromKm);
+      return sanitizeCourierZones(zones.length ? zones : DELIVERY_SETTINGS_DEFAULT.courier.zones);
+    }
+
+    function normalizeCourierZonesUI(showToast=true){
+      const zones = readCourierZonesFromUI().sort((a,b)=>a.maxKm-b.maxKm);
+      let prev = 0;
+      const normalized = zones.map((z, i)=>{
+        const maxKm = Math.max(prev + 0.1, Number(z.maxKm || prev + 3));
+        const next = { ...z, id:`z${i+1}`, fromKm: Number(prev.toFixed(1)), maxKm: Number(maxKm.toFixed(1)) };
+        prev = maxKm;
+        return next;
+      });
+      renderCourierZones(normalized);
+      const lastMax = normalized[normalized.length-1]?.maxKm || 30;
+      setVal('deliveryCourierMaxKm', lastMax);
+      if(showToast) toast('Zonalar ketma-ket tartiblandi');
+    }
+
+    function addCourierZoneFromUI(){
+      const zones = readCourierZonesFromUI();
+      const last = zones[zones.length-1] || DELIVERY_SETTINGS_DEFAULT.courier.zones[DELIVERY_SETTINGS_DEFAULT.courier.zones.length-1];
+      const fromKm = Math.max(0, Number(last.maxKm || 0));
+      const maxKm = fromKm + 5;
+      zones.push({
+        id:`z${zones.length+1}`,
+        fromKm,
+        maxKm,
+        feeUZS: Math.max(0, Number(last.baseFeeUZS || last.feeUZS || 35000)),
+        baseFeeUZS: Math.max(0, Number(last.baseFeeUZS || last.feeUZS || 35000)),
+        perKmUZS: Math.max(0, Number(last.perKmUZS || 3000)),
+        freeFromUZS: Math.max(0, Number(last.freeFromUZS || 0)),
+        etaText: last.etaText || '1–2 kun'
+      });
+      renderCourierZones(zones);
+      setVal('deliveryCourierMaxKm', maxKm);
+    }
+
     function fillDeliverySettingsForm(cfg){
       const d = cfg || deliveryDefaultClone();
-      const z = d.courier?.zones || DELIVERY_SETTINGS_DEFAULT.courier.zones;
-      setVal('deliveryCourierMaxKm', d.courier?.maxKm ?? 30);
-      setVal('deliveryCourierPerKm', z[4]?.perKmUZS ?? 3000);
-      setVal('courierFee3', z[0]?.feeUZS ?? 10000); setVal('courierFree3', z[0]?.freeFromUZS ?? 99000);
-      setVal('courierFee7', z[1]?.feeUZS ?? 15000); setVal('courierFree7', z[1]?.freeFromUZS ?? 199000);
-      setVal('courierFee12', z[2]?.feeUZS ?? 25000); setVal('courierFree12', z[2]?.freeFromUZS ?? 299000);
-      setVal('courierFee20', z[3]?.feeUZS ?? 35000); setVal('courierFree20', z[3]?.freeFromUZS ?? 499000);
-      setVal('courierFee30Base', z[4]?.baseFeeUZS ?? z[4]?.feeUZS ?? 35000); setVal('courierFree30', z[4]?.freeFromUZS ?? 899000);
+      const z = sanitizeCourierZones(d.courier?.zones || DELIVERY_SETTINGS_DEFAULT.courier.zones);
+      setVal('deliveryCourierMaxKm', d.courier?.maxKm ?? z[z.length-1]?.maxKm ?? 30);
+      setVal('deliveryCourierPerKm', z[z.length-1]?.perKmUZS ?? 3000);
+      renderCourierZones(z);
       setVal('uzpostFirstKgFee', d.uzpost?.firstKgFeeUZS ?? 15000);
       setVal('uzpostExtraKgFee', d.uzpost?.extraKgFeeUZS ?? 3000);
       setVal('uzpostEtaText', d.uzpost?.etaText ?? '2–5 kun');
@@ -1263,19 +1377,19 @@
       setVal('uzpostFree10', r[3]?.freeFromUZS ?? 999000);
     }
     function readDeliverySettingsForm(){
-      const perKm = numVal('deliveryCourierPerKm', 3000);
+      let zones = readCourierZonesFromUI();
+      const globalPerKm = numVal('deliveryCourierPerKm', NaN);
+      if(Number.isFinite(globalPerKm) && globalPerKm >= 0){
+        zones = zones.map((z, i)=> i === zones.length - 1 && Number(z.perKmUZS || 0) > 0 ? { ...z, perKmUZS: globalPerKm } : z);
+      }
+      const lastMax = zones[zones.length-1]?.maxKm || 30;
+      const maxKm = Math.max(1, lastMax, numVal('deliveryCourierMaxKm', lastMax));
       return {
-        version: 1,
+        version: 2,
         courier: {
           enabled: true,
-          maxKm: numVal('deliveryCourierMaxKm', 30),
-          zones: [
-            { id:'z1', fromKm:0, maxKm:3, feeUZS:numVal('courierFee3',10000), freeFromUZS:numVal('courierFree3',99000), etaText:'Bugun / 1 kun' },
-            { id:'z2', fromKm:3, maxKm:7, feeUZS:numVal('courierFee7',15000), freeFromUZS:numVal('courierFree7',199000), etaText:'Bugun / 1 kun' },
-            { id:'z3', fromKm:7, maxKm:12, feeUZS:numVal('courierFee12',25000), freeFromUZS:numVal('courierFree12',299000), etaText:'Bugun / 1 kun' },
-            { id:'z4', fromKm:12, maxKm:20, feeUZS:numVal('courierFee20',35000), freeFromUZS:numVal('courierFree20',499000), etaText:'1–2 kun' },
-            { id:'z5', fromKm:20, maxKm:30, baseFeeUZS:numVal('courierFee30Base',35000), perKmUZS:perKm, freeFromUZS:numVal('courierFree30',899000), etaText:'1–2 kun' }
-          ]
+          maxKm,
+          zones
         },
         uzpost: {
           enabled: true,
@@ -1309,6 +1423,7 @@
     }
     async function saveDeliverySettingsAdmin(){
       if(!isAdmin(auth.currentUser)) return toast('Faqat admin yetkazish tariflarini saqlay oladi','error');
+      try{ normalizeCourierZonesUI(false); }catch(_e){}
       const cfg = readDeliverySettingsForm();
       try{
         await setDoc(doc(db, 'configs', 'delivery'), cfg, { merge:true });
@@ -2462,6 +2577,8 @@ if(e.target===$("jsonModal")) closeModal("jsonModal");
     let __bound = false;
 
     document.getElementById("saveDeliverySettingsBtn")?.addEventListener("click", saveDeliverySettingsAdmin);
+    document.getElementById("addCourierZoneBtn")?.addEventListener("click", addCourierZoneFromUI);
+    document.getElementById("normalizeCourierZonesBtn")?.addEventListener("click", ()=>normalizeCourierZonesUI(true));
     document.getElementById("resetDeliverySettingsBtn")?.addEventListener("click", ()=>{ fillDeliverySettingsForm(deliveryDefaultClone()); toast('Standart tariflar qo‘yildi. Saqlashni unutmang.'); });
 
     onAuthStateChanged(auth, async (user)=>{
