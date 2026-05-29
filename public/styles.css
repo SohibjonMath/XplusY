@@ -5532,3 +5532,10 @@ body{
   font-weight:800;
   line-height:1.45;
 }
+
+/* v12 category system polish */
+.catItem{position:relative;overflow:hidden;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+.catItem:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#6D4AFF,#EF233C);opacity:.75}
+.catName{display:flex;align-items:center;gap:10px;min-width:0}
+.catName i{width:34px;height:34px;min-width:34px;border-radius:13px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#6D4AFF,#EF233C);box-shadow:0 10px 22px rgba(109,74,255,.18)}
+.catItemEmpty{opacity:.72}.catItemEmpty .catName i{background:#CBD5E1;box-shadow:none}.catItemEmpty .catCount{color:#94A3B8}

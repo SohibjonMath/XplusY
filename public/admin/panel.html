@@ -2692,6 +2692,29 @@ button[data-x] i{
 }
 </style>
 
+
+<style id="orzumall-v12-category-system-premium">
+/* v12: professional category system */
+.category-select-row{border:1px solid rgba(109,74,255,.12);background:linear-gradient(180deg,#fff,#f8f7ff);border-radius:18px;padding:12px;margin:2px 0 12px}
+.category-path-preview{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;border-radius:999px;background:#fff;border:1px solid #e5e7eb;color:#475569;font-size:12px;font-weight:900}
+.category-admin-hero{position:relative;overflow:hidden;border-radius:30px;padding:24px;margin-bottom:16px;background:linear-gradient(135deg,#111827,#6D4AFF 55%,#EF233C);color:#fff;box-shadow:0 24px 70px rgba(109,74,255,.22)}
+.category-admin-hero:before{content:"";position:absolute;inset:-30% -10% auto auto;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.12);filter:blur(4px)}
+.category-admin-hero h2{position:relative;font-size:30px;line-height:1.05;letter-spacing:-.04em;margin:0 0 8px;color:#fff}
+.category-admin-hero p{position:relative;max-width:780px;color:rgba(255,255,255,.78);font-weight:750;margin:0}
+.category-admin-stats{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
+.category-admin-stat{padding:14px;border-radius:22px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(12px)}
+.category-admin-stat span{display:block;font-size:12px;color:rgba(255,255,255,.72);font-weight:900;text-transform:uppercase;letter-spacing:.04em}.category-admin-stat b{display:block;margin-top:6px;font-size:26px;color:#fff}
+.category-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.cat-admin-card{border-radius:28px;background:#fff;border:1px solid #E7ECF5;box-shadow:0 18px 44px rgba(15,23,42,.065);padding:18px;transition:.18s ease;cursor:pointer;overflow:hidden;position:relative}
+.cat-admin-card:hover{transform:translateY(-2px);box-shadow:0 24px 60px rgba(15,23,42,.10)}
+.cat-admin-top{display:flex;gap:13px;align-items:center;margin-bottom:14px}.cat-admin-icon{width:54px;height:54px;min-width:54px;border-radius:20px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#6D4AFF,#EF233C);box-shadow:0 14px 28px rgba(109,74,255,.20)}
+.cat-admin-top h3{margin:0;font-size:18px;letter-spacing:-.03em;color:#111827}.cat-admin-top p{margin:4px 0 0;color:#64748B;font-weight:800}
+.cat-admin-subgrid{display:flex;flex-wrap:wrap;gap:8px}.cat-admin-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid #E5EAF3;background:#F8FAFC;color:#334155;border-radius:999px;padding:8px 10px;font-weight:900;font-size:12px;cursor:pointer}.cat-admin-chip b{background:#fff;border:1px solid #E5EAF3;border-radius:999px;padding:2px 7px;color:#6D4AFF}.cat-admin-chip:hover{background:#F1ECFF;border-color:#DDD1FF;color:#5B21B6}
+.category-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#F1ECFF;color:#5B21B6;border:1px solid #DDD1FF;font-size:12px;font-weight:950;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.products-tools #productCategoryFilter{min-width:180px}
+@media(max-width:900px){.category-admin-stats{grid-template-columns:1fr}.category-admin-grid{grid-template-columns:1fr}.products-tools #productCategoryFilter{min-width:100%}}
+</style>
+
 </head>
 <body style="display:none;">
   <div class="container">
@@ -2699,6 +2722,7 @@ button[data-x] i{
       <div class="logo"><h1><i class="fas fa-bag-shopping"></i> <span>OrzuMall<br>Admin</span></h1></div>
       <ul class="nav-menu">
         <li class="nav-item"><a href="#" class="nav-link active" data-view="products"><i class="fas fa-boxes-stacked"></i><span>Mahsulotlar</span></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-view="categories"><i class="fas fa-sitemap"></i><span>Kategoriyalar</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="orders"><i class="fas fa-cart-shopping"></i><span>Buyurtmalar</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="topups"><i class="fas fa-wallet"></i><span>Balans</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="turnover"><i class="fas fa-chart-line"></i><span>Aylanma</span></a></li>
@@ -2741,7 +2765,7 @@ button[data-x] i{
         <div class="stat-card"><div class="stat-icon total"><i class="fas fa-boxes"></i></div><div class="stat-info"><h3 id="totalProducts">0</h3><p>Jami mahsulotlar</p></div></div>
         <div class="stat-card"><div class="stat-icon price"><i class="fas fa-money-bill-wave"></i></div><div class="stat-info"><h3 id="avgPrice">0</h3><p>O'rtacha narx (UZS)</p></div></div>
         <div class="stat-card"><div class="stat-icon popular"><i class="fas fa-fire"></i></div><div class="stat-info"><h3 id="avgPopular">0</h3><p>O‘rtacha ommaboplik balli</p></div></div>
-        <div class="stat-card"><div class="stat-icon tags"><i class="fas fa-tag"></i></div><div class="stat-info"><h3 id="totalTags">0</h3><p>Jami teglar</p></div></div>
+        <div class="stat-card"><div class="stat-icon tags"><i class="fas fa-sitemap"></i></div><div class="stat-info"><h3 id="totalTags">0</h3><p>Kategoriyalangan</p></div></div>
       </div>
 
       <section class="products-suite" id="productsView">
@@ -2750,7 +2774,7 @@ button[data-x] i{
           <div class="products-hero-content">
             <div class="products-eyebrow"><i class="fas fa-crown"></i> OrzuMall katalog markazi</div>
             <h3 id="productsTitle">Mahsulotlar bo‘limi</h3>
-            <p>Rasm, narx, vazn, holat, rang va teglarni bitta premium ish maydonida boshqaring. Tez qidiruv, saralash va karta ko‘rinishi qo‘shildi.</p>
+            <p>Rasm, narx, vazn, holat, rang va professional kategoriyalarni bitta premium ish maydonida boshqaring. Endi katalog teglar emas, kategoriya daraxti asosida ishlaydi.</p>
             <div class="products-hero-tags">
               <span><i class="fas fa-database"></i> Firestore Live</span>
               <span><i class="fas fa-shield-halved"></i> Admin nazorat</span>
@@ -2789,7 +2813,8 @@ button[data-x] i{
               </div>
             </div>
             <div class="products-tools">
-              <div class="product-search-mini"><i class="fas fa-magnifying-glass"></i><input id="productSectionSearch" placeholder="Mahsulot, ID, teg, tavsif bo‘yicha qidirish"></div>
+              <div class="product-search-mini"><i class="fas fa-magnifying-glass"></i><input id="productSectionSearch" placeholder="Mahsulot, ID, kategoriya, tavsif bo‘yicha qidirish"></div>
+              <select id="productCategoryFilter" class="form-control compact-control" aria-label="Kategoriya bo‘yicha filter"><option value="all">Barcha kategoriyalar</option></select>
               <select id="productStatusFilter" class="form-control compact-control" aria-label="Holat bo‘yicha filter">
                 <option value="all">Barcha holatlar</option>
                 <option value="approved">Tasdiqlangan</option>
@@ -2820,7 +2845,7 @@ button[data-x] i{
             <table id="productsTable">
               <thead>
                 <tr>
-                  <th>Mahsulot</th><th>ID</th><th>Narx</th><th>Vazn</th><th>Turi</th><th>Teglar</th><th>Ranglar</th><th>O‘lcham</th><th>Ball</th><th>Amallar</th>
+                  <th>Mahsulot</th><th>ID</th><th>Narx</th><th>Vazn</th><th>Turi</th><th>Kategoriya</th><th>Ranglar</th><th>O‘lcham</th><th>Ball</th><th>Amallar</th>
                 </tr>
               </thead>
               <tbody id="productsTableBody"></tbody>
@@ -2829,6 +2854,20 @@ button[data-x] i{
           <div class="products-cards-grid hidden" id="productsCardsGrid"></div>
         </div>
       </section>
+
+      <section class="categories-suite hidden" id="categoriesView">
+        <div class="category-admin-hero">
+          <h2><i class="fas fa-sitemap"></i> Professional kategoriyalar</h2>
+          <p>Mahsulotlar endi oddiy teglar orqali emas, aniq <b>asosiy kategoriya → ichki kategoriya</b> tizimi orqali boshqariladi. Eski mahsulotlar nomi va teglari bo‘yicha avtomatik kategoriyaga tushadi.</p>
+          <div class="category-admin-stats">
+            <div class="category-admin-stat"><span>Asosiy kategoriyalar</span><b id="categoryTotalCount">0</b></div>
+            <div class="category-admin-stat"><span>Qo‘lda biriktirilgan</span><b id="categoryAssignedCount">0</b></div>
+            <div class="category-admin-stat"><span>Avto aniqlangan</span><b id="categoryAutoCount">0</b></div>
+          </div>
+        </div>
+        <div class="category-admin-grid" id="categoryAdminGrid"></div>
+      </section>
+
       <section class="orders-suite hidden" id="ordersView">
         <div class="orders-hero">
           <div class="orders-hero-orb"></div>
@@ -3280,6 +3319,25 @@ button[data-x] i{
                     <input id="youtubeUrl" class="form-control" placeholder="https://youtu.be/..." />
                     <small class="hint">Frontenda YouTube ikonka shu linkni ishlatadi.</small>
                   </div>
+                </div>
+                <div class="category-select-row">
+                  <div class="pm-section-head" style="margin-bottom:10px">
+                    <h4><i class="fas fa-sitemap"></i> Kategoriya tizimi</h4>
+                    <span class="pm-badge">Muhim</span>
+                  </div>
+                  <div class="form-row pm-row-2" style="margin-bottom:0!important">
+                    <div class="form-group">
+                      <label>Asosiy kategoriya</label>
+                      <select id="productCategory" class="form-control"><option value="">Kategoriya tanlang</option></select>
+                      <small class="hint">Endi katalog shu maydon asosida tartiblanadi.</small>
+                    </div>
+                    <div class="form-group">
+                      <label>Ichki kategoriya</label>
+                      <select id="productSubcategory" class="form-control"><option value="">Ichki kategoriya tanlang</option></select>
+                      <small class="hint">Masalan: Go‘zallik → Depilyatsiya.</small>
+                    </div>
+                  </div>
+                  <div class="category-path-preview" id="categoryPathPreview"><i class="fas fa-sitemap"></i> Kategoriya tanlanmagan</div>
                 </div>
                 <div class="form-row">
                   <div class="form-group"><label>Tavsif</label><textarea id="description" class="form-control" rows="3"></textarea></div>
@@ -3934,6 +3992,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
         renderTable();
         renderStats();
         try{ renderStatsPanels(); }catch(e){}
+        try{ renderCategoryAdmin(); }catch(e){}
         return items;
       }catch(e){
         console.error(e);
@@ -4224,6 +4283,163 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     }
 
     
+    /* ===== Professional category system: independent from tags ===== */
+    const OM_ADMIN_CATEGORY_CATALOG = [
+      {id:"beauty", name:"Go‘zallik va parvarish", icon:"fa-sparkles", keywords:["kosmetik","beauty","go‘zallik","go'zallik","parvarish","bioaqua"], children:[
+        {id:"skincare", name:"Yuz parvarishi", icon:"fa-face-smile", keywords:["yuz","face","krem","niqob","mask","aloe","rice","guruch","serum","sovun","soap"]},
+        {id:"haircare", name:"Soch parvarishi", icon:"fa-scissors", keywords:["soch","hair","shampun","balzam","conditioner","taroq","raw pulp"]},
+        {id:"bodycare", name:"Tana parvarishi", icon:"fa-spa", keywords:["tana","body","massaj","cho‘tka","cho'tka","brush","scrub","sponge","gubka"]},
+        {id:"depilation", name:"Depilyatsiya", icon:"fa-wand-magic-sparkles", keywords:["depilyatsiya","wax","vоск","воск","hot wax","mum","granula","spatula","shugaring"]},
+        {id:"perfume", name:"Atirlar", icon:"fa-spray-can-sparkles", keywords:["atir","parfum","perfume","duhi","dukh","aroma","fragrance","creed","aventus"]},
+        {id:"beauty-tools", name:"Kosmetik aksessuarlar", icon:"fa-brush", keywords:["aksessuar","accessory","cho'p","cho‘p","spatula","applikator","brush","щетка","silikon","plastik"]}
+      ]},
+      {id:"electronics", name:"Elektronika", icon:"fa-mobile-screen", keywords:["telefon","phone","elektron","gadget"], children:[
+        {id:"phones", name:"Telefonlar", icon:"fa-mobile-screen-button", keywords:["telefon","smartfon","iphone","samsung","xiaomi","redmi"]},
+        {id:"phone-accessories", name:"Telefon aksessuarlari", icon:"fa-plug", keywords:["charger","zaryad","quvvatlagich","adapter","case","chexol","kabel","powerbank","usb"]},
+        {id:"audio", name:"Audio", icon:"fa-headphones", keywords:["naushnik","tws","bluetooth","earphone","speaker","kolonka","audio"]},
+        {id:"smart-devices", name:"Smart qurilmalar", icon:"fa-clock", keywords:["smart watch","soat","watch","kamera","camera"]}
+      ]},
+      {id:"home", name:"Uy-ro‘zg‘or", icon:"fa-house", keywords:["uy","home","oshxona","kitchen"], children:[
+        {id:"kitchen", name:"Oshxona", icon:"fa-kitchen-set", keywords:["oshxona","kitchen","pichoq","idish","termos","blender","choynak"]},
+        {id:"cleaning", name:"Tozalash", icon:"fa-broom", keywords:["tozalash","clean","mop","supurgi","salfetka"]},
+        {id:"storage", name:"Saqlash va tartib", icon:"fa-box-archive", keywords:["organizer","saqlash","box","quti","polka"]},
+        {id:"home-decor", name:"Dekor", icon:"fa-couch", keywords:["dekor","lamp","chiroq","gilam","parda"]}
+      ]},
+      {id:"fashion", name:"Kiyim va aksessuarlar", icon:"fa-shirt", keywords:["kiyim","fashion","clothes"], children:[
+        {id:"women-fashion", name:"Ayollar uchun", icon:"fa-person-dress", keywords:["ayol","women","dress","ko‘ylak","sumka","bijuteriya"]},
+        {id:"men-fashion", name:"Erkaklar uchun", icon:"fa-user-tie", keywords:["erkak","men","futbolka","shim","remen","soat"]},
+        {id:"bags", name:"Sumka va hamyonlar", icon:"fa-bag-shopping", keywords:["sumka","bag","hamyon","wallet","ryukzak"]},
+        {id:"jewelry", name:"Bijuteriya", icon:"fa-gem", keywords:["uzuk","zirak","taqinchoq","jewelry","bijuteriya"]}
+      ]},
+      {id:"health", name:"Sog‘liq va gigiyena", icon:"fa-heart-pulse", keywords:["sog‘liq","sogliq","health","gigiyena"], children:[
+        {id:"hygiene", name:"Gigiyena", icon:"fa-hands-bubbles", keywords:["gigiyena","hygiene","sovun","soap","antiseptik","tish","tooth"]},
+        {id:"wellness", name:"Wellness", icon:"fa-leaf", keywords:["wellness","massaj","relax","vitamin"]}
+      ]},
+      {id:"kids", name:"Bolalar tovarlari", icon:"fa-child", keywords:["bola","baby","kids"], children:[
+        {id:"kids-care", name:"Bolalar parvarishi", icon:"fa-baby", keywords:["baby","chaqaloq","pampers","bolalar"]},
+        {id:"toys", name:"O‘yinchoqlar", icon:"fa-puzzle-piece", keywords:["toy","o‘yinchoq","oyinchoq","puzzle","lego"]}
+      ]},
+      {id:"other", name:"Boshqa mahsulotlar", icon:"fa-box-open", keywords:[], children:[
+        {id:"other-products", name:"Turli mahsulotlar", icon:"fa-layer-group", keywords:[]}
+      ]}
+    ];
+    function adminCatSlug(v){return String(v||"").trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g,"-").replace(/[^a-z0-9а-яёўғқҳ'\-]+/gi,"-").replace(/^-+|-+$/g,"");}
+    function adminCategoryFlat(){
+      if(window.__omAdminCategoryFlat) return window.__omAdminCategoryFlat;
+      const flat=new Map(), byName=new Map();
+      const walk=(arr,parent=null,path=[])=>{(arr||[]).forEach(def=>{const item={...def,parentId:parent?.id||null,pathIds:[...path,def.id]}; flat.set(def.id,item); [def.id,def.name].filter(Boolean).forEach(x=>byName.set(adminCatSlug(x),item)); walk(def.children||[],item,item.pathIds);});};
+      walk(OM_ADMIN_CATEGORY_CATALOG);
+      window.__omAdminCategoryFlat={flat,byName}; return window.__omAdminCategoryFlat;
+    }
+    function adminGetCategoryDef(idOrName){const {flat,byName}=adminCategoryFlat(); const k=String(idOrName||"").trim(); return flat.get(k)||byName.get(adminCatSlug(k))||null;}
+    function adminExplicitCategoryPath(p){
+      const arr=p?.categoryPathIds||p?.categoryIds;
+      if(Array.isArray(arr)&&arr.length){const ids=arr.map(x=>adminGetCategoryDef(x)?.id).filter(Boolean); if(ids.length) return ids;}
+      const cat=adminGetCategoryDef(p?.categoryId||p?.mainCategoryId||p?.categorySlug||p?.category);
+      const sub=adminGetCategoryDef(p?.subcategoryId||p?.subCategoryId||p?.subcategorySlug||p?.subcategory);
+      if(cat&&sub){ if(sub.parentId===cat.id) return [cat.id,sub.id]; return cat.parentId?cat.pathIds:[cat.id]; }
+      if(sub) return sub.pathIds;
+      if(cat) return cat.pathIds;
+      const names=p?.categoryPath||p?.categories;
+      if(Array.isArray(names)&&names.length){const ids=names.map(x=>adminGetCategoryDef(x)?.id).filter(Boolean); if(ids.length) return ids;}
+      return [];
+    }
+    function adminInferCategoryPath(p){
+      const explicit=adminExplicitCategoryPath(p); if(explicit.length) return explicit;
+      const hay=[p?.name,p?.name_ru,p?.name_en,p?.description,p?.description_ru,p?.productType,p?.fulfillmentType,...(Array.isArray(p?.tags)?p.tags:[])].filter(Boolean).join(" ").toLowerCase();
+      let best=null; const score=(def)=>{let s=0; for(const kw of (def.keywords||[])){const k=String(kw).toLowerCase(); if(k&&hay.includes(k)) s+=k.length>6?3:2;} return s;};
+      for(const parent of OM_ADMIN_CATEGORY_CATALOG){const ps=score(parent); if(ps&&(!best||ps>best.score)) best={score:ps,path:[parent.id]}; for(const child of (parent.children||[])){const sc=ps+score(child); if(sc&&(!best||sc>best.score)) best={score:sc,path:[parent.id,child.id]};}}
+      return best?.path || ["other","other-products"];
+    }
+    function adminProductCategoryPathIds(p){return adminInferCategoryPath(p);}
+    function adminProductCategoryLabel(p){return adminProductCategoryPathIds(p).map(id=>adminGetCategoryDef(id)?.name).filter(Boolean).join(" / ") || "Boshqa mahsulotlar";}
+    function adminProductInCategory(p,catId){ if(!catId||catId==="all") return true; const path=adminProductCategoryPathIds(p); return path.includes(catId); }
+    function adminCategoryPayloadFromPath(path){
+      const ids=(Array.isArray(path)?path:[]).map(x=>adminGetCategoryDef(x)?.id).filter(Boolean);
+      const cat=adminGetCategoryDef(ids[0]) || adminGetCategoryDef("other");
+      let sub=adminGetCategoryDef(ids[1]);
+      if(!sub || sub.parentId !== cat?.id){
+        sub = (cat?.children||[])[0] ? adminGetCategoryDef((cat.children||[])[0].id) : null;
+      }
+      return {
+        categoryId: cat?.id || "other",
+        categoryName: cat?.name || "Boshqa mahsulotlar",
+        subcategoryId: sub?.id || "",
+        subcategoryName: sub?.name || "",
+        categoryPathIds: [cat?.id, sub?.id].filter(Boolean),
+        categoryPath: [cat?.name, sub?.name].filter(Boolean),
+        categorySearchText: [cat?.name,sub?.name,cat?.id,sub?.id].filter(Boolean).join(" ").toLowerCase()
+      };
+    }
+    function selectedCategoryPayload(){
+      const catId=$("productCategory")?.value || "";
+      const subId=$("productSubcategory")?.value || "";
+      if(catId || subId) return adminCategoryPayloadFromPath([catId,subId].filter(Boolean));
+      const draft={name:$("name")?.value,description:$("description")?.value,tags:($("tagsInput")?.value||"").split(",").map(s=>s.trim()).filter(Boolean),productType:$("productType")?.value};
+      return adminCategoryPayloadFromPath(adminInferCategoryPath(draft));
+    }
+    function populateCategoryFilters(){
+      const filter=$("productCategoryFilter");
+      if(filter && filter.dataset.ready!=="1"){
+        filter.innerHTML='<option value="all">Barcha kategoriyalar</option>'+OM_ADMIN_CATEGORY_CATALOG.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option><optgroup label="${esc(c.name)}">${(c.children||[]).map(ch=>`<option value="${esc(ch.id)}">— ${esc(ch.name)}</option>`).join("")}</optgroup>`).join("");
+        filter.dataset.ready="1";
+      }
+      const main=$("productCategory");
+      if(main && main.dataset.ready!=="1"){
+        main.innerHTML='<option value="">Kategoriya tanlang</option>'+OM_ADMIN_CATEGORY_CATALOG.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+        main.dataset.ready="1";
+      }
+    }
+    function syncSubcategorySelect(selected=""){
+      const main=$("productCategory"), sub=$("productSubcategory"), preview=$("categoryPathPreview");
+      if(!main||!sub) return;
+      const def=adminGetCategoryDef(main.value);
+      const children=def?.children||[];
+      sub.innerHTML='<option value="">Ichki kategoriya tanlang</option>'+children.map(ch=>`<option value="${esc(ch.id)}">${esc(ch.name)}</option>`).join("");
+      if(selected && children.some(ch=>ch.id===selected)) sub.value=selected;
+      else if(children.length && !sub.value) sub.value=children[0].id;
+      if(preview){
+        const payload=selectedCategoryPayload();
+        preview.innerHTML=`<i class="fas fa-sitemap"></i> ${esc(payload.categoryPath.join(" / "))}`;
+      }
+    }
+    function setCategoryFormValue(path){
+      populateCategoryFilters();
+      const ids=(Array.isArray(path)?path:[]);
+      const main=$("productCategory"), sub=$("productSubcategory");
+      if(main){main.value=ids[0]||"";}
+      syncSubcategorySelect(ids[1]||"");
+      if(sub && ids[1]) sub.value=ids[1];
+    }
+    function categoryCounts(){
+      const counts=new Map();
+      for(const p of state.products||[]){
+        const path=adminProductCategoryPathIds(p);
+        path.forEach(id=>counts.set(id,(counts.get(id)||0)+1));
+      }
+      return counts;
+    }
+    function renderCategoryAdmin(){
+      populateCategoryFilters();
+      const grid=$("categoryAdminGrid"); if(!grid) return;
+      const counts=categoryCounts();
+      const total=(state.products||[]).length;
+      const assigned=(state.products||[]).filter(p=>adminExplicitCategoryPath(p).length>0).length;
+      if($("categoryTotalCount")) $("categoryTotalCount").textContent=String(OM_ADMIN_CATEGORY_CATALOG.length);
+      if($("categoryAssignedCount")) $("categoryAssignedCount").textContent=String(assigned);
+      if($("categoryAutoCount")) $("categoryAutoCount").textContent=String(Math.max(0,total-assigned));
+      grid.innerHTML=OM_ADMIN_CATEGORY_CATALOG.map(parent=>{
+        const pc=counts.get(parent.id)||0;
+        const children=(parent.children||[]).map(ch=>`<button type="button" class="cat-admin-chip" data-cat-filter="${esc(ch.id)}"><i class="fas ${esc(ch.icon||'fa-layer-group')}"></i><span>${esc(ch.name)}</span><b>${counts.get(ch.id)||0}</b></button>`).join("");
+        return `<article class="cat-admin-card" data-cat-filter="${esc(parent.id)}">
+          <div class="cat-admin-top"><div class="cat-admin-icon"><i class="fas ${esc(parent.icon||'fa-folder')}"></i></div><div><h3>${esc(parent.name)}</h3><p>${pc} ta mahsulot</p></div></div>
+          <div class="cat-admin-subgrid">${children}</div>
+        </article>`;
+      }).join("");
+      grid.querySelectorAll("[data-cat-filter]").forEach(el=>el.addEventListener("click",(e)=>{e.stopPropagation(); const id=el.getAttribute("data-cat-filter"); setView("products"); if($("productCategoryFilter")) $("productCategoryFilter").value=id; renderTable();}));
+    }
+
+
     function productStatusPill(p){
       const s = String(p?.status||"approved").toLowerCase();
       if(s==="pending" || s==="kutilmoqda") return `<span class="pill pending"><i class="fas fa-clock"></i> Kutilmoqda</span>`;
@@ -4248,7 +4464,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       if(!q) return true;
       const hay = [
         p?.id, p?.name, p?.subtitle, p?.description, p?.currency, p?.ownerEmail,
-        p?.productType, p?.pType, p?.fulfillment,
+        p?.productType, p?.pType, p?.fulfillment, adminProductCategoryLabel(p), p?.categorySearchText, p?.categoryName, p?.subcategoryName,
         ...(Array.isArray(p?.tags)?p.tags:[]),
         ...(Array.isArray(p?.sizes)?p.sizes:[])
       ].filter(Boolean).join(" ").toLowerCase();
@@ -4259,12 +4475,14 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       const q = (($("productSectionSearch")?.value || $("searchInput")?.value || "").toLowerCase().trim());
       const status = $("productStatusFilter")?.value || "all";
       const fulfillment = $("productFulfillmentFilter")?.value || "all";
+      const category = $("productCategoryFilter")?.value || "all";
       const sort = $("productSort")?.value || "default";
       let data = [...(base || state.products)];
       data = data.filter(p=>{
         if(!productMatchesQuery(p,q)) return false;
         if(status!=="all" && getProductStatusKey(p)!==status) return false;
         if(fulfillment!=="all" && getProductFulfillmentKey(p)!==fulfillment) return false;
+        if(category!=="all" && !adminProductInCategory(p, category)) return false;
         return true;
       });
       const byNumber = (k)=>(a,b)=>Number(b?.[k]||0)-Number(a?.[k]||0);
@@ -4291,6 +4509,8 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       if(hint){
         const q = ($("productSectionSearch")?.value || $("searchInput")?.value || "").trim();
         hint.textContent = q ? `${data.length} ta natija: “${q}”` : `${data.length} ta mahsulot ko‘rsatilmoqda`;
+        const cf = $("productCategoryFilter")?.value || "all";
+        if(cf!=="all") hint.textContent += ` · ${adminGetCategoryDef(cf)?.name || cf}`;
       }
     }
 
@@ -4330,7 +4550,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
               <div><span>Vazn</span><b>${weightText}</b></div>
               <div><span>Sotilgan</span><b>${Number(p.soldCount||0)} ta</b></div>
             </div>
-            <div class="om-subline" style="margin-bottom:12px">${renderFulfillmentPill(p)} ${renderProductTypePill(p)} ${colors || `<span class="muted">Rang yo‘q</span>`}</div>
+            <div class="om-subline" style="margin-bottom:12px">${renderFulfillmentPill(p)} ${renderProductTypePill(p)} <span class="category-pill"><i class="fas fa-sitemap"></i> ${esc(adminProductCategoryLabel(p))}</span> ${colors || `<span class="muted">Rang yo‘q</span>`}</div>
             <div class="product-card-bottom">
               <div style="display:flex;align-items:center;gap:9px;min-width:120px"><div class="om-score"><span style="width:${popular}%"></span></div><b>${popular}</b></div>
               <div class="actions">
@@ -4378,7 +4598,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
         tr.dataset.pid = p.id || "";
 
         const old = p.oldPrice>0?`<span class="old-price">${formatPrice(p.oldPrice)}</span>`:"";
-        const tags = (p.tags||[]).slice(0,4).map(t=>`<span class="tag">${esc(t)}</span>`).join("") || `<span style="color:var(--muted)">—</span>`;
+        const categoryPill = `<span class="category-pill" title="${esc(adminProductCategoryLabel(p))}"><i class="fas fa-sitemap"></i> ${esc(adminProductCategoryLabel(p))}</span>`;
         const colors = (p.colors||[]).slice(0,4).map(c=>{
           const hex = (typeof c==="string") ? c : (c.hex || c.value || c.color || c.code || c.bg || "");
           const name = (typeof c==="string") ? c : (c.name || c.label || hex || "");
@@ -4410,7 +4630,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
           <td class="price-cell">${formatPrice(p.price)} ${old}<div style="font-size:12px;color:var(--muted);margin-top:4px">${esc(p.currency||"UZS")}</div></td>
           <td><span class="tag" title="Mahsulot vazni"><i class="fas fa-weight-hanging"></i> ${weightText}</span></td>
           <td>${renderFulfillmentPill(p)}</td>
-          <td><div class="tags-container">${tags}</div></td>
+          <td>${categoryPill}</td>
           <td>${colors}</td>
           <td>${sizes}</td>
           <td>
@@ -4438,12 +4658,12 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       $("avgPrice").textContent = formatPrice(avgPrice).replace(" so‘m","");
       const avgPopular = state.products.length ? Math.round(state.products.reduce((s,p)=>s+Number(p.popularScore||0),0)/state.products.length) : 0;
       $("avgPopular").textContent = avgPopular;
-      const totalTags = state.products.reduce((s,p)=>s+(p.tags||[]).length,0);
-      $("totalTags").textContent = totalTags;
+      const totalCategorized = state.products.filter(p=>adminProductCategoryPathIds(p).length).length;
+      $("totalTags").textContent = totalCategorized;
     }
 
     function setView(view){
-      const views = ["products","stats","settings","orders","topups","turnover"];
+      const views = ["products","categories","stats","settings","orders","topups","turnover"];
       views.forEach(v=>{
         const el = document.getElementById(v+"View");
         if(el) el.classList.toggle("hidden", view!==v);
@@ -4452,6 +4672,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
         a.classList.toggle("active", a.dataset.view===view);
       });
       if(view==="stats"){ try{ renderStatsPanels(); }catch(e){} }
+      if(view==="categories"){ try{ renderCategoryAdmin(); }catch(e){} }
       if(view==="orders"){ try{ subscribeOrdersAdmin(); }catch(e){} }
       if(view==="topups"){ try{ subscribeTopupReq(); }catch(e){} }
       if(view==="turnover"){ try{ subscribeTurnover(); }catch(e){} }
@@ -4462,7 +4683,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       const top = [...state.products].sort((a,b)=>Number(b.popularScore||0)-Number(a.popularScore||0)).slice(0,10);
       $("topPopularList").innerHTML = top.map(p=>`<div class="mini-row"><div class="k">${esc(p.id)} · ${esc((p.name||"").slice(0,34))}</div><div class="v">${Number(p.popularScore||0)}</div></div>`).join("");
       const map = new Map();
-      state.products.forEach(p=>(p.tags||[]).forEach(t=>map.set(t,(map.get(t)||0)+1)));
+      state.products.forEach(p=>{ const label=adminProductCategoryLabel(p); map.set(label,(map.get(label)||0)+1); });
       const topTags=[...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
       $("topTagsList").innerHTML = topTags.map(([t,c])=>`<div class="mini-row"><div class="k">${esc(t)}</div><div class="v">${c}</div></div>`).join("");
     }
@@ -4486,6 +4707,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       if(document.getElementById("weightKg")) document.getElementById("weightKg").value="";
       ["name_ru","name_en","description_ru","description_en"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
       if(document.getElementById("pType")) document.getElementById("pType").value="stock";
+      try{ setCategoryFormValue([]); }catch(e){}
       if(document.getElementById("pMinDays")) document.getElementById("pMinDays").value="";
       if(document.getElementById("pMaxDays")) document.getElementById("pMaxDays").value="";
     }
@@ -4913,6 +5135,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       // keep form in sync (read-only display)
       if($("productId")) $("productId").value = id;
 const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean);
+      const categoryPayload = selectedCategoryPayload();
 
       const colors=[...document.querySelectorAll("#colorsContainer .list-item")].map(li=>{
         const ins=li.querySelectorAll("input");
@@ -4952,6 +5175,7 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
         productType: (document.getElementById("productType")?.value || ""),
 
         createdAt:$("createdAt").value||nowISO(),
+        ...categoryPayload,
         tags, colors, sizes, images, variants,
         imagesByColor: getImagesByColorFromRows() || parseImagesByColor($("imagesByColorInput").value||""),
         updatedAt: serverTimestamp(),
@@ -5018,6 +5242,7 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
       $("youtubeUrl").value=p.youtubeUrl||p.videoUrl||"";
 $("currency").value=p.currency||"UZS";
       if(document.getElementById("productType")) document.getElementById("productType").value = (p.productType||"");
+      try{ setCategoryFormValue(adminProductCategoryPathIds(p)); }catch(e){}
       $("tagsInput").value=(p.tags||[]).join(", ");
       updateTagsPreview();
 
@@ -5233,6 +5458,9 @@ $("viewJsonBtn").addEventListener("click",viewJson);
       $("refreshBtn").addEventListener("click",fetchProducts);
       $("exportJsonNav").addEventListener("click",(e)=>{e.preventDefault(); downloadJson();});
 
+      try{ populateCategoryFilters(); syncSubcategorySelect(); }catch(e){}
+      $("productCategory")?.addEventListener("change",()=>syncSubcategorySelect());
+      $("productSubcategory")?.addEventListener("change",()=>syncSubcategorySelect($("productSubcategory")?.value||""));
       $("tagsInput").addEventListener("input",updateTagsPreview);
       $("addColorBtn").addEventListener("click",()=>{ addColor(); refreshColorImageSelects(); });
       $("addSizeBtn").addEventListener("click",()=>addSize());
@@ -5252,7 +5480,7 @@ $("viewJsonBtn").addEventListener("click",viewJson);
         if(globalSearch && document.activeElement !== globalSearch) globalSearch.value = $("productSectionSearch").value || "";
         applyProductFilters();
       });
-      ["productStatusFilter","productFulfillmentFilter","productSort"].forEach(id=>{
+      ["productStatusFilter","productFulfillmentFilter","productCategoryFilter","productSort"].forEach(id=>{
         const el = $(id);
         if(el){ el.addEventListener("input", applyProductFilters); el.addEventListener("change", applyProductFilters); }
       });
@@ -5261,6 +5489,7 @@ $("viewJsonBtn").addEventListener("click",viewJson);
         if($("searchInput")) $("searchInput").value="";
         if($("productStatusFilter")) $("productStatusFilter").value="all";
         if($("productFulfillmentFilter")) $("productFulfillmentFilter").value="all";
+        if($("productCategoryFilter")) $("productCategoryFilter").value="all";
         if($("productSort")) $("productSort").value="default";
         renderTable();
       });

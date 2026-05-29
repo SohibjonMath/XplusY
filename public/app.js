@@ -1473,7 +1473,126 @@ applyFilterSort();
 }
 
 
-/* ===== Categories from tags (nested) ===== */
+/* ===== Professional category catalog (no longer tag-based) ===== */
+const OM_CATEGORY_CATALOG = [
+  {id:"beauty", name:"Go‘zallik va parvarish", ru:"Красота и уход", icon:"fa-sparkles", keywords:["kosmetik","beauty","go‘zallik","go'zallik","parvarish","bioaqua"], children:[
+    {id:"skincare", name:"Yuz parvarishi", ru:"Уход за лицом", icon:"fa-face-smile", keywords:["yuz","face","крем","krem","niqob","mask","маска","aloe","aloe vera","rice","guruch","serum","sovun","soap"]},
+    {id:"haircare", name:"Soch parvarishi", ru:"Уход за волосами", icon:"fa-scissors", keywords:["soch","hair","волос","shampun","shampoo","balzam","conditioner","taroq","head","maska dlya volos","raw pulp"]},
+    {id:"bodycare", name:"Tana parvarishi", ru:"Уход за телом", icon:"fa-spa", keywords:["tana","body","massaj","massage","cho‘tka","cho'tka","brush","scrub","spong","sponge","gubka"]},
+    {id:"depilation", name:"Depilyatsiya", ru:"Депиляция", icon:"fa-wand-magic-sparkles", keywords:["depilyatsiya","депиляция","wax","воск","hot wax","mum","granula","spatula","shugaring"]},
+    {id:"perfume", name:"Atirlar", ru:"Парфюмерия", icon:"fa-spray-can-sparkles", keywords:["atir","parfum","perfume","duhi","духи","aroma","fragrance","creed","aventus"]},
+    {id:"beauty-tools", name:"Kosmetik aksessuarlar", ru:"Косметические аксессуары", icon:"fa-brush", keywords:["aksessuar","accessory","cho'p","cho‘p","spatula","applikator","brush","щетка","silikon","plastik"]}
+  ]},
+  {id:"electronics", name:"Elektronika", ru:"Электроника", icon:"fa-mobile-screen", keywords:["telefon","phone","elektron","gadget"], children:[
+    {id:"phones", name:"Telefonlar", ru:"Телефоны", icon:"fa-mobile-screen-button", keywords:["telefon","smartfon","iphone","samsung","xiaomi","redmi"]},
+    {id:"phone-accessories", name:"Telefon aksessuarlari", ru:"Аксессуары для телефонов", icon:"fa-plug", keywords:["charger","zaryad","quvvatlagich","adapter","case","chexol","kabel","powerbank","usb"]},
+    {id:"audio", name:"Audio", ru:"Аудио", icon:"fa-headphones", keywords:["naushnik","tws","bluetooth","earphone","speaker","kolonka","audio"]},
+    {id:"smart-devices", name:"Smart qurilmalar", ru:"Смарт-устройства", icon:"fa-watch-smart", keywords:["smart watch","soat","watch","kamera","camera"]}
+  ]},
+  {id:"home", name:"Uy-ro‘zg‘or", ru:"Дом и быт", icon:"fa-house", keywords:["uy","home","oshxona","kitchen"], children:[
+    {id:"kitchen", name:"Oshxona", ru:"Кухня", icon:"fa-kitchen-set", keywords:["oshxona","kitchen","pichoq","idish","termos","blender","choynak"]},
+    {id:"cleaning", name:"Tozalash", ru:"Уборка", icon:"fa-broom", keywords:["tozalash","clean","mop","supurgi","salfetka"]},
+    {id:"storage", name:"Saqlash va tartib", ru:"Хранение", icon:"fa-box-archive", keywords:["organizer","saqlash","box","quti","polka"]},
+    {id:"home-decor", name:"Dekor", ru:"Декор", icon:"fa-couch", keywords:["dekor","lamp","chiroq","gilam","parda"]}
+  ]},
+  {id:"fashion", name:"Kiyim va aksessuarlar", ru:"Одежда и аксессуары", icon:"fa-shirt", keywords:["kiyim","fashion","clothes"], children:[
+    {id:"women-fashion", name:"Ayollar uchun", ru:"Для женщин", icon:"fa-person-dress", keywords:["ayol","women","dress","ko‘ylak","sumka","bijuteriya"]},
+    {id:"men-fashion", name:"Erkaklar uchun", ru:"Для мужчин", icon:"fa-user-tie", keywords:["erkak","men","futbolka","shim","remень","soat"]},
+    {id:"bags", name:"Sumka va hamyonlar", ru:"Сумки и кошельки", icon:"fa-bag-shopping", keywords:["sumka","bag","hamyon","wallet","ryukzak"]},
+    {id:"jewelry", name:"Bijuteriya", ru:"Бижутерия", icon:"fa-gem", keywords:["uzuk","zirak","taqinchoq","jewelry","bijuteriya"]}
+  ]},
+  {id:"health", name:"Sog‘liq va gigiyena", ru:"Здоровье и гигиена", icon:"fa-heart-pulse", keywords:["sog‘liq","sogliq","health","gigiyena"], children:[
+    {id:"hygiene", name:"Gigiyena", ru:"Гигиена", icon:"fa-hands-bubbles", keywords:["gigiyena","hygiene","sovun","soap","antiseptik","tish","tooth"]},
+    {id:"wellness", name:"Wellness", ru:"Wellness", icon:"fa-leaf", keywords:["wellness","massaj","relax","vitamin"]}
+  ]},
+  {id:"kids", name:"Bolalar tovarlari", ru:"Детские товары", icon:"fa-child", keywords:["bola","baby","kids"], children:[
+    {id:"kids-care", name:"Bolalar parvarishi", ru:"Уход за детьми", icon:"fa-baby", keywords:["baby","chaqaloq","pampers","bolalar"]},
+    {id:"toys", name:"O‘yinchoqlar", ru:"Игрушки", icon:"fa-puzzle-piece", keywords:["toy","o‘yinchoq","oyinchoq","puzzle","lego"]}
+  ]},
+  {id:"other", name:"Boshqa mahsulotlar", ru:"Другие товары", icon:"fa-box-open", keywords:[], children:[
+    {id:"other-products", name:"Turli mahsulotlar", ru:"Разные товары", icon:"fa-layer-group", keywords:[]}
+  ]}
+];
+function omCatNorm(v){ return String(v||"").trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g," "); }
+function omCatSlug(v){ return omCatNorm(v).replace(/[^a-z0-9а-яёўғқҳ‘'\-]+/gi,"-").replace(/^-+|-+$/g,""); }
+function omCategoryLangName(def){ return omLang()==="ru" ? (def?.ru || def?.name || def?.id || "") : (def?.name || def?.ru || def?.id || ""); }
+function omCategoryFlat(){
+  if(window.__omCategoryFlat) return window.__omCategoryFlat;
+  const flat = new Map();
+  const byName = new Map();
+  const walk=(arr,parent=null,path=[])=>{
+    (arr||[]).forEach(def=>{
+      const item={...def,parentId:parent?.id||null,pathIds:[...path,def.id]};
+      flat.set(def.id,item);
+      [def.id,def.name,def.ru].filter(Boolean).forEach(x=>byName.set(omCatSlug(x), item));
+      walk(def.children||[], item, item.pathIds);
+    });
+  };
+  walk(OM_CATEGORY_CATALOG);
+  window.__omCategoryFlat={flat,byName};
+  return window.__omCategoryFlat;
+}
+function omGetCategoryDef(idOrName){
+  const {flat,byName}=omCategoryFlat();
+  const k=String(idOrName||"").trim();
+  return flat.get(k) || byName.get(omCatSlug(k)) || null;
+}
+function omExplicitProductCategoryPath(p){
+  if(!p) return [];
+  const pathArr = p.categoryPathIds || p.categoryIds || p.categoryPathId;
+  if(Array.isArray(pathArr) && pathArr.length){
+    const ids = pathArr.map(x=>omGetCategoryDef(x)?.id).filter(Boolean);
+    if(ids.length) return ids;
+  }
+  const catRaw = p.categoryId || p.mainCategoryId || p.categorySlug || p.category;
+  const subRaw = p.subcategoryId || p.subCategoryId || p.subcategorySlug || p.subcategory;
+  const cat = omGetCategoryDef(catRaw);
+  const sub = omGetCategoryDef(subRaw);
+  if(cat && sub){
+    if(sub.parentId === cat.id) return [cat.id, sub.id];
+    if(cat.parentId) return cat.pathIds;
+    return [cat.id];
+  }
+  if(sub) return sub.pathIds;
+  if(cat) return cat.pathIds;
+  const names = p.categoryPath || p.categories;
+  if(Array.isArray(names) && names.length){
+    const ids = names.map(x=>omGetCategoryDef(x)?.id).filter(Boolean);
+    if(ids.length) return ids;
+  }
+  return [];
+}
+function omInferCategoryPath(p){
+  const explicit = omExplicitProductCategoryPath(p);
+  if(explicit.length) return explicit;
+  const hay = [p?.name,p?.name_ru,p?.name_en,p?.description,p?.description_ru,p?.productType,p?.fulfillmentType,...(Array.isArray(p?.tags)?p.tags:[])].filter(Boolean).join(" ").toLowerCase();
+  let best=null;
+  const scoreDef=(def)=>{
+    let score=0;
+    for(const kw of (def.keywords||[])){
+      const k=String(kw).toLowerCase();
+      if(k && hay.includes(k)) score += k.length>6 ? 3 : 2;
+    }
+    return score;
+  };
+  for(const parent of OM_CATEGORY_CATALOG){
+    const ps=scoreDef(parent);
+    if(ps && (!best || ps>best.score)) best={score:ps,path:[parent.id]};
+    for(const child of (parent.children||[])){
+      const sc=ps + scoreDef(child);
+      if(sc && (!best || sc>best.score)) best={score:sc,path:[parent.id,child.id]};
+    }
+  }
+  return best?.path || ["other","other-products"];
+}
+function omProductCategoryPathIds(p){ return omInferCategoryPath(p); }
+function omProductCategoryLabel(p){
+  const ids=omProductCategoryPathIds(p);
+  return ids.map(id=>omCategoryLangName(omGetCategoryDef(id))).filter(Boolean).join(" / ") || omTrText("Boshqa mahsulotlar");
+}
+
+
+/* ===== Categories from professional catalog (nested) ===== */
 let catTree = null;
 
 function normalizeTag(t){
@@ -1481,22 +1600,23 @@ function normalizeTag(t){
 }
 
 function buildCategoryTree(){
-  const root = { name:"root", count:0, children: new Map() };
+  const root = { id:"root", name:"root", count:0, children:new Map() };
+  const addDef=(def,parent)=>{
+    const node = { id:def.id, key:def.id, name:def.name, ru:def.ru, icon:def.icon, count:0, children:new Map(), def };
+    parent.children.set(def.id,node);
+    (def.children||[]).forEach(ch=>addDef(ch,node));
+    return node;
+  };
+  OM_CATEGORY_CATALOG.forEach(def=>addDef(def,root));
   for(const p of products || []){
-    const tags = Array.isArray(p.tags) ? p.tags : [];
-    const path = tags.map(x=>String(x||"").trim()).filter(Boolean).slice(0, 6);
-    if(path.length===0) continue;
+    const path = omProductCategoryPathIds(p);
+    if(!path.length) continue;
     root.count++;
     let node = root;
-    for(const raw of path){
-      const key = normalizeTag(raw);
-      if(!key) continue;
-      if(!node.children.has(key)){
-        node.children.set(key, { key, name: raw.trim(), count:0, children: new Map() });
-      }
-      const child = node.children.get(key);
-      child.count++;
-      node = child;
+    for(const id of path){
+      if(!node.children.has(id)) break;
+      node = node.children.get(id);
+      node.count++;
     }
   }
   catTree = root;
@@ -1504,21 +1624,20 @@ function buildCategoryTree(){
 
 function getNodeByPath(path){
   let node = catTree;
-  for(const part of path){
+  for(const part of (path||[])){
     if(!node || !node.children) return null;
-    const key = normalizeTag(part);
-    node = node.children.get(key);
+    const def = omGetCategoryDef(part);
+    const id = def?.id || String(part||"");
+    node = node.children.get(id);
   }
   return node;
 }
 
 function renderCategoriesPage(){
   if(!els.catList || !els.catCrumbs) return;
-  if(!catTree) buildCategoryTree();
-
+  buildCategoryTree();
   const node = getNodeByPath(activeCatPath) || catTree;
 
-  // crumbs
   els.catCrumbs.innerHTML = "";
   const homeCr = document.createElement("button");
   homeCr.className = "crumb";
@@ -1528,34 +1647,36 @@ function renderCategoriesPage(){
   els.catCrumbs.appendChild(homeCr);
 
   let acc = [];
-  for(const part of activeCatPath){
-    acc.push(part);
+  for(const part of (activeCatPath||[])){
+    const def = omGetCategoryDef(part);
+    const id = def?.id || part;
+    acc.push(id);
     const b = document.createElement("button");
     b.className = "crumb";
     b.type = "button";
-    b.textContent = omTrText(part);
+    b.textContent = omCategoryLangName(def) || omTrText(part);
     const snap = acc.slice();
     b.addEventListener("click", ()=>{ activeCatPath = snap; renderCategoriesPage(); });
     els.catCrumbs.appendChild(b);
   }
 
   const children = Array.from((node?.children || new Map()).values())
-    .sort((a,b)=> (b.count||0)-(a.count||0) || String(a.name).localeCompare(String(b.name)));
+    .sort((a,b)=> (b.count||0)-(a.count||0) || String(omCategoryLangName(a)).localeCompare(String(omCategoryLangName(b)), omLang()==="ru"?"ru":"uz"));
 
   els.catList.innerHTML = "";
   if(els.catEmpty) els.catEmpty.hidden = children.length !== 0;
 
   for(const ch of children){
     const item = document.createElement("div");
-    item.className = "catItem";
+    item.className = "catItem" + ((ch.count||0)===0 ? " catItemEmpty" : "");
     item.innerHTML = `
-      <div class="catName">${escapeHtml(omTrText(ch.name))}</div>
+      <div class="catName"><i class="fa-solid ${escapeHtml(ch.icon||"fa-layer-group")}" aria-hidden="true"></i> ${escapeHtml(omCategoryLangName(ch))}</div>
       <div class="catMeta">
-        <div class="catCount">${ch.count}</div>
+        <div class="catCount">${omCount(ch.count||0)}</div>
         <div class="catArrow">›</div>
       </div>`;
     item.addEventListener("click", ()=>{
-      activeCatPath = [...activeCatPath, ch.name];
+      activeCatPath = [...(activeCatPath||[]), ch.id];
       renderCategoriesPage();
     });
     els.catList.appendChild(item);
@@ -1564,15 +1685,16 @@ function renderCategoriesPage(){
 }
 
 function productMatchesCategory(p, path){
-  const usePath = Array.isArray(path) ? path : [];
+  const usePath = Array.isArray(path) ? path.map(x=>omGetCategoryDef(x)?.id || String(x||"")) : [];
   if(usePath.length===0) return true;
-  const tags = Array.isArray(p.tags) ? p.tags.map(x=>String(x||"").trim()) : [];
-  if(tags.length < usePath.length) return false;
+  const prodPath = omProductCategoryPathIds(p);
+  if(prodPath.length < usePath.length) return false;
   for(let i=0;i<usePath.length;i++){
-    if(normalizeTag(tags[i]) !== normalizeTag(usePath[i])) return false;
+    if(prodPath[i] !== usePath[i]) return false;
   }
   return true;
 }
+
 function applyFilterSort(){
   const query = norm(els.q.value);
   let arr = [...products];
@@ -1589,7 +1711,7 @@ function applyFilterSort(){
 
   if(query){
     arr = arr.filter(p=>{
-      const hay = `${p.name} ${omProductText(p, "name", p.name||"")} ${(p.tags||[]).join(" ")} ${omProductTags(p).join(" ")}`.toLowerCase();
+      const hay = `${p.name} ${omProductText(p, "name", p.name||"")} ${omProductCategoryLabel(p)} ${(p.tags||[]).join(" ")} ${omProductTags(p).join(" ")}`.toLowerCase();
       return hay.includes(query);
     });
   }
