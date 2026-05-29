@@ -1634,7 +1634,12 @@ function titleTag(t){
 
 function setSelectedTag(tag){
   selectedTag = tag || "all";
-applyFilterSort();
+  if(selectedTag !== "all"){
+    activeCatPath = [];
+    appliedCatPath = [];
+    if(els?.q) els.q.value = "";
+  }
+  applyFilterSort();
 }
 
 
@@ -1890,6 +1895,14 @@ function applyFilterSort(){
     arr = arr.filter(p=>productMatchesCategory(p, appliedCatPath));
   }
 
+  // Tag filter: teg ustiga bosilganda shu tegdagi barcha mahsulotlar chiqadi.
+  if(selectedTag && selectedTag !== "all"){
+    const tagKey = norm(selectedTag);
+    arr = arr.filter(p=>{
+      const tags = [...(Array.isArray(p.tags) ? p.tags : []), ...omProductTags(p)].map(x=>norm(x));
+      return tags.includes(tagKey);
+    });
+  }
 
   if(query){
     arr = arr.filter(p=>{
@@ -3069,6 +3082,32 @@ function omBindQvCategoryClicks(){
     });
   });
 }
+
+function omOpenTagFromQuickView(tag){
+  const clean = String(tag || "").trim();
+  if(!clean) return;
+  selectedTag = clean;
+  activeCatPath = [];
+  appliedCatPath = [];
+  if(els?.q) els.q.value = "";
+  applyFilterSort();
+  closeImageViewer();
+  goTab("home");
+  toast(`#${clean} tegi bo‘yicha mahsulotlar ochildi`);
+}
+function omBindQvTagClicks(){
+  const root = document.getElementById("imgViewer");
+  if(!root) return;
+  root.querySelectorAll("[data-qv-tag]").forEach(btn=>{
+    if(btn.dataset.boundTag === "1") return;
+    btn.dataset.boundTag = "1";
+    btn.addEventListener("click", (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      omOpenTagFromQuickView(btn.getAttribute("data-qv-tag") || btn.textContent || "");
+    });
+  });
+}
 function omQVVariantHtml(p){
   const colors = normColors(p||{});
   const sizes = normSizes(p||{});
@@ -3099,11 +3138,11 @@ function omQVMetricHtml(p){
   const arr=[];
   if(type) arr.push(`<span><i class="fa-solid fa-certificate"></i>${escapeHtml(type.toUpperCase())}</span>`);
   if(id) arr.push(`<span><i class="fa-solid fa-barcode"></i>${escapeHtml(id)}</span>`);
-  arr.push(`<span class="qvMetricViews"><i class="fa-regular fa-eye"></i>Ko‘rishlar: ${omCount(m.views||0)}</span>`);
-  arr.push(`<span><i class="fa-solid fa-cart-shopping"></i>Savat: ${omCount(m.cartAdds||0)}</span>`);
-  arr.push(`<span><i class="fa-solid fa-heart"></i>Sevimli: ${omCount(m.favoriteAdds||0)}</span>`);
-  arr.push(`<span><i class="fa-solid fa-bag-shopping"></i>Sotib olish: ${omCount(m.purchases||0)}</span>`);
-  arr.push(`<span class="qvMetricScore"><i class="fa-solid fa-fire"></i>Popular ball: ${omCount(m.score||0)}</span>`);
+  arr.push(`<span class="qvMetricViews"><i class="fa-regular fa-eye"></i><b>${omCount(m.views||0)}</b><small>ko‘rish</small></span>`);
+  arr.push(`<span><i class="fa-solid fa-cart-shopping"></i><b>${omCount(m.cartAdds||0)}</b><small>savat</small></span>`);
+  arr.push(`<span><i class="fa-solid fa-heart"></i><b>${omCount(m.favoriteAdds||0)}</b><small>sevimli</small></span>`);
+  arr.push(`<span><i class="fa-solid fa-bag-shopping"></i><b>${omCount(m.purchases||0)}</b><small>sotuv</small></span>`);
+  arr.push(`<span class="qvMetricScore"><i class="fa-solid fa-fire"></i><b>${omCount(m.score||0)}</b><small>ball</small></span>`);
   return arr.join("");
 }
 function omRenderQuickViewPro(){
@@ -3147,12 +3186,17 @@ function renderViewer(){
   }
   if(els.qvTags){
     const tagsArr = Array.isArray(viewer.tags) ? viewer.tags : [];
-    els.qvTags.innerHTML = tagsArr.slice(0,12).map(t=>`<span class="qvTag">${escapeHtml(String(t))}</span>`).join("");
+    els.qvTags.innerHTML = tagsArr.slice(0,14).map(t=>{
+      const label = String(t || "").trim();
+      const cnt = tagCounts?.get?.(label.toLowerCase()) || 0;
+      return `<button type="button" class="qvTag" data-qv-tag="${escapeHtml(label)}" title="${escapeHtml(label)} tegidagi mahsulotlarni ko‘rish"><i class="fa-solid fa-hashtag"></i>${escapeHtml(label)}${cnt?`<em>${omCount(cnt)}</em>`:""}</button>`;
+    }).join("");
     els.qvTags.style.display = tagsArr.length ? "" : "none";
   }
 
   // Premium quick-view category/product system
   omRenderQuickViewPro();
+  omBindQvTagClicks();
 
   // Description
   if(els.imgViewerDesc) els.imgViewerDesc.textContent = viewer.desc || "";
