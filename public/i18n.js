@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "orzumall_lang";
-  const CACHE_KEY = "orzumall_ai_translations_v1";
+  const CACHE_KEY = "orzumall_ai_translations_v2";
   const SUPPORTED = ["uz", "ru", "en"];
   const LANG_LABELS = { uz:"UZ", ru:"RU", en:"EN" };
 
@@ -95,6 +95,18 @@
       "To‘lov":"Оплата",
       "Umumiy summa":"Итого",
       "Jami":"Итого",
+      "Savatcha":"Корзина",
+      "Orqaga":"Назад",
+      "Tanlangan mahsulotlaringiz shu yerda jamlanadi.":"Выбранные товары будут собраны здесь.",
+      "Sevimlilarni tozalash":"Очистить избранное",
+      "Savatchani tozalash":"Очистить корзину",
+      "Savatchada":"В корзине",
+      "tanlangan":"выбрано",
+      "Sevimli":"Избранное",
+      "Yuborilmoqda...":"Отправляется...",
+      "Yuklanmoqda...":"Загрузка...",
+      "Hozircha sharh yo‘q.":"Отзывов пока нет.",
+      "Bu mahsulot uchun video link qo‘shilmagan.":"Для этого товара видео-ссылка не добавлена.",
       "ta":"шт."
     },
     en: {
@@ -185,23 +197,42 @@
       "To‘lov":"Payment",
       "Umumiy summa":"Total",
       "Jami":"Total",
+      "Savatcha":"Cart",
+      "Orqaga":"Back",
+      "Tanlangan mahsulotlaringiz shu yerda jamlanadi.":"Your selected products are collected here.",
+      "Sevimlilarni tozalash":"Clear favorites",
+      "Savatchani tozalash":"Clear cart",
+      "Savatchada":"In cart",
+      "tanlangan":"selected",
+      "Sevimli":"Favorite",
+      "Yuborilmoqda...":"Sending...",
+      "Yuklanmoqda...":"Loading...",
+      "Hozircha sharh yo‘q.":"No reviews yet.",
+      "Bu mahsulot uchun video link qo‘shilmagan.":"No video link has been added for this product.",
       "ta":"pcs"
     }
   };
 
   const dynamicSelectors = [
-    ".pname", ".cartTitle", ".favTitle", ".vName", ".catName",
-    "#imgViewerName", "#imgViewerDesc", ".miniBody"
+    ".pname", ".cartTitle", ".favTitle", ".vName", ".catName", ".favTitle",
+    "#imgViewerName", "#imgViewerDesc", ".qvTag", ".pbadge.meta",
+    ".catCrumbs button", ".ptags", ".miniBody .muted", ".revItemText"
   ];
 
   let currentLang = normalizeLang(localStorage.getItem(STORAGE_KEY) || document.documentElement.lang || "uz");
   let busy = false;
+  let lightObserver = null;
+  let applyTimer = null;
 
   function normalizeLang(lang){
     lang = String(lang || "uz").toLowerCase();
     return SUPPORTED.includes(lang) ? lang : "uz";
   }
   function norm(s){ return String(s == null ? "" : s).replace(/\s+/g, " ").trim(); }
+  function setText(el, value){
+    const v = String(value == null ? "" : value);
+    if(el && el.textContent !== v) el.textContent = v;
+  }
   function trExact(text, lang){
     if(lang === "uz") return text;
     return exact[lang]?.[norm(text)] || null;
@@ -319,7 +350,7 @@
   async function translateDynamic(){
     if(currentLang === "uz"){
       collectDynamicElements().forEach(el => {
-        if(el.dataset.omDynOrigin) el.textContent = el.dataset.omDynOrigin;
+        if(el.dataset.omDynOrigin) setText(el, el.dataset.omDynOrigin);
       });
       return;
     }
@@ -333,9 +364,9 @@
       const original = el.dataset.omDynOrigin || norm(el.textContent || "");
       if(!el.dataset.omDynOrigin) el.dataset.omDynOrigin = original;
       const exactTranslation = trExact(original, currentLang);
-      if(exactTranslation){ el.textContent = exactTranslation; return; }
+      if(exactTranslation){ setText(el, exactTranslation); return; }
       const ck = cacheKey(currentLang, original);
-      if(cache[ck]){ el.textContent = cache[ck]; return; }
+      if(cache[ck]){ setText(el, cache[ck]); return; }
       if(!byText.has(original)){
         byText.set(original, []);
         toAsk.push(original);
@@ -360,7 +391,7 @@
           const translated = norm(translations[idx] || text);
           if(translated && translated !== text) cache[cacheKey(currentLang, text)] = translated;
           (byText.get(text) || []).forEach(el => {
-            if(currentLang !== "uz") el.textContent = translated || text;
+            if(currentLang !== "uz") setText(el, translated || text);
           });
         });
         setCache(cache);
@@ -370,6 +401,41 @@
       }
       await new Promise(r => setTimeout(r, 60));
     }
+  }
+
+  function scheduleApply(scope){
+    if(currentLang === "uz") return;
+    clearTimeout(applyTimer);
+    applyTimer = setTimeout(() => {
+      try{
+        applyStaticText(scope && scope.querySelectorAll ? scope : root());
+        applyAttrs(scope && scope.querySelectorAll ? scope : root());
+        translateDynamic();
+      }catch(_e){}
+    }, 220);
+  }
+
+  function startLightObserver(){
+    if(lightObserver || !window.MutationObserver) return;
+    const targets = [
+      "#grid", "#catList", "#catCrumbs", "#panelList", "#favPageList", "#cartPageList",
+      "#imgViewer", "#variantModal", "#miniModal", "#cartPanel", "main"
+    ].map(sel => document.querySelector(sel)).filter(Boolean);
+    if(!targets.length) return;
+    lightObserver = new MutationObserver((mutations) => {
+      if(currentLang === "uz") return;
+      let ok = false;
+      for(const m of mutations){
+        if(m.type === "childList" && (m.addedNodes && m.addedNodes.length)){ ok = true; break; }
+      }
+      if(ok) scheduleApply(root());
+    });
+    targets.forEach(t => { try{ lightObserver.observe(t, { childList:true, subtree:true }); }catch(_e){} });
+  }
+
+  function stopLightObserver(){
+    if(lightObserver){ try{ lightObserver.disconnect(); }catch(_e){} lightObserver = null; }
+    clearTimeout(applyTimer);
   }
 
   function applyNow(){
@@ -390,6 +456,7 @@
       busy = false;
     }
     translateDynamic();
+    if(currentLang !== "uz") startLightObserver(); else stopLightObserver();
   }
 
   function setLang(lang){
@@ -397,8 +464,9 @@
     try{ localStorage.setItem(STORAGE_KEY, currentLang); }catch(_e){}
     applyNow();
     // App render qilib bo'lgandan keyin mahsulot nomlari ham tarjima bo'lishi uchun.
-    setTimeout(translateDynamic, 700);
-    setTimeout(translateDynamic, 2000);
+    setTimeout(applyNow, 700);
+    setTimeout(applyNow, 2000);
+    setTimeout(applyNow, 4500);
   }
 
   function init(){
@@ -408,6 +476,8 @@
     if(currentLang !== "uz"){
       setTimeout(applyNow, 300);
       setTimeout(applyNow, 1600);
+      setTimeout(applyNow, 4200);
+      startLightObserver();
     }
     document.addEventListener("click", (e)=>{
       if(e.target && e.target.closest && e.target.closest(".omLangBtn")) return;
@@ -416,7 +486,13 @@
     window.addEventListener("hashchange", ()=> currentLang !== "uz" && setTimeout(applyNow, 300));
   }
 
-  window.OM_I18N = { setLang, getLang: () => currentLang, apply: applyNow, translateVisible: translateDynamic };
+  window.OM_I18N = {
+    setLang,
+    getLang: () => currentLang,
+    apply: applyNow,
+    translateVisible: translateDynamic,
+    notify: (scope) => scheduleApply(scope || root())
+  };
 
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();

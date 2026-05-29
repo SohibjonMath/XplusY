@@ -15,6 +15,17 @@
 /* OrzuMall: silence noisy console in production */
 try{ if(typeof console!=="undefined"){ console.warn=()=>{}; console.error=()=>{}; } }catch(e){}
 
+function omI18nRefresh(delay = 0){
+  try{
+    const run = () => {
+      const api = window.OM_I18N;
+      if(api && typeof api.notify === "function") api.notify(document.body);
+      else if(api && typeof api.apply === "function") api.apply();
+    };
+    setTimeout(run, delay);
+  }catch(_e){}
+}
+
 
 /* ========= TELEGRAM ADMIN NOTIFY (NO FUNCTIONS) =========
    Sends a lightweight notification to admin chat when a new order is created.
@@ -1268,6 +1279,7 @@ function renderCategoriesPage(){
     });
     els.catList.appendChild(item);
   }
+  omI18nRefresh(80);
 }
 
 function productMatchesCategory(p, path){
@@ -1642,6 +1654,8 @@ try{
   }
 }catch(e){}
 
+  omI18nRefresh(80);
+  omI18nRefresh(650);
 }
 
 
@@ -1776,6 +1790,7 @@ function renderVariantModal(){
       renderVariantModal();
     });
   });
+  omI18nRefresh(80);
 }
 
 function validateVariantSelection(){
@@ -2464,6 +2479,7 @@ function renderViewer(){
   if(els.imgPrev) els.imgPrev.style.display = hasNav ? "" : "none";
   if(els.imgNext) els.imgNext.style.display = hasNav ? "" : "none";
   if(!viewer.imageOnly) renderReviewsUI(viewer.productId);
+  omI18nRefresh(80);
 }
 
 function openImageViewer({productId, title, desc, pricing, rating, reviewsCount, tags, badge, images, startIndex=0, onSelect, imageOnly=false}){
@@ -2956,6 +2972,7 @@ const removeBtn = item.querySelector(".removeBtn");
   }
 
   if(els.cartTotal) els.cartTotal.textContent = moneyUZS(total);
+  omI18nRefresh(80);
 }
 
 
@@ -3037,6 +3054,7 @@ function renderFavPage(){
 
     els.favPageList.appendChild(item);
   }
+  omI18nRefresh(80);
 }
 
 function renderCartPage(){
@@ -3138,6 +3156,7 @@ function renderCartPage(){
   }
   // apply payment option rules based on cart items
   if(typeof applyPayTypeRules==='function') applyPayTypeRules();
+  omI18nRefresh(80);
 }
 
 
