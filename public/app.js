@@ -4355,12 +4355,47 @@ function updateCheckoutCompactSummary(){
   const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
   if(!built || !built.ok){
     els.checkoutCompactSummary.innerHTML = `<span>Mahsulot tanlanmagan</span><b>0 so‘m</b>`;
+    try{ updateCheckoutFinalSummary(); }catch(_e){}
     return;
   }
   const info = getCheckoutDeliveryInfo();
   const total = info.ok ? Number(info.data?.totalWithDeliveryUZS || built.totalUZS) : Number(built.totalUZS || 0);
   const suffix = info.ok ? " • yakuniy summa" : " • yetkazishni tanlang";
   els.checkoutCompactSummary.innerHTML = `<span>${built.items.reduce((s,x)=>s + Number(x.qty||0),0)} ta tanlangan${suffix}</span><b>${moneyUZS(total)}</b>`;
+  try{ updateCheckoutFinalSummary(built, info); }catch(_e){}
+}
+
+function updateCheckoutFinalSummary(prebuilt=null, preinfo=null){
+  const box = document.getElementById("checkoutFinalTotal");
+  if(!box) return;
+  const built = prebuilt || ((typeof buildSelectedItems === "function") ? buildSelectedItems() : null);
+  const labelEl = box.querySelector('.checkoutFinalTotalLabel');
+  const valueEl = box.querySelector('.checkoutFinalTotalValue');
+  const subEl = box.querySelector('.checkoutFinalTotalSub');
+  if(!labelEl || !valueEl || !subEl) return;
+  if(!built || !built.ok){
+    labelEl.textContent = 'Yakuniy summa';
+    valueEl.textContent = '0 so‘m';
+    subEl.textContent = 'Avval mahsulot tanlang.';
+    return;
+  }
+  const info = preinfo || getCheckoutDeliveryInfo();
+  const qty = built.items.reduce((s,x)=>s + Number(x.qty||0),0);
+  if(info.ok){
+    const productsTotal = Number(info.data?.productsTotalUZS || built.totalUZS || 0);
+    const deliveryFee = Number(info.data?.deliveryFeeUZS || 0);
+    const total = Number(info.data?.totalWithDeliveryUZS || productsTotal + deliveryFee);
+    labelEl.textContent = 'Yakuniy summa';
+    valueEl.textContent = moneyUZS(total);
+    const methodText = info.data?.method === 'pickup'
+      ? `Do‘kondan olib ketish • ${qty} ta mahsulot`
+      : `${info.data?.serviceLabel || 'Yetkazib berish'} • ${qty} ta mahsulot`;
+    subEl.textContent = `${methodText}. Mahsulotlar ${moneyUZS(productsTotal)} + yetkazish ${deliveryFee ? moneyUZS(deliveryFee) : 'Bepul'}.`;
+    return;
+  }
+  labelEl.textContent = 'Mahsulotlar summasi';
+  valueEl.textContent = moneyUZS(Number(built.totalUZS || 0));
+  subEl.textContent = 'Yetkazish usulini tanlang — yakuniy summa avtomatik hisoblanadi.';
 }
 
 function updateCheckoutSubmitVisibility(){
@@ -4409,11 +4444,40 @@ function updateDeliveryMethodUI(){
   try{ updateCartPrimaryCTA(); }catch(_e){}
 }
 
+function updateDeliveryLocationMeta(){
+  const wrap = document.getElementById('deliveryLocationActions');
+  const copyBtn = document.getElementById('copyDeliveryCoordsBtn');
+  const mapBtn = document.getElementById('openDeliveryMapBtn');
+  const hasLoc = !!(omDeliveryLocation && Number.isFinite(Number(omDeliveryLocation.lat)) && Number.isFinite(Number(omDeliveryLocation.lng)));
+  if(copyBtn){
+    copyBtn.dataset.coords = hasLoc ? `${Number(omDeliveryLocation.lat).toFixed(6)}, ${Number(omDeliveryLocation.lng).toFixed(6)}` : '';
+    copyBtn.disabled = !hasLoc;
+  }
+  if(mapBtn){
+    mapBtn.href = hasLoc ? (omDeliveryLocation.mapUrl || `https://maps.google.com/?q=${Number(omDeliveryLocation.lat)},${Number(omDeliveryLocation.lng)}`) : '#';
+    mapBtn.setAttribute('aria-disabled', hasLoc ? 'false' : 'true');
+    mapBtn.classList.toggle('isDisabled', !hasLoc);
+  }
+  if(wrap) wrap.hidden = !hasLoc;
+}
+
 function setDeliveryLocationStatus(text, ok=false){
   const el = document.getElementById('deliveryLocationStatus');
   if(!el) return;
-  el.textContent = text;
+  const safeText = escapeHtml(String(text || '').trim() || 'Yetkazib berish uchun lokatsiyani avto aniqlang.');
+  let html = safeText;
+  if(omDeliveryLocation && Number.isFinite(Number(omDeliveryLocation.lat)) && Number.isFinite(Number(omDeliveryLocation.lng))){
+    const coords = `${Number(omDeliveryLocation.lat).toFixed(6)}, ${Number(omDeliveryLocation.lng).toFixed(6)}`;
+    const safeCoords = escapeHtml(coords);
+    if(safeText.includes(safeCoords)){
+      html = safeText.replace(safeCoords, `<span class="deliveryCoordInline">${safeCoords}</span>`);
+    }else{
+      html = `${safeText} <span class="deliveryCoordInline">${safeCoords}</span>`;
+    }
+  }
+  el.innerHTML = html;
   el.classList.toggle('ok', !!ok);
+  try{ updateDeliveryLocationMeta(); }catch(_e){}
 }
 
 
@@ -4678,7 +4742,9 @@ function applySavedAddressToCheckout(id){
     setDeliveryLocationStatus(`Saqlangan manzil tanlandi: ${omAddressTitle(a)}`, true);
   }
   try{ omRenderDeliveryEstimate(); }catch(_e){}
-    try{ omRenderCartDeliverySummary(); }catch(_e){}
+  try{ updateCheckoutCompactSummary(); }catch(_e){}
+  try{ updateCheckoutSubmitVisibility(); }catch(_e){}
+  try{ omRenderCartDeliverySummary(); }catch(_e){}
 }
 
 async function saveCurrentAddressFromProfile(){
@@ -4753,13 +4819,38 @@ function initCheckoutDeliveryUI(){
   });
   document.getElementById('deliveryLocateBtn')?.addEventListener('click', detectDeliveryLocation);
   document.getElementById('deliveryUseNewLocation')?.addEventListener('click', detectDeliveryLocation);
+  document.getElementById('copyDeliveryCoordsBtn')?.addEventListener('click', async (e)=>{
+    const coords = String(e.currentTarget?.dataset?.coords || '').trim();
+    if(!coords) return;
+    try{
+      await navigator.clipboard.writeText(coords);
+      toast('Koordinata nusxalandi.');
+    }catch(_e){
+      try{
+        const ta = document.createElement('textarea');
+        ta.value = coords;
+        ta.setAttribute('readonly','readonly');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        toast('Koordinata nusxalandi.');
+      }catch(_ee){
+        toast('Nusxalash amalga oshmadi.');
+      }
+    }
+  });
   const sel = document.getElementById("deliveryMethodSelect");
   if(sel && !sel.value){
     const stored = omReadStoredDeliveryMethod();
     if(stored) sel.value = stored;
   }
   updateDeliveryMethodUI();
-  try{ renderSavedAddressesUI(); }catch(_){}
+  try{ renderSavedAddressesUI(); }catch(_){ }
+  try{ updateDeliveryLocationMeta(); }catch(_e){}
+  try{ updateCheckoutFinalSummary(); }catch(_e){}
 }
 initCheckoutDeliveryUI();
 initSavedAddressUI();

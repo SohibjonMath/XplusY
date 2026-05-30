@@ -304,6 +304,10 @@
                   <span>Joylashuvni avto aniqlash</span>
                 </button>
                 <div class="deliveryLocationStatus" id="deliveryLocationStatus">Yetkazib berish uchun lokatsiyani avto aniqlang.</div>
+                <div class="deliveryLocationActions" id="deliveryLocationActions" hidden>
+                  <button class="locMetaBtn" id="copyDeliveryCoordsBtn" type="button"><i class="fa-regular fa-copy" aria-hidden="true"></i> Koordinatani nusxalash</button>
+                  <a class="locMetaBtn" id="openDeliveryMapBtn" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i> Xaritada tekshirish</a>
+                </div>
                 <div class="omDeliveryCalcBox" id="deliveryEstimateBox" hidden>
                   <div class="omDeliveryCalcHead">
                     <i class="fa-solid fa-route" aria-hidden="true"></i>
@@ -329,7 +333,14 @@
             </div>
 
             <div class="checkoutSubmitHint" id="checkoutSubmitHint">Davom etish uchun yetkazish usulini tanlang.</div>
-            <button class="btn primary" id="checkoutSubmit" type="button" hidden><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Buyurtmani tasdiqlash</button>
+            <div class="checkoutActionBar">
+              <div class="checkoutFinalTotalCard" id="checkoutFinalTotal">
+                <span class="checkoutFinalTotalLabel">Yakuniy summa</span>
+                <b class="checkoutFinalTotalValue">0 so‘m</b>
+                <small class="checkoutFinalTotalSub">Yetkazish usuli tanlangandan keyin jami summa shu yerda ko‘rinadi.</small>
+              </div>
+              <button class="btn primary" id="checkoutSubmit" type="button" hidden><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Buyurtmani tasdiqlash</button>
+            </div>
           </div>
         </div>
       </div>

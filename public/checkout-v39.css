@@ -106,3 +106,102 @@ html.modalOpen,body.modalOpen{overflow:hidden!important}
 }
 
 body.modalOpen .mobile-bottom-bar{display:none!important}
+
+
+.checkoutModal .checkoutBody{display:flex;flex-direction:column}
+.deliveryLocationStatus{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:12px 13px;
+  border-radius:14px;
+}
+.deliveryLocationStatus .deliveryCoordInline{
+  font-weight:900;
+  color:#0f172a;
+  background:#ffffff;
+  border:1px dashed rgba(15,23,42,.18);
+  border-radius:999px;
+  padding:4px 9px;
+}
+.deliveryLocationActions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:10px;
+}
+.locMetaBtn{
+  min-height:42px;
+  padding:0 14px;
+  border-radius:12px;
+  border:1px solid #dbe3ef;
+  background:#fff;
+  color:#0f172a;
+  font-size:12.5px;
+  font-weight:900;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-decoration:none;
+  cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.locMetaBtn:hover{transform:translateY(-1px);border-color:#cbd5e1;box-shadow:0 10px 22px rgba(15,23,42,.08)}
+.locMetaBtn[disabled],.locMetaBtn.isDisabled{opacity:.55;pointer-events:none;box-shadow:none;transform:none}
+.checkoutActionBar{
+  position:sticky;
+  bottom:0;
+  z-index:4;
+  margin-top:auto;
+  padding-top:12px;
+  padding-bottom:calc(2px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(255,255,255,.0),#fff 18%,#fff 100%);
+}
+.checkoutFinalTotalCard{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:15px 16px;
+  border-radius:18px;
+  border:1px solid #e9d5ff;
+  background:linear-gradient(135deg,#faf5ff,#fff7ed);
+  box-shadow:0 18px 40px rgba(15,23,42,.08);
+  margin-bottom:10px;
+}
+.checkoutFinalTotalLabel{
+  font-size:12px;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  font-weight:900;
+  color:#6b21a8;
+}
+.checkoutFinalTotalValue{
+  font-size:30px;
+  line-height:1.05;
+  font-weight:1000;
+  color:#111827;
+}
+.checkoutFinalTotalSub{
+  font-size:12px;
+  line-height:1.5;
+  color:#475569;
+  font-weight:800;
+}
+#checkoutSubmit{
+  width:100%;
+  min-height:56px;
+  border-radius:16px;
+  font-size:15px;
+  font-weight:950;
+  box-shadow:0 20px 38px rgba(79,70,229,.22);
+  justify-content:center;
+}
+@media(max-width:640px){
+  .deliveryLocationActions{gap:8px}
+  .locMetaBtn{flex:1 1 calc(50% - 4px);min-height:40px;padding:0 10px;font-size:12px}
+  .checkoutActionBar{padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  .checkoutFinalTotalCard{padding:14px 14px 13px;border-radius:16px}
+  .checkoutFinalTotalValue{font-size:27px}
+}
