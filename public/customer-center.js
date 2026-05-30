@@ -7,7 +7,7 @@ import {
 
 const S = {
   user:null, profile:{}, notifications:[], globalNotes:[], userNotes:[], readIds:new Set(), messages:[], thread:null,
-  activeTab:'notifications', open:false, unsub:[], aiPending:false
+  activeTab:'notifications', open:false, unsub:[], aiPending:false, nativeToken:'', nativeRegisteredToken:'', nativeRegistering:false
 };
 const $ = (id)=>document.getElementById(id);
 const esc = (v)=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -56,6 +56,11 @@ function mount(){
           <button class="omcc-tab" type="button" data-omcc-tab="chat"><i class="fa-solid fa-headset"></i> Qo‘llab-quvvatlash <span class="omcc-badge" id="omccTabChatBadge" hidden>0</span></button>
         </div>
         <section class="omcc-pane" id="omccNotificationsPane">
+          <div class="omcc-native-push" id="omccNativePush" hidden>
+            <span class="omcc-native-push-icon"><i class="fa-solid fa-mobile-screen-button"></i></span>
+            <div><b>Android native push</b><small id="omccNativePushText">Ilova bildirishnomasi ulanmoqda...</small></div>
+            <button class="omcc-native-test" id="omccNativePushTest" type="button">Test push</button>
+          </div>
           <div class="omcc-pane-head"><b>So‘nggi xabarlar</b><button class="omcc-link-btn" id="omccMarkAll" type="button">Barchasini o‘qilgan qilish</button></div>
           <div class="omcc-list" id="omccNotifList"></div>
         </section>
@@ -82,9 +87,20 @@ function mount(){
   document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'&&S.open) closeCenter(); });
   document.querySelectorAll('[data-omcc-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.omccTab)));
   $('omccMarkAll')?.addEventListener('click',markAllNotificationsRead);
+  $('omccNativePushTest')?.addEventListener('click',testNativePush);
   $('omccChatForm')?.addEventListener('submit',sendMessage);
   document.querySelectorAll('[data-omcc-quick]').forEach(b=>b.addEventListener('click',()=>sendQuickMessage(b.dataset.omccQuick)));
 }
+
+function nativeBridge(){try{return window.OrzuMallNative||null}catch(_){return null}}
+function nativeTokenFromBridge(){try{return String(nativeBridge()?.getPushToken?.()||'').trim()}catch(_){return ''}}
+function renderNativePush(){const card=$('omccNativePush'),txt=$('omccNativePushText'),btn=$('omccNativePushTest');if(!card)return;const native=!!nativeBridge()||window.OrzuMallNativeApp===true;card.hidden=!native;if(!native)return;const ready=!!(S.nativeRegisteredToken&&S.nativeRegisteredToken===S.nativeToken);if(txt)txt.textContent=ready?'Native bildirishnoma tayyor. Ilova yopiq turganda ham xabar keladi.':(S.nativeToken?'Token serverga ulanmoqda...':'Bildirishnoma tokeni olinmoqda...');if(btn)btn.disabled=!S.user||S.nativeRegistering||!S.nativeToken;}
+async function registerNativePush(token){token=String(token||nativeTokenFromBridge()||'').trim();if(!S.user||!token||token.length<40)return false;if(S.nativeRegistering)return false;if(S.nativeRegisteredToken===token){renderNativePush();return true}S.nativeToken=token;S.nativeRegistering=true;renderNativePush();try{const idToken=await S.user.getIdToken();const res=await fetch('/.netlify/functions/customer-push-register',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${idToken}`},body:JSON.stringify({token,appId:'uz.orzumall.app',deviceName:navigator.userAgent.slice(0,170)})});const out=await res.json().catch(()=>({}));if(!res.ok)throw new Error(out.error||'push_register_failed');S.nativeRegisteredToken=token;renderNativePush();return true}catch(_){renderNativePush();return false}finally{S.nativeRegistering=false;renderNativePush()}}
+function requestNativePush(){const b=nativeBridge();try{b?.requestPushToken?.()}catch(_){}const token=nativeTokenFromBridge();if(token)registerNativePush(token);renderNativePush();}
+async function testNativePush(){const btn=$('omccNativePushTest');if(btn)btn.disabled=true;try{requestNativePush();await new Promise(r=>setTimeout(r,850));const token=nativeTokenFromBridge()||S.nativeToken;if(token)await registerNativePush(token);if(!S.user)throw new Error('login_required');const idToken=await S.user.getIdToken();const res=await fetch('/.netlify/functions/customer-push-test',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${idToken}`},body:'{}'});const out=await res.json().catch(()=>({}));if(!res.ok)throw new Error(out.error||'test_failed');toast(Number(out.sent||0)>0?'Test push yuborildi. Telefon bildirishnomasini tekshiring.':'Push token hali ulanmagan. Bildirishnomaga ruxsat bering va qayta urinib ko‘ring.')}catch(_){toast('Test push yuborilmadi. Internet va bildirishnoma ruxsatini tekshiring.')}finally{if(btn)btn.disabled=false;renderNativePush()}}
+window.addEventListener('orzumall-native-ready',e=>{const token=String(e?.detail?.pushToken||nativeTokenFromBridge()||'').trim();if(token)registerNativePush(token);renderNativePush()});
+window.addEventListener('orzumall-native-push-token',e=>{const token=String(e?.detail?.token||nativeTokenFromBridge()||'').trim();if(token)registerNativePush(token);renderNativePush()});
+
 function cleanup(){ S.unsub.splice(0).forEach(fn=>{try{fn?.();}catch(_){}}); S.notifications=[];S.globalNotes=[];S.userNotes=[];S.readIds=new Set();S.messages=[];S.thread=null;S.aiPending=false; renderAll(); }
 function setBadge(id,n){ const e=$(id); if(!e)return; const x=Math.max(0,Number(n||0)); e.textContent=x>99?'99+':String(x); e.hidden=!x; }
 function unreadNotifications(){ return S.notifications.filter(n=>!S.readIds.has(n.id)).length; }
@@ -103,7 +119,7 @@ function renderMessages(){
 }
 function renderAll(){ renderNotifications();renderMessages();updateBadges(); }
 async function loadProfile(){ if(!S.user)return; try{ const x=await getDoc(doc(db,'users',S.user.uid)); S.profile=x.exists()?x.data()||{}:{}; }catch(_){S.profile={};} }
-function bind(u){ cleanup();S.user=u||null;if(!u)return; loadProfile();
+function bind(u){ cleanup();S.user=u||null;renderNativePush();if(!u)return; loadProfile();setTimeout(requestNativePush,180);
   S.unsub.push(onSnapshot(query(collection(db,'notifications'),where('targetType','==','all'),limit(80)),snap=>{S.globalNotes=snap.docs.map(d=>({id:d.id,...d.data()}));rebuildNotifications();},()=>{}));
   S.unsub.push(onSnapshot(query(collection(db,'notifications'),where('targetUid','==',u.uid),limit(80)),snap=>{S.userNotes=snap.docs.map(d=>({id:d.id,...d.data()}));rebuildNotifications();},()=>{}));
   S.unsub.push(onSnapshot(collection(db,'users',u.uid,'notification_reads'),snap=>{S.readIds=new Set(snap.docs.map(d=>d.id));renderNotifications();updateBadges();},()=>{}));
@@ -139,4 +155,6 @@ async function sendMessage(e){
 }
 
 mount();
+renderNativePush();
+setTimeout(requestNativePush,350);
 onAuthStateChanged(auth,bind);

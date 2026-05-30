@@ -1,4 +1,5 @@
 const { admin, json, initAdmin, requireUser, loadConfig, safeText, money, toMs, statusLabel } = require('./_supportAiCommon');
+const { pushToCustomer } = require('./_customerPush');
 
 const STOP = new Set('salom assalom alaykum va yoki bilan uchun haqida qancha qanday qayerda bormi kerak menga sizda shu bu bir nima iltimos ayting maxsulot mahsulot buyurtma yetkazish tolov to‘lov holati'.split(/\s+/));
 const RX = {
@@ -153,6 +154,7 @@ async function writeReply(db, uid, text, meta={}) {
   const nextUnread=escalated?Math.max(1,currentUnread):Math.max(0,currentUnread-1);
   const needsHuman=escalated||nextUnread>0;
   await tRef.set({ status:needsHuman?'open':'ai_resolved', needsHuman, aiState:escalated?'escalated':'answered', pendingAiCount:nextPending, lastMessage:safeText(text,500), lastSender:meta.sender||'ai', updatedAt:now, userUnreadCount:admin.firestore.FieldValue.increment(1), adminUnreadCount:nextUnread },{merge:true});
+  await pushToCustomer(db,uid,{title:escalated?'Murojaatingiz operatorga yuborildi':'OrzuMall yordamchisi javob berdi',body:safeText(text,360),channelId:'orzumall_general',data:{type:'support',url:'https://orzumall.uz/'}}).catch(()=>{});
 }
 function availableEvidence(snapshot,text){
   const keys=[];

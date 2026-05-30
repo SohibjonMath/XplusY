@@ -2,6 +2,7 @@
 // Robust balance checkout for OrzuMall
 const admin = require("firebase-admin");
 const { pushNewOrder } = require('./_adminPush');
+const { pushOrderUpdate } = require('./_customerPush');
 
 function initAdmin() {
   if (admin.apps.length) return;
@@ -306,6 +307,7 @@ exports.handler = async (event) => {
 
     // Native Android admin push. Payment success must not depend on push delivery.
     await pushNewOrder(db, { id: orderId, orderId, totalUZS, userName: decoded.name || decoded.email || 'Mijoz' }).catch(err => console.warn('admin push skipped:', err?.message || err));
+    await pushOrderUpdate(db, decoded.uid, orderId, 'Buyurtmangiz qabul qilindi', `#${orderId} buyurtma balans orqali qabul qilindi. Holati: Yangi.`).catch(err => console.warn('customer push skipped:', err?.message || err));
     return json(200, { ok: true, orderId, totalUZS, balanceUZS: result.balance });
   } catch (e) {
     const msg = String(e?.message || e);

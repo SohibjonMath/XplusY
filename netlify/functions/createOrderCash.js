@@ -1,6 +1,7 @@
 // netlify/functions/createOrderCash.js
 const admin = require("firebase-admin");
 const { pushNewOrder } = require('./_adminPush');
+const { pushOrderUpdate } = require('./_customerPush');
 
 function initAdmin() {
   if (admin.apps.length) return;
@@ -181,6 +182,7 @@ exports.handler = async (event) => {
     await orderRef.set(orderDoc, { merge: false });
     // Native Android admin push. Order creation must not fail when push delivery fails.
     await pushNewOrder(db, { id: orderId, ...orderDoc }).catch(err => console.warn('admin push skipped:', err?.message || err));
+    await pushOrderUpdate(db, uid, orderId, 'Buyurtmangiz qabul qilindi', `#${orderId} buyurtma qabul qilindi. Holati: Yangi.`).catch(err => console.warn('customer push skipped:', err?.message || err));
 
     return json(200, { ok: true, orderId });
   } catch (e) {

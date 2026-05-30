@@ -1,6 +1,7 @@
 // OrzuMall v48 — strict chained lifecycle; customer guided cancel reasons; admin can mark returned during shipping
 const admin = require("firebase-admin");
 const { pushOrderStateChanged } = require('./_adminPush');
+const { pushToCustomer } = require('./_customerPush');
 
 function initAdmin(){
   if(admin.apps.length) return;
@@ -76,9 +77,10 @@ async function notify(db, uid, title, text, type="order"){
   if(!uid) return;
   try{
     await db.collection("notifications").add({
-      targetType:"uid", targetUid:uid, type, title:safeText(title,160), text:safeText(text,800),
+      targetType:"uid", targetUid:uid, type, title:safeText(title,160), body:safeText(text,800), text:safeText(text,800),
       createdAt:admin.firestore.FieldValue.serverTimestamp(), active:true
     });
+    await pushToCustomer(db,uid,{title:safeText(title,160),body:safeText(text,500),channelId:type==="order"?"orzumall_orders":"orzumall_general",data:{type,url:"https://orzumall.uz/#profile"}}).catch(()=>{});
   }catch(_e){}
 }
 async function txUpdateWithOptionalRefund(db, orderId, updater){
