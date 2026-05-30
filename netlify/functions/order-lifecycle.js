@@ -1,4 +1,4 @@
-// OrzuMall v47 — strict chained lifecycle; customer cancel until delivery; admin step-by-step transitions and admin-only return
+// OrzuMall v48 — strict chained lifecycle; customer guided cancel reasons; admin can mark returned during shipping
 const admin = require("firebase-admin");
 
 function initAdmin(){
@@ -46,7 +46,7 @@ function adminTransitionAllowed(previous,next){
     new:["packing","cancelled"],
     paid:["packing","cancelled"],
     packing:["shipping","cancelled"],
-    shipping:["delivered","cancelled"],
+    shipping:["delivered","returned","cancelled"],
     delivered:["returned","cancelled"],
     return_requested:["returned","return_rejected","cancelled"],
     return_rejected:["cancelled"],
@@ -186,7 +186,7 @@ exports.handler=async(event)=>{
       const out=await txUpdateWithOptionalRefund(db,orderId,async({tx,order,orderRef})=>{
         const previous=normalizeStatus(order.status);
         if(!adminTransitionAllowed(previous,next)) throw new Error("CHAIN_TRANSITION_NOT_ALLOWED");
-        if(next==="returned" && !["delivered","return_requested"].includes(previous)) throw new Error("RETURN_NOT_ALLOWED");
+        if(next==="returned" && !["shipping","delivered","return_requested"].includes(previous)) throw new Error("RETURN_NOT_ALLOWED");
         const entry=lifecycleEntry({status:next,actorType:"orzumall",actorUid:uid,actorName,reason,action:"admin_status_update"});
         const patch={status:next,statusNote:reason,statusActor:"orzumall",statusUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),statusHistory:admin.firestore.FieldValue.arrayUnion(entry),updatedAt:admin.firestore.FieldValue.serverTimestamp()};
         if(next==="cancelled") patch.cancellation={by:"orzumall",reason,cancelledAt:admin.firestore.Timestamp.now()};

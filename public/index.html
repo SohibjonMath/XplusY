@@ -649,6 +649,26 @@
               <div class="modalBody orderLifecycleActionBody">
                 <div class="orderActionSummary" id="orderActionSummary"></div>
                 <div class="orderActionHelp" id="orderActionHelp"></div>
+                <div class="orderCancelReasonWrap" id="orderCancelReasonWrap" hidden>
+                  <label class="field">
+                    <span>Bekor qilish sababini tanlang</span>
+                    <select id="orderCancelReasonSelect" class="orderCancelReasonSelect">
+                      <option value="">Sababni tanlang</option>
+                      <option value="Adashib buyurtma berdim">Adashib buyurtma berdim</option>
+                      <option value="Mahsulotni noto‘g‘ri tanladim">Mahsulotni noto‘g‘ri tanladim</option>
+                      <option value="Yetkazib berish muddati menga to‘g‘ri kelmadi">Yetkazib berish muddati menga to‘g‘ri kelmadi</option>
+                      <option value="Yetkazib berish narxi menga to‘g‘ri kelmadi">Yetkazib berish narxi menga to‘g‘ri kelmadi</option>
+                      <option value="To‘lov usulini o‘zgartirmoqchiman">To‘lov usulini o‘zgartirmoqchiman</option>
+                      <option value="Manzil yoki telefon raqamini noto‘g‘ri kiritdim">Manzil yoki telefon raqamini noto‘g‘ri kiritdim</option>
+                      <option value="Boshqa joydan xarid qildim">Boshqa joydan xarid qildim</option>
+                      <option value="other">Boshqa sabab</option>
+                    </select>
+                  </label>
+                  <label class="field" id="orderCancelReasonOtherWrap" hidden>
+                    <span>Boshqa sababni yozing</span>
+                    <textarea id="orderCancelReasonOther" rows="3" maxlength="1000" placeholder="Sababni qisqacha yozing..."></textarea>
+                  </label>
+                </div>
                 <label class="field" id="orderActionReasonWrap">
                   <span id="orderActionReasonLabel">Sabab yoki izoh</span>
                   <textarea id="orderActionReason" rows="4" maxlength="1000" placeholder="Batafsil yozing..."></textarea>

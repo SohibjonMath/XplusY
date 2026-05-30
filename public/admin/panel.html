@@ -3417,6 +3417,7 @@ aloqa, telefon => Operator shu chat orqali javob beradi."></textarea></label>
           <button class="btn btn-light btn-sm" id="printReceipt80Btn" title="80mm chek"><i class="fas fa-print"></i> Chek</button>
           <button class="btn btn-light btn-sm" id="printStickerA6Btn" title="A6 stiker"><i class="fas fa-tag"></i> Stiker</button>
           <button class="btn btn-primary btn-sm" id="orderAdminNextFromDetailBtn" type="button" style="display:none"><i class="fas fa-arrow-right"></i> Keyingi bosqich</button>
+          <button class="btn btn-sm" id="orderAdminReturnFromDetailBtn" type="button" style="display:none"><i class="fas fa-rotate-left"></i> Qaytarildi</button>
           <button class="btn btn-danger btn-sm" id="orderAdminCancelFromDetailBtn" type="button" style="display:none"><i class="fas fa-ban"></i> Bekor qilish</button>
           <button class="btn btn-light btn-sm" id="closeOrderModalBtn" title="Yopish"><i class="fas fa-times"></i></button>
         </div>
@@ -6535,7 +6536,7 @@ function orderLifecycleCanCancelAdmin(status){
 }
 function orderLifecycleActionLabel(status){
   const st=orderLifecycleStatusKey(status||"");
-  const map={packing:"Yig‘ishga olish",shipping:"Yetkazishga berish",delivered:"Yetkazib berildi",cancelled:"Bekor qilish",returned:"Qaytarish",return_rejected:"Qaytarishni rad etish"};
+  const map={packing:"Yig‘ishga olish",shipping:"Yetkazishga berish",delivered:"Yetkazib berildi",cancelled:"Bekor qilish",returned:"Qaytarildi deb belgilash",return_rejected:"Qaytarishni rad etish"};
   return map[st]||statusUZ(st);
 }
 function adminOrderLifecycleActionsHTML(order, compact=false){
@@ -6546,6 +6547,9 @@ function adminOrderLifecycleActionsHTML(order, compact=false){
   const out=[];
   if(next){
     out.push(`<button class="order-chain-btn order-lifecycle-step-btn tone-${escapeHtml(next.tone)}${cls}" type="button" data-order-id="${oid}" data-next-status="${escapeHtml(next.status)}"><i class="fas ${escapeHtml(next.icon)}"></i><span>${escapeHtml(next.label)}</span></button>`);
+  }
+  if(current==="shipping"){
+    out.push(`<button class="order-chain-btn order-lifecycle-step-btn tone-returned${cls}" type="button" data-order-id="${oid}" data-next-status="returned"><i class="fas fa-rotate-left"></i><span>Qaytarildi</span></button>`);
   }
   if(current==="return_requested"){
     out.push(`<button class="order-chain-btn order-lifecycle-step-btn tone-reject${cls}" type="button" data-order-id="${oid}" data-next-status="return_rejected"><i class="fas fa-circle-xmark"></i><span>Qaytarishni rad etish</span></button>`);
@@ -6989,6 +6993,7 @@ function formatLifecycleTimelineAdmin(o){
       window.__OM_CURRENT_ORDER = order;
       try{
         const nextBtn=$("orderAdminNextFromDetailBtn");
+        const returnBtn=$("orderAdminReturnFromDetailBtn");
         const cancelBtn=$("orderAdminCancelFromDetailBtn");
         const current=orderLifecycleStatusKey(order.status||"new");
         const next=orderLifecycleNextAction(current);
@@ -6996,6 +7001,11 @@ function formatLifecycleTimelineAdmin(o){
           nextBtn.style.display=next?"inline-flex":"none";
           nextBtn.innerHTML=next?`<i class="fas ${escapeHtml(next.icon)}"></i> ${escapeHtml(next.label)}`:"";
           nextBtn.onclick=()=>{ closeModal("orderModal"); openOrderLifecycleAdminQuick(order.id||"",next?.status||""); };
+        }
+        if(returnBtn){
+          const canReturnFromDoor=current==="shipping";
+          returnBtn.style.display=canReturnFromDoor?"inline-flex":"none";
+          returnBtn.onclick=()=>{ closeModal("orderModal"); openOrderLifecycleAdminQuick(order.id||"","returned"); };
         }
         if(cancelBtn){
           const canCancel=orderLifecycleCanCancelAdmin(current);

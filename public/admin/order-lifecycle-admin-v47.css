@@ -47,3 +47,6 @@
   .order-card .order-card-actions>.order-chain-actions{display:grid;grid-template-columns:1fr}
   .order-chain-modal-action{padding:12px;border-radius:15px}
 }
+
+/* OrzuMall v48 — return at the door while order is in delivery */
+#orderAdminReturnFromDetailBtn{background:#f0fdfa!important;border-color:#99f6e4!important;color:#0f766e!important}

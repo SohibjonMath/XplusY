@@ -3009,17 +3009,27 @@ function openOrderActionModal(type, orderId){
   const summary=document.getElementById('orderActionSummary');
   const reason=document.getElementById('orderActionReason');
   const reasonLabel=document.getElementById('orderActionReasonLabel');
+  const cancelReasonWrap=document.getElementById('orderCancelReasonWrap');
+  const cancelReasonSelect=document.getElementById('orderCancelReasonSelect');
+  const cancelReasonOtherWrap=document.getElementById('orderCancelReasonOtherWrap');
+  const cancelReasonOther=document.getElementById('orderCancelReasonOther');
   const starsWrap=document.getElementById('orderReviewStarsWrap');
   const submit=document.getElementById('orderActionSubmit');
   const oid=String(order.id||order.orderId||'');
   omOrderActionState={type,orderId:oid,stars:0};
   if(reason) reason.value='';
+  if(cancelReasonSelect) cancelReasonSelect.value='';
+  if(cancelReasonOther) cancelReasonOther.value='';
+  if(cancelReasonOtherWrap) cancelReasonOtherWrap.hidden=true;
   if(summary) summary.innerHTML=`<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
   if(starsWrap) starsWrap.hidden = type !== 'review';
+  if(cancelReasonWrap) cancelReasonWrap.hidden = type !== 'cancel';
+  const reasonWrap=document.getElementById('orderActionReasonWrap');
+  if(reasonWrap) reasonWrap.hidden = type === 'cancel';
   setReviewStars(0);
   if(type==='cancel'){
     if(title) title.textContent='Buyurtmani bekor qilish';
-    if(help) help.textContent='Bekor qilish sababini yozing. Buyurtma balansdan to‘langan bo‘lsa mablag‘ avtomatik qaytariladi.';
+    if(help) help.textContent='Eng mos sababni tanlang. Kerak bo‘lsa “Boshqa sabab” orqali o‘zingiz yozishingiz mumkin. Buyurtma balansdan to‘langan bo‘lsa mablag‘ avtomatik qaytariladi.';
     if(reasonLabel) reasonLabel.textContent='Bekor qilish sababi';
     if(reason) reason.placeholder='Masalan: adashib buyurtma berdim';
     if(submit) submit.innerHTML='<i class="fa-solid fa-ban"></i> Bekor qilish';
@@ -3038,7 +3048,19 @@ function openOrderActionModal(type, orderId){
 async function submitOrderAction(){
   const {type,orderId,stars}=omOrderActionState;
   if(!type || !orderId || !currentUser){ toast('Avval tizimga kiring.','error'); return; }
-  const reason=String(document.getElementById('orderActionReason')?.value||'').trim();
+  let reason='';
+  if(type==='cancel'){
+    const selected=String(document.getElementById('orderCancelReasonSelect')?.value||'').trim();
+    if(!selected){ toast('Bekor qilish sababini tanlang.','error'); return; }
+    if(selected==='other'){
+      reason=String(document.getElementById('orderCancelReasonOther')?.value||'').trim();
+      if(reason.length<4){ toast('Boshqa sababni qisqacha yozing.','error'); return; }
+    }else{
+      reason=selected;
+    }
+  }else{
+    reason=String(document.getElementById('orderActionReason')?.value||'').trim();
+  }
   if(reason.length<2){ toast(type==='review'?'Fikringizni yozing.':'Sababni batafsil yozing.','error'); return; }
   if(type==='review' && !(Number(stars)>=1 && Number(stars)<=5)){ toast('Bahoni tanlang.','error'); return; }
   const btn=document.getElementById('orderActionSubmit');
@@ -7678,6 +7700,14 @@ document.addEventListener("click", (e)=>{
   if(e.target?.closest?.("#orderActionSubmit")){ e.preventDefault(); submitOrderAction(); return; }
   const overlay=e.target?.closest?.("#orderActionModal");
   if(overlay && e.target===overlay) closeOrderActionModal();
+});
+
+document.addEventListener("change", (e)=>{
+  if(e.target?.id!=="orderCancelReasonSelect") return;
+  const isOther=String(e.target.value||"")==="other";
+  const wrap=document.getElementById("orderCancelReasonOtherWrap");
+  if(wrap) wrap.hidden=!isOther;
+  if(isOther) setTimeout(()=>document.getElementById("orderCancelReasonOther")?.focus(),0);
 });
 
 document.addEventListener("keydown", (e)=>{
