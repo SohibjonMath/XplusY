@@ -2771,6 +2771,7 @@ button[data-x] i{
 @media(max-width:760px){.category-deep-levels{grid-template-columns:1fr}.cat-image-upload-row{grid-template-columns:1fr}.cat-tree-node.level-2,.cat-tree-node.level-3,.cat-tree-node.level-4{margin-left:0}.cat-tree-row{align-items:flex-start;flex-direction:column}.cat-tree-actions{justify-content:flex-start}}
 </style>
 
+  <link rel="stylesheet" href="./support-admin.css?v=20260530_v43_support_center">
 </head>
 <body style="display:none;">
   <div class="container">
@@ -2782,6 +2783,8 @@ button[data-x] i{
 <li class="nav-item"><a href="#" class="nav-link" data-view="orders"><i class="fas fa-cart-shopping"></i><span>Buyurtmalar</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="topups"><i class="fas fa-wallet"></i><span>Balans</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="turnover"><i class="fas fa-chart-line"></i><span>Aylanma</span></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-view="support"><i class="fas fa-headset"></i><span>Qo‘llab-quvvatlash</span><b class="omadmin-badge" id="adminSupportBadge" hidden>0</b></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-view="notifications"><i class="fas fa-bell"></i><span>Bildirishnomalar</span></a></li>
         <li class="nav-item"><a href="#" class="nav-link" data-view="stats"><i class="fas fa-chart-pie"></i><span>Statistika</span></a></li>
         <li class="nav-item"><a href="#" class="nav-link" data-view="settings"><i class="fas fa-sliders"></i><span>Sozlamalar</span></a></li>
         <li class="nav-item"><a href="#" class="nav-link" id="exportJsonNav"><i class="fas fa-download"></i><span>JSON eksport</span></a></li>
@@ -3171,7 +3174,53 @@ button[data-x] i{
         </div>
 </div>
 
-<div class="card hidden" id="statsView">
+<section class="hidden" id="supportView">
+        <div class="omsup-shell">
+          <div class="omsup-head">
+            <div><h3><i class="fas fa-headset"></i> Mijozlarni qo‘llab-quvvatlash</h3><p>Mijoz murojaatlari real vaqtda keladi. Suhbatni tanlab, shu yerdan javob bering.</p></div>
+            <button class="btn btn-light btn-sm" id="omsupRefresh" type="button"><i class="fas fa-rotate"></i> Yangilash</button>
+          </div>
+          <div class="omsup-layout">
+            <aside class="omsup-sidebar">
+              <div class="omsup-search"><input id="omsupSearch" placeholder="Mijoz, telefon, UID bo‘yicha qidirish"></div>
+              <div class="omsup-thread-list" id="omsupThreadList"><div class="omsup-empty"><i class="fas fa-comments"></i>Hozircha mijoz murojaati yo‘q.</div></div>
+            </aside>
+            <section class="omsup-main">
+              <div class="omsup-chat-head">
+                <div><div class="omsup-client-title" id="omsupClientTitle">Mijoz tanlanmagan</div><div class="omsup-client-sub" id="omsupClientSub">Chap tomondan suhbatni tanlang</div></div>
+                <div class="omsup-actions"><button class="btn btn-light btn-sm" id="omsupToggleStatus" type="button" disabled><i class="fas fa-check"></i> Yopish</button></div>
+              </div>
+              <div class="omsup-msgs" id="omsupMessages"><div class="omsup-disabled"><div><i class="fas fa-comments" style="display:block;font-size:30px;color:#cbd5e1;margin-bottom:10px"></i>Javob berish uchun chap tomondan mijoz suhbatini tanlang.</div></div></div>
+              <form class="omsup-compose" id="omsupForm" hidden><textarea id="omsupInput" maxlength="1000" placeholder="Mijozga javob yozing..." required></textarea><button class="omsup-send" id="omsupSend" type="submit" aria-label="Yuborish"><i class="fas fa-paper-plane"></i></button></form>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="hidden" id="notificationsView">
+        <div class="omnot-shell">
+          <div class="omnot-head">
+            <div><h3><i class="fas fa-bell"></i> Bildirishnomalar markazi</h3><p>Barcha mijozlarga yoki bitta foydalanuvchiga alohida xabar yuboring.</p></div>
+            <button class="btn btn-light btn-sm" id="omnotRefresh" type="button"><i class="fas fa-rotate"></i> Yangilash</button>
+          </div>
+          <div class="omnot-grid">
+            <div class="omnot-card">
+              <h4>Yangi bildirishnoma</h4>
+              <form class="omnot-form" id="omnotForm">
+                <label>Qabul qiluvchi<select id="omnotTarget"><option value="all">Barcha mijozlar</option><option value="user">Bitta mijoz</option></select></label>
+                <label id="omnotUidWrap" hidden>Mijoz UID<input id="omnotUid" placeholder="Firebase UID"></label>
+                <label>Turi<select id="omnotType"><option value="info">Oddiy xabar</option><option value="promo">Aksiya</option><option value="warning">Muhim ogohlantirish</option><option value="support">Qo‘llab-quvvatlash</option></select></label>
+                <label>Sarlavha<input id="omnotTitle" maxlength="100" placeholder="Masalan: Yangi aksiya"></label>
+                <label>Xabar matni<textarea id="omnotBody" maxlength="700" placeholder="Mijoz ko‘radigan xabarni yozing..."></textarea></label>
+                <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> Yuborish</button>
+              </form>
+            </div>
+            <div class="omnot-card"><h4>Yuborilgan bildirishnomalar</h4><div class="omnot-list" id="omnotList"><div class="omsup-empty"><i class="fas fa-bell-slash"></i>Hozircha bildirishnoma yo‘q.</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="card hidden" id="statsView">
         <div class="card-header"><h3>Statistika</h3><div class="right-actions"><button class="btn btn-light btn-sm" id="recalcStatsBtn"><i class="fas fa-bolt"></i> Qayta hisoblash</button></div></div>
         <div class="card-body pad"><div class="grid2">
           <div class="mini-card"><div class="mini-title">Top 10 (popular)</div><div id="topPopularList" class="mini-list"></div></div>
@@ -5369,7 +5418,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     }
 
     function setView(view){
-      const views = ["products","categories","stats","settings","orders","topups","turnover"];
+      const views = ["products","categories","stats","settings","orders","topups","turnover","support","notifications"];
       views.forEach(v=>{
         const el = document.getElementById(v+"View");
         if(el) el.classList.toggle("hidden", view!==v);
@@ -5382,6 +5431,8 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       if(view==="orders"){ try{ subscribeOrdersAdmin(); }catch(e){} }
       if(view==="topups"){ try{ subscribeTopupReq(); }catch(e){} }
       if(view==="turnover"){ try{ subscribeTurnover(); }catch(e){} }
+      if(view==="support"){ try{ window.OM_SUPPORT_ADMIN?.openSupport?.(); }catch(e){} }
+      if(view==="notifications"){ try{ window.OM_SUPPORT_ADMIN?.openNotifications?.(); }catch(e){} }
       if(view==="settings"){ try{ loadAccessLists(); }catch(e){} try{ loadDeliverySettingsAdmin(); }catch(e){} }
     }
 
@@ -7113,6 +7164,7 @@ function statusUZ(s){
           await updateDoc(doc(db,"users",uid,"orders",oid), { status, updatedAt: serverTimestamp() });
         }
         toast("Holat yangilandi");
+        try{ window.OM_SUPPORT_ADMIN?.notifyOrderStatus?.(uid, oid, status); }catch(_e){}
         // Telegram notify (status change) — once per status
         try{
           const orderRef = doc(db,"orders",oid);
@@ -7160,6 +7212,7 @@ function statusUZ(s){
           await updateDoc(doc(db,"users",uid,"orders",oid), { status, updatedAt: serverTimestamp() });
         }
         toast("Holat yangilandi");
+        try{ window.OM_SUPPORT_ADMIN?.notifyOrderStatus?.(uid, oid, status); }catch(_e){}
         // Telegram notify (status change) — once per status
         try{
           const orderRef = doc(db,"orders",oid);
@@ -7982,5 +8035,6 @@ document.addEventListener('click', async (e)=>{
 })();
 </script>
 
+  <script type="module" src="./support-admin.js?v=20260530_v43_support_center"></script>
 </body>
 </html>

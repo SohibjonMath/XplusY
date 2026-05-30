@@ -1,0 +1,32 @@
+/* ===== OrzuMall v43: customer notification + support chat center ===== */
+.omcc-icon-btn{position:relative}
+.omcc-badge{
+  position:absolute;top:-5px;right:-6px;min-width:18px;height:18px;padding:0 5px;
+  display:grid;place-items:center;border-radius:999px;background:#dc2626;color:#fff;
+  border:2px solid #fff;font-size:10px;font-weight:950;line-height:1;box-shadow:0 5px 14px rgba(220,38,38,.28)
+}
+.omcc-badge[hidden]{display:none!important}
+.omcc-overlay{position:fixed;inset:0;z-index:12000;background:rgba(15,23,42,.54);backdrop-filter:blur(10px);display:flex;justify-content:flex-end;opacity:0;transition:opacity .2s ease}
+.omcc-overlay[hidden]{display:none!important}.omcc-overlay.is-open{opacity:1}
+.omcc-drawer{width:min(520px,100vw);height:100dvh;background:#fff;display:flex;flex-direction:column;box-shadow:-22px 0 70px rgba(15,23,42,.22);transform:translateX(24px);opacity:0;transition:transform .2s ease,opacity .2s ease}
+.omcc-overlay.is-open .omcc-drawer{transform:none;opacity:1}
+.omcc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 12px;border-bottom:1px solid #edf0f5;background:linear-gradient(180deg,#fff,#fff8f8)}
+.omcc-title{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:950;color:#111827}.omcc-title i{color:#dc2626}
+.omcc-close{width:38px;height:38px;border:1px solid #e5e7eb;border-radius:13px;background:#fff;color:#111827;display:grid;place-items:center;cursor:pointer}
+.omcc-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:11px 14px;border-bottom:1px solid #edf0f5;background:#fff}
+.omcc-tab{min-height:44px;border:1px solid #e5e7eb;border-radius:13px;background:#f8fafc;color:#64748b;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer}.omcc-tab.active{color:#b91c1c;background:#fff1f2;border-color:#fecdd3}
+.omcc-pane{min-height:0;flex:1;display:flex;flex-direction:column}.omcc-pane[hidden]{display:none!important}
+.omcc-pane-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 7px}.omcc-pane-head b{font-size:13px;color:#111827}.omcc-link-btn{border:0;background:transparent;color:#dc2626;font-size:12px;font-weight:900;cursor:pointer}
+.omcc-list{padding:6px 12px 18px;overflow:auto;display:flex;flex-direction:column;gap:9px}
+.omcc-empty{margin:auto;padding:30px 18px;text-align:center;color:#64748b;font-size:13px;font-weight:750;line-height:1.6}.omcc-empty i{display:block;font-size:28px;color:#cbd5e1;margin-bottom:9px}
+.omcc-note{position:relative;padding:13px 13px 12px 45px;border:1px solid #e8edf4;border-radius:16px;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.035);cursor:pointer}.omcc-note.unread{border-color:#fecdd3;background:#fff8f8}.omcc-note-icon{position:absolute;left:12px;top:13px;width:25px;height:25px;display:grid;place-items:center;border-radius:9px;background:#fff1f2;color:#dc2626;font-size:12px}.omcc-note-title{font-size:13px;font-weight:950;color:#111827;padding-right:48px}.omcc-note-body{margin-top:4px;font-size:12px;line-height:1.5;color:#64748b;font-weight:700}.omcc-note-time{margin-top:7px;font-size:10.5px;color:#94a3b8;font-weight:800}.omcc-new{position:absolute;right:11px;top:11px;padding:3px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:9px;font-weight:950}
+.omcc-chat-intro{padding:10px 14px;border-bottom:1px solid #f1f5f9;background:#f8fafc;color:#64748b;font-size:12px;line-height:1.5;font-weight:750}.omcc-chat-intro b{color:#111827}
+.omcc-messages{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:9px;background:linear-gradient(180deg,#fff,#f8fafc)}
+.omcc-msg{max-width:84%;padding:10px 12px;border-radius:15px;font-size:13px;line-height:1.45;font-weight:700;white-space:pre-wrap;word-break:break-word}.omcc-msg.user{align-self:flex-end;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border-bottom-right-radius:5px}.omcc-msg.admin{align-self:flex-start;background:#fff;color:#111827;border:1px solid #e5e7eb;border-bottom-left-radius:5px;box-shadow:0 8px 18px rgba(15,23,42,.04)}.omcc-msg.system{align-self:center;max-width:94%;text-align:center;background:#f1f5f9;color:#64748b;font-size:11.5px}.omcc-msg-time{display:block;margin-top:5px;font-size:10px;opacity:.72;font-weight:750}
+.omcc-chat-compose{display:grid;grid-template-columns:1fr 48px;gap:8px;padding:11px 12px calc(11px + env(safe-area-inset-bottom));border-top:1px solid #e8edf4;background:#fff}.omcc-chat-input{min-height:48px;max-height:116px;resize:none;border:1px solid #dce3ed;border-radius:14px;padding:12px 13px;outline:none;font:inherit;font-size:13px;line-height:1.4}.omcc-chat-input:focus{border-color:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.09)}.omcc-send{width:48px;height:48px;border:0;border-radius:15px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-size:16px;cursor:pointer;box-shadow:0 12px 22px rgba(220,38,38,.24)}.omcc-send:disabled{opacity:.55;cursor:not-allowed}
+.omcc-float{position:fixed;right:18px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:9000;width:58px;height:58px;border:0;border-radius:20px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;font-size:21px;box-shadow:0 18px 34px rgba(185,28,28,.32);cursor:pointer;display:grid;place-items:center}.omcc-float .omcc-badge{top:-5px;right:-5px}
+body.omcc-open{overflow:hidden!important}
+@media(max-width:760px){
+  .omcc-drawer{width:100vw}.omcc-head{padding-top:calc(14px + env(safe-area-inset-top))}.omcc-float{right:14px;bottom:calc(82px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:19px;font-size:19px}
+  .actionsRight .omcc-icon-btn{display:none!important}
+}
