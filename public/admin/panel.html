@@ -2359,6 +2359,7 @@ body{
 
 </style>
   <script src="../telegram-config.js"></script>
+  <script src="../order-print-v53.js?v=20260530_v53_packing"></script>
 
 <link rel="stylesheet" href="/theme-redwhite.css">
 <style id="orzumall-v8-actions-click-overrides">
@@ -2774,6 +2775,7 @@ button[data-x] i{
   <link rel="stylesheet" href="./support-admin.css?v=20260530_v44_support_ai">
   <link rel="stylesheet" href="./order-lifecycle-admin-v46.css?v=20260530_v46_status_groups">
   <link rel="stylesheet" href="./order-lifecycle-admin-v47.css?v=20260530_v47_chain_flow">
+  <link rel="stylesheet" href="./order-print-admin-v53.css?v=20260530_v53_packing">
 </head>
 <body style="display:none;">
   <div class="container">
@@ -2952,7 +2954,7 @@ button[data-x] i{
               <span><i class="fas fa-bell"></i> Live kuzatuv</span>
               <span><i class="fas fa-route"></i> Yetkazish nazorati</span>
               <span><i class="fas fa-paper-plane"></i> Telegram xabar</span>
-              <span><i class="fas fa-receipt"></i> Chek / stiker</span>
+              <span><i class="fas fa-receipt"></i> Chek / 58×40 etiketka</span>
             </div>
           </div>
           <div class="orders-hero-panel">
@@ -2978,6 +2980,18 @@ button[data-x] i{
           <div class="order-mini-stat success"><i class="fas fa-truck-fast"></i><div><b id="ordersDeliveredCount">0</b><span>Yetkazildi</span></div></div>
           <div class="order-mini-stat muted"><i class="fas fa-ban"></i><div><b id="ordersCancelledCount">0</b><span>Bekor qilindi</span></div></div>
         </div>
+
+        <section class="packing-cutoff-admin-strip" id="packingCutoffAdminStrip">
+          <div class="packing-cutoff-admin-main">
+            <span class="packing-cutoff-admin-icon"><i class="fas fa-boxes-packing"></i></span>
+            <div><b>16:00 yig‘im navbati</b><small id="ordersCutoffText">Kesim vaqti hisoblanmoqda...</small></div>
+          </div>
+          <div class="packing-cutoff-admin-metrics"><span><b id="ordersCutoffDueCount">0</b> buyurtma</span><span><b id="ordersCutoffItemsCount">0</b> tovar</span></div>
+          <div class="packing-cutoff-admin-actions">
+            <button class="btn btn-light btn-sm" id="ordersPrintCutoffLabels" type="button"><i class="fas fa-tags"></i> 58×40 etiketkalar</button>
+            <button class="btn btn-primary btn-sm" id="ordersPrintCutoffSheet" type="button"><i class="fas fa-clipboard-check"></i> Yig‘im hujjati</button>
+          </div>
+        </section>
 
         <div class="orders-status-tabs" id="ordersStatusTabs" aria-label="Buyurtmalarni holat bo‘yicha ajratish">
           <button class="orders-status-tab is-active" type="button" data-orders-status-tab=""><i class="fas fa-layer-group"></i><span>Barchasi</span><b id="ordersTabCountAll">0</b></button>
@@ -3028,6 +3042,8 @@ button[data-x] i{
               </select>
               <input id="ordersFrom" type="date" class="form-control compact-control date-control" title="Sanadan">
               <input id="ordersTo" type="date" class="form-control compact-control date-control" title="Sanagacha">
+              <button class="btn btn-light btn-sm" id="ordersPrintVisibleLabels" type="button" title="Filtrlangan buyurtmalar uchun etiketka"><i class="fas fa-tags"></i> Etiketka</button>
+              <button class="btn btn-light btn-sm" id="ordersPrintVisibleSheet" type="button" title="Filtrlangan buyurtmalar uchun yig‘im hujjati"><i class="fas fa-clipboard-list"></i> Yig‘im</button>
               <button class="btn btn-light btn-sm" id="ordersClear"><i class="fas fa-eraser"></i> Tozalash</button>
               <button class="btn btn-secondary btn-sm" id="ordersRefresh"><i class="fas fa-rotate"></i> Yangilash</button>
               <div class="view-toggle" aria-label="Buyurtmalar ko‘rinishi">
@@ -3416,7 +3432,8 @@ aloqa, telefon => Operator shu chat orqali javob beradi."></textarea></label>
         <h3><i class="fas fa-receipt"></i> Buyurtma tafsiloti</h3>
         <div class="modal-actions">
           <button class="btn btn-light btn-sm" id="printReceipt80Btn" title="80mm chek"><i class="fas fa-print"></i> Chek</button>
-          <button class="btn btn-light btn-sm" id="printStickerA6Btn" title="A6 stiker"><i class="fas fa-tag"></i> Stiker</button>
+          <button class="btn btn-light btn-sm" id="printSticker58Btn" title="58×40 mm termal etiketka"><i class="fas fa-tag"></i> 58×40 etiketka</button>
+          <button class="btn btn-light btn-sm" id="printPickSheetBtn" title="A4 yig‘im hujjati"><i class="fas fa-clipboard-check"></i> Yig‘im hujjati</button>
           <button class="btn btn-primary btn-sm" id="orderAdminNextFromDetailBtn" type="button" style="display:none"><i class="fas fa-arrow-right"></i> Keyingi bosqich</button>
           <button class="btn btn-sm" id="orderAdminReturnFromDetailBtn" type="button" style="display:none"><i class="fas fa-rotate-left"></i> Qaytarildi</button>
           <button class="btn btn-danger btn-sm" id="orderAdminCancelFromDetailBtn" type="button" style="display:none"><i class="fas fa-ban"></i> Bekor qilish</button>
@@ -6748,6 +6765,7 @@ function formatLifecycleTimelineAdmin(o){
 
 
     let ordersCache = [];
+    let ordersVisible = [];
 
     let ordersById = new Map();
     let orderModalMap = null;
@@ -6824,7 +6842,7 @@ function formatLifecycleTimelineAdmin(o){
 
     function orderDeliveryFee(o){
       const ship = o.shipping || {};
-      const candidates = [ship.price, ship.cost, ship.fee, ship.deliveryPrice, ship.deliveryFee, o.deliveryPrice, o.deliveryFee, o.shippingFee, o.shippingPrice];
+      const candidates = [ship.deliveryFeeUZS, ship.feeUZS, ship.price, ship.cost, ship.fee, ship.deliveryPrice, ship.deliveryFee, o.deliveryFeeUZS, o.deliveryPrice, o.deliveryFee, o.shippingFee, o.shippingPrice];
       for(const v of candidates){
         const n = Number(v);
         if(isFinite(n) && n > 0) return n;
@@ -6888,6 +6906,40 @@ function formatLifecycleTimelineAdmin(o){
       const d = toDate(o.createdAt);
       return d ? d.getTime() : 0;
     }
+    function adminPrintEngine(){ return window.OrzuMallOrderPrint || null; }
+    function adminCutoffDueOrders(){ return adminPrintEngine()?.dueBatch?.(ordersCache||[],Date.now()) || []; }
+    function adminOrdersItemsCount(list){ return (Array.isArray(list)?list:[]).reduce((sum,o)=>sum+(adminPrintEngine()?.itemCount?.(o)||orderItemsCount(o)),0); }
+    function adminPrintFail(){ toast("Chop etish oynasi ochilmadi. Brauzerda pop-up ruxsatini yoqing.","error"); }
+    function adminPrintOrderDoc(oid,kind){
+      const o=ordersById.get(String(oid||"")) || (ordersCache||[]).find(x=>String(x.id||x.orderId)===String(oid||""));
+      if(!o) return toast("Buyurtma topilmadi","error");
+      const eng=adminPrintEngine();
+      const ok=kind==="pick"?eng?.printPickSheet?.(o):eng?.printLabel58?.(o);
+      if(!ok) adminPrintFail();
+    }
+    function adminPrintMany(list,kind,cutoff=false){
+      const arr=(Array.isArray(list)?list:[]).filter(Boolean);
+      if(!arr.length) return toast(cutoff?"16:00 yig‘im navbatida buyurtma yo‘q":"Tanlangan ro‘yxatda buyurtma yo‘q");
+      const eng=adminPrintEngine();
+      const cut=eng?.latestCutoffMs?.(Date.now());
+      const opts=cutoff?{title:"16:00 NAVBATI — YIG‘IM HUJJATI",cutoffLabel:eng?.cutoffLabel?.(cut)||"16:00",subtitle:`${arr.length} ta buyurtma • ${adminOrdersItemsCount(arr)} ta tovar birligi`}:{title:"FILTRLANGAN BUYURTMALAR — YIG‘IM HUJJATI",cutoffLabel:"Admin filtri",subtitle:`${arr.length} ta buyurtma • ${adminOrdersItemsCount(arr)} ta tovar birligi`};
+      const ok=kind==="pick"?eng?.printPickBatch?.(arr,opts):eng?.printLabels58?.(arr);
+      if(!ok) adminPrintFail();
+    }
+    function updateAdminPackingCutoffStrip(){
+      const eng=adminPrintEngine(),due=adminCutoffDueOrders(),cut=eng?.latestCutoffMs?.(Date.now()),next=eng?.nextCutoffMs?.(Date.now());
+      if($("ordersCutoffDueCount")) $("ordersCutoffDueCount").textContent=String(due.length);
+      if($("ordersCutoffItemsCount")) $("ordersCutoffItemsCount").textContent=String(adminOrdersItemsCount(due));
+      if($("ordersCutoffText")) $("ordersCutoffText").textContent=due.length?`${eng?.cutoffLabel?.(cut)||"16:00"} gacha tushgan buyurtmalar — yig‘ib topshirish kerak`:`Keyingi kesim: ${eng?.cutoffLabel?.(next)||"16:00"}`;
+      $("packingCutoffAdminStrip")?.classList.toggle("has-due",!!due.length);
+      ["ordersPrintCutoffLabels","ordersPrintCutoffSheet"].forEach(id=>{const b=$(id);if(b)b.disabled=!due.length;});
+      ["ordersPrintVisibleLabels","ordersPrintVisibleSheet"].forEach(id=>{const b=$(id);if(b)b.disabled=!(ordersVisible||[]).length;});
+    }
+    function adminOrderPrintActionsHTML(order,compact=false){
+      const oid=escapeHtml(String(order?.id||order?.orderId||""));
+      return `<div class="order-print-actions${compact?" is-compact":""}"><button class="order-print-btn" type="button" data-order-print="label" data-order-print-id="${oid}" title="58×40 etiketka"><i class="fas fa-tag"></i><span>58×40</span></button><button class="order-print-btn" type="button" data-order-print="pick" data-order-print-id="${oid}" title="Yig‘im hujjati"><i class="fas fa-clipboard-check"></i><span>Yig‘im</span></button></div>`;
+    }
+
 
     function renderOrdersMetrics(filtered, all){
       const arr = Array.isArray(filtered) ? filtered : [];
@@ -6976,7 +7028,9 @@ function formatLifecycleTimelineAdmin(o){
         return orderTimeMs(b) - orderTimeMs(a);
       });
 
+      ordersVisible = out.slice();
       renderOrdersAdmin(out);
+      updateAdminPackingCutoffStrip();
     }
 
     function kvRow(k,v){
@@ -7311,7 +7365,7 @@ function formatLifecycleTimelineAdmin(o){
             <td><div class="order-delivery-pill" title="${addr}"><i class="fas fa-location-dot"></i> ${escapeHtml(delivery)}</div><div class="order-muted-line">${escapeHtml(distance || (addr ? addr.slice(0,32) : "—"))}</div></td>
             <td><div class="order-items-mini"><div class="item-stack">${itemDots}${moreDot}</div><b>${itemsCount} ta</b></div><div class="order-muted-line" title="${escapeHtml(itemTitles)}">${escapeHtml(itemTitles || "—")}</div></td>
             <td><div class="order-muted-line" style="font-weight:900;color:var(--text)">${created}</div></td>
-            <td><div class="order-table-actions"><button class="btn btn-light btn-sm order-open" type="button"><i class="fas fa-eye"></i></button></div></td>
+            <td><div class="order-table-actions">${adminOrderPrintActionsHTML(o,true)}<button class="btn btn-light btn-sm order-open" type="button"><i class="fas fa-eye"></i></button></div></td>
           `;
           tbody.appendChild(tr);
         }
@@ -7349,6 +7403,7 @@ function formatLifecycleTimelineAdmin(o){
               </div>
               <div class="order-card-actions">
                 <button class="btn btn-light btn-sm order-open" type="button"><i class="fas fa-eye"></i> Batafsil</button>
+                ${adminOrderPrintActionsHTML(o,false)}
                 ${chainActions}
               </div>
             </div>
@@ -7470,6 +7525,10 @@ Izoh: <i>${tgEscape(reason)}</i>` : "");
     if($("ordersRefresh")){
       $("ordersRefresh").addEventListener("click", ()=> subscribeOrdersAdmin());
     }
+    $("ordersPrintCutoffLabels")?.addEventListener("click",()=>adminPrintMany(adminCutoffDueOrders(),"label",true));
+    $("ordersPrintCutoffSheet")?.addEventListener("click",()=>adminPrintMany(adminCutoffDueOrders(),"pick",true));
+    $("ordersPrintVisibleLabels")?.addEventListener("click",()=>adminPrintMany(ordersVisible,"label",false));
+    $("ordersPrintVisibleSheet")?.addEventListener("click",()=>adminPrintMany(ordersVisible,"pick",false));
 
     // Filters
     ["ordersSearch","ordersStatus","ordersProvider","ordersFrom","ordersTo","ordersSort"].forEach(id=>{
@@ -7510,6 +7569,14 @@ Izoh: <i>${tgEscape(reason)}</i>` : "");
     $("ordersTableMode")?.addEventListener("click", ()=>setOrdersViewMode("table"));
     $("ordersCardMode")?.addEventListener("click", ()=>setOrdersViewMode("cards"));
 
+    function handleOrderPrintAction(e){
+      const btn=e.target?.closest?.("[data-order-print][data-order-print-id]");
+      if(!btn) return false;
+      e.preventDefault();e.stopPropagation();
+      adminPrintOrderDoc(btn.getAttribute("data-order-print-id"),btn.getAttribute("data-order-print"));
+      return true;
+    }
+
     function handleOrderLifecycleChainAction(e){
       const btn=e.target?.closest?.("[data-order-id][data-next-status]");
       if(!btn) return false;
@@ -7521,6 +7588,7 @@ Izoh: <i>${tgEscape(reason)}</i>` : "");
 
     // Row click => chain action or detail modal
     $("ordersTbody")?.addEventListener("click", (e)=>{
+      if(handleOrderPrintAction(e)) return;
       if(handleOrderLifecycleChainAction(e)) return;
       const t = e.target;
       const tr = t?.closest("tr");
@@ -7532,6 +7600,7 @@ Izoh: <i>${tgEscape(reason)}</i>` : "");
 
     // Card click => chain action or detail modal
     $("ordersCards")?.addEventListener("click", (e)=>{
+      if(handleOrderPrintAction(e)) return;
       if(handleOrderLifecycleChainAction(e)) return;
       const t = e.target;
       if(!t) return;
@@ -8170,7 +8239,8 @@ document.addEventListener('click', async (e)=>{
     }
 
     document.getElementById("printReceipt80Btn")?.addEventListener("click", ()=> printOrder("80"));
-    document.getElementById("printStickerA6Btn")?.addEventListener("click", ()=> printOrder("a6"));
+    document.getElementById("printSticker58Btn")?.addEventListener("click", ()=>{ const o=window.__OM_CURRENT_ORDER; if(!o)return toast("Buyurtma tanlanmadi"); const ok=window.OrzuMallOrderPrint?.printLabel58?.(o); if(!ok)toast("Chop etish oynasi ochilmadi","error"); });
+    document.getElementById("printPickSheetBtn")?.addEventListener("click", ()=>{ const o=window.__OM_CURRENT_ORDER; if(!o)return toast("Buyurtma tanlanmadi"); const ok=window.OrzuMallOrderPrint?.printPickSheet?.(o); if(!ok)toast("Chop etish oynasi ochilmadi","error"); });
 
 
 
