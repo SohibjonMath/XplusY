@@ -33,10 +33,21 @@ function mount(){
         <i class="fa-solid fa-headset" aria-hidden="true"></i><span class="omcc-badge" id="omccChatHeadBadge" hidden>0</span>
       </button>`);
   }
+  const mobileHead=document.querySelector('.mobileSearchHead');
+  if(mobileHead && !$('omccMobileHeadActions')){
+    const mobileActions=document.createElement('div');
+    mobileActions.className='omcc-mobile-head-actions';
+    mobileActions.id='omccMobileHeadActions';
+    mobileActions.innerHTML=`
+      <button class="omcc-mobile-head-btn" id="omccBellMobileBtn" type="button" title="Bildirishnomalar" aria-label="Bildirishnomalar">
+        <i class="fa-solid fa-bell" aria-hidden="true"></i><span class="omcc-badge" id="omccBellMobileBadge" hidden>0</span>
+      </button>
+      <button class="omcc-mobile-head-btn" id="omccChatMobileBtn" type="button" title="Qo‘llab-quvvatlash" aria-label="Qo‘llab-quvvatlash">
+        <i class="fa-solid fa-headset" aria-hidden="true"></i><span class="omcc-badge" id="omccChatMobileBadge" hidden>0</span>
+      </button>`;
+    mobileHead.appendChild(mobileActions);
+  }
   document.body.insertAdjacentHTML('beforeend',`
-    <button class="omcc-float" id="omccFloatBtn" type="button" aria-label="Qo‘llab-quvvatlash chatini ochish" title="Qo‘llab-quvvatlash">
-      <i class="fa-solid fa-comments" aria-hidden="true"></i><span class="omcc-badge" id="omccFloatBadge" hidden>0</span>
-    </button>
     <div class="omcc-overlay" id="omccOverlay" hidden>
       <aside class="omcc-drawer" role="dialog" aria-modal="true" aria-label="Mijozlar markazi">
         <div class="omcc-head"><div class="omcc-title"><i class="fa-solid fa-shield-heart"></i> OrzuMall yordam markazi</div><button class="omcc-close" id="omccClose" type="button" aria-label="Yopish"><i class="fa-solid fa-xmark"></i></button></div>
@@ -64,7 +75,8 @@ function mount(){
     </div>`);
   $('omccBellBtn')?.addEventListener('click',()=>openCenter('notifications'));
   $('omccChatHeadBtn')?.addEventListener('click',()=>openCenter('chat'));
-  $('omccFloatBtn')?.addEventListener('click',()=>openCenter(unreadNotifications()?'notifications':'chat'));
+  $('omccBellMobileBtn')?.addEventListener('click',()=>openCenter('notifications'));
+  $('omccChatMobileBtn')?.addEventListener('click',()=>openCenter('chat'));
   $('omccClose')?.addEventListener('click',closeCenter);
   $('omccOverlay')?.addEventListener('click',(e)=>{ if(e.target===$('omccOverlay')) closeCenter(); });
   document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'&&S.open) closeCenter(); });
@@ -77,7 +89,7 @@ function cleanup(){ S.unsub.splice(0).forEach(fn=>{try{fn?.();}catch(_){}}); S.n
 function setBadge(id,n){ const e=$(id); if(!e)return; const x=Math.max(0,Number(n||0)); e.textContent=x>99?'99+':String(x); e.hidden=!x; }
 function unreadNotifications(){ return S.notifications.filter(n=>!S.readIds.has(n.id)).length; }
 function unreadChat(){ return Math.max(0,Number(S.thread?.userUnreadCount||0)); }
-function updateBadges(){ const nn=unreadNotifications(), cc=unreadChat(); setBadge('omccBellBadge',nn);setBadge('omccTabNotifBadge',nn);setBadge('omccChatHeadBadge',cc);setBadge('omccTabChatBadge',cc);setBadge('omccFloatBadge',nn+cc); }
+function updateBadges(){ const nn=unreadNotifications(), cc=unreadChat(); setBadge('omccBellBadge',nn);setBadge('omccBellMobileBadge',nn);setBadge('omccTabNotifBadge',nn);setBadge('omccChatHeadBadge',cc);setBadge('omccChatMobileBadge',cc);setBadge('omccTabChatBadge',cc); }
 function noteIcon(t){ return ({order:'fa-box',support:'fa-headset',promo:'fa-gift',warning:'fa-triangle-exclamation'}[String(t||'info')]||'fa-bell'); }
 function visibleNotifications(all){ const uid=S.user?.uid||''; return (all||[]).filter(n=>n&&n.active!==false&&(n.targetType==='all'||n.target==='all'||String(n.targetUid||'')===uid)).sort((a,b)=>tsMs(b.createdAt)-tsMs(a.createdAt)); }
 function rebuildNotifications(){ const map=new Map(); [...S.globalNotes,...S.userNotes].forEach(n=>{if(n?.id)map.set(n.id,n)}); S.notifications=visibleNotifications([...map.values()]); renderNotifications(); updateBadges(); }

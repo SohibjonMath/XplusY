@@ -268,11 +268,28 @@
   }
   function cacheKey(lang, text){ return lang + "|" + text; }
 
-  function buildSwitcher(extraClass){
+  function buildSwitcher(extraClass, mode="buttons"){
     const wrap = document.createElement("div");
     wrap.className = "omLangSwitch" + (extraClass ? " " + extraClass : "");
-    wrap.setAttribute("role", "group");
     wrap.setAttribute("aria-label", "Til / Language");
+    if(mode === "select"){
+      wrap.classList.add("omLangSelectWrap");
+      const select = document.createElement("select");
+      select.className = "omLangSelect";
+      select.setAttribute("aria-label", "Tilni tanlang / Choose language");
+      select.title = "Tilni tanlang";
+      SUPPORTED.forEach(lang => {
+        const option = document.createElement("option");
+        option.value = lang;
+        option.textContent = LANG_LABELS[lang];
+        select.appendChild(option);
+      });
+      select.value = currentLang;
+      select.addEventListener("change", () => setLang(select.value));
+      wrap.appendChild(select);
+      return wrap;
+    }
+    wrap.setAttribute("role", "group");
     SUPPORTED.forEach(lang => {
       const b = document.createElement("button");
       b.type = "button";
@@ -296,11 +313,13 @@
     }
 
     if(!document.querySelector(".omLangMobile")){
-      const mobile = buildSwitcher("omLangMobile");
+      const mobile = buildSwitcher("omLangMobile", "select");
       const mobileHead = document.querySelector(".mobileSearchHead");
       const topbar = document.querySelector(".topbar");
       if(mobileHead){
-        mobileHead.appendChild(mobile);
+        const mobileActions = mobileHead.querySelector(".omcc-mobile-head-actions");
+        if(mobileActions) mobileHead.insertBefore(mobile, mobileActions);
+        else mobileHead.appendChild(mobile);
       }else if(topbar){
         topbar.appendChild(mobile);
       }else{
@@ -315,6 +334,9 @@
       const on = btn.dataset.lang === currentLang;
       btn.classList.toggle("active", on);
       btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    document.querySelectorAll(".omLangSelect").forEach(select => {
+      if(select.value !== currentLang) select.value = currentLang;
     });
   }
 

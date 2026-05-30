@@ -39,3 +39,51 @@ body.omcc-open{overflow:hidden!important}
 .omcc-ai-label{display:block;margin-bottom:5px;color:#2563eb;font-size:10.5px;font-weight:950;letter-spacing:.02em;text-transform:uppercase}.omcc-ai-label i{margin-right:4px}
 .omcc-typing{display:flex!important;align-items:center;gap:4px;max-width:210px!important}.omcc-typing .omcc-ai-label{margin:0 5px 0 0}.omcc-typing span{width:6px;height:6px;border-radius:50%;background:#60a5fa;animation:omccPulse 1s ease-in-out infinite}.omcc-typing span:nth-of-type(2){animation-delay:.16s}.omcc-typing span:nth-of-type(3){animation-delay:.32s}.omcc-typing em{margin-left:5px;color:#64748b;font-size:10.5px;font-style:normal;font-weight:800}
 @keyframes omccPulse{0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-4px);opacity:1}}
+
+/* ===== v49: support tools inside mobile search header; no floating SMS bubble ===== */
+.omcc-float{display:none!important}
+.omcc-mobile-head-actions{display:none}
+@media(max-width:820px){
+  .mobileSearchHead .omcc-mobile-head-actions{
+    display:flex !important;
+    flex:0 0 auto !important;
+    align-items:center !important;
+    gap:5px !important;
+    margin-left:0 !important;
+  }
+  .mobileSearchHead .omcc-mobile-head-btn{
+    position:relative !important;
+    display:grid !important;
+    place-items:center !important;
+    flex:0 0 auto !important;
+    width:34px !important;
+    min-width:34px !important;
+    height:34px !important;
+    padding:0 !important;
+    border:1px solid rgba(17,24,39,.10) !important;
+    border-radius:11px !important;
+    background:#fff !important;
+    color:#111827 !important;
+    box-shadow:0 5px 14px rgba(15,23,42,.06) !important;
+    cursor:pointer !important;
+  }
+  .mobileSearchHead .omcc-mobile-head-btn i{
+    color:#dc2626 !important;
+    font-size:14px !important;
+  }
+  .mobileSearchHead .omcc-mobile-head-btn:active{transform:scale(.96)}
+  .mobileSearchHead .omcc-mobile-head-btn .omcc-badge{
+    top:-6px !important;
+    right:-6px !important;
+    min-width:16px !important;
+    height:16px !important;
+    padding:0 4px !important;
+    border-width:2px !important;
+    font-size:9px !important;
+  }
+}
+@media(max-width:380px){
+  .mobileSearchHead{gap:7px !important;padding:0 10px !important}
+  .mobileSearchHead .omcc-mobile-head-actions{gap:4px !important}
+  .mobileSearchHead .omcc-mobile-head-btn{width:32px !important;min-width:32px !important;height:32px !important;border-radius:10px !important}
+}
