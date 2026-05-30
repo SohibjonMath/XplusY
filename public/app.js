@@ -4442,23 +4442,179 @@ function updateDeliveryMethodUI(){
   try{ updateCheckoutSubmitVisibility(); }catch(_e){}
   try{ omRenderCartDeliverySummary(); }catch(_e){}
   try{ updateCartPrimaryCTA(); }catch(_e){}
+  try{ updateDeliveryLocationMeta(); }catch(_e){}
+}
+
+let omDeliveryInlineMap = null;
+let omDeliveryInlineMapMarker = null;
+let omDeliveryStoreMarker = null;
+let omDeliveryMapDraft = null;
+
+function omDeliveryMapCoords(loc=null){
+  const x = loc || omDeliveryLocation || omDeliveryMapDraft || OM_STORE_LOCATION;
+  const lat = Number(x?.lat), lng = Number(x?.lng);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return { lat:Number(OM_STORE_LOCATION.lat), lng:Number(OM_STORE_LOCATION.lng) };
+  return { lat, lng };
+}
+
+function omGoogleMapsUrl(lat, lng){
+  return `https://www.google.com/maps?q=${encodeURIComponent(`${Number(lat)},${Number(lng)}`)}`;
+}
+
+function omYandexMapsUrl(lat, lng){
+  return `https://yandex.com/maps/?ll=${encodeURIComponent(`${Number(lng)},${Number(lat)}`)}&z=17&pt=${encodeURIComponent(`${Number(lng)},${Number(lat)},pm2rdm`)}`;
+}
+
+function omSetMapDraft(lat, lng, showApply=true){
+  lat = Number(lat); lng = Number(lng);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+  omDeliveryMapDraft = { lat, lng };
+  const draftText = document.getElementById('deliveryMapDraftText');
+  const applyBtn = document.getElementById('deliveryMapApplyBtn');
+  if(draftText) draftText.textContent = `Tanlangan nuqta: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  if(applyBtn) applyBtn.hidden = !showApply;
+  if(omDeliveryInlineMapMarker){
+    omDeliveryInlineMapMarker.setLatLng([lat, lng]);
+  }
+}
+
+function omRenderInlineDeliveryMap({open=false, centerCurrent=true}={}){
+  const panel = document.getElementById('deliveryInlineMapPanel');
+  const mapEl = document.getElementById('deliveryInlineMap');
+  const toggleBtn = document.getElementById('deliveryMapToggleBtn');
+  if(!panel || !mapEl) return false;
+  if(open) panel.hidden = false;
+  if(panel.hidden){
+    if(toggleBtn){
+      const hasLoc = !!(omDeliveryLocation && Number.isFinite(Number(omDeliveryLocation.lat)) && Number.isFinite(Number(omDeliveryLocation.lng)));
+      toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${hasLoc ? 'Kichik xaritani ko‘rsatish' : 'Xaritadan belgilash'}</span>`;
+    }
+    return false;
+  }
+  if(toggleBtn) toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>Xaritani yopish</span>`;
+  if(!window.L){
+    mapEl.innerHTML = `<div style="padding:16px;font-size:12px;font-weight:800;color:#475569">Xarita yuklanmadi. Internet aloqasini tekshirib, sahifani yangilang.</div>`;
+    return false;
+  }
+  const center = omDeliveryMapCoords(centerCurrent ? (omDeliveryLocation || omDeliveryMapDraft) : (omDeliveryMapDraft || omDeliveryLocation));
+  if(!omDeliveryInlineMap){
+    omDeliveryInlineMap = window.L.map(mapEl, { zoomControl:true, attributionControl:true }).setView([center.lat, center.lng], omDeliveryLocation ? 17 : 14);
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom:19,
+      attribution:'&copy; OpenStreetMap'
+    }).addTo(omDeliveryInlineMap);
+    omDeliveryStoreMarker = window.L.circleMarker([Number(OM_STORE_LOCATION.lat), Number(OM_STORE_LOCATION.lng)], {
+      radius:7,
+      color:'#dc2626',
+      fillColor:'#dc2626',
+      fillOpacity:.9,
+      weight:2
+    }).addTo(omDeliveryInlineMap).bindTooltip('OrzuMall do‘koni');
+    omDeliveryInlineMapMarker = window.L.marker([center.lat, center.lng], { draggable:true }).addTo(omDeliveryInlineMap);
+    omDeliveryInlineMapMarker.on('dragend', (e)=>{
+      const p = e.target.getLatLng();
+      omSetMapDraft(p.lat, p.lng, true);
+    });
+    omDeliveryInlineMap.on('click', (e)=> omSetMapDraft(e.latlng.lat, e.latlng.lng, true));
+  }else{
+    omDeliveryInlineMap.setView([center.lat, center.lng], omDeliveryLocation ? 17 : 14);
+    if(omDeliveryInlineMapMarker) omDeliveryInlineMapMarker.setLatLng([center.lat, center.lng]);
+  }
+  const draftText = document.getElementById('deliveryMapDraftText');
+  const applyBtn = document.getElementById('deliveryMapApplyBtn');
+  if(omDeliveryLocation){
+    omDeliveryMapDraft = { lat:Number(omDeliveryLocation.lat), lng:Number(omDeliveryLocation.lng) };
+    if(draftText) draftText.textContent = `Amaldagi nuqta: ${Number(omDeliveryLocation.lat).toFixed(6)}, ${Number(omDeliveryLocation.lng).toFixed(6)}. O‘zgartirish uchun xaritani bosing.`;
+    if(applyBtn) applyBtn.hidden = true;
+  }else if(draftText){
+    draftText.textContent = 'Yetkazib berish nuqtasini xaritadan bosing.';
+  }
+  setTimeout(()=>{ try{ omDeliveryInlineMap?.invalidateSize(); }catch(_e){} }, 60);
+  return true;
+}
+
+function omHideInlineDeliveryMap(){
+  const panel = document.getElementById('deliveryInlineMapPanel');
+  if(panel) panel.hidden = true;
+  try{ omRenderInlineDeliveryMap(); }catch(_e){}
+}
+
+function omToggleInlineDeliveryMap(){
+  const panel = document.getElementById('deliveryInlineMapPanel');
+  if(!panel) return;
+  if(panel.hidden) omRenderInlineDeliveryMap({open:true});
+  else omHideInlineDeliveryMap();
+}
+
+function omShowInlineDeliveryPreview(){
+  try{ omRenderInlineDeliveryMap({open:true, centerCurrent:true}); }catch(_e){}
+}
+
+function omApplyInlineMapDraft(){
+  if(!omDeliveryMapDraft || !Number.isFinite(Number(omDeliveryMapDraft.lat)) || !Number.isFinite(Number(omDeliveryMapDraft.lng))){
+    toast('Avval xaritadan nuqtani tanlang.');
+    return;
+  }
+  const lat = Number(omDeliveryMapDraft.lat), lng = Number(omDeliveryMapDraft.lng);
+  omDeliveryLocation = {
+    lat,
+    lng,
+    accuracy:0,
+    mapUrl:omGoogleMapsUrl(lat, lng),
+    savedAddressTitle:'Xaritadan belgilangan manzil',
+    source:'map_picker'
+  };
+  const saved = omSaveDeliveryLocationOnce(omDeliveryLocation, 'Xaritadan belgilangan manzil');
+  if(saved){
+    omDeliveryLocation.savedAddressId = saved.id;
+    omDeliveryLocation.savedAddressTitle = omAddressTitle(saved);
+    const sel = document.getElementById('savedDeliveryAddressSelect');
+    if(sel) sel.value = String(saved.id || '');
+  }
+  setDeliveryLocationStatus(`Xaritadan nuqta belgilandi: ${lat.toFixed(6)}, ${lng.toFixed(6)}`, true);
+  const applyBtn = document.getElementById('deliveryMapApplyBtn');
+  if(applyBtn) applyBtn.hidden = true;
+  try{ omRenderDeliveryEstimate(); }catch(_e){}
+  try{ updateCheckoutCompactSummary(); }catch(_e){}
+  try{ updateCheckoutSubmitVisibility(); }catch(_e){}
+  try{ omRenderCartDeliverySummary(); }catch(_e){}
+  try{ updateCartPrimaryCTA(); }catch(_e){}
+  try{ omShowInlineDeliveryPreview(); }catch(_e){}
+  toast('Xaritadagi manzil qo‘llandi va summa yangilandi.');
 }
 
 function updateDeliveryLocationMeta(){
   const wrap = document.getElementById('deliveryLocationActions');
   const copyBtn = document.getElementById('copyDeliveryCoordsBtn');
   const mapBtn = document.getElementById('openDeliveryMapBtn');
+  const yandexBtn = document.getElementById('openDeliveryYandexBtn');
+  const toggleBtn = document.getElementById('deliveryMapToggleBtn');
+  const panel = document.getElementById('deliveryInlineMapPanel');
   const hasLoc = !!(omDeliveryLocation && Number.isFinite(Number(omDeliveryLocation.lat)) && Number.isFinite(Number(omDeliveryLocation.lng)));
+  const lat = hasLoc ? Number(omDeliveryLocation.lat) : null;
+  const lng = hasLoc ? Number(omDeliveryLocation.lng) : null;
   if(copyBtn){
-    copyBtn.dataset.coords = hasLoc ? `${Number(omDeliveryLocation.lat).toFixed(6)}, ${Number(omDeliveryLocation.lng).toFixed(6)}` : '';
+    copyBtn.dataset.coords = hasLoc ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : '';
     copyBtn.disabled = !hasLoc;
   }
   if(mapBtn){
-    mapBtn.href = hasLoc ? (omDeliveryLocation.mapUrl || `https://maps.google.com/?q=${Number(omDeliveryLocation.lat)},${Number(omDeliveryLocation.lng)}`) : '#';
+    mapBtn.href = hasLoc ? omGoogleMapsUrl(lat, lng) : '#';
     mapBtn.setAttribute('aria-disabled', hasLoc ? 'false' : 'true');
     mapBtn.classList.toggle('isDisabled', !hasLoc);
   }
+  if(yandexBtn){
+    yandexBtn.href = hasLoc ? omYandexMapsUrl(lat, lng) : '#';
+    yandexBtn.setAttribute('aria-disabled', hasLoc ? 'false' : 'true');
+    yandexBtn.classList.toggle('isDisabled', !hasLoc);
+  }
   if(wrap) wrap.hidden = !hasLoc;
+  if(toggleBtn){
+    const isOpen = !!panel && !panel.hidden;
+    toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${isOpen ? 'Xaritani yopish' : (hasLoc ? 'Kichik xaritani ko‘rsatish' : 'Xaritadan belgilash')}</span>`;
+  }
+  if(panel && !panel.hidden){
+    try{ omRenderInlineDeliveryMap({centerCurrent:true}); }catch(_e){}
+  }
 }
 
 function setDeliveryLocationStatus(text, ok=false){
@@ -4542,6 +4698,7 @@ async function detectDeliveryLocation(){
       if(sel) sel.value = String(saved.id || "");
     }
     setDeliveryLocationStatus(`Joylashuv olindi: ${lat.toFixed(6)}, ${lng.toFixed(6)}${accuracy ? ` • ±${accuracy} m` : ''}`, true);
+    try{ omShowInlineDeliveryPreview(); }catch(_e){}
     try{ omRenderDeliveryEstimate(); }catch(_e){}
     try{ updateCheckoutCompactSummary(); }catch(_e){}
     try{ updateCheckoutSubmitVisibility(); }catch(_e){}
@@ -4741,6 +4898,7 @@ function applySavedAddressToCheckout(id){
   }else{
     setDeliveryLocationStatus(`Saqlangan manzil tanlandi: ${omAddressTitle(a)}`, true);
   }
+  try{ omShowInlineDeliveryPreview(); }catch(_e){}
   try{ omRenderDeliveryEstimate(); }catch(_e){}
   try{ updateCheckoutCompactSummary(); }catch(_e){}
   try{ updateCheckoutSubmitVisibility(); }catch(_e){}
@@ -4842,6 +5000,9 @@ function initCheckoutDeliveryUI(){
       }
     }
   });
+  document.getElementById('deliveryMapToggleBtn')?.addEventListener('click', omToggleInlineDeliveryMap);
+  document.getElementById('deliveryMapCloseBtn')?.addEventListener('click', omHideInlineDeliveryMap);
+  document.getElementById('deliveryMapApplyBtn')?.addEventListener('click', omApplyInlineMapDraft);
   const sel = document.getElementById("deliveryMethodSelect");
   if(sel && !sel.value){
     const stored = omReadStoredDeliveryMethod();

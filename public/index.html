@@ -29,7 +29,8 @@
 
 <link rel="stylesheet" href="/theme-redwhite.css?v=20260530_v39_simple_checkout">
   <link rel="stylesheet" href="./i18n.css?v=20260529_mobile_lang_fix" />
-  <link rel="stylesheet" href="./checkout-v39.css?v=20260530_v39_simple_checkout" />
+  <link rel="stylesheet" href="./checkout-v41.css?v=20260530_v41_inline_map" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" referrerpolicy="no-referrer" />
 </head>
 <body class="om-view-home">
   <header class="topbar">
@@ -304,9 +305,28 @@
                   <span>Joylashuvni avto aniqlash</span>
                 </button>
                 <div class="deliveryLocationStatus" id="deliveryLocationStatus">Yetkazib berish uchun lokatsiyani avto aniqlang.</div>
+                <button class="locMetaBtn deliveryMapMainBtn" id="deliveryMapToggleBtn" type="button">
+                  <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+                  <span>Xaritadan belgilash</span>
+                </button>
                 <div class="deliveryLocationActions" id="deliveryLocationActions" hidden>
                   <button class="locMetaBtn" id="copyDeliveryCoordsBtn" type="button"><i class="fa-regular fa-copy" aria-hidden="true"></i> Koordinatani nusxalash</button>
-                  <a class="locMetaBtn" id="openDeliveryMapBtn" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i> Xaritada tekshirish</a>
+                  <a class="locMetaBtn" id="openDeliveryMapBtn" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-google" aria-hidden="true"></i> Google Maps</a>
+                  <a class="locMetaBtn" id="openDeliveryYandexBtn" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-map" aria-hidden="true"></i> Yandex Maps</a>
+                </div>
+                <div class="deliveryInlineMapPanel" id="deliveryInlineMapPanel" hidden>
+                  <div class="deliveryInlineMapHead">
+                    <div>
+                      <b><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Xaritadan tekshirish yoki belgilash</b>
+                      <span>Xaritadagi kerakli joyni bosing. Belgini surish ham mumkin.</span>
+                    </div>
+                    <button class="mapPanelCloseBtn" id="deliveryMapCloseBtn" type="button" aria-label="Xaritani yopish"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                  </div>
+                  <div class="deliveryInlineMap" id="deliveryInlineMap" aria-label="Yetkazib berish manzilini belgilash xaritasi"></div>
+                  <div class="deliveryInlineMapFoot">
+                    <div class="deliveryMapDraftText" id="deliveryMapDraftText">Nuqtani xaritadan tanlang.</div>
+                    <button class="deliveryMapApplyBtn" id="deliveryMapApplyBtn" type="button" hidden><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Tanlangan nuqtani qo‘llash</button>
+                  </div>
                 </div>
                 <div class="omDeliveryCalcBox" id="deliveryEstimateBox" hidden>
                   <div class="omDeliveryCalcHead">
@@ -316,7 +336,7 @@
                   <div id="deliveryEstimateContent" class="omDeliveryCalcContent">Avto lokatsiya aniqlangandan keyin hisoblanadi.</div>
                 </div>
                 <div class="deliveryAutoOnlyNote">
-                  Xatolik bo‘lmasligi uchun qo‘lda manzil yozilmaydi. Telefon yoki brauzer lokatsiyasi ishlatiladi.
+                  Xatolik bo‘lmasligi uchun manzil matni qo‘lda yozilmaydi. GPS lokatsiyasi yoki xaritada belgilangan aniq nuqta ishlatiladi.
                 </div>
               </div>
             </div>
@@ -623,7 +643,8 @@
   <script type="module" src="./cardpay-config.js"></script>
   <script src="./telegram-config.js"></script>
 <script src="./i18n.js?v=20260529_mobile_lang_fix"></script>
-<script type="module" src="./app.js?v=20260530_v39_simple_checkout"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" referrerpolicy="no-referrer"></script>
+<script type="module" src="./app.js?v=20260530_v41_inline_map"></script>
 
   
 
