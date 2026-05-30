@@ -1,6 +1,7 @@
 // netlify/functions/balancePay.js
 // Robust balance checkout for OrzuMall
 const admin = require("firebase-admin");
+const { pushNewOrder } = require('./_adminPush');
 
 function initAdmin() {
   if (admin.apps.length) return;
@@ -303,6 +304,8 @@ exports.handler = async (event) => {
       return json(402, { ok: false, error: "insufficient_balance", balanceUZS: result.balance, needUZS: result.need });
     }
 
+    // Native Android admin push. Payment success must not depend on push delivery.
+    await pushNewOrder(db, { id: orderId, orderId, totalUZS, userName: decoded.name || decoded.email || 'Mijoz' }).catch(err => console.warn('admin push skipped:', err?.message || err));
     return json(200, { ok: true, orderId, totalUZS, balanceUZS: result.balance });
   } catch (e) {
     const msg = String(e?.message || e);

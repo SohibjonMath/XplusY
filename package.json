@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.5.0",
-  "description": "OrzuMall premium store with dedicated mobile admin app, secure chained orders, wallet approvals, realtime support, notifications and official OrzuMall review replies",
+  "version": "1.6.0",
+  "description": "OrzuMall premium store v52 with dedicated mobile admin Android native auth, FCM push registration and native order alerts",
   "engines": {
     "node": "18.x"
   },

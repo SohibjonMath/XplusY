@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithPopup, signInWithRedirect, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithPopup, signInWithRedirect, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, collection, collectionGroup, doc, getDoc, onSnapshot, orderBy, query, limit } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const cfg={apiKey:"AIzaSyDYwHJou_9GqHZcf8XxtTByC51Z8un8rrM",authDomain:"xplusy-760fa.firebaseapp.com",projectId:"xplusy-760fa",storageBucket:"xplusy-760fa.appspot.com",appId:"1:992512966017:web:5e919dbc9b8d8abcb43c80"};
@@ -26,11 +26,19 @@ function empty(icon,text){return `<div class="empty"><i class="fa-solid ${icon}"
 async function isAdmin(user){const email=normEmail(user?.email);if(email==="sohibjonmath@gmail.com")return true;try{const s=await getDoc(doc(db,"configs","admins"));return s.exists()&&Array.isArray(s.data()?.emails)&&s.data().emails.map(normEmail).includes(email)}catch(_){return false}}
 async function api(endpoint,action,payload={}){if(!S.user)throw new Error("Kirish talab qilinadi");const token=await S.user.getIdToken();const r=await fetch(`/.netlify/functions/${endpoint}`,{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${token}`},body:JSON.stringify({action,...payload})});const out=await r.json().catch(()=>({}));if(!r.ok||!out.ok)throw new Error(out.error||"server_error");return out}
 
+/* ===== v52: Android native bridge integration ===== */
+function nativeBridge(){try{return window.OrzuMallNative||null}catch(_){return null}}
+function nativeSyncOrderAlerts(){try{const c=orderAlertCounts();nativeBridge()?.syncOrderAlerts?.(Number(c.news.length||0),Number(c.packing.length||0),Number(c.urgent||0))}catch(_){}}
+function nativeRequestPushToken(){try{nativeBridge()?.requestPushToken?.()}catch(_){}}
+function nativeAskNotificationPermission(){try{nativeBridge()?.requestNotificationPermission?.()}catch(_){}}
+window.addEventListener("orzumall-native-auth",async(e)=>{const customToken=String(e?.detail?.customToken||"").trim();if(!customToken)return;try{await signInWithCustomToken(auth,customToken)}catch(err){console.warn("native auth failed",err)}});
+window.addEventListener("orzumall-native-ready",()=>{try{nativeRequestPushToken();nativeSyncOrderAlerts()}catch(_){}});
+
 function openDrawer(){$("drawer").classList.add("open");$("drawerOverlay").hidden=false}
 function closeDrawer(){$("drawer").classList.remove("open");$("drawerOverlay").hidden=true}
 function setView(view){S.view=view;document.querySelectorAll(".view").forEach(e=>e.classList.toggle("active",e.id===`view-${view}`));document.querySelectorAll("[data-view]").forEach(e=>e.classList.toggle("active",e.dataset.view===view));closeDrawer();if(view!=="support")closeChat();renderCurrent();window.scrollTo({top:0,behavior:"smooth"})}
 function renderCurrent(){({orders:renderOrders,balance:renderBalance,turnover:renderTurnover,support:renderSupport,notifications:renderNotifications,reviews:renderReviews}[S.view]||(()=>{}))();updateBadges()}
-function updateBadges(){const action=orderAlertCounts().action;badge("badgeOrders",action);badge("bottomOrdersBadge",action);badge("badgeBalance",S.topups.filter(x=>String(x.status||"pending").toLowerCase()==="pending").length);const sup=S.threads.reduce((a,t)=>a+Math.max(num(t.adminUnreadCount),t.needsHuman?1:0),0);badge("badgeSupport",sup);badge("bottomSupportBadge",sup);badge("badgeReviews",S.reviews.filter(r=>!r.adminReplyText&&!r.adminReply?.text).length);try{if("setAppBadge" in navigator){action?navigator.setAppBadge(action):navigator.clearAppBadge()}}catch(_){}}
+function updateBadges(){const action=orderAlertCounts().action;badge("badgeOrders",action);badge("bottomOrdersBadge",action);badge("badgeBalance",S.topups.filter(x=>String(x.status||"pending").toLowerCase()==="pending").length);const sup=S.threads.reduce((a,t)=>a+Math.max(num(t.adminUnreadCount),t.needsHuman?1:0),0);badge("badgeSupport",sup);badge("bottomSupportBadge",sup);badge("badgeReviews",S.reviews.filter(r=>!r.adminReplyText&&!r.adminReply?.text).length);try{if("setAppBadge" in navigator){action?navigator.setAppBadge(action):navigator.clearAppBadge()}}catch(_){ }try{nativeSyncOrderAlerts()}catch(_){}}
 
 /* ===== v51: repeating, action-based order reminders ===== */
 const ORDER_ALERT_REPEAT_MS=60000;
@@ -90,8 +98,9 @@ function onOrdersSnapshot(orders){
 }
 async function enableOrderAlerts(){
   S.alertsEnabled=true;localStorage.setItem("orzumall_mobile_admin_alerts_v1","1");S.alertSnoozeUntil=0;localStorage.removeItem("orzumall_mobile_admin_alert_snooze_until_v1");ensureAudioCtx();
+  try{nativeAskNotificationPermission()}catch(_){ }
   try{if("Notification" in window&&Notification.permission==="default")await Notification.requestPermission()}catch(_){ }
-  renderOrderAlertCenter();const c=orderAlertCounts();if(c.action)notifyOrderAlert(c,"new");else toast("Buyurtma signali yoqildi","success")
+  renderOrderAlertCenter();nativeSyncOrderAlerts();const c=orderAlertCounts();if(c.action)notifyOrderAlert(c,"new");else toast("Buyurtma signali yoqildi","success")
 }
 function snoozeOrderAlerts(){S.alertSnoozeUntil=Date.now()+5*60*1000;localStorage.setItem("orzumall_mobile_admin_alert_snooze_until_v1",String(S.alertSnoozeUntil));renderOrderAlertCenter();toast("Signal 5 daqiqaga tinchitildi")}
 
@@ -150,4 +159,4 @@ $("ordersSearch").addEventListener("input",renderOrders);$("balanceSearch").addE
 const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});
 $("loginBtn").addEventListener("click",async()=>{const b=$("loginBtn"),err=$("loginError");b.disabled=true;err.hidden=true;try{await signInWithPopup(auth,provider)}catch(e){console.warn("popup login fallback",e);try{await signInWithRedirect(auth,provider)}catch(e2){err.hidden=false;err.textContent="Kirish amalga oshmadi: "+(e2?.message||e?.message||e2);b.disabled=false}}});
 getRedirectResult(auth).catch(e=>console.warn("redirect result",e));
-onAuthStateChanged(auth,async user=>{if(!user){clearSubs();S.user=null;$("loginScreen").hidden=false;$("appShell").hidden=true;return}const ok=await isAdmin(user);if(!ok){$("loginError").hidden=false;$("loginError").textContent="Bu Gmail akkauntda admin huquqi yo‘q.";await signOut(auth);return}S.user=user;$("adminEmail").textContent=user.email||"Admin";$("loginScreen").hidden=true;$("appShell").hidden=false;startSubscriptions();scheduleOrderAlertTimer();renderOrderAlertCenter();setView("orders")});
+onAuthStateChanged(auth,async user=>{if(!user){clearSubs();S.user=null;$("loginScreen").hidden=false;$("appShell").hidden=true;return}const ok=await isAdmin(user);if(!ok){$("loginError").hidden=false;$("loginError").textContent="Bu Gmail akkauntda admin huquqi yo‘q.";await signOut(auth);return}S.user=user;$("adminEmail").textContent=user.email||"Admin";$("loginScreen").hidden=true;$("appShell").hidden=false;startSubscriptions();scheduleOrderAlertTimer();renderOrderAlertCenter();setView("orders");setTimeout(()=>{nativeRequestPushToken();nativeSyncOrderAlerts()},250)});

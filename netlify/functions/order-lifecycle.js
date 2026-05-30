@@ -1,5 +1,6 @@
 // OrzuMall v48 — strict chained lifecycle; customer guided cancel reasons; admin can mark returned during shipping
 const admin = require("firebase-admin");
+const { pushOrderStateChanged } = require('./_adminPush');
 
 function initAdmin(){
   if(admin.apps.length) return;
@@ -205,6 +206,7 @@ exports.handler=async(event)=>{
       const ownerUid=out.result?.ownerUid||"";
       const label={new:"Yangi",packing:"Yig‘ilyapti",shipping:"Yetkazib berishda",delivered:"Yetkazib berildi",cancelled:"Bekor qilindi",return_requested:"Qaytarish so‘rovi",returned:"Qaytarildi",return_rejected:"Qaytarish rad etildi"}[next]||next;
       await notify(db,ownerUid,"Buyurtma holati yangilandi",`#${orderId}: ${label}${reason?`. Izoh: ${reason}`:""}`);
+      await pushOrderStateChanged(db, orderId, label).catch(err => console.warn('admin status push skipped:', err?.message || err));
       return json(200,{ok:true,status:next,...(out.result||{})});
     }
 
