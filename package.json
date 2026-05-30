@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.7.0",
-  "description": "OrzuMall premium store v53 with marketplace packing center, 58x40 thermal labels, A4 picking sheets and 16:00 native cutoff reminders",
+  "version": "1.8.0",
+  "description": "OrzuMall premium store v54 with browser-safe Android admin login, manual Android FCM fallback, token registration, native push test and order alerts",
   "engines": {
     "node": "18.x"
   },

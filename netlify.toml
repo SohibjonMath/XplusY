@@ -49,8 +49,3 @@
   for = "/*.css"
   [headers.values]
     Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
-
-# OrzuMall v53: native Android reminder for the 16:00 Asia/Tashkent packing cutoff.
-# Runs every 5 minutes; the function itself sends only when an unresolved cutoff batch exists.
-[functions."packing-cutoff-reminder"]
-  schedule = "*/5 * * * *"

@@ -60,10 +60,7 @@
       <section class="view active" id="view-orders" data-title="Buyurtmalar">
         <div class="page-head">
           <div><span class="eyebrow">REAL VAQTDA</span><h2>Buyurtmalar</h2><p>Statuslarni navbat bilan boshqaring.</p></div>
-          <div class="page-head-actions">
-            <button class="round-add print" id="packingCenterBtn" type="button" aria-label="Yig‘im va etiketka markazi" title="Yig‘im va etiketka markazi"><i class="fa-solid fa-print"></i></button>
-            <button class="round-add" id="ordersReload" type="button" aria-label="Yangilash"><i class="fa-solid fa-rotate"></i></button>
-          </div>
+          <button class="round-add" id="ordersReload" type="button" aria-label="Yangilash"><i class="fa-solid fa-rotate"></i></button>
         </div>
         <section class="order-alert-center" id="orderAlertCenter" hidden>
           <div class="order-alert-head">
@@ -77,19 +74,6 @@
           <div class="order-alert-bottom">
             <div id="orderAlertMessage"><i class="fa-solid fa-circle-info"></i><span>Buyurtmalar nazorat ostida.</span></div>
             <button class="alert-snooze" id="orderAlertSnooze" type="button"><i class="fa-regular fa-clock"></i> 5 daqiqaga tinchitish</button>
-          </div>
-        </section>
-        <section class="packing-ops" id="packingOps">
-          <div class="packing-ops-main">
-            <div class="packing-ops-icon"><i class="fa-solid fa-boxes-packing"></i></div>
-            <div><b>16:00 yig‘im navbati</b><small id="packingCutoffText">Kesim vaqti hisoblanmoqda...</small></div>
-          </div>
-          <div class="packing-ops-metrics">
-            <span><b id="packingDueOrders">0</b> buyurtma</span><span><b id="packingDueItems">0</b> tovar</span>
-          </div>
-          <div class="packing-ops-actions">
-            <button class="btn btn-soft" id="packingBatchLabels" type="button"><i class="fa-solid fa-tags"></i> 58×40 etiketkalar</button>
-            <button class="btn btn-primary" id="packingBatchSheet" type="button"><i class="fa-solid fa-clipboard-check"></i> Yig‘im hujjati</button>
           </div>
         </section>
         <div class="stat-row" id="orderStats"></div>
@@ -148,6 +132,11 @@
           <div><span class="eyebrow">XABAR MARKAZI</span><h2>Bildirishnomalar</h2><p>Barchaga yoki bitta mijozga xabar yuboring.</p></div>
           <button class="round-add" id="newNotification" type="button"><i class="fa-solid fa-plus"></i></button>
         </div>
+        <section class="native-push-test-card">
+          <div class="native-push-test-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+          <div class="native-push-test-copy"><b>Android native push</b><span>Ilova fon rejimida yoki yopiq turganda ham yangi buyurtma signalini tekshiring.</span></div>
+          <button class="btn btn-primary" id="testNativePush" type="button"><i class="fa-solid fa-bell"></i> Test push</button>
+        </section>
         <div class="cards" id="notificationsList"></div>
       </section>
 
@@ -172,7 +161,6 @@
 
   <div class="modal-host" id="modalHost"></div>
   <div class="toast-host" id="toastHost"></div>
-  <script src="/order-print-v53.js?v=20260530_v53_packing"></script>
-  <script type="module" src="./mobile-admin.js?v=20260530_v53_packing"></script>
+  <script type="module" src="./mobile-admin.js"></script>
 </body>
 </html>
