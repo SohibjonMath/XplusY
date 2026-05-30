@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.3.0",
-  "description": "OrzuMall premium store with grounded DeepSeek support AI, premium status history and admin-only returns",
+  "version": "1.4.0",
+  "description": "OrzuMall premium store with grounded DeepSeek support AI, offline-first UID-scoped state, premium status history, strict chained admin workflow and admin-only returns",
   "engines": {
     "node": "18.x"
   },

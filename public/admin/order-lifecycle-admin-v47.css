@@ -1,0 +1,49 @@
+/* OrzuMall v47 — strict chained admin order workflow */
+.order-chain-status-cell{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:220px}
+.order-chain-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.order-chain-actions.is-compact{gap:6px;margin-top:0}
+.order-chain-btn{
+  min-height:38px;padding:0 12px;border:1px solid transparent;border-radius:12px;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;
+  font-size:12px;font-weight:950;line-height:1;transition:.18s ease;
+  box-shadow:0 7px 16px rgba(15,23,42,.06);background:#fff;color:#111827;
+}
+.order-chain-btn:hover{transform:translateY(-1px);box-shadow:0 12px 22px rgba(15,23,42,.11)}
+.order-chain-btn:active{transform:translateY(0)}
+.order-chain-btn.tone-packing{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.order-chain-btn.tone-shipping{background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9}
+.order-chain-btn.tone-delivered{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+.order-chain-btn.tone-returned{background:#f0fdfa;border-color:#99f6e4;color:#0f766e}
+.order-chain-btn.tone-reject{background:#fff1f2;border-color:#fecdd3;color:#be123c}
+.order-chain-btn.tone-cancel{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+.order-chain-actions.is-compact .order-chain-btn{min-height:32px;padding:0 9px;border-radius:10px;font-size:11px;box-shadow:none}
+.order-chain-terminal{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;color:#64748b;font-size:11px;font-weight:900}
+.order-card .order-card-actions{align-items:center;flex-wrap:wrap}
+.order-card .order-card-actions>.order-chain-actions{flex:1 1 100%;padding-top:9px;margin-top:2px;border-top:1px dashed rgba(148,163,184,.35)}
+.order-card .order-card-actions>.order-chain-actions .order-chain-btn{flex:1 1 auto}
+.order-chain-modal-action{
+  --chain-tone:#6d4aff;--chain-soft:#f5f3ff;--chain-border:#ddd6fe;
+  display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:14px 15px;
+  border:1px solid var(--chain-border);border-radius:17px;background:linear-gradient(135deg,var(--chain-soft),#fff);
+}
+.order-chain-modal-action.tone-packing{--chain-tone:#2563eb;--chain-soft:#eff6ff;--chain-border:#bfdbfe}
+.order-chain-modal-action.tone-shipping{--chain-tone:#6d28d9;--chain-soft:#f5f3ff;--chain-border:#ddd6fe}
+.order-chain-modal-action.tone-delivered{--chain-tone:#15803d;--chain-soft:#f0fdf4;--chain-border:#bbf7d0}
+.order-chain-modal-action.tone-cancelled{--chain-tone:#dc2626;--chain-soft:#fef2f2;--chain-border:#fecaca}
+.order-chain-modal-action.tone-returned{--chain-tone:#0f766e;--chain-soft:#f0fdfa;--chain-border:#99f6e4}
+.order-chain-modal-action.tone-return_rejected{--chain-tone:#be123c;--chain-soft:#fff1f2;--chain-border:#fecdd3}
+.order-chain-modal-icon{width:42px;height:42px;min-width:42px;display:grid;place-items:center;border-radius:14px;background:#fff;border:1px solid var(--chain-border);color:var(--chain-tone);box-shadow:0 8px 18px rgba(15,23,42,.06)}
+.order-chain-modal-action small{display:block;color:#64748b;font-size:10px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.order-chain-modal-action b{display:block;margin-top:2px;color:var(--chain-tone);font-size:16px;font-weight:1000}
+.order-chain-modal-action span:not(.order-chain-modal-icon){display:block;margin-top:3px;color:#475569;font-size:12px;font-weight:850}
+#orderAdminCancelFromDetailBtn{background:#fef2f2!important;border-color:#fecaca!important;color:#b91c1c!important}
+@media(max-width:900px){
+  .order-chain-status-cell{min-width:180px}
+  .order-chain-actions.is-compact{flex-direction:column;align-items:stretch;width:100%}
+  .order-chain-actions.is-compact .order-chain-btn{width:100%}
+}
+@media(max-width:620px){
+  .order-chain-btn{min-height:40px;font-size:11.5px;padding:0 10px}
+  .order-card .order-card-actions>.order-chain-actions{display:grid;grid-template-columns:1fr}
+  .order-chain-modal-action{padding:12px;border-radius:15px}
+}

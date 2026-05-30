@@ -753,6 +753,59 @@ const LS = {
   cart: "om_cart"
 };
 
+/* v47: UID-scoped offline-first caches.  Each account gets its own durable
+   local snapshot, then Firestore reconciles in the background. */
+const OM_USER_SHOP_CACHE_PREFIX = "orzumall_user_shop_cache_v47";
+const OM_ORDER_HISTORY_CACHE_PREFIX = "orzumall_order_history_cache_v47";
+const OM_TOPUP_HISTORY_CACHE_PREFIX = "orzumall_topup_history_cache_v47";
+function omScopedCacheKey(prefix, uid=currentUser?.uid){
+  const safeUid=String(uid||"").trim().replace(/[^a-zA-Z0-9_-]/g,"_");
+  return safeUid ? `${prefix}_${safeUid}` : "";
+}
+function omCacheClean(value){
+  try{
+    if(value instanceof Date) return value.toISOString();
+    if(value && typeof value.toDate === "function") return value.toDate().toISOString();
+    if(Array.isArray(value)) return value.map(omCacheClean);
+    if(value && typeof value === "object"){
+      const out={};
+      Object.entries(value).forEach(([k,v])=>{ out[k]=omCacheClean(v); });
+      return out;
+    }
+  }catch(_e){}
+  return value;
+}
+function omReadScopedCache(prefix, uid, fallback){
+  try{
+    const key=omScopedCacheKey(prefix,uid);
+    if(!key) return fallback;
+    const raw=localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  }catch(_e){ return fallback; }
+}
+function omWriteScopedCache(prefix, uid, value){
+  try{
+    const key=omScopedCacheKey(prefix,uid);
+    if(!key) return;
+    localStorage.setItem(key,JSON.stringify(omCacheClean(value)));
+  }catch(_e){}
+}
+function omOrderTimeMsLocal(o){
+  const raw=o?.createdAt || o?.updatedAt || null;
+  try{
+    if(raw?.toDate) return +raw.toDate();
+    if(raw && typeof raw === "object" && Number.isFinite(Number(raw.seconds))) return Number(raw.seconds)*1000;
+    return raw ? +new Date(raw) : 0;
+  }catch(_e){ return 0; }
+}
+function omSortOrdersNewest(arr){
+  return (Array.isArray(arr)?arr.slice():[]).sort((a,b)=>omOrderTimeMsLocal(b)-omOrderTimeMsLocal(a));
+}
+function omLoadOrdersHistoryCache(uid){ return omSortOrdersNewest(omReadScopedCache(OM_ORDER_HISTORY_CACHE_PREFIX,uid,[])); }
+function omSaveOrdersHistoryCache(uid,arr){ omWriteScopedCache(OM_ORDER_HISTORY_CACHE_PREFIX,uid,omSortOrdersNewest(arr)); }
+function omLoadTopupHistoryCache(uid){ return Array.isArray(omReadScopedCache(OM_TOPUP_HISTORY_CACHE_PREFIX,uid,[])) ? omReadScopedCache(OM_TOPUP_HISTORY_CACHE_PREFIX,uid,[]) : []; }
+function omSaveTopupHistoryCache(uid,arr){ omWriteScopedCache(OM_TOPUP_HISTORY_CACHE_PREFIX,uid,Array.isArray(arr)?arr:[]); }
+
 // ---------------- Reviews (Firestore, realtime) ----------------
 // Reviews subcollection: products/{productId}/reviews/{uid} -> {uid, authorName, stars, text, createdAt, updatedAt}
 // Rating/Count: Firestore Aggregate (real, server-side), statsCache bilan tezlashtiramiz.
@@ -1049,9 +1102,12 @@ function loadLS(key, fallback){
   catch{ return fallback; }
 }
 function saveLS(key, value){
-  localStorage.setItem(key, JSON.stringify(value));
+  try{ localStorage.setItem(key, JSON.stringify(value)); }catch(_e){}
   try{
-    if(key === LS.favs || key === LS.cart) scheduleUserShopSync();
+    if(key === LS.favs || key === LS.cart){
+      omCacheCurrentShopLocal();
+      scheduleUserShopSync();
+    }
   }catch(_){}
 }
 
@@ -1180,6 +1236,43 @@ function omUserShopPayload(){
     deliveryPreference: { method: (typeof omReadStoredDeliveryMethod === "function" ? omReadStoredDeliveryMethod() : "") }
   };
 }
+function omReadUserShopLocal(uid=currentUser?.uid){
+  let raw=omReadScopedCache(OM_USER_SHOP_CACHE_PREFIX,uid,null);
+  // One-time safe legacy migration: the first authenticated account on v47 may
+  // claim old generic fav/cart storage. Later accounts never inherit it.
+  if((!raw || typeof raw!=="object") && uid){
+    try{
+      const migrationOwnerKey="orzumall_legacy_shop_owner_v47";
+      const owner=String(localStorage.getItem(migrationOwnerKey)||"");
+      if(!owner || owner===String(uid)){
+        if(!owner) localStorage.setItem(migrationOwnerKey,String(uid));
+        raw={
+          favs:loadLS(LS.favs,[]),
+          cart:loadLS(LS.cart,[]),
+          savedAddresses:omCurrentSavedAddresses(),
+          deliveryPreference:{method:(typeof omReadStoredDeliveryMethod==="function"?omReadStoredDeliveryMethod():"")}
+        };
+        omWriteScopedCache(OM_USER_SHOP_CACHE_PREFIX,uid,raw);
+      }
+    }catch(_e){}
+  }
+  if(!raw || typeof raw!=="object") return null;
+  return {
+    favs:omNormalizeFavs(raw.favs||[]),
+    cart:omNormalizeCart(raw.cart||[]),
+    savedAddresses:omOwnedAddresses(raw.savedAddresses||[],uid),
+    deliveryPreference:raw.deliveryPreference||{method:""}
+  };
+}
+function omCacheCurrentShopLocal(uid=currentUser?.uid){
+  if(!uid) return;
+  try{ omWriteScopedCache(OM_USER_SHOP_CACHE_PREFIX,uid,omUserShopPayload()); }catch(_e){}
+}
+function omHydrateUserShopLocal(user){
+  if(!user?.uid) return;
+  const cached=omReadUserShopLocal(user.uid) || {favs:[],cart:[],savedAddresses:[],deliveryPreference:{method:""}};
+  omApplyUserShopState(cached,{merge:false});
+}
 function omApplyUserShopState(data, opts={merge:false}){
   if(!data) return;
   omUserShopApplying = true;
@@ -1217,6 +1310,7 @@ function omApplyUserShopState(data, opts={merge:false}){
     try{ renderFavPage?.(); }catch(_){}
     try{ renderCartPage?.(); }catch(_){}
     try{ if(typeof applyFilterSort === "function") applyFilterSort(); }catch(_){}
+    try{ omCacheCurrentShopLocal(); }catch(_e){}
   }finally{
     omUserShopApplying = false;
   }
@@ -1224,17 +1318,22 @@ function omApplyUserShopState(data, opts={merge:false}){
 async function loadUserShopState(user){
   if(!user?.uid) return;
   omUserShopReady = false;
+  // Instant offline-first render; never hydrate from another account's generic cache.
+  try{ omHydrateUserShopLocal(user); }catch(_e){}
   try{
     const ref = doc(db, "users", user.uid);
     const snap = await getDoc(ref);
     const data = snap.exists() ? (snap.data() || {}) : {};
+    // Merge only the UID-scoped local copy with this same UID's Firestore data.
     omApplyUserShopState(data, {merge:true});
     const payload = omUserShopPayload();
     omUserShopLastJson = JSON.stringify(payload);
+    omCacheCurrentShopLocal(user.uid);
     await setDoc(ref, {...payload, shopUpdatedAt: serverTimestamp()}, {merge:true});
     omUserShopReady = true;
   }catch(e){
     omUserShopReady = true;
+    try{ omCacheCurrentShopLocal(user.uid); }catch(_e){}
     console.warn("User shop sync load failed", e);
   }
 }
@@ -1253,7 +1352,6 @@ function subscribeUserShopState(user){
       deliveryPreference: data.deliveryPreference || data.shop?.deliveryPreference || {method:""}
     };
     const json = JSON.stringify(payload);
-    if(!payload.favs.length && !payload.cart.length && !payload.savedAddresses.length && !payload.deliveryPreference?.method) return;
     if(json === omUserShopLastJson) return;
     omUserShopLastJson = json;
     omApplyUserShopState(payload, {merge:false});
@@ -1261,13 +1359,16 @@ function subscribeUserShopState(user){
 }
 function scheduleUserShopSync(){
   try{
+    // Persist synchronously first. Network sync is a second layer, not the only layer.
+    omCacheCurrentShopLocal();
     if(omUserShopApplying || !omUserShopReady || !currentUser?.uid) return;
     clearTimeout(omUserShopTimer);
-    omUserShopTimer = setTimeout(saveUserShopStateNow, 450);
+    omUserShopTimer = setTimeout(saveUserShopStateNow, 260);
   }catch(_){}
 }
 async function saveUserShopStateNow(){
   try{
+    omCacheCurrentShopLocal();
     if(omUserShopApplying || !omUserShopReady || !currentUser?.uid) return;
     const payload = omUserShopPayload();
     const json = JSON.stringify(payload);
@@ -1276,6 +1377,10 @@ async function saveUserShopStateNow(){
     await setDoc(doc(db, "users", currentUser.uid), {...payload, shopUpdatedAt: serverTimestamp()}, {merge:true});
   }catch(e){ console.warn("User shop sync save failed", e); }
 }
+try{
+  window.addEventListener("pagehide",()=>{ try{ omCacheCurrentShopLocal(); saveUserShopStateNow(); }catch(_e){} });
+  document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden"){ try{ omCacheCurrentShopLocal(); saveUserShopStateNow(); }catch(_e){} } });
+}catch(_e){}
 
 
 function showTgNotice(msg){
@@ -2656,6 +2761,8 @@ function omOrderStatusKey(s){
     "pending":"new",
     "pending_cash":"new",
     "pending_payment":"new",
+    "shared_telegram":"new",
+    "telegram":"new",
     "processing":"packing",
     "shipped":"shipping",
     "completed":"delivered",
@@ -3146,58 +3253,68 @@ function subscribeMoneyHistory(uid){
   try{ moneyUnsubTopups?.(); }catch(e){}
   try{ moneyUnsubOrders?.(); }catch(e){}
 
-  let topupsArr = [];
-  let ordersArr = [];
+  // Render durable local snapshot immediately; Firestore refreshes it afterward.
+  let topupsArr = omLoadTopupHistoryCache(uid);
+  let ordersArr = omLoadOrdersHistoryCache(uid);
 
   function merge(){
     const items = normalizeMoneyItems({ topups: topupsArr, orders: ordersArr });
     renderMoneyHistory(items);
   }
+  merge();
 
   // Topups: only this user
   try{
-    const qTop = query(collection(db, "topup_requests"), where("uid", "==", uid), limit(50));
+    const qTop = query(collection(db, "topup_requests"), where("uid", "==", uid), limit(80));
     moneyUnsubTopups = onSnapshot(qTop, (snap)=>{
       topupsArr = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+      omSaveTopupHistoryCache(uid,topupsArr);
       merge();
-    }, ()=>{ topupsArr=[]; merge(); });
-  }catch(e){ topupsArr=[]; merge(); }
+    }, (err)=>{
+      console.warn("topup history snapshot failed",err);
+      // Keep last known local snapshot instead of blanking the UI.
+      merge();
+    });
+  }catch(e){ console.warn("topup history subscribe failed",e); merge(); }
 
-  // Orders are also displayed in money history from the very first checkout.
-  // Sorting is client-side so no extra composite index is required here.
+  // Orders are displayed from the very first checkout. Sorting remains client-side,
+  // avoiding a composite-index dependency that could make refresh look broken.
   try{
-    const qOrders = query(collection(db, "orders"), where("uid", "==", uid), limit(80));
+    const qOrders = query(collection(db, "orders"), where("uid", "==", uid), limit(120));
     moneyUnsubOrders = onSnapshot(qOrders, (snap)=>{
-      ordersArr = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+      ordersArr = omSortOrdersNewest(snap.docs.map(d=>({ id:d.id, ...d.data() })));
+      omSaveOrdersHistoryCache(uid,ordersArr);
       merge();
-    }, ()=>{ ordersArr=[]; merge(); });
-  }catch(e){ ordersArr=[]; merge(); }
+    }, (err)=>{
+      console.warn("money order history snapshot failed",err);
+      merge();
+    });
+  }catch(e){ console.warn("money order history subscribe failed",e); merge(); }
 }
 
 
 function subscribeOrders(uid){
-  if(!uid) return;
-  if(!currentUser) return;
-
-  if(!uid || !db || !els.ordersList) return;
+  if(!uid || !currentUser || !db || !els.ordersList) return;
   try{ ordersUnsub?.(); }catch(e){}
 
-  // Read from top-level orders (rules allow user to read only own orders)
-  // NOTE: This query may require a composite index (uid + createdAt). If missing, Firestore will show a link to create it.
+  // Immediate local render so a page refresh never flashes an empty history.
+  const cached=omLoadOrdersHistoryCache(uid);
+  if(cached.length) renderOrders(cached);
+
+  // Client-side sort intentionally avoids requiring a uid + createdAt composite index.
   const qy = query(
     collection(db, "orders"),
     where("uid", "==", uid),
-    orderBy("createdAt", "desc"),
-    limit(20)
+    limit(120)
   );
 
   ordersUnsub = onSnapshot(qy, (snap)=>{
-    const arr = snap.docs.map(d=>({ id: d.id, ...d.data() }));
+    const arr = omSortOrdersNewest(snap.docs.map(d=>({ id: d.id, ...d.data() })));
+    omSaveOrdersHistoryCache(uid,arr);
     renderOrders(arr);
   }, (err)=>{
-    
-    // Fallback to cache if any
-    renderOrders(ordersCache);
+    console.warn("orders snapshot failed",err);
+    renderOrders(cached.length ? cached : ordersCache);
   });
 }
 
@@ -7073,9 +7190,14 @@ onAuthStateChanged(auth, async (user)=>{
     return; // setUserUI redirects to /login.html
   }
 
+  // Render this account's UID-scoped local snapshot immediately, before any network wait.
+  try{ omHydrateUserShopLocal(user); }catch(_e){}
   if(window.__omProfile?.syncUser) await window.__omProfile.syncUser(user);
   await loadUserShopState(user);
   subscribeUserShopState(user);
+  // Keep order and wallet history warm across refreshes, not only after Profile is opened.
+  try{ subscribeOrders(user.uid); }catch(_e){}
+  try{ subscribeMoneyHistory(user.uid); }catch(_e){}
 
   if(__appStarted) { updateBadges(); return; }
   __appStarted = true;

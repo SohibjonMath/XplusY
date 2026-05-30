@@ -1,4 +1,4 @@
-// OrzuMall v46 — secure status-colored order lifecycle; customer cancel until delivery; admin-only return
+// OrzuMall v47 — strict chained lifecycle; customer cancel until delivery; admin step-by-step transitions and admin-only return
 const admin = require("firebase-admin");
 
 function initAdmin(){
@@ -21,7 +21,7 @@ function safeId(v){ const s=String(v||"").trim(); return s && s.length<=128 && !
 function num(v){ const n=Number(v); return Number.isFinite(n) ? n : 0; }
 function normalizeStatus(v){
   const s=String(v||"").trim().toLowerCase();
-  const map={ pending:"new", pending_cash:"new", pending_payment:"new", processing:"packing", shipped:"shipping", completed:"delivered", canceled:"cancelled", rejected:"cancelled", declined:"cancelled" };
+  const map={ pending:"new", pending_cash:"new", pending_payment:"new", shared_telegram:"new", telegram:"new", processing:"packing", shipped:"shipping", completed:"delivered", canceled:"cancelled", rejected:"cancelled", declined:"cancelled" };
   return map[s] || s || "new";
 }
 function adminAllowed(decoded){
@@ -39,6 +39,22 @@ function readBalance(u){
 }
 function isBalanceOrder(order){ return String(order?.provider||"").toLowerCase()==="balance"; }
 function isRefundStatus(status){ return ["cancelled","returned"].includes(normalizeStatus(status)); }
+function adminTransitionAllowed(previous,next){
+  const from=normalizeStatus(previous);
+  const to=normalizeStatus(next);
+  const map={
+    new:["packing","cancelled"],
+    paid:["packing","cancelled"],
+    packing:["shipping","cancelled"],
+    shipping:["delivered","cancelled"],
+    delivered:["returned","cancelled"],
+    return_requested:["returned","return_rejected","cancelled"],
+    return_rejected:["cancelled"],
+    cancelled:[],
+    returned:[]
+  };
+  return (map[from]||[]).includes(to);
+}
 function lifecycleEntry({status, actorType, actorUid, actorName, reason, action}){
   return {
     status: normalizeStatus(status),
@@ -169,6 +185,7 @@ exports.handler=async(event)=>{
       const actorName=safeText(decoded.name||decoded.email||"OrzuMall",160);
       const out=await txUpdateWithOptionalRefund(db,orderId,async({tx,order,orderRef})=>{
         const previous=normalizeStatus(order.status);
+        if(!adminTransitionAllowed(previous,next)) throw new Error("CHAIN_TRANSITION_NOT_ALLOWED");
         if(next==="returned" && !["delivered","return_requested"].includes(previous)) throw new Error("RETURN_NOT_ALLOWED");
         const entry=lifecycleEntry({status:next,actorType:"orzumall",actorUid:uid,actorName,reason,action:"admin_status_update"});
         const patch={status:next,statusNote:reason,statusActor:"orzumall",statusUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),statusHistory:admin.firestore.FieldValue.arrayUnion(entry),updatedAt:admin.firestore.FieldValue.serverTimestamp()};
@@ -189,7 +206,7 @@ exports.handler=async(event)=>{
     return json(400,{ok:false,error:"unknown_action"});
   }catch(e){
     const msg=String(e?.message||e);
-    const status=msg==="ORDER_NOT_FOUND"?404:(["FORBIDDEN"].includes(msg)?403:(["CANCEL_NOT_ALLOWED","RETURN_NOT_ALLOWED"].includes(msg)?409:500));
+    const status=msg==="ORDER_NOT_FOUND"?404:(["FORBIDDEN"].includes(msg)?403:(["CANCEL_NOT_ALLOWED","RETURN_NOT_ALLOWED","CHAIN_TRANSITION_NOT_ALLOWED"].includes(msg)?409:500));
     return json(status,{ok:false,error:msg.toLowerCase()});
   }
 };
