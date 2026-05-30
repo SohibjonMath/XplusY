@@ -2772,6 +2772,7 @@ button[data-x] i{
 </style>
 
   <link rel="stylesheet" href="./support-admin.css?v=20260530_v44_support_ai">
+  <link rel="stylesheet" href="./order-lifecycle-admin-v45.css?v=20260530_v45_order_lifecycle">
 </head>
 <body style="display:none;">
   <div class="container">
@@ -2989,11 +2990,14 @@ button[data-x] i{
               <div class="order-search-mini"><i class="fas fa-magnifying-glass"></i><input id="ordersSearch" placeholder="ID, mijoz, telefon, manzil yoki mahsulot bo‘yicha qidirish"></div>
               <select id="ordersStatus" class="form-control compact-control" aria-label="Holat bo‘yicha filter">
                 <option value="">Barcha holatlar</option>
-                <option value="pending">Kutilmoqda</option>
-                <option value="pending_payment">To‘lov kutilmoqda</option>
-                <option value="paid">To‘langan</option>
-                <option value="delivered">Yetkazildi</option>
+                <option value="new">Yangi</option>
+                <option value="packing">Yig‘ilyapti</option>
+                <option value="shipping">Yetkazib berishda</option>
+                <option value="delivered">Yetkazib berildi</option>
                 <option value="cancelled">Bekor qilindi</option>
+                <option value="return_requested">Qaytarish so‘rovi</option>
+                <option value="returned">Qaytarildi</option>
+                <option value="return_rejected">Qaytarish rad etildi</option>
               </select>
               <select id="ordersProvider" class="form-control compact-control" aria-label="To‘lov bo‘yicha filter">
                 <option value="">Barcha to‘lovlar</option>
@@ -3365,6 +3369,41 @@ aloqa, telefon => Operator shu chat orqali javob beradi."></textarea></label>
     </main>
   </div>
 
+
+  <!-- Order lifecycle status modal -->
+  <div class="modal" id="orderLifecycleAdminModal">
+    <div class="modal-content lifecycle-admin-modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-route"></i> Buyurtma holatini yangilash</h3>
+        <button class="btn btn-light btn-sm" id="closeOrderLifecycleAdminModal" type="button"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="lifecycle-admin-summary" id="orderLifecycleAdminSummary"></div>
+        <div class="form-group">
+          <label>Yangi holat</label>
+          <select id="orderLifecycleAdminStatus" class="form-control">
+            <option value="new">Yangi</option>
+            <option value="packing">Yig‘ilyapti</option>
+            <option value="shipping">Yetkazib berishda</option>
+            <option value="delivered">Yetkazib berildi</option>
+            <option value="cancelled">Bekor qilindi</option>
+            <option value="return_requested">Qaytarish so‘rovi</option>
+            <option value="returned">Qaytarildi</option>
+            <option value="return_rejected">Qaytarish rad etildi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label id="orderLifecycleAdminReasonLabel">Izoh</label>
+          <textarea id="orderLifecycleAdminReason" class="form-control" rows="4" maxlength="800" placeholder="Mijozga ko‘rinadigan izoh yozing..."></textarea>
+          <small class="hint" id="orderLifecycleAdminHint">Izoh mijoz profilida va bildirishnomada ko‘rinadi.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" id="orderLifecycleAdminCancel" type="button">Bekor</button>
+        <button class="btn btn-primary" id="orderLifecycleAdminSave" type="button"><i class="fas fa-save"></i> Saqlash</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Order Detail Modal -->
   <div class="modal" id="orderModal">
@@ -6441,32 +6480,52 @@ function getItemImageUrl(item){
   return "";
 }
 
+function orderLifecycleStatusKey(s){
+  const st=String(s||"").toLowerCase().trim();
+  const map={pending:"new",pending_payment:"new",pending_cash:"new",paid:"new",processing:"packing",shipped:"shipping",completed:"delivered",canceled:"cancelled",rejected:"cancelled",declined:"cancelled"};
+  return map[st] || st || "new";
+}
 function statusClass3(s){
-  const st = String(s||"").toLowerCase();
-  if(st==="approved" || st==="paid" || st==="delivered" || st==="success") return "approved";
-  if(st==="cancelled" || st==="canceled" || st==="rejected" || st==="failed") return "cancelled";
-  // pending/payment/waiting/cash
+  const st = orderLifecycleStatusKey(s);
+  if(["delivered","returned","approved","success"].includes(st)) return "approved";
+  if(["cancelled","return_rejected","failed"].includes(st)) return "cancelled";
+  if(st==="packing") return "packing";
+  if(st==="shipping") return "shipping";
+  if(st==="return_requested") return "return_requested";
   return "pending";
 }
 
 function statusUZ(s){
-  const st = String(s||"").toLowerCase();
+  const st = orderLifecycleStatusKey(s);
   const map = {
-    pending: "Kutilmoqda",
-    pending_payment: "To‘lov kutilmoqda",
-    pending_cash: "Naqd kutilmoqda",
-    approved: "Tasdiqlandi",
-    rejected: "Rad etildi",
-    paid: "To‘langan",
-    delivered: "Yetkazildi",
+    new: "Yangi",
+    packing: "Yig‘ilyapti",
+    shipping: "Yetkazib berishda",
+    delivered: "Yetkazib berildi",
     cancelled: "Bekor qilindi",
-    canceled: "Bekor qilindi",
-    canceled_by_admin: "Admin bekor qildi",
+    return_requested: "Qaytarish so‘rovi",
+    returned: "Qaytarildi",
+    return_rejected: "Qaytarish rad etildi",
+    approved: "Tasdiqlandi",
     success: "Muvaffaqiyatli",
     failed: "Xatolik"
   };
   return map[st] || s;
 }
+function orderLifecycleActorLabel(v){
+  const s=String(v||"").toLowerCase();
+  if(s==="customer") return "Foydalanuvchi";
+  if(s==="orzumall" || s==="admin") return "OrzuMall";
+  return "Tizim";
+}
+function orderLifecycleNote(o){ return String(o?.statusNote || o?.cancellation?.reason || o?.returnRequest?.resolutionReason || o?.returnRequest?.reason || "").trim(); }
+function formatLifecycleTimelineAdmin(o){
+  const list=Array.isArray(o?.statusHistory)?o.statusHistory.slice():[];
+  if(!list.length) list.push({status:o?.status||"new",actorType:o?.statusActor||"system",reason:orderLifecycleNote(o),at:o?.updatedAt||o?.createdAt||null});
+  list.sort((a,b)=>{ const ta=toDate(a?.at)?.getTime?.()||0; const tb=toDate(b?.at)?.getTime?.()||0; return ta-tb; });
+  return `<div class="order-lifecycle-timeline"><h4>Buyurtma harakati</h4>${list.map(x=>`<div class="order-lifecycle-step"><span class="order-lifecycle-dot"></span><div class="order-lifecycle-text"><b>${escapeHtml(statusUZ(x?.status||""))}</b>${escapeHtml([orderLifecycleActorLabel(x?.actorType),formatTS(x?.at)].filter(Boolean).join(" • "))}${x?.reason?`<br>Izoh: ${escapeHtml(String(x.reason))}`:""}</div></div>`).join("")}</div>`;
+}
+
 
     // === Telegram helpers (Admin + User) ===
     function tgEscape(s){ return String(s??"").replace(/[<>&]/g, c=>({ "<":"&lt;", ">":"&gt;", "&":"&amp;" }[c])); }
@@ -6785,11 +6844,11 @@ function statusUZ(s){
     function renderOrdersMetrics(filtered, all){
       const arr = Array.isArray(filtered) ? filtered : [];
       const full = Array.isArray(all) ? all : [];
-      const pending = arr.filter(o=>["pending","pending_payment","pending_cash"].includes(String(o.status||"pending").toLowerCase())).length;
-      const paid = arr.filter(o=>["paid","approved","success"].includes(String(o.status||"").toLowerCase())).length;
-      const delivered = arr.filter(o=>String(o.status||"").toLowerCase()==="delivered").length;
-      const cancelled = arr.filter(o=>["cancelled","canceled","rejected","failed"].includes(String(o.status||"").toLowerCase())).length;
-      const revenue = arr.filter(o=>!["cancelled","canceled","rejected","failed"].includes(String(o.status||"").toLowerCase())).reduce((s,o)=>s+orderTotal(o),0);
+      const pending = arr.filter(o=>["new","packing","shipping","return_requested"].includes(orderLifecycleStatusKey(o.status))).length;
+      const paid = arr.filter(o=>String(o.paymentStatus||"").toLowerCase()==="paid" || String(o.provider||"").toLowerCase()==="balance").length;
+      const delivered = arr.filter(o=>["delivered","returned"].includes(orderLifecycleStatusKey(o.status))).length;
+      const cancelled = arr.filter(o=>["cancelled","return_rejected"].includes(orderLifecycleStatusKey(o.status))).length;
+      const revenue = arr.filter(o=>!["cancelled","return_rejected"].includes(orderLifecycleStatusKey(o.status))).reduce((s,o)=>s+orderTotal(o),0);
       const items = arr.reduce((s,o)=>s+orderItemsCount(o),0);
       const avg = arr.length ? Math.round(revenue / arr.length) : 0;
       const set = (id,val)=>{ const el=$(id); if(el) el.textContent=val; };
@@ -6828,7 +6887,7 @@ function statusUZ(s){
       const toD = toV ? new Date(toV+"T23:59:59") : null;
 
       const out = (ordersCache||[]).filter(o=>{
-        if(st && String(o.status||"pending") !== st) return false;
+        if(st && orderLifecycleStatusKey(o.status||"new") !== st) return false;
         if(prov){
           const p = formatProvider(o);
           if(p !== prov && !String(p||"").toLowerCase().includes(prov)) return false;
@@ -6895,6 +6954,10 @@ function statusUZ(s){
         if(rows[3]){
           rows[3].querySelector(".v").innerHTML = statusPill(order.status);
         }
+      }catch(e){}
+      try{
+        const noteText=orderLifecycleNote(order);
+        $("orderKv").insertAdjacentHTML("beforeend", `${noteText?`<div class="order-lifecycle-note"><b>${escapeHtml(orderLifecycleActorLabel(order.statusActor||order.cancellation?.by||"system"))} izohi:</b> ${escapeHtml(noteText)}</div>`:""}${formatLifecycleTimelineAdmin(order)}`);
       }catch(e){}
 
       $("shipKv").innerHTML = [
@@ -7115,8 +7178,9 @@ function statusUZ(s){
           return `<span class="item-dot">${idx+1}</span>`;
         }).join("");
         const moreDot = itemsCount > firstItems.length ? `<span class="item-dot">+${itemsCount-firstItems.length}</span>` : "";
-        const statusSelect = `<select class="statusSel order-status-select" data-oid="${oid}" data-uid="${uid}">
-          ${["pending","pending_payment","paid","delivered","cancelled"].map(s=>`<option value="${s}" ${String(o.status||"pending")==s?"selected":""}>${statusUZ(s)}</option>`).join("")}
+        const currentLifecycleStatus = orderLifecycleStatusKey(o.status||"new");
+        const statusSelect = `<select class="statusSel order-status-select" data-oid="${oid}" data-uid="${uid}" data-current-status="${escapeHtml(currentLifecycleStatus)}">
+          ${["new","packing","shipping","delivered","cancelled","return_requested","returned","return_rejected"].map(s=>`<option value="${s}" ${currentLifecycleStatus==s?"selected":""}>${statusUZ(s)}</option>`).join("")}
         </select>`;
 
         if(tbody){
@@ -7139,7 +7203,7 @@ function statusUZ(s){
                 </div>
               </div>
             </td>
-            <td>${statusSelect}<div class="order-muted-line">${statusPill(o.status)}</div></td>
+            <td>${statusSelect}<div class="order-muted-line">${statusPill(o.status)}</div>${orderLifecycleNote(o)?`<div class="order-lifecycle-note"><b>${escapeHtml(orderLifecycleActorLabel(o.statusActor||o.cancellation?.by||"system"))}:</b> ${escapeHtml(orderLifecycleNote(o))}</div>`:""}</td>
             <td><div class="order-delivery-pill"><i class="fas fa-wallet"></i> ${escapeHtml(prov||"—")}</div></td>
             <td><div class="order-money">${moneyUZS(total)} so‘m</div><div class="order-muted-line">Yetkazish: ${deliveryFee ? moneyUZS(deliveryFee)+" so‘m" : "—"}</div></td>
             <td><div class="order-delivery-pill" title="${addr}"><i class="fas fa-location-dot"></i> ${escapeHtml(delivery)}</div><div class="order-muted-line">${escapeHtml(distance || (addr ? addr.slice(0,32) : "—"))}</div></td>
@@ -7175,6 +7239,7 @@ function statusUZ(s){
               <div class="order-chip"><span class="k">Vaqt</span><span class="v">${created}</span></div>
             </div>
 
+            ${orderLifecycleNote(o)?`<div class="order-lifecycle-note"><b>${escapeHtml(orderLifecycleActorLabel(o.statusActor||o.cancellation?.by||"system"))} izohi:</b> ${escapeHtml(orderLifecycleNote(o))}</div>`:""}
             <div class="order-card-bottom">
               <div class="order-total">
                 <div class="k">Jami summa</div>
@@ -7191,100 +7256,105 @@ function statusUZ(s){
     }
 
 
-    // Status update (admin)
-    $("ordersTbody")?.addEventListener("change", async (e)=>{
-      const sel = e.target;
-      if(!(sel && sel.classList && sel.classList.contains("statusSel"))) return;
-      if(!db){ toast("DB yo‘q"); return; }
-      const oid = sel.dataset.oid;
-      const uid = sel.dataset.uid;
-      const status = sel.value;
-      try{
-        await updateDoc(doc(db,"orders",oid), { status, updatedAt: serverTimestamp() });
-        if(uid){
-          await updateDoc(doc(db,"users",uid,"orders",oid), { status, updatedAt: serverTimestamp() });
-        }
-        toast("Holat yangilandi");
-        try{ window.OM_SUPPORT_ADMIN?.notifyOrderStatus?.(uid, oid, status); }catch(_e){}
-        // Telegram notify (status change) — once per status
-        try{
-          const orderRef = doc(db,"orders",oid);
-          const snap = await getDoc(orderRef);
-          const d = snap.exists() ? (snap.data()||{}) : {};
-          if(String(d.lastNotifiedStatus||"") !== String(status||"")){
-            await updateDoc(orderRef, { lastNotifiedStatus: status, lastNotifiedAt: serverTimestamp() });
-            const payload = {
-              orderId: oid,
-              id: oid,
-              uid: d.uid || uid || "",
-              numericId: d.numericId || "",
-              userName: d.userName || "",
-              userPhone: d.userPhone || "",
-              userTgChatId: d.userTgChatId || null,
-              provider: d.provider || "",
-              totalUZS: d.totalUZS || 0,
-              status
-            };
-            const html = tgOrderStatusHTML(payload);
-            tgAdminHTML(html);
-            if(payload.userTgChatId){
-              tgUserHTML(payload.userTgChatId, html);
-            }
-          }
-        }catch(_e){}
+    // Status update (admin) — v45 secure lifecycle modal
+    let orderLifecycleAdminState = { oid:"", uid:"", previous:"", selectEl:null };
 
-      }catch(err){
-        console.warn("status update error", err);
-        toast("Holat yangilanmadi (rules?)");
+    function updateOrderLifecycleAdminHint(){
+      const st = $("orderLifecycleAdminStatus")?.value || "new";
+      const required = ["cancelled","returned","return_rejected"].includes(st);
+      const label = $("orderLifecycleAdminReasonLabel");
+      const hint = $("orderLifecycleAdminHint");
+      if(label) label.textContent = required ? "Sabab *" : "Mijozga ko‘rinadigan izoh";
+      if(hint) hint.textContent = required
+        ? "Bu holat uchun sabab majburiy. Sabab mijoz profilida va bildirishnomada ko‘rinadi."
+        : "Izoh ixtiyoriy, ammo mijozga buyurtma jarayonini tushunarli qiladi.";
+    }
+
+    function closeOrderLifecycleAdminModal(resetSelect=true){
+      if(resetSelect && orderLifecycleAdminState.selectEl){
+        try{ orderLifecycleAdminState.selectEl.value = orderLifecycleAdminState.previous || "new"; }catch(_e){}
       }
-    });
+      closeModal("orderLifecycleAdminModal");
+      orderLifecycleAdminState = { oid:"", uid:"", previous:"", selectEl:null };
+    }
 
-    // Status update (cards)
-    $("ordersCards")?.addEventListener("change", async (e)=>{
-      const sel = e.target;
+    function openOrderLifecycleAdminModal(sel){
       if(!(sel && sel.classList && sel.classList.contains("statusSel"))) return;
-      if(!db){ toast("DB yo‘q"); return; }
-      const oid = sel.dataset.oid;
-      const uid = sel.dataset.uid;
-      const status = sel.value;
+      const oid = sel.dataset.oid || "";
+      const uid = sel.dataset.uid || "";
+      const previous = sel.dataset.currentStatus || orderLifecycleStatusKey(ordersById.get(oid)?.status || "new");
+      const status = sel.value || previous;
+      const order = ordersById.get(oid) || {};
+      orderLifecycleAdminState = { oid, uid, previous, selectEl:sel };
+      if($("orderLifecycleAdminStatus")) $("orderLifecycleAdminStatus").value = status;
+      if($("orderLifecycleAdminReason")) $("orderLifecycleAdminReason").value = "";
+      if($("orderLifecycleAdminSummary")){
+        $("orderLifecycleAdminSummary").innerHTML = `<b>#${escapeHtml(orderShortId(oid))}</b> • ${escapeHtml(orderCustomerName(order))}<br><span>Hozirgi holat: ${escapeHtml(statusUZ(previous))} → yangi holat: ${escapeHtml(statusUZ(status))}</span>`;
+      }
+      updateOrderLifecycleAdminHint();
+      openModal("orderLifecycleAdminModal");
+    }
+
+    async function saveOrderLifecycleAdmin(){
+      const { oid, uid, previous, selectEl } = orderLifecycleAdminState;
+      const status = $("orderLifecycleAdminStatus")?.value || "";
+      const reason = ($("orderLifecycleAdminReason")?.value || "").trim();
+      if(!oid || !status){ toast("Buyurtma topilmadi", "error"); return; }
+      if(["cancelled","returned","return_rejected"].includes(status) && reason.length < 4){
+        toast("Sababni batafsil yozing", "error");
+        $("orderLifecycleAdminReason")?.focus();
+        return;
+      }
+      const btn = $("orderLifecycleAdminSave");
+      const old = btn?.innerHTML || "";
+      if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...'; }
       try{
-        await updateDoc(doc(db,"orders",oid), { status, updatedAt: serverTimestamp() });
-        if(uid){
-          await updateDoc(doc(db,"users",uid,"orders",oid), { status, updatedAt: serverTimestamp() });
-        }
-        toast("Holat yangilandi");
-        try{ window.OM_SUPPORT_ADMIN?.notifyOrderStatus?.(uid, oid, status); }catch(_e){}
-        // Telegram notify (status change) — once per status
+        const token = await auth.currentUser?.getIdToken();
+        if(!token) throw new Error("admin_auth_required");
+        const resp = await fetch("/.netlify/functions/order-lifecycle",{
+          method:"POST",
+          headers:{"content-type":"application/json","authorization":`Bearer ${token}`},
+          body:JSON.stringify({action:"admin_update_status",orderId:oid,status,reason})
+        });
+        const out = await resp.json().catch(()=>({}));
+        if(!resp.ok || !out.ok) throw new Error(out.error || "status_update_failed");
+        if(selectEl){ selectEl.dataset.currentStatus=status; selectEl.value=status; }
+        closeOrderLifecycleAdminModal(false);
+        toast(out.refund?.refunded ? "Holat yangilandi va mablag‘ balansga qaytarildi" : "Holat yangilandi");
+        // Telegram notify after secure server update
         try{
-          const orderRef = doc(db,"orders",oid);
-          const snap = await getDoc(orderRef);
+          const snap = await getDoc(doc(db,"orders",oid));
           const d = snap.exists() ? (snap.data()||{}) : {};
-          if(String(d.lastNotifiedStatus||"") !== String(status||"")){
-            await updateDoc(orderRef, { lastNotifiedStatus: status, lastNotifiedAt: serverTimestamp() });
-            const payload = {
-              orderId: oid,
-              id: oid,
-              uid: d.uid || uid || "",
-              numericId: d.numericId || "",
-              userName: d.userName || "",
-              userPhone: d.userPhone || "",
-              userTgChatId: d.userTgChatId || null,
-              provider: d.provider || "",
-              totalUZS: d.totalUZS || 0,
-              status
-            };
-            const html = tgOrderStatusHTML(payload);
-            tgAdminHTML(html);
-            if(payload.userTgChatId){
-              tgUserHTML(payload.userTgChatId, html);
-            }
-          }
+          const payload = {orderId:oid,id:oid,uid:d.uid||uid||"",numericId:d.numericId||"",userName:d.userName||"",userPhone:d.userPhone||"",userTgChatId:d.userTgChatId||null,provider:d.provider||"",totalUZS:d.totalUZS||0,status};
+          const html = tgOrderStatusHTML(payload) + (reason ? `\nIzoh: <i>${tgEscape(reason)}</i>` : "");
+          tgAdminHTML(html);
+          if(payload.userTgChatId) tgUserHTML(payload.userTgChatId, html);
         }catch(_e){}
       }catch(err){
         console.warn("status update error", err);
-        toast("Holat yangilanmadi (rules?)");
+        toast("Holat yangilanmadi: " + String(err?.message||"xatolik"), "error");
+        if(selectEl) selectEl.value=previous||"new";
+      }finally{
+        if(btn){ btn.disabled=false; btn.innerHTML=old; }
       }
+    }
+
+    $("ordersTbody")?.addEventListener("change", (e)=>{
+      const sel=e.target;
+      if(sel?.classList?.contains("statusSel")) openOrderLifecycleAdminModal(sel);
     });
+    $("ordersCards")?.addEventListener("change", (e)=>{
+      const sel=e.target;
+      if(sel?.classList?.contains("statusSel")) openOrderLifecycleAdminModal(sel);
+    });
+    $("orderLifecycleAdminStatus")?.addEventListener("change", ()=>{
+      updateOrderLifecycleAdminHint();
+      const order=ordersById.get(orderLifecycleAdminState.oid)||{};
+      if($("orderLifecycleAdminSummary")) $("orderLifecycleAdminSummary").innerHTML=`<b>#${escapeHtml(orderShortId(orderLifecycleAdminState.oid))}</b> • ${escapeHtml(orderCustomerName(order))}<br><span>Hozirgi holat: ${escapeHtml(statusUZ(orderLifecycleAdminState.previous))} → yangi holat: ${escapeHtml(statusUZ($("orderLifecycleAdminStatus")?.value||""))}</span>`;
+    });
+    $("closeOrderLifecycleAdminModal")?.addEventListener("click", ()=>closeOrderLifecycleAdminModal(true));
+    $("orderLifecycleAdminCancel")?.addEventListener("click", ()=>closeOrderLifecycleAdminModal(true));
+    $("orderLifecycleAdminSave")?.addEventListener("click", saveOrderLifecycleAdmin);
 
 
     function subscribeOrdersAdmin(){

@@ -118,10 +118,19 @@ function toMs(v) {
 function statusLabel(v) {
   const k = String(v || '').toLowerCase();
   return ({
+    new: 'yangi — buyurtma qabul qilindi',
+    packing: 'yig‘ilyapti',
+    shipping: 'yetkazib berishda',
+    delivered: 'yetkazib berildi',
+    cancelled: 'bekor qilindi',
+    return_requested: 'qaytarish so‘rovi ko‘rib chiqilmoqda',
+    returned: 'qaytarildi',
+    return_rejected: 'qaytarish rad etildi',
     pending: 'qabul qilindi', pending_cash: 'naqd to‘lov bilan qabul qilindi', pending_payment: 'to‘lov kutilmoqda',
     paid: 'to‘lov tasdiqlandi', approved: 'tasdiqlandi', processing: 'tayyorlanmoqda', shipped: 'jo‘natildi',
-    delivered: 'yetkazildi', cancelled: 'bekor qilindi', canceled: 'bekor qilindi', rejected: 'rad etildi',
+    completed: 'yetkazib berildi', canceled: 'bekor qilindi', rejected: 'rad etildi'
   })[k] || safeText(v, 80) || 'holati aniqlanmagan';
 }
+
 
 module.exports = { admin, json, initAdmin, requireUser, requireAdmin, DEFAULT_SUPPORT_CONFIG, normalizeConfig, loadConfig, safeText, money, toMs, statusLabel };

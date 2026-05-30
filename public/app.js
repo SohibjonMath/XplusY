@@ -2650,30 +2650,66 @@ function fmtDate(ts){
 }
 
 
-function orderStatusLabel(s){
-  const v = (s||"").toString().toLowerCase();
+function omOrderStatusKey(s){
+  const v = (s||"").toString().toLowerCase().trim();
   const m = {
-    // common order statuses
-    "pending":"Kutilmoqda",
-    "pending_cash":"Kutilmoqda (naqd)",
-    "pending_payment":"To‘lov kutilmoqda",
-    "processing":"Jarayonda",
-    "paid":"To‘langan",
-    "completed":"Yakunlangan",
-    "delivered":"Yetkazildi",
-    "shipped":"Jo‘natildi",
-    "rejected":"Rad etilgan",
-    "declined":"Rad etilgan",
-    "canceled":"Bekor qilindi",
+    "pending":"new",
+    "pending_cash":"new",
+    "pending_payment":"new",
+    "processing":"packing",
+    "shipped":"shipping",
+    "completed":"delivered",
+    "canceled":"cancelled",
+    "rejected":"cancelled",
+    "declined":"cancelled"
+  };
+  return m[v] || v || "new";
+}
+function orderStatusLabel(s){
+  const v = omOrderStatusKey(s);
+  const m = {
+    "new":"Yangi",
+    "paid":"Yangi • to‘langan",
+    "packing":"Yig‘ilyapti",
+    "shipping":"Yetkazib berishda",
+    "delivered":"Yetkazib berildi",
     "cancelled":"Bekor qilindi",
+    "return_requested":"Qaytarish so‘rovi yuborildi",
+    "returned":"Qaytarildi",
+    "return_rejected":"Qaytarish rad etildi",
     "failed":"Muvaffaqiyatsiz"
   };
   return m[v] || (v ? v : "");
 }
 function orderStatusClass(s){
-  const v = (s||"").toString();
-  if(!v) return "";
+  const v = omOrderStatusKey(s);
   return "status-"+v.replace(/[^a-z0-9_\-]/gi,"").toLowerCase();
+}
+function orderActorLabel(v){
+  const s = String(v||"").toLowerCase();
+  if(s === "customer") return "Foydalanuvchi";
+  if(s === "orzumall" || s === "admin") return "OrzuMall";
+  return "Tizim";
+}
+function orderStatusNote(order){
+  return String(order?.statusNote || order?.cancellation?.reason || order?.returnRequest?.resolutionReason || order?.returnRequest?.reason || "").trim();
+}
+function orderTimelineHTML(order){
+  const list = Array.isArray(order?.statusHistory) ? order.statusHistory.slice() : [];
+  if(!list.length){
+    list.push({status: order?.status || "new", actorType: order?.statusActor || "system", reason: orderStatusNote(order), at: order?.updatedAt || order?.createdAt || null});
+  }
+  list.sort((a,b)=>{
+    const ta = a?.at?.toDate ? +a.at.toDate() : (a?.at ? +new Date(a.at) : 0);
+    const tb = b?.at?.toDate ? +b.at.toDate() : (b?.at ? +new Date(b.at) : 0);
+    return ta - tb;
+  });
+  return `<div class="orderTimeline"><div class="orderTimelineTitle">Buyurtma harakati</div>${list.map(x=>{
+    const when=fmtDate(x?.at)||"";
+    const actor=orderActorLabel(x?.actorType);
+    const reason=String(x?.reason||"").trim();
+    return `<div class="orderTimelineItem"><span class="orderTimelineDot"></span><div class="orderTimelineText"><b>${escapeHtml(orderStatusLabel(x?.status||""))}</b>${escapeHtml([actor,when].filter(Boolean).join(" • "))}${reason?`<br><span>Izoh: ${escapeHtml(reason)}</span>`:""}</div></div>`;
+  }).join("")}</div>`;
 }
 
 
@@ -2706,6 +2742,9 @@ function buildOrderReceiptHTML(order){
   const deliveryLabel = order?.shipping?.methodLabel || (order?.shipping?.method === 'delivery' ? 'Yetkazib berish' : (order?.shipping?.method === 'pickup' ? 'Do‘kondan olib ketish' : '—'));
   const addr = order?.shipping?.addressText || [order?.shipping?.region, order?.shipping?.district, order?.shipping?.post, order?.shipping?.address].filter(Boolean).join(' / ') || [order?.region, order?.district, order?.post].filter(Boolean).join(' / ') || "—";
   const mapUrl = order?.shipping?.mapUrl || (order?.shipping?.lat && order?.shipping?.lng ? `https://maps.google.com/?q=${order.shipping.lat},${order.shipping.lng}` : '');
+  const statusReason = orderStatusNote(order);
+  const statusActor = orderActorLabel(order?.statusActor || order?.cancellation?.by || order?.returnRequest?.resolvedBy || 'system');
+  const review = order?.orderReview || null;
   const items = Array.isArray(order?.items) ? order.items : [];
   const itemsHtml = items.length ? items.map((it)=>{
     const qty = Number(it?.qty || 1) || 1;
@@ -2743,6 +2782,10 @@ function buildOrderReceiptHTML(order){
         <div class="orderReceiptBox"><div class="k">Yetkazish</div><div class="v">${escapeHtml(deliveryLabel)}</div></div>
         <div class="orderReceiptBox"><div class="k">Manzil</div><div class="v">${escapeHtml(addr)}${mapUrl ? `<br><a href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">Xaritada ochish</a>` : ''}</div></div>
       </div>
+
+      ${statusReason ? `<div class="orderStatusReason"><b>${escapeHtml(statusActor)} izohi:</b> ${escapeHtml(statusReason)}</div>` : ''}
+      ${orderTimelineHTML(order)}
+      ${review ? `<div class="orderReviewSaved"><b>Fikr bildirildi:</b> ${'★'.repeat(Number(review.stars||0))}${'☆'.repeat(Math.max(0,5-Number(review.stars||0)))}<br>${escapeHtml(review.text||'')}</div>` : ''}
 
       <div class="orderReceiptItems">${itemsHtml}</div>
 
@@ -2792,9 +2835,122 @@ function printOrderReceipt(){
     .orderReceiptItem{display:flex;justify-content:space-between;gap:12px}.orderReceiptItemName{font-weight:700}.orderReceiptItemMeta{color:#666;font-size:12px;margin-top:4px}
     .orderReceiptTotals{margin-top:12px}.orderReceiptTotals .row{display:flex;justify-content:space-between}.orderReceiptTotals .total{font-size:20px;font-weight:700}
     .orderPill{display:inline-block;border:1px solid #ddd;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700}
+    .orderStatusReason,.orderReviewSaved{margin:10px 0;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:12px;line-height:1.5}
+    .orderTimeline{margin:12px 0;padding-top:10px;border-top:1px dashed #bbb}.orderTimelineTitle{font-weight:700;margin-bottom:7px}.orderTimelineItem{display:flex;gap:8px;margin:6px 0}.orderTimelineDot{width:8px;height:8px;border-radius:50%;margin-top:5px;background:#222}.orderTimelineText{font-size:12px;line-height:1.45}.orderTimelineText b{display:block}
     @media print{body{padding:0}.orderReceiptSheet{border:none;border-radius:0;padding:0}.orderReceiptGrid{grid-template-columns:1fr 1fr}}
   </style></head><body>${html}<script>setTimeout(()=>{window.focus();window.print();},150)<\/script></body></html>`);
   w.document.close();
+}
+
+function orderCustomerActionButtonsHTML(order){
+  const oid = escapeHtml(String(order?.id || order?.orderId || ""));
+  const st = omOrderStatusKey(order?.status || "new");
+  const reviewed = !!order?.orderReview;
+  const buttons = [`<button class="orderActionBtn" type="button" data-order-receipt="${oid}">🧾 Chek</button>`];
+  if(["new","paid"].includes(st)){
+    buttons.push(`<button class="orderActionBtn isDanger" type="button" data-order-action="cancel" data-order-id="${oid}"><i class="fa-solid fa-ban"></i> Bekor qilish</button>`);
+  }
+  if(st === "delivered"){
+    buttons.push(`<button class="orderActionBtn isReturn" type="button" data-order-action="return" data-order-id="${oid}"><i class="fa-solid fa-rotate-left"></i> Qaytarish</button>`);
+  }
+  if(["delivered","returned"].includes(st) && !reviewed){
+    buttons.push(`<button class="orderActionBtn isReview" type="button" data-order-action="review" data-order-id="${oid}"><i class="fa-solid fa-star"></i> Fikr bildirish</button>`);
+  }
+  return buttons.join("");
+}
+
+let omOrderActionState = { type:"", orderId:"", stars:0 };
+
+function getOrderFromCache(orderId){
+  return (ordersCache || []).find(o=>String(o?.id || o?.orderId || "") === String(orderId || "")) || null;
+}
+function setReviewStars(stars){
+  const n=Math.max(0,Math.min(5,Number(stars)||0));
+  omOrderActionState.stars=n;
+  document.querySelectorAll('#orderReviewStars [data-review-star]').forEach(btn=>{
+    btn.classList.toggle('isActive', Number(btn.getAttribute('data-review-star')||0)<=n);
+  });
+  const hint=document.getElementById('orderReviewStarsHint');
+  if(hint) hint.textContent=n ? `${n} yulduz tanlandi.` : 'Bahoni tanlang.';
+}
+function closeOrderActionModal(){
+  const modal=document.getElementById('orderActionModal');
+  if(modal){ modal.classList.remove('isOpen'); modal.hidden=true; }
+  try{ document.body.classList.remove('modalOpen'); }catch(_e){}
+  document.body.style.overflow='';
+  omOrderActionState={type:"",orderId:"",stars:0};
+}
+function openOrderActionModal(type, orderId){
+  const order=getOrderFromCache(orderId);
+  if(!order){ toast('Buyurtma topilmadi.','error'); return; }
+  const modal=document.getElementById('orderActionModal');
+  if(!modal) return;
+  const title=document.getElementById('orderActionTitle');
+  const help=document.getElementById('orderActionHelp');
+  const summary=document.getElementById('orderActionSummary');
+  const reason=document.getElementById('orderActionReason');
+  const reasonLabel=document.getElementById('orderActionReasonLabel');
+  const starsWrap=document.getElementById('orderReviewStarsWrap');
+  const submit=document.getElementById('orderActionSubmit');
+  const oid=String(order.id||order.orderId||'');
+  omOrderActionState={type,orderId:oid,stars:0};
+  if(reason) reason.value='';
+  if(summary) summary.innerHTML=`<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
+  if(starsWrap) starsWrap.hidden = type !== 'review';
+  setReviewStars(0);
+  if(type==='cancel'){
+    if(title) title.textContent='Buyurtmani bekor qilish';
+    if(help) help.textContent='Bekor qilish sababini yozing. Buyurtma balansdan to‘langan bo‘lsa mablag‘ avtomatik qaytariladi.';
+    if(reasonLabel) reasonLabel.textContent='Bekor qilish sababi';
+    if(reason) reason.placeholder='Masalan: adashib buyurtma berdim';
+    if(submit) submit.innerHTML='<i class="fa-solid fa-ban"></i> Bekor qilish';
+  }else if(type==='return'){
+    if(title) title.textContent='Buyurtmani qaytarish';
+    if(help) help.textContent='Qaytarish sababini batafsil yozing. So‘rov operatorga yuboriladi va ko‘rib chiqilgach javob beriladi.';
+    if(reasonLabel) reasonLabel.textContent='Qaytarish sababi';
+    if(reason) reason.placeholder='Masalan: mahsulot shikastlangan yoki mos kelmadi';
+    if(submit) submit.innerHTML='<i class="fa-solid fa-rotate-left"></i> So‘rov yuborish';
+  }else{
+    if(title) title.textContent='Buyurtmaga fikr bildirish';
+    if(help) help.textContent='Bu tasdiqlangan xarid fikri sifatida mahsulot sahifalarida ko‘rinadi.';
+    if(reasonLabel) reasonLabel.textContent='Fikringiz';
+    if(reason) reason.placeholder='Mahsulot va xizmat haqida fikringizni yozing';
+    if(submit) submit.innerHTML='<i class="fa-solid fa-star"></i> Fikrni saqlash';
+  }
+  modal.hidden=false;
+  requestAnimationFrame(()=>modal.classList.add('isOpen'));
+  try{ document.body.classList.add('modalOpen'); }catch(_e){}
+  document.body.style.overflow='hidden';
+}
+async function submitOrderAction(){
+  const {type,orderId,stars}=omOrderActionState;
+  if(!type || !orderId || !currentUser){ toast('Avval tizimga kiring.','error'); return; }
+  const reason=String(document.getElementById('orderActionReason')?.value||'').trim();
+  if(reason.length<2){ toast(type==='review'?'Fikringizni yozing.':'Sababni batafsil yozing.','error'); return; }
+  if(type==='review' && !(Number(stars)>=1 && Number(stars)<=5)){ toast('Bahoni tanlang.','error'); return; }
+  const btn=document.getElementById('orderActionSubmit');
+  const old=btn?.innerHTML||'';
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="omBtnSpinner" aria-hidden="true"></span> Yuborilmoqda...'; }
+  try{
+    const token=await currentUser.getIdToken();
+    const action=type==='cancel'?'cancel_order':(type==='return'?'request_return':'submit_review');
+    const resp=await fetch('/.netlify/functions/order-lifecycle',{
+      method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},
+      body:JSON.stringify({action,orderId,reason,text:reason,stars:Number(stars)||0})
+    });
+    const out=await resp.json().catch(()=>({}));
+    if(!resp.ok || !out.ok) throw new Error(out.error||'action_failed');
+    closeOrderActionModal();
+    if(type==='cancel') toast(out.refund?.refunded?'Buyurtma bekor qilindi va mablag‘ balansga qaytarildi.':'Buyurtma bekor qilindi.','success');
+    else if(type==='return') toast('Qaytarish so‘rovi operatorga yuborildi.','success');
+    else toast('Fikringiz saqlandi. Rahmat!','success');
+  }catch(e){
+    const code=String(e?.message||'');
+    const map={cancel_not_allowed:'Bu bosqichda buyurtmani avtomatik bekor qilib bo‘lmaydi. Operatorga yozing.',return_not_allowed:'Faqat yetkazib berilgan buyurtmani qaytarish mumkin.',review_not_allowed:'Fikr faqat yetkazib berilgan buyurtmaga yoziladi.'};
+    toast(map[code]||'Amal bajarilmadi. Qayta urinib ko‘ring.','error');
+  }finally{
+    if(btn){ btn.disabled=false; btn.innerHTML=old; }
+  }
 }
 
 function renderOrders(orders){
@@ -2822,9 +2978,9 @@ function renderOrders(orders){
         ${provider ? `<span class="orderPill">${escapeHtml(providerLabel(provider))}</span>` : ""}
         ${when ? `<span class="orderPill">${escapeHtml(when)}</span>` : ""}
       </div>
-      <div class="orderActions">
-        <button class="orderActionBtn" type="button" data-order-receipt="${escapeHtml(String(o.id || o.orderId || ''))}">🧾 Chek</button>
-      </div>
+      ${orderStatusNote(o) ? `<div class="orderStatusReason"><b>${escapeHtml(orderActorLabel(o.statusActor || o.cancellation?.by || 'system'))} izohi:</b> ${escapeHtml(orderStatusNote(o))}</div>` : ""}
+      ${o.orderReview ? `<div class="orderReviewSaved"><b>Fikr bildirildi:</b> ${'★'.repeat(Number(o.orderReview.stars||0))}${'☆'.repeat(Math.max(0,5-Number(o.orderReview.stars||0)))}<br>${escapeHtml(o.orderReview.text||'')}</div>` : ''}
+      <div class="orderActions">${orderCustomerActionButtonsHTML(o)}</div>
     `;
     els.ordersList.appendChild(row);
   }
@@ -2835,8 +2991,9 @@ function renderOrders(orders){
    Money history (profile)
 ========================= */
 let moneyUnsubTopups = null;
+let moneyUnsubOrders = null;
 
-function normalizeMoneyItems({ topups=[] }){
+function normalizeMoneyItems({ topups=[], orders=[] }){
   const out = [];
   for(const t of topups){
     const ts = t.approvedAt || t.updatedAt || t.createdAt || null;
@@ -2849,9 +3006,40 @@ function normalizeMoneyItems({ topups=[] }){
       status: st,
       note: (t.adminNote||""),
       provider: (t.provider||""),
+      title: String(t.provider||"").toLowerCase()==="click" ? "Click orqali balans to‘ldirish" : "Balans to‘ldirish",
       ts,
       id: t.id || ""
     });
+  }
+  for(const o of orders){
+    const oid=String(o.orderId || o.id || "");
+    const provider=String(o.provider||"").toLowerCase();
+    const status=String(o.status||"new");
+    const paidFromBalance=provider==="balance";
+    out.push({
+      kind:"order",
+      direction:"out",
+      amountUZS:Number(o.totalUZS||0)||0,
+      status,
+      note:orderStatusNote(o),
+      provider,
+      title:`Buyurtma #${oid.slice(-6) || "—"}${paidFromBalance ? " • balansdan to‘landi" : " • naqd to‘lov"}`,
+      ts:o.createdAt||null,
+      id:oid
+    });
+    if(o?.refund?.status === "refunded" || o?.refund?.processed === true){
+      out.push({
+        kind:"refund",
+        direction:"in",
+        amountUZS:Number(o.refund.amountUZS||o.totalUZS||0)||0,
+        status:"refunded",
+        note:o.refund.reason || orderStatusNote(o),
+        provider,
+        title:`Buyurtma #${oid.slice(-6) || "—"} uchun qaytarilgan mablag‘`,
+        ts:o.refund.refundedAt || o.updatedAt || o.createdAt || null,
+        id:`refund_${oid}`
+      });
+    }
   }
   out.sort((a,b)=>{
     const ta = (a.ts?.toDate ? +a.ts.toDate() : (a.ts ? +new Date(a.ts) : 0));
@@ -2874,7 +3062,7 @@ function renderMoneyHistory(items){
     const when = fmtDate(it.ts);
     const st = (it.status||"").toString();
 
-    const title = it.provider === 'click' ? "Click orqali balans to‘ldirish" : "Balans to‘ldirish";
+    const title = it.title || (it.provider === 'click' ? "Click orqali balans to‘ldirish" : "Balans to‘ldirish");
 
     const left = document.createElement("div");
     left.style.minWidth = "0";
@@ -2903,8 +3091,10 @@ function renderMoneyHistory(items){
 
 
 function moneyHistoryStatusClass(st){
-  const v = (st||"").toString().toLowerCase();
-  return (v === "approved" || v === "success") ? "status-approved" : "status-rejected";
+  const v = omOrderStatusKey(st||"");
+  if(["approved","success","delivered","returned","refunded"].includes(v)) return "status-approved";
+  if(["cancelled","failed","return_rejected"].includes(v)) return "status-rejected";
+  return "status-pending";
 }
 
 function statusLabel(st, kind){
@@ -2918,6 +3108,7 @@ function statusLabel(st, kind){
     return v ? v : "";
   }
 
+  if(kind === "refund") return "Mablag‘ qaytarildi";
   // orders
   return orderStatusLabel(v);
 }
@@ -2935,41 +3126,34 @@ function escapeHtml(s){
 function subscribeMoneyHistory(uid){
   if(!uid || !db) return;
   try{ moneyUnsubTopups?.(); }catch(e){}
+  try{ moneyUnsubOrders?.(); }catch(e){}
 
   let topupsArr = [];
+  let ordersArr = [];
 
   function merge(){
-    const items = normalizeMoneyItems({ topups: topupsArr });
+    const items = normalizeMoneyItems({ topups: topupsArr, orders: ordersArr });
     renderMoneyHistory(items);
   }
 
   // Topups: only this user
   try{
-    const qTop = query(
-      collection(db, "topup_requests"),
-      where("uid", "==", uid),
-      limit(50)
-    );
+    const qTop = query(collection(db, "topup_requests"), where("uid", "==", uid), limit(50));
     moneyUnsubTopups = onSnapshot(qTop, (snap)=>{
       topupsArr = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-      // client-side sort to avoid composite index requirement
-      topupsArr.sort((a,b)=>{
-        const ta = (a.createdAt?.toDate ? +a.createdAt.toDate() : (a.createdAt ? +new Date(a.createdAt) : 0));
-        const tb = (b.createdAt?.toDate ? +b.createdAt.toDate() : (b.createdAt ? +new Date(b.createdAt) : 0));
-        return tb - ta;
-      });
       merge();
-    }, (err)=>{
-      
-      topupsArr = [];
+    }, ()=>{ topupsArr=[]; merge(); });
+  }catch(e){ topupsArr=[]; merge(); }
+
+  // Orders are also displayed in money history from the very first checkout.
+  // Sorting is client-side so no extra composite index is required here.
+  try{
+    const qOrders = query(collection(db, "orders"), where("uid", "==", uid), limit(80));
+    moneyUnsubOrders = onSnapshot(qOrders, (snap)=>{
+      ordersArr = snap.docs.map(d=>({ id:d.id, ...d.data() }));
       merge();
-    });
-  }catch(e){
-    console.error(e);
-  }
-
-
-
+    }, ()=>{ ordersArr=[]; merge(); });
+  }catch(e){ ordersArr=[]; merge(); }
 }
 
 
@@ -5328,7 +5512,8 @@ async function createOrderFromCheckout(){
   const payload = {
     orderId,
     provider: payType === 'balance' ? 'balance' : 'cash',
-    status: payType === 'balance' ? 'paid' : 'pending_cash',
+    status: 'new',
+    paymentStatus: payType === 'balance' ? 'paid' : 'cash_on_delivery',
     items: built.items,
     totalUZS: grandTotalUZS,
     productsTotalUZS: built.totalUZS,
@@ -5959,7 +6144,11 @@ async function createOrderDoc({orderId, provider, status, items, totalUZS, amoun
     region,
     district,
     post,
-    status,
+    status: status === "paid" ? "new" : status,
+    paymentStatus: provider === "balance" ? "paid" : (provider === "cash" ? "cash_on_delivery" : null),
+    statusActor: "system",
+    statusUpdatedAt: serverTimestamp(),
+    statusHistory: [{ status: status === "paid" ? "new" : status, action: "created", actorType: "system", actorName: "OrzuMall", reason: "Buyurtma qabul qilindi", at: new Date() }],
     items,
     totalUZS,
     amountTiyin: amountTiyin ?? null,
@@ -5995,7 +6184,7 @@ async function createOrderDoc({orderId, provider, status, items, totalUZS, amoun
 
       tx.set(userRef, { balanceUZS: bal - need, updatedAt: serverTimestamp() }, { merge: true });
 
-      const paidOrder = { ...baseOrder, status: "paid", provider: "balance", amountTiyin: null };
+      const paidOrder = { ...baseOrder, status: "new", paymentStatus: "paid", provider: "balance", amountTiyin: null };
       tx.set(orderRef, paidOrder, { merge: true });
     });
   } else {
@@ -6334,7 +6523,11 @@ async function payWithBalance(built, shipping){
       userName: u.name || null,
       userPhone: u.phone || null,
       userTgChatId: (u.telegramChatId||u.tgChatId||null),
-      status: 'paid',
+      status: 'new',
+      paymentStatus: 'paid',
+      statusActor: 'system',
+      statusUpdatedAt: serverTimestamp(),
+      statusHistory: [{ status:'new', action:'created', actorType:'system', actorName:'OrzuMall', reason:'Buyurtma qabul qilindi va balansdan to‘landi', at:new Date() }],
       provider: 'balance',
       items: built.items,
       totalUZS: total,
@@ -7330,6 +7523,26 @@ document.addEventListener("click", async (e)=>{
   }
 });
 
+
+/* === Buyurtma holati: bekor qilish, qaytarish va fikr bildirish === */
+document.addEventListener("click", (e)=>{
+  const actionBtn=e.target?.closest?.("[data-order-action][data-order-id]");
+  if(actionBtn){
+    e.preventDefault();
+    openOrderActionModal(actionBtn.getAttribute("data-order-action")||"",actionBtn.getAttribute("data-order-id")||"");
+    return;
+  }
+  const star=e.target?.closest?.("#orderReviewStars [data-review-star]");
+  if(star){ e.preventDefault(); setReviewStars(Number(star.getAttribute("data-review-star")||0)); return; }
+  if(e.target?.closest?.("#orderActionClose,#orderActionCancel")){ e.preventDefault(); closeOrderActionModal(); return; }
+  if(e.target?.closest?.("#orderActionSubmit")){ e.preventDefault(); submitOrderAction(); return; }
+  const overlay=e.target?.closest?.("#orderActionModal");
+  if(overlay && e.target===overlay) closeOrderActionModal();
+});
+
+document.addEventListener("keydown", (e)=>{
+  if(e.key==="Escape" && !document.getElementById("orderActionModal")?.hidden) closeOrderActionModal();
+});
 
 /* === Buyurtma cheki tugmalari === */
 document.addEventListener("click", (e)=>{
