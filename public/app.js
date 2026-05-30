@@ -877,6 +877,7 @@ function subscribeReviews(productId){
         author: d.authorName || "Foydalanuvchi",
         stars: Number(d.stars)||0,
         text: (d.text||"").toString(),
+        adminReply: (d.adminReply?.text || d.adminReplyText || "").toString(),
         ts: d.createdAt?.toMillis ? d.createdAt.toMillis() : 0
       });
     });
@@ -937,6 +938,7 @@ function renderReviewsList(list){
       </div>
       ${r.text ? `<div class="revItemText">${escapeHtml(r.text)}</div>` : ""}
       ${imgs}
+      ${r.adminReply ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
     `;
     els.revList.appendChild(item);
   }
@@ -4085,6 +4087,7 @@ function renderMiniReviewsList(list){
         <div class="revItemStars">${omRenderStarIcons(s,'small')}</div>
       </div>
       <div class="revItemText">${escapeHtml(r.text||"")}</div>
+      ${r.adminReply ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
     `;
     wrap.appendChild(item);
   }
@@ -4243,6 +4246,7 @@ async function openMini(kind, productId){
           author: d.authorName || "Foydalanuvchi",
           stars: Number(d.stars)||0,
           text: (d.text||"").toString(),
+          adminReply: (d.adminReply?.text || d.adminReplyText || "").toString(),
           ts: d.createdAt?.toMillis ? d.createdAt.toMillis() : 0
         });
       });

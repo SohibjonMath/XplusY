@@ -24,11 +24,16 @@ function normalizeStatus(v){
   const map={ pending:"new", pending_cash:"new", pending_payment:"new", shared_telegram:"new", telegram:"new", processing:"packing", shipped:"shipping", completed:"delivered", canceled:"cancelled", rejected:"cancelled", declined:"cancelled" };
   return map[s] || s || "new";
 }
-function adminAllowed(decoded){
+async function adminAllowed(decoded, db){
   const email=String(decoded?.email||"").trim().toLowerCase();
   const configured=String(process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
   const allow=new Set(["sohibjonmath@gmail.com", ...configured]);
-  return !!email && allow.has(email);
+  if(email && allow.has(email)) return true;
+  try{
+    const snap=await db.doc("configs/admins").get();
+    const emails=snap.exists && Array.isArray(snap.data()?.emails) ? snap.data().emails.map(x=>String(x||"").trim().toLowerCase()) : [];
+    return !!email && emails.includes(email);
+  }catch(_e){ return false; }
 }
 function readBalance(u){
   for(const k of ["balanceUZS","balance","walletUZS","wallet"]){
@@ -176,7 +181,7 @@ exports.handler=async(event)=>{
     }
 
     if(action==="admin_update_status"){
-      if(!adminAllowed(decoded)) return json(403,{ok:false,error:"admin_required"});
+      if(!(await adminAllowed(decoded, db))) return json(403,{ok:false,error:"admin_required"});
       const next=normalizeStatus(body.status);
       const reason=safeText(body.reason,800);
       const allowed=["new","packing","shipping","delivered","cancelled","return_requested","returned","return_rejected"];
