@@ -26,7 +26,7 @@ exports.handler=async(event)=>{
     const result=await sendToAdmins(db,{
       title:'OrzuMall Admin — test push',
       body:'Native push muvaffaqiyatli ishlayapti. Endi yangi buyurtma kelsa signal olasiz.',
-      channelId:'updates_default',
+      channelId:'updates_voice_v3',
       data:{type:'test_push',url:'https://orzumall.uz/admin-mobile/'}
     });
     return json(200,{ok:true,...result});

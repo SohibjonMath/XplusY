@@ -1,4 +1,4 @@
-// Shared native push helper for OrzuMall admin Android app (v52)
+// Shared native push helper for OrzuMall admin Android app (v56 unified custom voice)
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 
@@ -54,11 +54,10 @@ async function sendToAdmins(db, payload = {}) {
         priority: 'high',
         ttl: 1000 * 60 * 60 * 24,
         notification: {
-          channelId: payload.channelId || 'orders_high',
-          sound: 'default',
+          channelId: payload.channelId || 'orders_voice_v3',
+          sound: 'orzumall_sizga_yangi_xabar_bor',
           priority: 'high',
           defaultVibrateTimings: true,
-          defaultSound: true,
           clickAction: 'OPEN_ADMIN_ORDERS'
         }
       }
@@ -73,7 +72,7 @@ async function pushNewOrder(db, order) {
   return sendToAdmins(db, {
     title: orderTitle(order),
     body: orderBody(order),
-    channelId: 'orders_high',
+    channelId: 'orders_voice_v3',
     data: {
       type: 'new_order',
       orderId: safeText(order?.orderId || order?.id || '', 64),
@@ -87,7 +86,7 @@ async function pushOrderStateChanged(db, orderId, status) {
   return sendToAdmins(db, {
     title: 'Buyurtma holati yangilandi',
     body: `#${safeText(orderId, 64)} • ${safeText(status, 80)}`,
-    channelId: 'updates_default',
+    channelId: 'updates_voice_v3',
     data: { type: 'order_state_changed', orderId: safeText(orderId, 64), status: safeText(status, 80), url: 'https://orzumall.uz/admin-mobile/' }
   });
 }

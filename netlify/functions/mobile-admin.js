@@ -26,7 +26,7 @@ async function isAdmin(decoded,db){
 async function notify(db,uid,title,body,type="info"){
   if(!uid)return;
   await db.collection("notifications").add({targetType:"uid",targetUid:String(uid),type,title:safeText(title,160),body:safeText(body,800),text:safeText(body,800),active:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});
-  await pushToCustomer(db,String(uid),{title:safeText(title,160),body:safeText(body,500),channelId:type==="order"?"orzumall_orders":"orzumall_general",data:{type:String(type||"info"),url:"https://orzumall.uz/"}}).catch(()=>{});
+  await pushToCustomer(db,String(uid),{title:safeText(title,160),body:safeText(body,500),channelId:type==="order"?"orzumall_orders_voice_v2":"orzumall_general_voice_v2",data:{type:String(type||"info"),url:"https://orzumall.uz/"}}).catch(()=>{});
 }
 async function resolveTopupUid(db,r){
   if(r?.uid)return String(r.uid);
@@ -98,8 +98,8 @@ exports.handler=async(event)=>{
       const title=safeText(body.title,160),text=safeText(body.text||body.body,900),type=safeText(body.type||"info",40);
       if(!title||!text)return json(400,{ok:false,error:"title_and_text_required"});if(targetType==="uid"&&!targetUid)return json(400,{ok:false,error:"target_uid_required"});
       const ref=await db.collection("notifications").add({targetType,targetUid,type,title,body:text,text,active:true,createdAt:admin.firestore.FieldValue.serverTimestamp(),createdBy:adminEmail});
-      if(targetType==="uid") await pushToCustomer(db,targetUid,{title,body:text,channelId:type==="order"?"orzumall_orders":"orzumall_general",data:{type,url:"https://orzumall.uz/"}}).catch(()=>{});
-      else await pushToAllCustomers(db,{title,body:text,channelId:type==="order"?"orzumall_orders":"orzumall_general",data:{type,url:"https://orzumall.uz/"}}).catch(()=>{});
+      if(targetType==="uid") await pushToCustomer(db,targetUid,{title,body:text,channelId:type==="order"?"orzumall_orders_voice_v2":"orzumall_general_voice_v2",data:{type,url:"https://orzumall.uz/"}}).catch(()=>{});
+      else await pushToAllCustomers(db,{title,body:text,channelId:type==="order"?"orzumall_orders_voice_v2":"orzumall_general_voice_v2",data:{type,url:"https://orzumall.uz/"}}).catch(()=>{});
       return json(200,{ok:true,id:ref.id});
     }
 

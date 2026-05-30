@@ -1,4 +1,4 @@
-// Shared native push helper for OrzuMall customer Android app (v55)
+// Shared native push helper for OrzuMall customer Android app (v56 unified custom voice)
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 
@@ -40,7 +40,7 @@ async function sendDocs(db, docs, payload = {}) {
       data:{ ...data, title, body },
       android:{
         priority: payload.priority || 'high', ttl:1000*60*60*24*3,
-        notification:{ channelId:payload.channelId || 'orzumall_general', sound:'default', defaultSound:true, defaultVibrateTimings:true }
+        notification:{ channelId:payload.channelId || 'orzumall_general_voice_v2', sound:'orzumall_sizga_yangi_xabar_bor', defaultVibrateTimings:true }
       }
     });
     sent += Number(result.successCount || 0); failed += Number(result.failureCount || 0);
@@ -51,6 +51,6 @@ async function sendDocs(db, docs, payload = {}) {
 async function pushToCustomer(db, uid, payload={}) { return sendDocs(db, await tokenDocsForUid(db, uid), payload); }
 async function pushToAllCustomers(db, payload={}) { return sendDocs(db, await allActiveTokens(db), payload); }
 async function pushOrderUpdate(db, uid, orderId, title, body, extra={}) {
-  return pushToCustomer(db, uid, { title, body, channelId:'orzumall_orders', data:{ type:'order', orderId:safeText(orderId,100), url:'https://orzumall.uz/#profile', ...extra } });
+  return pushToCustomer(db, uid, { title, body, channelId:'orzumall_orders_voice_v2', data:{ type:'order', orderId:safeText(orderId,100), url:'https://orzumall.uz/#profile', ...extra } });
 }
 module.exports={ safeText, tokenHash, pushToCustomer, pushToAllCustomers, pushOrderUpdate };
