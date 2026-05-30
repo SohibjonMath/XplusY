@@ -29,7 +29,7 @@
 
 <link rel="stylesheet" href="/theme-redwhite.css?v=20260530_v39_simple_checkout">
   <link rel="stylesheet" href="./i18n.css?v=20260529_mobile_lang_fix" />
-  <link rel="stylesheet" href="./checkout-v41.css?v=20260530_v41_inline_map" />
+  <link rel="stylesheet" href="./checkout-v42.css?v=20260530_v42_payment_flow" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" referrerpolicy="no-referrer" />
 </head>
 <body class="om-view-home">
@@ -268,7 +268,7 @@
           <div class="checkoutHead">
             <div>
               <div class="checkoutTitle"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Yetkazib berishni sozlash</div>
-              <div class="checkoutSub">Bitta oynada yetkazish usuli va to‘lov turini tanlang. Yakuniy summa shu yerning o‘zida hisoblanadi.</div>
+              <div class="checkoutSub">Yetkazish usuli va manzilni sozlang. Keyingi buyurtmalarda bu oynani qayta ochish shart bo‘lmaydi.</div>
             </div>
             <button class="iconBtn checkoutCloseBtn" id="checkoutClose" type="button" aria-label="Yopish"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
           </div>
@@ -341,29 +341,52 @@
               </div>
             </div>
 
-            <div class="payType simpleCheckoutSection">
-              <label class="simpleSelectLabel" for="payTypeSelect">
-                <span><i class="fa-solid fa-wallet" aria-hidden="true"></i> To‘lov turi</span>
-                <select class="checkoutSelect" id="payTypeSelect">
-                  <option value="cash">Naqd — buyurtma topshirilganda</option>
-                  <option value="balance" id="payTypeBalanceOption">Balansdan to‘lash</option>
-                </select>
-              </label>
-              <div class="muted tiny" id="payRuleNote"></div>
-            </div>
-
             <div class="checkoutSubmitHint" id="checkoutSubmitHint">Davom etish uchun yetkazish usulini tanlang.</div>
+          </div>
+          <div class="checkoutFooter">
             <div class="checkoutActionBar">
               <div class="checkoutFinalTotalCard" id="checkoutFinalTotal">
                 <span class="checkoutFinalTotalLabel">Yakuniy summa</span>
                 <b class="checkoutFinalTotalValue">0 so‘m</b>
                 <small class="checkoutFinalTotalSub">Yetkazish usuli tanlangandan keyin jami summa shu yerda ko‘rinadi.</small>
               </div>
-              <button class="btn primary" id="checkoutSubmit" type="button" hidden><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Buyurtmani tasdiqlash</button>
+              <button class="btn primary" id="checkoutSubmit" type="button" hidden><i class="fa-solid fa-arrow-right" aria-hidden="true"></i> Davom etish — to‘lov turini tanlash</button>
             </div>
           </div>
         </div>
       </div>
+
+<div class="paymentOverlay" id="paymentOverlay" hidden>
+  <div class="paymentModal" id="paymentModal" role="dialog" aria-modal="true" aria-label="To‘lov turini tanlash" hidden>
+    <div class="paymentHead">
+      <div>
+        <div class="paymentTitle"><i class="fa-solid fa-wallet" aria-hidden="true"></i> To‘lov turini tanlang</div>
+        <div class="paymentSub">Har bir buyurtma oldidan to‘lov usulini tasdiqlang.</div>
+      </div>
+      <button class="iconBtn paymentCloseBtn" id="paymentClose" type="button" aria-label="Yopish"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </div>
+    <div class="paymentBody">
+      <div class="paymentFinalCard">
+        <span>To‘lanadigan jami summa</span>
+        <b id="paymentFinalTotal">0 so‘m</b>
+        <small id="paymentProductsInfo">Mahsulotlar va yetkazish hisob-kitobi.</small>
+      </div>
+      <div class="paymentDeliveryPreview" id="paymentDeliveryPreview"></div>
+      <div class="payType simpleCheckoutSection">
+        <label class="simpleSelectLabel" for="payTypeSelect">
+          <span><i class="fa-solid fa-wallet" aria-hidden="true"></i> To‘lov turi</span>
+          <select class="checkoutSelect" id="payTypeSelect">
+            <option value="cash">Naqd — buyurtma topshirilganda</option>
+            <option value="balance" id="payTypeBalanceOption">Balansdan to‘lash</option>
+          </select>
+        </label>
+        <div class="muted tiny" id="payRuleNote"></div>
+      </div>
+      <button class="btn primary paymentSubmitBtn" id="paymentSubmit" type="button"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Buyurtmani tasdiqlash</button>
+      <button class="paymentDeliveryChangeBtn" id="paymentDeliveryChangeBtn" type="button"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Yetkazib berishni o‘zgartirish</button>
+    </div>
+  </div>
+</div>
 
 <section class="view" id="view-profile" hidden>
   <div class="viewHeader">

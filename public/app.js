@@ -519,6 +519,10 @@ const els = {
   checkoutSubmit: document.getElementById("checkoutSubmit"),
   checkoutCompactSummary: document.getElementById("checkoutCompactSummary"),
   cartDeliverySummary: document.getElementById("cartDeliverySummary"),
+  paymentOverlay: document.getElementById("paymentOverlay"),
+  paymentModal: document.getElementById("paymentModal"),
+  paymentClose: document.getElementById("paymentClose"),
+  paymentSubmit: document.getElementById("paymentSubmit"),
   shipAddress: document.getElementById("shipAddress"),
   shipPhone: document.getElementById("shipPhone"),
   useProfilePhone: document.getElementById("useProfilePhone"),
@@ -1144,18 +1148,36 @@ function omNormalizeAddresses(arr){
 function omMergeCart(a,b){ return omNormalizeCart([...(a||[]), ...(b||[])]); }
 function omMergeFavs(a,b){ return omNormalizeFavs([...(a||[]), ...(b||[])]); }
 function omMergeAddresses(a,b){ return omNormalizeAddresses([...(a||[]), ...(b||[])]); }
+
+/* v42: delivery addresses must never leak between accounts on the same browser. */
+const OM_SAVED_ADDR_KEY_PREFIX = "orzumall_saved_delivery_addresses_v2";
+function omSavedAddressStorageKey(uid=currentUser?.uid){
+  const safeUid = String(uid || "guest").replace(/[^a-zA-Z0-9_-]/g, "_");
+  return `${OM_SAVED_ADDR_KEY_PREFIX}_${safeUid}`;
+}
+function omOwnedAddresses(arr, uid=currentUser?.uid){
+  const ownerUid = String(uid || "");
+  if(!ownerUid) return [];
+  return omNormalizeAddresses(arr).filter(a=>String(a?.ownerUid || "") === ownerUid);
+}
+function omStampOwnedAddresses(arr, uid=currentUser?.uid){
+  const ownerUid = String(uid || "");
+  if(!ownerUid) return [];
+  return omNormalizeAddresses(arr).map(a=>({...a, ownerUid}));
+}
 function omCurrentSavedAddresses(){
-  try{ return omNormalizeAddresses(JSON.parse(localStorage.getItem("orzumall_saved_delivery_addresses_v1") || "[]")); }
+  try{ return omOwnedAddresses(JSON.parse(localStorage.getItem(omSavedAddressStorageKey()) || "[]")); }
   catch(_){ return []; }
 }
 function omSetSavedAddressesLocal(arr){
-  try{ localStorage.setItem("orzumall_saved_delivery_addresses_v1", JSON.stringify(omNormalizeAddresses(arr))); }catch(_){}
+  try{ localStorage.setItem(omSavedAddressStorageKey(), JSON.stringify(omStampOwnedAddresses(arr))); }catch(_){}
 }
 function omUserShopPayload(){
   return {
     favs: omNormalizeFavs(Array.from(favs||[])),
     cart: omNormalizeCart(cart||[]),
-    savedAddresses: omCurrentSavedAddresses()
+    savedAddresses: omCurrentSavedAddresses(),
+    deliveryPreference: { method: (typeof omReadStoredDeliveryMethod === "function" ? omReadStoredDeliveryMethod() : "") }
   };
 }
 function omApplyUserShopState(data, opts={merge:false}){
@@ -1164,17 +1186,27 @@ function omApplyUserShopState(data, opts={merge:false}){
   try{
     const serverFavs = data.favs || data.favoriteProducts || data.shop?.favs || [];
     const serverCart = data.cart || data.shop?.cart || [];
-    const serverAddresses = data.savedAddresses || data.deliveryAddresses || data.shop?.savedAddresses || [];
+    const serverAddresses = omOwnedAddresses(data.savedAddresses || data.deliveryAddresses || data.shop?.savedAddresses || []);
+    const serverPreference = data.deliveryPreference || data.shop?.deliveryPreference || {};
 
     const nextFavs = opts.merge ? omMergeFavs(Array.from(favs||[]), serverFavs) : omNormalizeFavs(serverFavs);
     const nextCart = opts.merge ? omMergeCart(cart||[], serverCart) : omNormalizeCart(serverCart);
-    const nextAddresses = opts.merge ? omMergeAddresses(omCurrentSavedAddresses(), serverAddresses) : omNormalizeAddresses(serverAddresses);
+    const nextAddresses = opts.merge ? omMergeAddresses(omCurrentSavedAddresses(), serverAddresses) : omOwnedAddresses(serverAddresses);
 
     favs = new Set(nextFavs);
     cart = nextCart;
     localStorage.setItem(LS.favs, JSON.stringify(nextFavs));
     localStorage.setItem(LS.cart, JSON.stringify(nextCart));
     omSetSavedAddressesLocal(nextAddresses);
+    try{
+      const prefMethod = String(serverPreference?.method || "");
+      if(!omReadStoredDeliveryMethod() && (prefMethod === "pickup" || prefMethod === "delivery")) omStoreDeliveryMethod(prefMethod, false);
+      const methodSelect = document.getElementById("deliveryMethodSelect");
+      if(methodSelect && !methodSelect.value){
+        const storedMethod = omReadStoredDeliveryMethod();
+        if(storedMethod) methodSelect.value = storedMethod;
+      }
+    }catch(_e){}
 
     cartSelected = new Set((cart||[]).map(x=>x.key));
     lastCartKeys = new Set((cart||[]).map(x=>x.key));
@@ -1217,10 +1249,11 @@ function subscribeUserShopState(user){
     const payload = {
       favs: omNormalizeFavs(data.favs || data.favoriteProducts || data.shop?.favs || []),
       cart: omNormalizeCart(data.cart || data.shop?.cart || []),
-      savedAddresses: omNormalizeAddresses(data.savedAddresses || data.deliveryAddresses || data.shop?.savedAddresses || [])
+      savedAddresses: omOwnedAddresses(data.savedAddresses || data.deliveryAddresses || data.shop?.savedAddresses || []),
+      deliveryPreference: data.deliveryPreference || data.shop?.deliveryPreference || {method:""}
     };
     const json = JSON.stringify(payload);
-    if(!payload.favs.length && !payload.cart.length && !payload.savedAddresses.length) return;
+    if(!payload.favs.length && !payload.cart.length && !payload.savedAddresses.length && !payload.deliveryPreference?.method) return;
     if(json === omUserShopLastJson) return;
     omUserShopLastJson = json;
     omApplyUserShopState(payload, {merge:false});
@@ -4271,18 +4304,24 @@ function renderCartPage(){
 /* =========================
    Checkout (Cart -> Order)
 ========================= */
-const OM_DELIVERY_METHOD_KEY = "orzumall_checkout_delivery_method_v1";
+const OM_DELIVERY_METHOD_KEY_PREFIX = "orzumall_checkout_delivery_method_v2";
 
+function omDeliveryMethodStorageKey(uid=currentUser?.uid){
+  const safeUid = String(uid || "guest").replace(/[^a-zA-Z0-9_-]/g, "_");
+  return `${OM_DELIVERY_METHOD_KEY_PREFIX}_${safeUid}`;
+}
 function omReadStoredDeliveryMethod(){
   try{
-    const v = String(localStorage.getItem(OM_DELIVERY_METHOD_KEY) || "");
+    const v = String(localStorage.getItem(omDeliveryMethodStorageKey()) || "");
     return (v === "pickup" || v === "delivery") ? v : "";
   }catch(_e){ return ""; }
 }
-function omStoreDeliveryMethod(v){
+function omStoreDeliveryMethod(v, sync=true){
   try{
-    if(v === "pickup" || v === "delivery") localStorage.setItem(OM_DELIVERY_METHOD_KEY, v);
-    else localStorage.removeItem(OM_DELIVERY_METHOD_KEY);
+    const key = omDeliveryMethodStorageKey();
+    if(v === "pickup" || v === "delivery") localStorage.setItem(key, v);
+    else localStorage.removeItem(key);
+    if(sync) scheduleUserShopSync();
   }catch(_e){}
 }
 
@@ -4324,6 +4363,14 @@ function openCheckout(){
   }catch(_){}
 }
 
+function omSyncModalOpenState(){
+  const checkoutOpen = !!(els.checkoutOverlay && !els.checkoutOverlay.hidden);
+  const paymentOpen = !!(els.paymentOverlay && !els.paymentOverlay.hidden);
+  const hasOpenModal = checkoutOpen || paymentOpen;
+  try{ document.documentElement.classList.toggle("modalOpen", hasOpenModal); }catch(_e){}
+  try{ document.body.classList.toggle("modalOpen", hasOpenModal); }catch(_e){}
+}
+
 function closeCheckout(){
   if(!els.checkoutSheet) return;
   const overlay = els.checkoutOverlay || document.getElementById("checkoutOverlay");
@@ -4331,7 +4378,93 @@ function closeCheckout(){
   try{ overlay?.classList.remove("isOpen"); }catch(_e){}
   els.checkoutSheet.hidden = true;
   if(overlay) overlay.hidden = true;
-  try{ document.documentElement.classList.remove("modalOpen"); document.body.classList.remove("modalOpen"); }catch(_e){}
+  try{ omSyncModalOpenState(); }catch(_e){}
+}
+
+function updatePaymentModalSummary(){
+  const totalEl = document.getElementById("paymentFinalTotal");
+  const productsEl = document.getElementById("paymentProductsInfo");
+  const deliveryEl = document.getElementById("paymentDeliveryPreview");
+  if(!totalEl || !productsEl || !deliveryEl) return false;
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  const info = built?.ok ? getCheckoutDeliveryInfo() : {ok:false, reason: built?.reason || "Mahsulot tanlang."};
+  if(!built?.ok || !info.ok){
+    totalEl.textContent = "0 so‘m";
+    productsEl.textContent = info.reason || "Yetkazib berishni sozlang.";
+    deliveryEl.innerHTML = `<div class="paymentDeliveryWarn"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span>${escapeHtml(info.reason || "Yetkazib berishni sozlang.")}</span></div>`;
+    return false;
+  }
+  const deliveryFee = Number(info.data?.deliveryFeeUZS || 0);
+  const total = Number(info.data?.totalWithDeliveryUZS || built.totalUZS + deliveryFee);
+  const qty = built.items.reduce((s,x)=>s + Number(x.qty||0), 0);
+  totalEl.textContent = moneyUZS(total);
+  productsEl.textContent = `${qty} ta mahsulot: ${moneyUZS(built.totalUZS)} + yetkazish: ${deliveryFee ? moneyUZS(deliveryFee) : "Bepul"}.`;
+  const methodText = info.data?.method === "pickup" ? "Do‘kondan olib ketish" : (info.data?.serviceLabel || "Yetkazib berish");
+  const addrText = info.data?.method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : (info.data?.addressText || "Lokatsiya saqlandi.");
+  deliveryEl.innerHTML = `
+    <div class="paymentDeliveryIcon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></div>
+    <div class="paymentDeliveryText"><b>${escapeHtml(methodText)}</b><span>${escapeHtml(addrText)}</span></div>
+    <div class="paymentDeliveryFee">${deliveryFee ? moneyUZS(deliveryFee) : "Bepul"}</div>
+  `;
+  return true;
+}
+
+function openPaymentConfirm(){
+  if(!currentUser){ toast("Avval kirish qiling."); return; }
+  if(cart.length === 0){ toast("Savatcha bo‘sh."); return; }
+  try{
+    if(window.__omProfile && window.__omProfile.isProfileComplete && !window.__omProfile.isProfileComplete()){
+      toast("Avval profilni to‘liq to‘ldiring.");
+      goTab("profile");
+      return;
+    }
+  }catch(_e){}
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  if(!built?.ok){ toast(built?.reason || "Mahsulot tanlang."); return; }
+  const deliveryInfo = getCheckoutDeliveryInfo();
+  if(!deliveryInfo.ok){
+    openCheckout();
+    toast(deliveryInfo.reason || "Avval yetkazib berishni sozlang.");
+    return;
+  }
+  const paySel = document.getElementById("payTypeSelect");
+  if(paySel) paySel.value = "cash"; // payment choice is intentionally requested for every order
+  try{ applyPayTypeRules(); }catch(_e){}
+  try{ updatePaymentModalSummary(); }catch(_e){}
+  const overlay = els.paymentOverlay || document.getElementById("paymentOverlay");
+  const modal = els.paymentModal || document.getElementById("paymentModal");
+  if(!overlay || !modal) return;
+  overlay.hidden = false;
+  modal.hidden = false;
+  requestAnimationFrame(()=>{
+    try{ overlay.classList.add("isOpen"); modal.classList.add("isOpen"); }catch(_e){}
+  });
+  try{ omSyncModalOpenState(); }catch(_e){}
+}
+
+function closePaymentModal(){
+  const overlay = els.paymentOverlay || document.getElementById("paymentOverlay");
+  const modal = els.paymentModal || document.getElementById("paymentModal");
+  try{ overlay?.classList.remove("isOpen"); modal?.classList.remove("isOpen"); }catch(_e){}
+  if(modal) modal.hidden = true;
+  if(overlay) overlay.hidden = true;
+  try{ omSyncModalOpenState(); }catch(_e){}
+}
+
+function continueFromDeliverySetup(){
+  const info = getCheckoutDeliveryInfo();
+  if(!info.ok){ toast(info.reason || "Yetkazib berishni sozlang."); return; }
+  try{ scheduleUserShopSync(); }catch(_e){}
+  closeCheckout();
+  setTimeout(openPaymentConfirm, 40);
+}
+
+function openOrderFlow(){
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  if(!built?.ok){ toast(built?.reason || "Mahsulot tanlang."); return; }
+  const info = getCheckoutDeliveryInfo();
+  if(info.ok) openPaymentConfirm();
+  else openCheckout();
 }
 
 function getPayType(){
@@ -4342,6 +4475,19 @@ function getPayType(){
 }
 
 let omDeliveryLocation = null;
+
+function omResetDeliverySessionForUser(){
+  omDeliveryLocation = null;
+  try{ omDeliveryMapDraft = null; }catch(_e){}
+  try{ omHideInlineDeliveryMap(); }catch(_e){}
+  try{
+    const methodSelect = document.getElementById("deliveryMethodSelect");
+    if(methodSelect) methodSelect.value = omReadStoredDeliveryMethod();
+  }catch(_e){}
+  try{ renderSavedAddressesUI(); }catch(_e){}
+  try{ setDeliveryLocationStatus('Yetkazib berish uchun lokatsiyani avto aniqlang.'); }catch(_e){}
+  try{ updateDeliveryMethodUI(); }catch(_e){}
+}
 
 function getDeliveryMethod(){
   const sel = document.getElementById("deliveryMethodSelect");
@@ -4443,6 +4589,7 @@ function updateDeliveryMethodUI(){
   try{ omRenderCartDeliverySummary(); }catch(_e){}
   try{ updateCartPrimaryCTA(); }catch(_e){}
   try{ updateDeliveryLocationMeta(); }catch(_e){}
+  try{ if(els.paymentOverlay && !els.paymentOverlay.hidden) updatePaymentModalSummary(); }catch(_e){}
 }
 
 let omDeliveryInlineMap = null;
@@ -4791,17 +4938,15 @@ function getCheckoutDeliveryInfo(){
 }
 
 
-const OM_SAVED_ADDR_KEY = "orzumall_saved_delivery_addresses_v1";
-
 function omReadSavedAddresses(){
   try{
-    const arr = JSON.parse(localStorage.getItem(OM_SAVED_ADDR_KEY) || "[]");
-    return Array.isArray(arr) ? arr.filter(Boolean) : [];
+    const arr = JSON.parse(localStorage.getItem(omSavedAddressStorageKey()) || "[]");
+    return omOwnedAddresses(arr);
   }catch(_){ return []; }
 }
 
 function omWriteSavedAddresses(arr){
-  try{ localStorage.setItem(OM_SAVED_ADDR_KEY, JSON.stringify(Array.isArray(arr) ? arr : [])); }catch(_){}
+  try{ localStorage.setItem(omSavedAddressStorageKey(), JSON.stringify(omStampOwnedAddresses(Array.isArray(arr) ? arr : []))); }catch(_){}
   try{ scheduleUserShopSync(); }catch(_){}
 }
 
@@ -5041,6 +5186,7 @@ function applyPayTypeRules(){
         : "";
     }
     try{ updateCheckoutCompactSummary(); }catch(_e){}
+    try{ if(els.paymentOverlay && !els.paymentOverlay.hidden) updatePaymentModalSummary(); }catch(_e){}
   }catch(e){
     console.warn("applyPayTypeRules failed:", e);
   }
@@ -5080,7 +5226,7 @@ function showOrderWaitOverlay(){
   document.documentElement.classList.add("om-order-waiting");
   document.body.classList.add("om-order-waiting");
 
-  const btns = [els?.checkoutSubmit, els?.orderBtnPage].filter(Boolean);
+  const btns = [els?.checkoutSubmit, els?.paymentSubmit, els?.orderBtnPage].filter(Boolean);
   btns.forEach(btn=>{
     if(!btn.dataset.omOldHtml) btn.dataset.omOldHtml = btn.innerHTML;
     btn.disabled = true;
@@ -5088,6 +5234,9 @@ function showOrderWaitOverlay(){
   });
   if(els?.checkoutSubmit){
     els.checkoutSubmit.innerHTML = `<span class="omBtnSpinner" aria-hidden="true"></span> Kuting...`;
+  }
+  if(els?.paymentSubmit){
+    els.paymentSubmit.innerHTML = `<span class="omBtnSpinner" aria-hidden="true"></span> Buyurtma yuborilmoqda...`;
   }
 }
 
@@ -5100,7 +5249,7 @@ function hideOrderWaitOverlay(){
   document.documentElement.classList.remove("om-order-waiting");
   document.body.classList.remove("om-order-waiting");
 
-  const btns = [els?.checkoutSubmit, els?.orderBtnPage].filter(Boolean);
+  const btns = [els?.checkoutSubmit, els?.paymentSubmit, els?.orderBtnPage].filter(Boolean);
   btns.forEach(btn=>{
     btn.disabled = false;
     btn.classList.remove("isLoading");
@@ -5248,6 +5397,7 @@ async function createOrderFromCheckout(){
     updateBadges();
     renderCartPage();
     closeCheckout();
+    closePaymentModal();
   }catch(e){
     console.warn("checkout order create failed", e);
     const msg = (e && e.message) ? String(e.message) : "";
@@ -5501,7 +5651,12 @@ function wireEyeButtons(){
 /* ================== /PHONE + PASSWORD AUTH ================== */
 
 function setUserUI(user){
+  const prevUid = String(currentUser?.uid || "");
   currentUser = user || null;
+  const nextUid = String(currentUser?.uid || "");
+  if(prevUid !== nextUid){
+    try{ omResetDeliverySessionForUser(); }catch(_e){}
+  }
   const authCard = els.authCard || document.getElementById("authCard");
 
   document.body.classList.toggle("signed-in", !!user);
@@ -6236,24 +6391,35 @@ els.paymeBtn?.addEventListener("click", ()=>{
   if(cart.length === 0){ toast("Savatcha bo'sh."); return; }
   try{ closePanel(); }catch(_e){}
   try{ goTab("cart"); }catch(_e){}
-  setTimeout(()=>{ openCheckout(); }, 120);
+  setTimeout(openOrderFlow, 120);
 });
 els.paymeBtnPage?.addEventListener("click", ()=>{
   if(cart.length === 0){ toast("Savatcha bo'sh."); return; }
-  openCheckout();
+  openOrderFlow();
 });
 els.tgShareBtn?.addEventListener("click", shareOrderTelegram);
 els.tgShareBtnPage?.addEventListener("click", shareOrderTelegram);
 
-// Cart -> single order flow
+// Cart -> first order asks delivery setup; later orders open only payment selection.
 els.orderBtnPage?.addEventListener("click", ()=>{
   if(cart.length === 0){ toast("Savatcha bo'sh."); return; }
-  openCheckout();
+  openOrderFlow();
 });
 els.checkoutClose?.addEventListener("click", closeCheckout);
 els.checkoutOverlay?.addEventListener("click", (e)=>{ if(e.target === els.checkoutOverlay) closeCheckout(); });
-document.addEventListener("keydown", (e)=>{ if(e.key === "Escape" && !els.checkoutOverlay?.hidden) closeCheckout(); });
-els.checkoutSubmit?.addEventListener("click", createOrderFromCheckout);
+els.checkoutSubmit?.addEventListener("click", continueFromDeliverySetup);
+els.paymentClose?.addEventListener("click", closePaymentModal);
+els.paymentOverlay?.addEventListener("click", (e)=>{ if(e.target === els.paymentOverlay) closePaymentModal(); });
+els.paymentSubmit?.addEventListener("click", createOrderFromCheckout);
+document.getElementById("paymentDeliveryChangeBtn")?.addEventListener("click", ()=>{
+  closePaymentModal();
+  setTimeout(openCheckout, 40);
+});
+document.addEventListener("keydown", (e)=>{
+  if(e.key !== "Escape") return;
+  if(els.paymentOverlay && !els.paymentOverlay.hidden) closePaymentModal();
+  else if(els.checkoutOverlay && !els.checkoutOverlay.hidden) closeCheckout();
+});
 
 /* =========================
    Profile modal (one-time fill + pencil edit)
