@@ -153,7 +153,8 @@ exports.handler = async function(event) {
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "deepseek-v4-flash",
+        thinking: { type: "disabled" },
         temperature: 0.2,
         response_format: { type: "json_object" },
         messages: [

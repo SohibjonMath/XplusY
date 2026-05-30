@@ -7,7 +7,7 @@ import {
 
 const S = {
   user:null, profile:{}, notifications:[], globalNotes:[], userNotes:[], readIds:new Set(), messages:[], thread:null,
-  activeTab:'notifications', open:false, unsub:[]
+  activeTab:'notifications', open:false, unsub:[], aiPending:false
 };
 const $ = (id)=>document.getElementById(id);
 const esc = (v)=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -49,7 +49,14 @@ function mount(){
           <div class="omcc-list" id="omccNotifList"></div>
         </section>
         <section class="omcc-pane" id="omccChatPane" hidden>
-          <div class="omcc-chat-intro"><b>OrzuMall yordam xizmati</b><br>Savolingizni yozing. Operator javobi shu yerda real vaqtda ko‘rinadi.</div>
+          <div class="omcc-chat-intro"><b><i class="fa-solid fa-robot"></i> OrzuMall AI yordamchisi + operator</b><br>Avval tekshirilgan ma’lumotlardan tezkor javob beraman. Aniq ma’lumot topilmasa savol operatorga avtomatik yuboriladi.</div>
+          <div class="omcc-quick" id="omccQuick">
+            <button type="button" data-omcc-quick="Oxirgi buyurtmam holati qanday?">Buyurtmam qayerda?</button>
+            <button type="button" data-omcc-quick="Yetkazib berish narxi qanday hisoblanadi?">Yetkazish narxi</button>
+            <button type="button" data-omcc-quick="Qanday to‘lov turlari mavjud?">To‘lov turlari</button>
+            <button type="button" data-omcc-quick="Mahsulotni qaytarish yoki almashtirish mumkinmi?">Qaytarish</button>
+            <button type="button" data-omcc-quick="Operator bilan bog‘lanmoqchiman">Operator</button>
+          </div>
           <div class="omcc-messages" id="omccMessages"></div>
           <form class="omcc-chat-compose" id="omccChatForm"><textarea class="omcc-chat-input" id="omccChatInput" maxlength="1000" placeholder="Savolingizni yozing..." required></textarea><button class="omcc-send" id="omccSend" type="submit" aria-label="Yuborish"><i class="fa-solid fa-paper-plane"></i></button></form>
         </section>
@@ -64,8 +71,9 @@ function mount(){
   document.querySelectorAll('[data-omcc-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.omccTab)));
   $('omccMarkAll')?.addEventListener('click',markAllNotificationsRead);
   $('omccChatForm')?.addEventListener('submit',sendMessage);
+  document.querySelectorAll('[data-omcc-quick]').forEach(b=>b.addEventListener('click',()=>sendQuickMessage(b.dataset.omccQuick)));
 }
-function cleanup(){ S.unsub.splice(0).forEach(fn=>{try{fn?.();}catch(_){}}); S.notifications=[];S.globalNotes=[];S.userNotes=[];S.readIds=new Set();S.messages=[];S.thread=null; renderAll(); }
+function cleanup(){ S.unsub.splice(0).forEach(fn=>{try{fn?.();}catch(_){}}); S.notifications=[];S.globalNotes=[];S.userNotes=[];S.readIds=new Set();S.messages=[];S.thread=null;S.aiPending=false; renderAll(); }
 function setBadge(id,n){ const e=$(id); if(!e)return; const x=Math.max(0,Number(n||0)); e.textContent=x>99?'99+':String(x); e.hidden=!x; }
 function unreadNotifications(){ return S.notifications.filter(n=>!S.readIds.has(n.id)).length; }
 function unreadChat(){ return Math.max(0,Number(S.thread?.userUnreadCount||0)); }
@@ -74,7 +82,13 @@ function noteIcon(t){ return ({order:'fa-box',support:'fa-headset',promo:'fa-gif
 function visibleNotifications(all){ const uid=S.user?.uid||''; return (all||[]).filter(n=>n&&n.active!==false&&(n.targetType==='all'||n.target==='all'||String(n.targetUid||'')===uid)).sort((a,b)=>tsMs(b.createdAt)-tsMs(a.createdAt)); }
 function rebuildNotifications(){ const map=new Map(); [...S.globalNotes,...S.userNotes].forEach(n=>{if(n?.id)map.set(n.id,n)}); S.notifications=visibleNotifications([...map.values()]); renderNotifications(); updateBadges(); }
 function renderNotifications(){ const box=$('omccNotifList'); if(!box)return; if(!S.notifications.length){box.innerHTML='<div class="omcc-empty"><i class="fa-regular fa-bell"></i>Hozircha yangi bildirishnoma yo‘q.</div>';return;} box.innerHTML=S.notifications.map(n=>{ const unread=!S.readIds.has(n.id); return `<article class="omcc-note ${unread?'unread':''}" data-note-id="${esc(n.id)}"><span class="omcc-note-icon"><i class="fa-solid ${noteIcon(n.type)}"></i></span><div class="omcc-note-title">${esc(n.title||'Bildirishnoma')}</div>${unread?'<span class="omcc-new">Yangi</span>':''}<div class="omcc-note-body">${esc(n.body||n.message||'')}</div><div class="omcc-note-time">${esc(fmt(n.createdAt))}</div></article>`;}).join(''); box.querySelectorAll('[data-note-id]').forEach(el=>el.addEventListener('click',()=>markNotificationRead(el.dataset.noteId))); }
-function renderMessages(){ const box=$('omccMessages'); if(!box)return; if(!S.messages.length){ box.innerHTML='<div class="omcc-empty"><i class="fa-solid fa-comments"></i>Assalomu alaykum! Savolingizni yozing, operator imkon qadar tez javob beradi.</div>'; return; } box.innerHTML=S.messages.map(m=>`<div class="omcc-msg ${m.sender==='admin'?'admin':(m.sender==='system'?'system':'user')}">${esc(m.text||'')}<span class="omcc-msg-time">${esc(fmt(m.createdAt))}</span></div>`).join(''); requestAnimationFrame(()=>{box.scrollTop=box.scrollHeight;}); }
+function renderMessages(){
+  const box=$('omccMessages'); if(!box)return;
+  if(!S.messages.length&&!S.aiPending){ box.innerHTML='<div class="omcc-empty"><i class="fa-solid fa-robot"></i>Assalomu alaykum! Savolingizni yozing. Oddiy savollarga AI yordamchi tezkor javob beradi, zarur bo‘lsa operator davom ettiradi.</div>'; return; }
+  const html=S.messages.map(m=>{const cls=m.sender==='admin'?'admin':(m.sender==='ai'?'ai':(m.sender==='system'?'system':'user'));const who=m.sender==='ai'?'<b class="omcc-ai-label"><i class="fa-solid fa-robot"></i> AI yordamchi</b>':'';return `<div class="omcc-msg ${cls}">${who}${esc(m.text||'')}<span class="omcc-msg-time">${esc(fmt(m.createdAt))}</span></div>`}).join('');
+  box.innerHTML=html+(S.aiPending?'<div class="omcc-msg ai omcc-typing"><b class="omcc-ai-label"><i class="fa-solid fa-robot"></i> AI yordamchi</b><span></span><span></span><span></span><em>Tekshirilmoqda...</em></div>':'');
+  requestAnimationFrame(()=>{box.scrollTop=box.scrollHeight;});
+}
 function renderAll(){ renderNotifications();renderMessages();updateBadges(); }
 async function loadProfile(){ if(!S.user)return; try{ const x=await getDoc(doc(db,'users',S.user.uid)); S.profile=x.exists()?x.data()||{}:{}; }catch(_){S.profile={};} }
 function bind(u){ cleanup();S.user=u||null;if(!u)return; loadProfile();
@@ -90,7 +104,27 @@ function closeCenter(){S.open=false;$('omccOverlay')?.classList.remove('is-open'
 async function markNotificationRead(id){ if(!S.user||!id||S.readIds.has(id))return;S.readIds.add(id);renderNotifications();updateBadges();try{await setDoc(doc(db,'users',S.user.uid,'notification_reads',id),{readAt:serverTimestamp()},{merge:true});}catch(_){}}
 async function markAllNotificationsRead(){ if(!S.user)return;const unread=S.notifications.filter(n=>!S.readIds.has(n.id));if(!unread.length)return;unread.forEach(n=>S.readIds.add(n.id));renderNotifications();updateBadges();await Promise.allSettled(unread.map(n=>setDoc(doc(db,'users',S.user.uid,'notification_reads',n.id),{readAt:serverTimestamp()},{merge:true})));}
 async function markChatRead(){if(!S.user||!Number(S.thread?.userUnreadCount||0))return;try{await setDoc(doc(db,'support_threads',S.user.uid),{userUnreadCount:0,userLastReadAt:serverTimestamp()},{merge:true});}catch(_){}}
-async function sendMessage(e){e.preventDefault();const input=$('omccChatInput'),btn=$('omccSend');const text=String(input?.value||'').trim();if(!S.user||!text)return;btn.disabled=true;try{await loadProfile();const uid=S.user.uid;const p=S.profile||{};const name=[p.firstName,p.lastName].filter(Boolean).join(' ').trim()||p.name||S.user.displayName||'Mijoz';const phone=p.phone||p.userPhone||'';await addDoc(collection(db,'support_threads',uid,'messages'),{text,sender:'user',uid,createdAt:serverTimestamp()});await setDoc(doc(db,'support_threads',uid),{uid,userName:name,userPhone:phone,userEmail:S.user.email||'',numericId:p.numericId||p.userPublicId||'',status:'open',lastMessage:text,lastSender:'user',updatedAt:serverTimestamp(),adminUnreadCount:increment(1),userUnreadCount:0},{merge:true});input.value='';}catch(err){toast('Xabar yuborilmadi. Internet yoki Firestore qoidalarini tekshiring.');}finally{btn.disabled=false;input?.focus();}}
+async function askSupportAi(messageId,text){
+  if(!S.user||!messageId)return;
+  S.aiPending=true;renderMessages();
+  try{
+    const token=await S.user.getIdToken();
+    const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),14500);
+    const res=await fetch('/.netlify/functions/support-ai',{method:'POST',signal:controller.signal,headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({messageId,text})});
+    clearTimeout(timer);
+    const out=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(out.error||'support_ai_failed');
+  }catch(_e){
+    toast('AI javobi kechikdi. Xabaringiz operator navbatida qoldi.');
+  }finally{S.aiPending=false;renderMessages();}
+}
+async function sendQuickMessage(text){const input=$('omccChatInput');if(!input)return;input.value=String(text||'');$('omccChatForm')?.requestSubmit();}
+async function sendMessage(e){
+  e.preventDefault();const input=$('omccChatInput'),btn=$('omccSend');const text=String(input?.value||'').trim();if(!S.user||!text)return;btn.disabled=true;
+  try{await loadProfile();const uid=S.user.uid;const p=S.profile||{};const name=[p.firstName,p.lastName].filter(Boolean).join(' ').trim()||p.name||S.user.displayName||'Mijoz';const phone=p.phone||p.userPhone||'';const ref=await addDoc(collection(db,'support_threads',uid,'messages'),{text,sender:'user',uid,createdAt:serverTimestamp()});await setDoc(doc(db,'support_threads',uid),{uid,userName:name,userPhone:phone,userEmail:S.user.email||'',numericId:p.numericId||p.userPublicId||'',status:'open',needsHuman:true,aiState:'queued',lastMessage:text,lastSender:'user',updatedAt:serverTimestamp(),adminUnreadCount:increment(1),pendingAiCount:increment(1),userUnreadCount:0},{merge:true});input.value='';askSupportAi(ref.id,text);}
+  catch(err){toast('Xabar yuborilmadi. Internet yoki Firestore qoidalarini tekshiring.');}
+  finally{btn.disabled=false;input?.focus();}
+}
 
 mount();
 onAuthStateChanged(auth,bind);
