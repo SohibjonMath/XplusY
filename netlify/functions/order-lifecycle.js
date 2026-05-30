@@ -1,4 +1,4 @@
-// OrzuMall v45 — secure order lifecycle actions for customers and admins
+// OrzuMall v46 — secure status-colored order lifecycle; customer cancel until delivery; admin-only return
 const admin = require("firebase-admin");
 
 function initAdmin(){
@@ -112,7 +112,7 @@ exports.handler=async(event)=>{
       const out=await txUpdateWithOptionalRefund(db,orderId,async({tx,order,orderRef})=>{
         if(String(order.uid||"")!==uid) throw new Error("FORBIDDEN");
         const st=normalizeStatus(order.status);
-        if(!["new","paid"].includes(st)) throw new Error("CANCEL_NOT_ALLOWED");
+        if(!["new","paid","packing","shipping"].includes(st)) throw new Error("CANCEL_NOT_ALLOWED");
         const entry=lifecycleEntry({status:"cancelled",actorType:"customer",actorUid:uid,actorName:order.userName||"Mijoz",reason,action:"cancelled"});
         const patch={
           status:"cancelled", statusNote:reason, statusActor:"customer", statusUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),
@@ -127,21 +127,8 @@ exports.handler=async(event)=>{
     }
 
     if(action==="request_return"){
-      const reason=safeText(body.reason,800);
-      if(reason.length<4) return json(400,{ok:false,error:"return_reason_required"});
-      const out=await txUpdateWithOptionalRefund(db,orderId,async({order})=>{
-        if(String(order.uid||"")!==uid) throw new Error("FORBIDDEN");
-        const st=normalizeStatus(order.status);
-        if(st!=="delivered") throw new Error("RETURN_NOT_ALLOWED");
-        const entry=lifecycleEntry({status:"return_requested",actorType:"customer",actorUid:uid,actorName:order.userName||"Mijoz",reason,action:"return_requested"});
-        return {patch:{
-          status:"return_requested",statusNote:reason,statusActor:"customer",statusUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),
-          returnRequest:{status:"requested",by:"customer",reason,requestedAt:admin.firestore.Timestamp.now()},
-          statusHistory:admin.firestore.FieldValue.arrayUnion(entry),updatedAt:admin.firestore.FieldValue.serverTimestamp()
-        }};
-      });
-      await notify(db,uid,"Qaytarish so‘rovi yuborildi",`#${orderId} buyurtma bo‘yicha qaytarish so‘rovi qabul qilindi. Operator ko‘rib chiqadi.`);
-      return json(200,{ok:true,status:"return_requested",...(out.result||{})});
+      // v46: qaytarish faqat OrzuMall operatori tomonidan admin panelda boshqariladi.
+      return json(403,{ok:false,error:"customer_return_disabled"});
     }
 
     if(action==="submit_review"){
@@ -181,6 +168,8 @@ exports.handler=async(event)=>{
       if(["cancelled","returned","return_rejected"].includes(next) && reason.length<4) return json(400,{ok:false,error:"reason_required"});
       const actorName=safeText(decoded.name||decoded.email||"OrzuMall",160);
       const out=await txUpdateWithOptionalRefund(db,orderId,async({tx,order,orderRef})=>{
+        const previous=normalizeStatus(order.status);
+        if(next==="returned" && !["delivered","return_requested"].includes(previous)) throw new Error("RETURN_NOT_ALLOWED");
         const entry=lifecycleEntry({status:next,actorType:"orzumall",actorUid:uid,actorName,reason,action:"admin_status_update"});
         const patch={status:next,statusNote:reason,statusActor:"orzumall",statusUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),statusHistory:admin.firestore.FieldValue.arrayUnion(entry),updatedAt:admin.firestore.FieldValue.serverTimestamp()};
         if(next==="cancelled") patch.cancellation={by:"orzumall",reason,cancelledAt:admin.firestore.Timestamp.now()};

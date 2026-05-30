@@ -2685,6 +2685,19 @@ function orderStatusClass(s){
   const v = omOrderStatusKey(s);
   return "status-"+v.replace(/[^a-z0-9_\-]/gi,"").toLowerCase();
 }
+function orderStatusIcon(s){
+  const v=omOrderStatusKey(s);
+  const m={
+    new:"fa-sparkles",paid:"fa-circle-check",packing:"fa-box-open",shipping:"fa-truck-fast",
+    delivered:"fa-circle-check",cancelled:"fa-ban",return_requested:"fa-clock-rotate-left",
+    returned:"fa-rotate-left",return_rejected:"fa-circle-xmark",failed:"fa-triangle-exclamation",
+    refunded:"fa-arrow-rotate-left",approved:"fa-circle-check",success:"fa-circle-check"
+  };
+  return m[v]||"fa-receipt";
+}
+function orderStatusCustomerCardClass(s){
+  return "customer-order-status-"+omOrderStatusKey(s).replace(/[^a-z0-9_\-]/gi,"").toLowerCase();
+}
 function orderActorLabel(v){
   const s = String(v||"").toLowerCase();
   if(s === "customer") return "Foydalanuvchi";
@@ -2708,7 +2721,8 @@ function orderTimelineHTML(order){
     const when=fmtDate(x?.at)||"";
     const actor=orderActorLabel(x?.actorType);
     const reason=String(x?.reason||"").trim();
-    return `<div class="orderTimelineItem"><span class="orderTimelineDot"></span><div class="orderTimelineText"><b>${escapeHtml(orderStatusLabel(x?.status||""))}</b>${escapeHtml([actor,when].filter(Boolean).join(" • "))}${reason?`<br><span>Izoh: ${escapeHtml(reason)}</span>`:""}</div></div>`;
+    const timelineClass=orderStatusClass(x?.status||"");
+    return `<div class="orderTimelineItem ${timelineClass}"><span class="orderTimelineDot"><i class="fa-solid ${escapeHtml(orderStatusIcon(x?.status||''))}" aria-hidden="true"></i></span><div class="orderTimelineText"><b>${escapeHtml(orderStatusLabel(x?.status||""))}</b>${escapeHtml([actor,when].filter(Boolean).join(" • "))}${reason?`<br><span>Izoh: ${escapeHtml(reason)}</span>`:""}</div></div>`;
   }).join("")}</div>`;
 }
 
@@ -2847,11 +2861,8 @@ function orderCustomerActionButtonsHTML(order){
   const st = omOrderStatusKey(order?.status || "new");
   const reviewed = !!order?.orderReview;
   const buttons = [`<button class="orderActionBtn" type="button" data-order-receipt="${oid}">🧾 Chek</button>`];
-  if(["new","paid"].includes(st)){
+  if(["new","paid","packing","shipping"].includes(st)){
     buttons.push(`<button class="orderActionBtn isDanger" type="button" data-order-action="cancel" data-order-id="${oid}"><i class="fa-solid fa-ban"></i> Bekor qilish</button>`);
-  }
-  if(st === "delivered"){
-    buttons.push(`<button class="orderActionBtn isReturn" type="button" data-order-action="return" data-order-id="${oid}"><i class="fa-solid fa-rotate-left"></i> Qaytarish</button>`);
   }
   if(["delivered","returned"].includes(st) && !reviewed){
     buttons.push(`<button class="orderActionBtn isReview" type="button" data-order-action="review" data-order-id="${oid}"><i class="fa-solid fa-star"></i> Fikr bildirish</button>`);
@@ -2881,6 +2892,7 @@ function closeOrderActionModal(){
   omOrderActionState={type:"",orderId:"",stars:0};
 }
 function openOrderActionModal(type, orderId){
+  if(!["cancel","review"].includes(String(type||""))) return;
   const order=getOrderFromCache(orderId);
   if(!order){ toast('Buyurtma topilmadi.','error'); return; }
   const modal=document.getElementById('orderActionModal');
@@ -2904,12 +2916,6 @@ function openOrderActionModal(type, orderId){
     if(reasonLabel) reasonLabel.textContent='Bekor qilish sababi';
     if(reason) reason.placeholder='Masalan: adashib buyurtma berdim';
     if(submit) submit.innerHTML='<i class="fa-solid fa-ban"></i> Bekor qilish';
-  }else if(type==='return'){
-    if(title) title.textContent='Buyurtmani qaytarish';
-    if(help) help.textContent='Qaytarish sababini batafsil yozing. So‘rov operatorga yuboriladi va ko‘rib chiqilgach javob beriladi.';
-    if(reasonLabel) reasonLabel.textContent='Qaytarish sababi';
-    if(reason) reason.placeholder='Masalan: mahsulot shikastlangan yoki mos kelmadi';
-    if(submit) submit.innerHTML='<i class="fa-solid fa-rotate-left"></i> So‘rov yuborish';
   }else{
     if(title) title.textContent='Buyurtmaga fikr bildirish';
     if(help) help.textContent='Bu tasdiqlangan xarid fikri sifatida mahsulot sahifalarida ko‘rinadi.';
@@ -2933,7 +2939,7 @@ async function submitOrderAction(){
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="omBtnSpinner" aria-hidden="true"></span> Yuborilmoqda...'; }
   try{
     const token=await currentUser.getIdToken();
-    const action=type==='cancel'?'cancel_order':(type==='return'?'request_return':'submit_review');
+    const action=type==='cancel'?'cancel_order':'submit_review';
     const resp=await fetch('/.netlify/functions/order-lifecycle',{
       method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},
       body:JSON.stringify({action,orderId,reason,text:reason,stars:Number(stars)||0})
@@ -2942,11 +2948,10 @@ async function submitOrderAction(){
     if(!resp.ok || !out.ok) throw new Error(out.error||'action_failed');
     closeOrderActionModal();
     if(type==='cancel') toast(out.refund?.refunded?'Buyurtma bekor qilindi va mablag‘ balansga qaytarildi.':'Buyurtma bekor qilindi.','success');
-    else if(type==='return') toast('Qaytarish so‘rovi operatorga yuborildi.','success');
     else toast('Fikringiz saqlandi. Rahmat!','success');
   }catch(e){
     const code=String(e?.message||'');
-    const map={cancel_not_allowed:'Bu bosqichda buyurtmani avtomatik bekor qilib bo‘lmaydi. Operatorga yozing.',return_not_allowed:'Faqat yetkazib berilgan buyurtmani qaytarish mumkin.',review_not_allowed:'Fikr faqat yetkazib berilgan buyurtmaga yoziladi.'};
+    const map={cancel_not_allowed:'Yetkazib berilgan buyurtmani bekor qilib bo‘lmaydi. Operatorga yozing.',review_not_allowed:'Fikr faqat yetkazib berilgan buyurtmaga yoziladi.'};
     toast(map[code]||'Amal bajarilmadi. Qayta urinib ko‘ring.','error');
   }finally{
     if(btn){ btn.disabled=false; btn.innerHTML=old; }
@@ -2967,8 +2972,12 @@ function renderOrders(orders){
     const provider = (o.provider||"").toString();
     const when = fmtDate(o.createdAt);
     const row = document.createElement("div");
-    row.className = "orderRow orderPremiumRow";
+    row.className = `orderRow orderPremiumRow customerOrderHistoryCard ${orderStatusCustomerCardClass(status)}`;
     row.innerHTML = `
+      <div class="customerOrderStatusHero ${orderStatusClass(status)}">
+        <span class="customerOrderStatusIcon"><i class="fa-solid ${escapeHtml(orderStatusIcon(status))}" aria-hidden="true"></i></span>
+        <div><small>Buyurtma holati</small><b>${escapeHtml(orderStatusLabel(status))}</b></div>
+      </div>
       <div class="orderTop">
         <div class="orderId">#${escapeHtml(id)}</div>
         <div class="orderTotal">${escapeHtml(total)}</div>
@@ -3066,9 +3075,10 @@ function renderMoneyHistory(items){
 
     const left = document.createElement("div");
     left.style.minWidth = "0";
+    const historyStatusKey=moneyHistoryCanonicalStatus(st,it.kind);
     left.innerHTML = `
-      <div class="orderId">${title}</div>
-      <div class="orderMeta">${when ? `<span class="orderPill">${when}</span>` : ""}${st ? ` <span class="orderPill ${moneyHistoryStatusClass(st)}">${statusLabel(st, it.kind)}</span>` : ""}</div>
+      <div class="moneyHistoryTitleRow"><span class="moneyHistoryStatusIcon"><i class="fa-solid ${escapeHtml(orderStatusIcon(historyStatusKey))}" aria-hidden="true"></i></span><div class="orderId">${escapeHtml(title)}</div></div>
+      <div class="orderMeta">${when ? `<span class="orderPill">${when}</span>` : ""}${st ? ` <span class="orderPill ${moneyHistoryStatusClass(st,it.kind)}">${escapeHtml(statusLabel(st, it.kind))}</span>` : ""}</div>
       ${it.note ? `<div class="orderMeta" style="margin-top:6px"><b>Izoh:</b> ${escapeHtml(it.note)}</div>` : ""}
     `.trim();
 
@@ -3077,7 +3087,7 @@ function renderMoneyHistory(items){
     right.textContent = (isIn ? "+ " : "- ") + amt;
 
     const row = document.createElement("div");
-    row.className = `orderItem moneyHistoryEntry ${isIn ? "isIn" : "isOut"}`;
+    row.className = `orderItem moneyHistoryEntry ${isIn ? "isIn" : "isOut"} money-history-status-${historyStatusKey}`;
     row.style.display = "flex";
     row.style.alignItems = "flex-start";
     row.style.justifyContent = "space-between";
@@ -3090,11 +3100,19 @@ function renderMoneyHistory(items){
 }
 
 
-function moneyHistoryStatusClass(st){
-  const v = omOrderStatusKey(st||"");
-  if(["approved","success","delivered","returned","refunded"].includes(v)) return "status-approved";
-  if(["cancelled","failed","return_rejected"].includes(v)) return "status-rejected";
-  return "status-pending";
+function moneyHistoryCanonicalStatus(st,kind){
+  const raw=String(st||"").toLowerCase().trim();
+  if(kind==="refund") return "refunded";
+  if(kind==="topup"){
+    if(["approved","success","paid"].includes(raw)) return "approved";
+    if(["rejected","declined","failed"].includes(raw)) return "failed";
+    if(["cancelled","canceled","canceled_by_admin"].includes(raw)) return "cancelled";
+    return "new";
+  }
+  return omOrderStatusKey(raw||"new");
+}
+function moneyHistoryStatusClass(st,kind){
+  return "status-"+moneyHistoryCanonicalStatus(st,kind).replace(/[^a-z0-9_\-]/gi,"");
 }
 
 function statusLabel(st, kind){

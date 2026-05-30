@@ -1,0 +1,167 @@
+/* OrzuMall v45 — customer order lifecycle UI */
+.orderLifecycleActionCard{width:min(560px,100%)!important;max-height:min(760px,calc(100dvh - 34px));overflow:hidden!important}
+.orderLifecycleActionBody{display:flex;flex-direction:column;gap:13px;overflow:auto}
+.orderActionSummary{padding:14px 15px;border-radius:17px;background:linear-gradient(135deg,#f8fafc,#fff);border:1px solid #e6eaf2;font-size:13px;line-height:1.55;font-weight:800;color:#0f172a}
+.orderActionHelp{padding:12px 14px;border-radius:15px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:12px;line-height:1.55;font-weight:800}
+.orderLifecycleActionBody textarea{width:100%;resize:vertical;min-height:104px;padding:12px 13px;border-radius:15px;border:1px solid #dfe4ec;background:#f8fafc;color:#111827;font:inherit;font-size:13px;line-height:1.55;outline:none}
+.orderLifecycleActionBody textarea:focus{background:#fff;border-color:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.1)}
+.orderLifecycleActionBottom{display:flex!important;justify-content:flex-end!important;gap:10px!important;margin-top:0!important}
+.orderLifecycleActionBottom .btn,.orderLifecycleActionBottom .ghostBtn{min-height:46px;border-radius:14px;font-weight:900}
+.orderReviewStarsWrap{padding:14px;border-radius:16px;border:1px solid #e6eaf2;background:#fff}
+.orderReviewStarsTitle{font-size:13px;font-weight:950;color:#111827;margin-bottom:8px}
+.orderReviewStars{display:flex;gap:4px}
+.orderReviewStars button{border:0;background:transparent;padding:0 2px;font-size:34px;line-height:1;color:#cbd5e1;cursor:pointer;transition:transform .15s ease,color .15s ease}
+.orderReviewStars button:hover{transform:translateY(-2px)}
+.orderReviewStars button.isActive{color:#f59e0b}
+.orderReviewStarsHint{margin-top:8px;color:#64748b;font-size:12px;font-weight:800}
+.orderStatusReason{margin-top:9px;padding:10px 11px;border-radius:13px;background:#f8fafc;border:1px solid #eef2f7;color:#475569;font-size:12px;line-height:1.5;font-weight:750}
+.orderStatusReason b{color:#111827}
+.orderTimeline{margin-top:14px;padding-top:12px;border-top:1px dashed #d8dee9;display:flex;flex-direction:column;gap:9px}
+.orderTimelineTitle{font-size:13px;font-weight:950;color:#111827}
+.orderTimelineItem{display:grid;grid-template-columns:10px 1fr;gap:9px;align-items:flex-start}
+.orderTimelineDot{width:9px;height:9px;border-radius:999px;margin-top:5px;background:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.1)}
+.orderTimelineText{font-size:12px;line-height:1.5;color:#475569;font-weight:750}
+.orderTimelineText b{display:block;color:#111827;font-size:12.5px}
+.orderReviewSaved{margin-top:10px;padding:10px 11px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;border-radius:13px;font-size:12px;line-height:1.5;font-weight:850}
+.orderActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.orderActionBtn.isDanger{border-color:#fecaca!important;background:#fff5f5!important;color:#b91c1c!important}
+.orderActionBtn.isReturn{border-color:#fde68a!important;background:#fffbeb!important;color:#92400e!important}
+.orderActionBtn.isReview{border-color:#ddd6fe!important;background:#f5f3ff!important;color:#6d28d9!important}
+.orderPill.status-new,.orderPill.status-pending,.orderPill.status-pending_cash,.orderPill.status-pending_payment{background:#fff7ed!important;color:#b45309!important;border-color:#fed7aa!important}
+.orderPill.status-packing{background:#eff6ff!important;color:#1d4ed8!important;border-color:#bfdbfe!important}
+.orderPill.status-shipping{background:#eef2ff!important;color:#4338ca!important;border-color:#c7d2fe!important}
+.orderPill.status-delivered,.orderPill.status-returned{background:#f0fdf4!important;color:#166534!important;border-color:#bbf7d0!important}
+.orderPill.status-cancelled,.orderPill.status-return_rejected{background:#fef2f2!important;color:#991b1b!important;border-color:#fecaca!important}
+.orderPill.status-return_requested{background:#fffbeb!important;color:#92400e!important;border-color:#fde68a!important}
+@media(max-width:640px){
+ .orderLifecycleActionCard{border-radius:24px 24px 0 0!important;max-height:92dvh!important}
+ .orderLifecycleActionBottom{padding-bottom:calc(12px + env(safe-area-inset-bottom))!important}
+ .orderLifecycleActionBottom>*{flex:1}
+ .orderActions .orderActionBtn{flex:1 1 calc(50% - 4px)}
+}
+
+/* OrzuMall v46 — premium status-colored history cards */
+.customerOrderHistoryCard,
+.moneyHistoryEntry{
+  --order-tone:#d97706;
+  --order-tone-soft:#fff7ed;
+  --order-tone-border:#fed7aa;
+}
+.customer-order-status-new,.money-history-status-new{--order-tone:#d97706;--order-tone-soft:#fff7ed;--order-tone-border:#fed7aa}
+.customer-order-status-paid,.money-history-status-paid{--order-tone:#0f766e;--order-tone-soft:#f0fdfa;--order-tone-border:#99f6e4}
+.customer-order-status-packing,.money-history-status-packing{--order-tone:#2563eb;--order-tone-soft:#eff6ff;--order-tone-border:#bfdbfe}
+.customer-order-status-shipping,.money-history-status-shipping{--order-tone:#6d28d9;--order-tone-soft:#f5f3ff;--order-tone-border:#ddd6fe}
+.customer-order-status-delivered,.money-history-status-delivered{--order-tone:#15803d;--order-tone-soft:#f0fdf4;--order-tone-border:#bbf7d0}
+.customer-order-status-cancelled,.money-history-status-cancelled{--order-tone:#dc2626;--order-tone-soft:#fef2f2;--order-tone-border:#fecaca}
+.customer-order-status-return_requested,.money-history-status-return_requested{--order-tone:#b45309;--order-tone-soft:#fffbeb;--order-tone-border:#fde68a}
+.customer-order-status-returned,.money-history-status-returned,.money-history-status-refunded{--order-tone:#0f766e;--order-tone-soft:#f0fdfa;--order-tone-border:#99f6e4}
+.customer-order-status-return_rejected,.money-history-status-return_rejected,.money-history-status-failed{--order-tone:#be123c;--order-tone-soft:#fff1f2;--order-tone-border:#fecdd3}
+.money-history-status-approved{--order-tone:#15803d;--order-tone-soft:#f0fdf4;--order-tone-border:#bbf7d0}
+
+#view-profile .customerOrderHistoryCard{
+  position:relative;
+  overflow:hidden;
+  padding:0 14px 14px 18px!important;
+  border:1px solid var(--order-tone-border)!important;
+  border-radius:22px!important;
+  background:linear-gradient(145deg,var(--order-tone-soft),#fff 48%)!important;
+  box-shadow:0 14px 32px rgba(15,23,42,.07)!important;
+}
+#view-profile .customerOrderHistoryCard::before,
+#view-profile .moneyHistoryEntry::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:5px;
+  background:var(--order-tone)!important;
+  border-radius:999px 0 0 999px;
+}
+#view-profile .customerOrderStatusHero{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 -14px 13px -18px;
+  padding:13px 14px 11px 18px;
+  border-bottom:1px solid var(--order-tone-border);
+  background:linear-gradient(135deg,var(--order-tone-soft),rgba(255,255,255,.86));
+  color:var(--order-tone);
+}
+#view-profile .customerOrderStatusIcon,
+#view-profile .moneyHistoryStatusIcon{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  color:var(--order-tone);
+  background:#fff;
+  border:1px solid var(--order-tone-border);
+  box-shadow:0 8px 18px rgba(15,23,42,.06);
+}
+#view-profile .customerOrderStatusHero small{
+  display:block;
+  margin-bottom:2px;
+  color:#64748b;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.075em;
+  text-transform:uppercase;
+}
+#view-profile .customerOrderStatusHero b{
+  display:block;
+  color:var(--order-tone);
+  font-size:15px;
+  font-weight:1000;
+}
+#view-profile .customerOrderHistoryCard .orderTop{align-items:center!important}
+#view-profile .customerOrderHistoryCard .orderId{font-size:14px!important;font-weight:1000!important;color:#0f172a!important}
+#view-profile .customerOrderHistoryCard .orderTotal{font-size:22px!important;color:#0f172a!important;font-weight:1000!important}
+#view-profile .customerOrderHistoryCard .orderActions{margin-top:13px!important;padding-top:12px;border-top:1px dashed var(--order-tone-border)}
+#view-profile .customerOrderHistoryCard .orderActionBtn{border-color:var(--order-tone-border)!important;background:#fff!important}
+#view-profile .customerOrderHistoryCard .orderActionBtn.isDanger{background:#fff1f2!important;border-color:#fecaca!important;color:#b91c1c!important}
+
+#view-profile .moneyHistoryEntry{
+  position:relative;
+  overflow:hidden;
+  padding:14px 15px 14px 18px!important;
+  border:1px solid var(--order-tone-border)!important;
+  border-radius:19px!important;
+  background:linear-gradient(145deg,var(--order-tone-soft),#fff 54%)!important;
+  box-shadow:0 10px 24px rgba(15,23,42,.055)!important;
+}
+#view-profile .moneyHistoryTitleRow{display:flex;align-items:center;gap:9px;min-width:0}
+#view-profile .moneyHistoryTitleRow .orderId{min-width:0;color:#0f172a!important;font-size:13px!important;font-weight:1000!important}
+#view-profile .moneyHistoryEntry .moneyHistoryStatusIcon{width:30px;height:30px;min-width:30px;border-radius:10px;font-size:12px}
+#view-profile .moneyHistoryEntry .moneyAmount{font-weight:1000!important;font-size:20px!important;white-space:nowrap}
+
+.orderPill.status-new,.orderPill.status-pending,.orderPill.status-pending_cash,.orderPill.status-pending_payment{background:#fff7ed!important;color:#b45309!important;border-color:#fed7aa!important}
+.orderPill.status-paid{background:#f0fdfa!important;color:#0f766e!important;border-color:#99f6e4!important}
+.orderPill.status-packing{background:#eff6ff!important;color:#1d4ed8!important;border-color:#bfdbfe!important}
+.orderPill.status-shipping{background:#f5f3ff!important;color:#6d28d9!important;border-color:#ddd6fe!important}
+.orderPill.status-delivered{background:#f0fdf4!important;color:#166534!important;border-color:#bbf7d0!important}
+.orderPill.status-cancelled{background:#fef2f2!important;color:#991b1b!important;border-color:#fecaca!important}
+.orderPill.status-return_requested{background:#fffbeb!important;color:#92400e!important;border-color:#fde68a!important}
+.orderPill.status-returned,.orderPill.status-refunded{background:#f0fdfa!important;color:#0f766e!important;border-color:#99f6e4!important}
+.orderPill.status-return_rejected,.orderPill.status-failed{background:#fff1f2!important;color:#be123c!important;border-color:#fecdd3!important}
+.orderPill.status-approved,.orderPill.status-success{background:#f0fdf4!important;color:#166534!important;border-color:#bbf7d0!important}
+
+.orderTimelineItem .orderTimelineDot{display:grid;place-items:center;width:20px;height:20px;margin-top:0;border-radius:8px;font-size:9px;background:#fff!important;color:#d97706;border:1px solid #fed7aa;box-shadow:none!important}
+.orderTimelineItem.status-packing .orderTimelineDot{color:#2563eb;border-color:#bfdbfe;background:#eff6ff!important}
+.orderTimelineItem.status-shipping .orderTimelineDot{color:#6d28d9;border-color:#ddd6fe;background:#f5f3ff!important}
+.orderTimelineItem.status-delivered .orderTimelineDot{color:#15803d;border-color:#bbf7d0;background:#f0fdf4!important}
+.orderTimelineItem.status-cancelled .orderTimelineDot{color:#dc2626;border-color:#fecaca;background:#fef2f2!important}
+.orderTimelineItem.status-return_requested .orderTimelineDot{color:#b45309;border-color:#fde68a;background:#fffbeb!important}
+.orderTimelineItem.status-returned .orderTimelineDot{color:#0f766e;border-color:#99f6e4;background:#f0fdfa!important}
+.orderTimelineItem.status-return_rejected .orderTimelineDot{color:#be123c;border-color:#fecdd3;background:#fff1f2!important}
+.orderTimelineItem{grid-template-columns:22px 1fr!important;gap:9px!important}
+
+@media(max-width:520px){
+  #view-profile .customerOrderHistoryCard{padding:0 12px 13px 16px!important;border-radius:19px!important}
+  #view-profile .customerOrderStatusHero{margin:0 -12px 12px -16px;padding:11px 12px 10px 16px}
+  #view-profile .customerOrderHistoryCard .orderTotal{font-size:19px!important}
+  #view-profile .moneyHistoryEntry{padding:12px 12px 12px 16px!important}
+  #view-profile .moneyHistoryEntry .moneyAmount{font-size:17px!important}
+}
