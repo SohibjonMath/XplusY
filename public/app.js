@@ -513,6 +513,7 @@ const els = {
   tgShareBtnPage: document.getElementById("tgShareBtnPage"),
   clearCartPage: document.getElementById("clearCartPage"),
   orderBtnPage: document.getElementById("orderBtnPage"),
+  checkoutOverlay: document.getElementById("checkoutOverlay"),
   checkoutSheet: document.getElementById("checkoutSheet"),
   checkoutClose: document.getElementById("checkoutClose"),
   checkoutSubmit: document.getElementById("checkoutSubmit"),
@@ -1528,32 +1529,67 @@ function omRenderCartDeliverySummary(){
   const el = els.cartDeliverySummary || document.getElementById("cartDeliverySummary");
   if(!el) return;
   const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
-  if(!built || !built.ok){ el.innerHTML = ""; el.hidden = true; return; }
+  if(!built || !built.ok){
+    el.innerHTML = "";
+    el.hidden = true;
+    try{ updateCartPrimaryCTA(); }catch(_e){}
+    return;
+  }
+
+  const method = getDeliveryMethod();
   el.hidden = false;
-  const loc = omGetEffectiveDeliveryLocation();
-  const quote = omBuildDeliveryQuote(built.totalUZS, built.totalWeightKg || 0, loc);
-  const rec = quote.recommended || null;
-  const fee = Number(quote.deliveryFeeUZS || 0);
-  const totalWithDelivery = Number(quote.totalWithDeliveryUZS || built.totalUZS + fee);
-  const free = omFreeDeliveryInfo(built.totalUZS, quote, built.totalWeightKg || 0);
-  const locText = loc ? (loc.savedAddressTitle ? `Manzil: ${loc.savedAddressTitle}` : "Manzil: avto lokatsiya") : "Manzil yo‘q: narx manzil bilan aniq bo‘ladi";
+
+  if(!method){
+    el.innerHTML = `
+      <div class="cartDeliveryPending">
+        <div class="cartDeliveryPendingIcon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></div>
+        <div><b>Yetkazib berishni sozlang</b><span>Yakuniy summa yetkazish turi tanlangandan keyin ko‘rinadi.</span></div>
+      </div>
+    `;
+    try{ updateCartPrimaryCTA(); }catch(_e){}
+    return { ready:false, productsTotalUZS: built.totalUZS };
+  }
+
+  const info = getCheckoutDeliveryInfo();
+  if(!info.ok){
+    el.innerHTML = `
+      <div class="cartDeliveryHead"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yetkazib berish</span><button type="button" id="cartDeliveryChangeBtn">Sozlash</button></div>
+      <div class="cartDeliveryGrid">
+        <div><span>Mahsulotlar</span><b>${moneyUZS(built.totalUZS)}</b></div>
+        <div><span>Yetkazish</span><b>—</b></div>
+        <div><span>Jami</span><b>—</b></div>
+      </div>
+      <div class="cartDeliveryFree"><span>Lokatsiyani avto aniqlang</span><small>Yakuniy summa lokatsiya olingandan keyin hisoblanadi.</small></div>
+    `;
+    document.getElementById("cartDeliveryChangeBtn")?.addEventListener("click", openCheckout, {once:true});
+    try{ updateCartPrimaryCTA(); }catch(_e){}
+    return { ready:false, productsTotalUZS: built.totalUZS };
+  }
+
+  const data = info.data || {};
+  const fee = Number(data.deliveryFeeUZS || 0);
+  const totalWithDelivery = Number(data.totalWithDeliveryUZS || built.totalUZS + fee);
+  const quote = data.deliveryQuote || null;
+  const rec = quote?.recommended || null;
+  const free = method === "delivery" ? omFreeDeliveryInfo(built.totalUZS, quote, built.totalWeightKg || 0) : null;
   const freeDetail = free ? (free.source === "courier" && free.distanceKm != null ? ` (${Number(free.distanceKm).toFixed(1)} km zona)` : (free.source === "uzpost" ? ` (${free.billedKg || 1} kg UzPost)` : "")) : "";
-  const freeText = free ? (free.reached ? `${free.service} bepul yetkazish limiti bajarildi${freeDetail}` : `${free.service} bepul yetkazishgacha ${moneyUZS(free.remaining)} qoldi${freeDetail}`) : "Bepul yetkazish limiti yo‘q";
+  const freeText = method === "pickup"
+    ? "Do‘kondan olib ketish bepul"
+    : (free ? (free.reached ? `${free.service} bepul yetkazish limiti bajarildi${freeDetail}` : `${free.service} bepul yetkazishgacha ${moneyUZS(free.remaining)} qoldi${freeDetail}`) : "Yetkazib berish narxi hisoblandi");
+  const smallText = method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : `${data.serviceLabel || rec?.label || "Yetkazib berish"}${rec?.etaText ? ` • ${rec.etaText}` : ""}`;
+
   el.innerHTML = `
-    <div class="cartDeliveryHead"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yetkazib berish hisob-kitobi</span><button type="button" id="cartDeliveryChangeBtn">Manzil</button></div>
+    <div class="cartDeliveryHead"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yakuniy hisob-kitob</span><button type="button" id="cartDeliveryChangeBtn">O‘zgartirish</button></div>
     <div class="cartDeliveryGrid">
       <div><span>Mahsulotlar</span><b>${moneyUZS(built.totalUZS)}</b></div>
-      <div><span>Yetkazish</span><b>${rec ? (fee ? moneyUZS(fee) : "Bepul") : "—"}</b></div>
+      <div><span>Yetkazish</span><b>${fee ? moneyUZS(fee) : "Bepul"}</b></div>
       <div><span>Jami</span><b>${moneyUZS(totalWithDelivery)}</b></div>
     </div>
-    <div class="cartDeliveryFree ${free?.reached ? "ok" : ""}"><span>${freeText}</span><small>${rec ? `${rec.label} • ${rec.etaText || ""}` : locText}</small></div>
+    <div class="cartDeliveryFree ${method === "pickup" || free?.reached ? "ok" : ""}"><span>${freeText}</span><small>${smallText}</small></div>
   `;
-  document.getElementById("cartDeliveryChangeBtn")?.addEventListener("click", ()=>{
-    openCheckout();
-    const rb = document.querySelector('input[name="deliveryMethod"][value="delivery"]');
-    if(rb){ rb.checked = true; updateDeliveryMethodUI(); }
-  }, {once:true});
-  return { productsTotalUZS: built.totalUZS, deliveryFeeUZS: fee, totalWithDeliveryUZS: totalWithDelivery, quote };
+  document.getElementById("cartDeliveryChangeBtn")?.addEventListener("click", openCheckout, {once:true});
+  try{ updateCartPrimaryCTA(); }catch(_e){}
+  return { ready:true, productsTotalUZS: built.totalUZS, deliveryFeeUZS: fee, totalWithDeliveryUZS: totalWithDelivery, quote };
 }
 
 function omRenderDeliveryEstimate(){
@@ -4216,7 +4252,8 @@ function renderCartPage(){
     els.checkoutCompactSummary.innerHTML = `<span>${selectedCount} ta tanlangan • ${omFormatKg(selectedWeightKg)}</span><b>${moneyUZS(total)}</b>`;
   }
   try{ omRenderDeliveryEstimate(); }catch(_e){}
-    try{ omRenderCartDeliverySummary(); }catch(_e){}
+  try{ omRenderCartDeliverySummary(); }catch(_e){}
+  try{ updateCartPrimaryCTA(); }catch(_e){}
 
   // select all checkbox state
   if(els.cartSelectAllPage){
@@ -4234,11 +4271,38 @@ function renderCartPage(){
 /* =========================
    Checkout (Cart -> Order)
 ========================= */
+const OM_DELIVERY_METHOD_KEY = "orzumall_checkout_delivery_method_v1";
+
+function omReadStoredDeliveryMethod(){
+  try{
+    const v = String(localStorage.getItem(OM_DELIVERY_METHOD_KEY) || "");
+    return (v === "pickup" || v === "delivery") ? v : "";
+  }catch(_e){ return ""; }
+}
+function omStoreDeliveryMethod(v){
+  try{
+    if(v === "pickup" || v === "delivery") localStorage.setItem(OM_DELIVERY_METHOD_KEY, v);
+    else localStorage.removeItem(OM_DELIVERY_METHOD_KEY);
+  }catch(_e){}
+}
+
 function openCheckout(){
   if(!els.checkoutSheet) return;
+  const overlay = els.checkoutOverlay || document.getElementById("checkoutOverlay");
+  if(overlay){
+    overlay.hidden = false;
+    requestAnimationFrame(()=> overlay.classList.add("isOpen"));
+  }
   els.checkoutSheet.hidden = false;
   try{ els.checkoutSheet.classList.add("isOpen"); }catch(_e){}
+  try{ document.documentElement.classList.add("modalOpen"); document.body.classList.add("modalOpen"); }catch(_e){}
+
   try{
+    const methodSelect = document.getElementById("deliveryMethodSelect");
+    if(methodSelect && !methodSelect.value){
+      const stored = omReadStoredDeliveryMethod();
+      if(stored) methodSelect.value = stored;
+    }
     renderSavedAddressesUI();
     const saved = omBestSavedAddress();
     const sel = document.getElementById("savedDeliveryAddressSelect");
@@ -4246,6 +4310,7 @@ function openCheckout(){
     if(getDeliveryMethod() === "delivery" && saved && !omDeliveryLocation) applySavedAddressToCheckout(saved.id);
   }catch(_e){}
   try{ updateDeliveryMethodUI(); }catch(_e){}
+  try{ applyPayTypeRules(); }catch(_e){}
 
   // Require completed profile before checkout
   try{
@@ -4253,24 +4318,25 @@ function openCheckout(){
       toast("Avval profilni to‘liq to‘ldiring (Ism, Familiya, Telefon, Viloyat, Tuman, Pochta).");
       closeCheckout();
       goTab("profile");
-      // auto-open edit mode
-      try{ setTimeout(()=>{ document.getElementById("profileEditBtn")?.click(); }, 120); }catch(_){ }
+      try{ setTimeout(()=>{ document.getElementById("profileEditBtn")?.click(); }, 120); }catch(_){}
       return;
     }
   }catch(_){}
-
-
-  // Scroll sheet into view
-  els.checkoutSheet.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function closeCheckout(){
   if(!els.checkoutSheet) return;
+  const overlay = els.checkoutOverlay || document.getElementById("checkoutOverlay");
   try{ els.checkoutSheet.classList.remove("isOpen"); }catch(_e){}
+  try{ overlay?.classList.remove("isOpen"); }catch(_e){}
   els.checkoutSheet.hidden = true;
+  if(overlay) overlay.hidden = true;
+  try{ document.documentElement.classList.remove("modalOpen"); document.body.classList.remove("modalOpen"); }catch(_e){}
 }
 
 function getPayType(){
+  const sel = document.getElementById("payTypeSelect");
+  if(sel) return sel.value || "cash";
   const r = document.querySelector('input[name="paytype"]:checked');
   return r ? r.value : "cash";
 }
@@ -4278,20 +4344,69 @@ function getPayType(){
 let omDeliveryLocation = null;
 
 function getDeliveryMethod(){
+  const sel = document.getElementById("deliveryMethodSelect");
+  if(sel) return (sel.value === "pickup" || sel.value === "delivery") ? sel.value : "";
   const r = document.querySelector('input[name="deliveryMethod"]:checked');
-  return r ? r.value : "pickup";
+  return r ? r.value : "";
+}
+
+function updateCheckoutCompactSummary(){
+  if(!els.checkoutCompactSummary) return;
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  if(!built || !built.ok){
+    els.checkoutCompactSummary.innerHTML = `<span>Mahsulot tanlanmagan</span><b>0 so‘m</b>`;
+    return;
+  }
+  const info = getCheckoutDeliveryInfo();
+  const total = info.ok ? Number(info.data?.totalWithDeliveryUZS || built.totalUZS) : Number(built.totalUZS || 0);
+  const suffix = info.ok ? " • yakuniy summa" : " • yetkazishni tanlang";
+  els.checkoutCompactSummary.innerHTML = `<span>${built.items.reduce((s,x)=>s + Number(x.qty||0),0)} ta tanlangan${suffix}</span><b>${moneyUZS(total)}</b>`;
+}
+
+function updateCheckoutSubmitVisibility(){
+  const btn = els.checkoutSubmit || document.getElementById("checkoutSubmit");
+  const hint = document.getElementById("checkoutSubmitHint");
+  if(!btn) return false;
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  const info = built?.ok ? getCheckoutDeliveryInfo() : {ok:false, reason: built?.reason || "Mahsulot tanlang."};
+  btn.hidden = !info.ok;
+  if(hint){
+    hint.hidden = !!info.ok;
+    hint.textContent = info.reason || "Davom etish uchun yetkazish usulini tanlang.";
+  }
+  return !!info.ok;
+}
+
+function updateCartPrimaryCTA(){
+  const btn = els.orderBtnPage || document.getElementById("orderBtnPage");
+  if(!btn) return;
+  const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  if(!built || !built.ok){
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-cart-shopping" aria-hidden="true"></i> Mahsulot tanlang`;
+    return;
+  }
+  const info = getCheckoutDeliveryInfo();
+  btn.disabled = false;
+  if(info.ok){
+    const total = Number(info.data?.totalWithDeliveryUZS || built.totalUZS || 0);
+    btn.innerHTML = `<i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Buyurtma berish • ${moneyUZS(total)}`;
+  }else{
+    btn.innerHTML = `<i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Yetkazib berishni sozlash`;
+  }
 }
 
 function updateDeliveryMethodUI(){
   const method = getDeliveryMethod();
-  document.querySelectorAll('.deliveryOption').forEach(label=>{
-    const inp = label.querySelector('input[name="deliveryMethod"]');
-    label.classList.toggle('active', !!inp && inp.checked);
-  });
-  const box = document.getElementById('deliveryAddressBox');
-  if(box) box.hidden = method !== 'delivery';
+  omStoreDeliveryMethod(method);
+  const box = document.getElementById("deliveryAddressBox");
+  if(box) box.hidden = method !== "delivery";
+  if(method === "pickup") omDeliveryQuote = null;
   try{ omRenderDeliveryEstimate(); }catch(_e){}
-    try{ omRenderCartDeliverySummary(); }catch(_e){}
+  try{ updateCheckoutCompactSummary(); }catch(_e){}
+  try{ updateCheckoutSubmitVisibility(); }catch(_e){}
+  try{ omRenderCartDeliverySummary(); }catch(_e){}
+  try{ updateCartPrimaryCTA(); }catch(_e){}
 }
 
 function setDeliveryLocationStatus(text, ok=false){
@@ -4364,8 +4479,10 @@ async function detectDeliveryLocation(){
     }
     setDeliveryLocationStatus(`Joylashuv olindi: ${lat.toFixed(6)}, ${lng.toFixed(6)}${accuracy ? ` • ±${accuracy} m` : ''}`, true);
     try{ omRenderDeliveryEstimate(); }catch(_e){}
+    try{ updateCheckoutCompactSummary(); }catch(_e){}
+    try{ updateCheckoutSubmitVisibility(); }catch(_e){}
     try{ omRenderCartDeliverySummary(); }catch(_e){}
-    toast(saved ? 'Manzil saqlandi va yetkazish hisoblandi.' : 'Joylashuv qo‘shildi.');
+    toast(saved ? 'Manzil saqlandi va yakuniy summa hisoblandi.' : 'Joylashuv qo‘shildi.');
   }catch(e){
     omDeliveryLocation = null;
     try{ omRenderDeliveryEstimate(); }catch(_e){}
@@ -4383,6 +4500,9 @@ async function detectDeliveryLocation(){
 function getCheckoutDeliveryInfo(){
   const method = getDeliveryMethod();
   const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  if(method !== 'pickup' && method !== 'delivery'){
+    return { ok:false, reason:'Davom etish uchun yetkazish usulini tanlang.' };
+  }
   if(method === 'pickup'){
     omDeliveryQuote = null;
     return {
@@ -4535,8 +4655,8 @@ function applySavedAddressToCheckout(id){
   const a = arr.find(x=>String(x.id)===String(id));
   if(!a) return;
 
-  const deliveryRadio = document.querySelector('input[name="deliveryMethod"][value="delivery"]');
-  if(deliveryRadio) deliveryRadio.checked = true;
+  const deliverySelect = document.getElementById("deliveryMethodSelect");
+  if(deliverySelect) deliverySelect.value = "delivery";
   updateDeliveryMethodUI();
 
   const addrInput = document.getElementById("deliveryAddressInput");
@@ -4627,11 +4747,17 @@ function initSavedAddressUI(){
 
 
 function initCheckoutDeliveryUI(){
-  document.querySelectorAll('input[name="deliveryMethod"]').forEach(inp=>{
-    inp.addEventListener('change', updateDeliveryMethodUI);
+  document.getElementById("deliveryMethodSelect")?.addEventListener("change", updateDeliveryMethodUI);
+  document.getElementById("payTypeSelect")?.addEventListener("change", ()=>{
+    try{ updateCheckoutCompactSummary(); }catch(_e){}
   });
   document.getElementById('deliveryLocateBtn')?.addEventListener('click', detectDeliveryLocation);
   document.getElementById('deliveryUseNewLocation')?.addEventListener('click', detectDeliveryLocation);
+  const sel = document.getElementById("deliveryMethodSelect");
+  if(sel && !sel.value){
+    const stored = omReadStoredDeliveryMethod();
+    if(stored) sel.value = stored;
+  }
   updateDeliveryMethodUI();
   try{ renderSavedAddressesUI(); }catch(_){}
 }
@@ -4642,7 +4768,6 @@ omLoadDeliverySettings().catch(()=>{});
 
 function applyPayTypeRules(){
   try{
-    // determine if any selected item requires prepay (cargo)
     const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
     const items = built && built.ok ? built.items : [];
     const hasPrepay = items.some(it=>it.prepayRequired) || cart.some(ci=>{
@@ -4650,34 +4775,21 @@ function applyPayTypeRules(){
       return p && (_normPType(p)==="cargo" || p.prepayRequired===true);
     });
 
-    // helper to hide the whole option row
-    const hideOpt = (rb, hide)=>{
-      if(!rb) return;
-      const row = rb.closest("label") || rb.closest(".payOption") || rb.parentElement;
-      if(row) row.style.display = hide ? "none" : "";
-      rb.disabled = !!hide;
-    };
-
-    const cashRb = document.querySelector('input[name="paytype"][value="cash"]');
-    const balRb  = document.querySelector('input[name="paytype"][value="balance"]');
-
-    // Payme removed -> hide payme option if exists in markup
-    const paymeRb = document.querySelector('input[name="paytype"][value="payme"]');
-    hideOpt(paymeRb, true);
-
-    // For cargo/prepay: only BALANCE allowed
-    hideOpt(cashRb, hasPrepay);
-    hideOpt(balRb, false);
+    const sel = document.getElementById("payTypeSelect");
+    const cashOpt = sel?.querySelector('option[value="cash"]');
+    const balOpt = sel?.querySelector('option[value="balance"]');
+    if(cashOpt) cashOpt.disabled = !!hasPrepay;
+    if(balOpt) balOpt.disabled = false;
+    if(hasPrepay && sel) sel.value = "balance";
 
     const note = document.getElementById("payRuleNote");
-    if(hasPrepay){
-      if(balRb) balRb.checked = true;
-      if(note) note.textContent = "⚠️ Keltirib berish mahsulotlari uchun naqd to‘lov yo‘q. Oldindan to‘lov: BALANS.";
-    } else {
-      if(note) note.textContent = "";
+    if(note){
+      note.textContent = hasPrepay
+        ? "⚠️ Keltirib berish mahsulotlari uchun faqat balansdan oldindan to‘lov mavjud."
+        : "";
     }
+    try{ updateCheckoutCompactSummary(); }catch(_e){}
   }catch(e){
-    // never break page
     console.warn("applyPayTypeRules failed:", e);
   }
 }
@@ -4776,8 +4888,8 @@ async function createOrderFromCheckout(){
   let payType = getPayType(); // cash | balance
   if(hasPrepay && payType !== "balance"){
     toast("Keltirib berish mahsulotlari: faqat BALANS orqali to‘lanadi.");
-    const rb = document.querySelector("input[name=paytype][value=balance]");
-    if(rb) rb.checked = true;
+    const paySel = document.getElementById("payTypeSelect");
+    if(paySel) paySel.value = "balance";
     payType = "balance";
   }
   __omOrderSubmitting = true;
@@ -5515,6 +5627,8 @@ function setBalanceUI(n){
   const fmt = userBalanceUZS.toLocaleString();
   const b1 = document.getElementById('balInline');
   if(b1) b1.textContent = fmt;
+  const payBalanceOption = document.getElementById('payTypeBalanceOption');
+  if(payBalanceOption) payBalanceOption.textContent = `Balansdan to‘lash (${fmt} so‘m)`;
   const b2 = document.getElementById('balProfile');
   if(b2) b2.textContent = fmt + " so'm";
   const b3 = document.getElementById('balHeader');
@@ -5885,6 +5999,8 @@ els.orderBtnPage?.addEventListener("click", ()=>{
   openCheckout();
 });
 els.checkoutClose?.addEventListener("click", closeCheckout);
+els.checkoutOverlay?.addEventListener("click", (e)=>{ if(e.target === els.checkoutOverlay) closeCheckout(); });
+document.addEventListener("keydown", (e)=>{ if(e.key === "Escape" && !els.checkoutOverlay?.hidden) closeCheckout(); });
 els.checkoutSubmit?.addEventListener("click", createOrderFromCheckout);
 
 /* =========================
