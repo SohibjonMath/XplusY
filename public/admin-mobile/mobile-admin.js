@@ -126,28 +126,54 @@ function orderAddress(o){
 }
 function orderLabelNo(o){return String(o.numericId||o.orderNo||o.orderNumber||o.id||"").trim();}
 function orderTotal(o){return num(o.totalUZS||o.amountUZS||o.total||o.amount)}
-function code39Pattern(ch){
-  const m={"0":"101001101101","1":"110100101011","2":"101100101011","3":"110110010101","4":"101001101011","5":"110100110101","6":"101100110101","7":"101001011011","8":"110100101101","9":"101100101101","A":"110101001011","B":"101101001011","C":"110110100101","D":"101011001011","E":"110101100101","F":"101101100101","G":"101010011011","H":"110101001101","I":"101101001101","J":"101011001101","K":"110101010011","L":"101101010011","M":"110110101001","N":"101011010011","O":"110101101001","P":"101101101001","Q":"101010110011","R":"110101011001","S":"101101011001","T":"101011011001","U":"110010101011","V":"100110101011","W":"110011010101","X":"100101101011","Y":"110010110101","Z":"100110110101","-":"100101011011",".":"110010101101"," ":"100110101101","$":"100100100101","/":"100100101001","+":"100101001001","%":"101001001001","*":"100101101101"};
-  return m[ch]||m["-"];
-}
-function code39Svg(value){
-  const raw=String(value||"").toUpperCase().replace(/[^0-9A-Z\-\. \$\/\+%]/g,"-").slice(0,24)||"ORDER";
-  const data=`*${raw}*`,narrow=1,wide=2.7,h=34,gap=1;let x=0,bars=[];
-  for(const ch of data){const p=code39Pattern(ch);for(let i=0;i<p.length;i++){const w=p[i]==="1"?wide:narrow;if(i%2===0)bars.push(`<rect x="${x.toFixed(2)}" y="0" width="${w.toFixed(2)}" height="${h}" />`);x+=w}x+=gap}
-  return `<svg class="labelBarcode" viewBox="0 0 ${Math.ceil(x)} ${h}" preserveAspectRatio="none" aria-label="barcode">${bars.join("")}</svg>`;
+function buildQrData(o){
+  const no=orderLabelNo(o);
+  const payload={
+    brand:"OrzuMall",
+    orderNo:no,
+    customer:orderOwner(o),
+    phone:orderPhone(o),
+    address:orderAddress(o)
+  };
+  return JSON.stringify(payload);
 }
 function openOrderLabelPrint(id){
   const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return toast("Buyurtma topilmadi","error");
   const no=orderLabelNo(o);
+  const qrData=encodeURIComponent(buildQrData(o));
+  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${qrData}`;
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>Yorliq ${esc(no)}</title><style>
-    @page{size:58mm 40mm;margin:0}*{box-sizing:border-box}html,body{width:58mm;height:40mm;margin:0;padding:0;background:#fff;color:#000;font-family:Arial,sans-serif}.label{width:58mm;height:40mm;padding:2.2mm 2.4mm 2mm;display:flex;flex-direction:column;gap:1mm;overflow:hidden}.top{display:flex;align-items:center;justify-content:space-between;border-bottom:.25mm solid #000;padding-bottom:1mm;gap:2mm}.brand{font-size:8.5pt;font-weight:900;letter-spacing:.2pt}.ord{font-size:6.8pt;font-weight:800;white-space:nowrap}.name{font-size:8pt;font-weight:900;line-height:1.05;max-height:8.5mm;overflow:hidden;text-transform:uppercase}.phone{font-size:7.4pt;font-weight:800}.addrLabel{font-size:5.8pt;font-weight:900;margin-top:.2mm}.addr{font-size:6.4pt;line-height:1.12;height:9.2mm;overflow:hidden}.barcodeWrap{margin-top:auto;text-align:center}.labelBarcode{width:100%;height:8.2mm;display:block}.code{font-size:6pt;font-weight:900;letter-spacing:.8pt;margin-top:.2mm}
-  </style></head><body><div class="label"><div class="top"><div class="brand">OrzuMall</div><div class="ord">№ ${esc(no)}</div></div><div class="name">${esc(orderOwner(o))}</div><div class="phone">Tel: ${esc(orderPhone(o))}</div><div class="addrLabel">Yetkazib berish manzili:</div><div class="addr">${esc(orderAddress(o))}</div><div class="barcodeWrap">${code39Svg(no)}<div class="code">${esc(no)}</div></div></div><script>window.onload=()=>{setTimeout(()=>{window.print()},160)};<\/script></body></html>`;
-  const w=window.open("","_blank","width=420,height=320");
+    @page{size:58mm 40mm;margin:0}
+    *{box-sizing:border-box}
+    html,body{width:58mm;height:40mm;margin:0;padding:0;background:#fff;color:#000;font-family:Arial,sans-serif}
+    .label{width:58mm;height:40mm;padding:2mm 2.1mm;display:grid;grid-template-rows:auto auto 1fr auto;gap:1mm;overflow:hidden}
+    .top{display:flex;align-items:flex-start;justify-content:space-between;gap:2mm;border-bottom:.25mm solid #000;padding-bottom:.7mm}
+    .brand{font-size:8.8pt;font-weight:900;line-height:1}.sub{font-size:5pt;font-weight:800;letter-spacing:.25mm;margin-top:.35mm}.ord{font-size:9.5pt;font-weight:900;line-height:1;white-space:nowrap}
+    .name{font-size:7.2pt;font-weight:900;line-height:1.08;max-height:5.2mm;overflow:hidden}
+    .phone{font-size:6.5pt;font-weight:800;line-height:1.05;margin-top:.3mm}
+    .middle{display:grid;grid-template-columns:1fr 13.6mm;gap:1.6mm;min-height:0}
+    .addrBox{display:flex;flex-direction:column;min-height:0}
+    .addrLabel{font-size:5.6pt;font-weight:900;line-height:1}
+    .addr{margin-top:.45mm;font-size:6pt;line-height:1.14;max-height:14mm;overflow:hidden;word-break:break-word}
+    .qrBox{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.4mm}
+    .qr{width:13.2mm;height:13.2mm;border:.25mm solid #000;border-radius:1.2mm;overflow:hidden;background:#fff}
+    .qr img{display:block;width:100%;height:100%;object-fit:cover}
+    .qrCap{font-size:4.4pt;font-weight:900;line-height:1;text-align:center}
+    .bottom{border-top:.25mm solid #000;padding-top:.7mm;text-align:center;margin-top:auto}
+    .code{font-size:8.4pt;font-weight:900;letter-spacing:.45mm;line-height:1}
+    .hint{font-size:4.7pt;font-weight:800;line-height:1.05;margin-top:.45mm}
+  </style></head><body><div class="label">
+    <div class="top"><div><div class="brand">OrzuMall</div><div class="sub">BUYURTMA YORLIG‘I</div></div><div class="ord">№ ${esc(no)}</div></div>
+    <div><div class="name">${esc(orderOwner(o))}</div><div class="phone">Tel: ${esc(orderPhone(o))}</div></div>
+    <div class="middle"><div class="addrBox"><div class="addrLabel">Yetkazib berish manzili:</div><div class="addr">${esc(orderAddress(o))}</div></div><div class="qrBox"><div class="qr"><img alt="QR" src="${qrUrl}"></div><div class="qrCap">QR kod</div></div></div>
+    <div class="bottom"><div class="code">${esc(no)}</div><div class="hint">Buyurtma raqamini tekshirib yopishtiring</div></div>
+  </div><script>window.onload=()=>{setTimeout(()=>{window.print()},240)};<\/script></body></html>`;
+  const w=window.open("","_blank","width=420,height=340");
   if(!w){toast("Pop-up bloklangan. Brauzerda ruxsat bering.","error");return}
   w.document.open();w.document.write(html);w.document.close();
 }
-function activeCancel(st){return ["new","paid","packing","shipping"].includes(normalizeStatus(st))}
-function orderActionButtons(o){const st=normalizeStatus(o.status),id=esc(o.id);let a=[];if(["new","paid"].includes(st))a.push(["packing","fa-box-open","Yig‘ishga olish","btn-next"]);if(st==="packing")a.push(["shipping","fa-truck-fast","Yetkazishga berish","btn-next"]);if(st==="shipping"){a.push(["delivered","fa-circle-check","Yetkazib berildi","btn-success"]);a.push(["returned","fa-rotate-left","Qaytarildi","btn-return"])}if(st==="delivered")a.push(["returned","fa-rotate-left","Qaytarildi","btn-return"]);if(activeCancel(st))a.push(["cancelled","fa-ban","Bekor qilish","btn-danger"]);let html=a.map(x=>`<button class="btn ${x[3]}" data-order-action="${id}" data-next="${x[0]}" type="button"><i class="fa-solid ${x[1]}"></i>${x[2]}</button>`).join("");if(st==="packing")html+=`<button class="btn btn-label" data-order-label="${id}" type="button"><i class="fa-solid fa-barcode"></i>Yorliq 58×40</button>`;return html}
+
+function orderActionButtons(o){const st=normalizeStatus(o.status),id=esc(o.id);let a=[];if(["new","paid"].includes(st))a.push(["packing","fa-box-open","Yig‘ishga olish","btn-next"]);if(st==="packing")a.push(["shipping","fa-truck-fast","Yetkazishga berish","btn-next"]);if(st==="shipping"){a.push(["delivered","fa-circle-check","Yetkazib berildi","btn-success"]);a.push(["returned","fa-rotate-left","Qaytarildi","btn-return"])}if(st==="delivered")a.push(["returned","fa-rotate-left","Qaytarildi","btn-return"]);if(activeCancel(st))a.push(["cancelled","fa-ban","Bekor qilish","btn-danger"]);let html=a.map(x=>`<button class="btn ${x[3]}" data-order-action="${id}" data-next="${x[0]}" type="button"><i class="fa-solid ${x[1]}"></i>${x[2]}</button>`).join("");if(st==="packing")html+=`<button class="btn btn-label" data-order-label="${id}" type="button"><i class="fa-solid fa-qrcode"></i>QR yorliq 58×40</button>`;return html}
 function matchesOrderFilter(o,filter){const st=normalizeStatus(o.status);return filter==="new"?["new","paid"].includes(st):st===filter}
 function renderOrderChips(){const root=$("orderFilterChips");if(!root)return;const keys=["new","packing","shipping","delivered","cancelled","returned"];root.innerHTML=keys.map(k=>`<button class="chip ${S.orderFilter===k?"active":""}" data-order-filter="${k}" type="button">${meta(k).label} <b>${S.orders.filter(o=>matchesOrderFilter(o,k)).length}</b></button>`).join("")}
 function renderOrders(){
@@ -160,7 +186,7 @@ function renderOrders(){
   const cards=arr.length?arr.map(o=>{const st=normalizeStatus(o.status),note=o.statusNote||o.cancellation?.reason||o.returnRequest?.resolutionReason||"",age=orderAgeMs(o),aging=(["new","paid"].includes(st)&&age>=ORDER_ALERT_NEW_URGENT_MS)||(st==="packing"&&age>=ORDER_ALERT_PACKING_URGENT_MS),ageMin=Math.max(1,Math.floor(age/60000));return `<article class="order-card status-${esc(st)} ${aging?"is-aging":""}" data-order-detail="${esc(o.id)}"><div class="card-top"><div><div class="order-code">BUYURTMA • <span class="mono">#${esc(o.id)}</span></div><div class="card-title">${esc(orderOwner(o))}</div>${aging?`<span class="aging-tag"><i class="fa-solid fa-triangle-exclamation"></i>${ageMin} daqiqadan beri kutmoqda</span>`:""}</div>${statusPill(st)}</div><div class="card-grid"><div class="mini-info"><span>Telefon</span><b>${esc(orderPhone(o))}</b></div><div class="mini-info"><span>Summa</span><b>${esc(money(orderTotal(o)))}</b></div><div class="mini-info"><span>To‘lov</span><b>${esc(o.provider||o.paymentType||"—")}</b></div><div class="mini-info"><span>Vaqt</span><b>${esc(dateFmt(o.createdAt))}</b></div></div>${note?`<div class="order-note">${esc(note)}</div>`:""}<div class="card-actions">${orderActionButtons(o)}<button class="btn btn-soft" data-order-detail-btn="${esc(o.id)}" type="button"><i class="fa-solid fa-eye"></i>Batafsil</button></div></article>`}).join(""):empty("fa-box-open",`${sm.label} buyurtma yo‘q.`);
   $("ordersList").innerHTML=head+cards;
 }
-function orderDetails(o){const hist=Array.isArray(o.statusHistory)?o.statusHistory:[],st0=normalizeStatus(o.status);return `<div class="detail-row"><div class="mini-info"><span>Mijoz</span><b>${esc(orderOwner(o))}</b></div><div class="mini-info"><span>Telefon</span><b>${esc(orderPhone(o))}</b></div><div class="mini-info"><span>Jami</span><b>${esc(money(orderTotal(o)))}</b></div><div class="mini-info"><span>To‘lov</span><b>${esc(o.provider||"—")}</b></div></div><div class="mini-info"><span>Yetkazish</span><b>${esc(o.shipping?.methodLabel||o.shipping?.serviceLabel||"—")}</b></div>${orderAddress(o)?`<div class="order-note">${esc(orderAddress(o))}</div>`:""}${st0==="packing"?`<button class="btn btn-label label-wide" data-order-label="${esc(o.id)}" type="button"><i class="fa-solid fa-barcode"></i>58×40 yorliq chiqarish</button>`:""}<div class="section-title"><span>Status tarixi</span></div><div class="timeline">${hist.length?hist.slice().reverse().map(h=>{const st=normalizeStatus(h.status);return `<div class="timeline-item status-${esc(st)}"><b>${esc(meta(st).label)} • ${esc(h.actorName||h.actorType||"Tizim")}</b><span>${esc(dateFmt(h.at,true))}${h.reason?`<br>${esc(h.reason)}`:""}</span></div>`}).join(""):`<div class="empty">Tarix hali yozilmagan.</div>`}</div><div class="card-actions">${orderActionButtons(o)}</div>`}
+function orderDetails(o){const hist=Array.isArray(o.statusHistory)?o.statusHistory:[],st0=normalizeStatus(o.status);return `<div class="detail-row"><div class="mini-info"><span>Mijoz</span><b>${esc(orderOwner(o))}</b></div><div class="mini-info"><span>Telefon</span><b>${esc(orderPhone(o))}</b></div><div class="mini-info"><span>Jami</span><b>${esc(money(orderTotal(o)))}</b></div><div class="mini-info"><span>To‘lov</span><b>${esc(o.provider||"—")}</b></div></div><div class="mini-info"><span>Yetkazish</span><b>${esc(o.shipping?.methodLabel||o.shipping?.serviceLabel||"—")}</b></div>${orderAddress(o)?`<div class="order-note">${esc(orderAddress(o))}</div>`:""}${st0==="packing"?`<button class="btn btn-label label-wide" data-order-label="${esc(o.id)}" type="button"><i class="fa-solid fa-qrcode"></i>58×40 QR yorliq chiqarish</button>`:""}<div class="section-title"><span>Status tarixi</span></div><div class="timeline">${hist.length?hist.slice().reverse().map(h=>{const st=normalizeStatus(h.status);return `<div class="timeline-item status-${esc(st)}"><b>${esc(meta(st).label)} • ${esc(h.actorName||h.actorType||"Tizim")}</b><span>${esc(dateFmt(h.at,true))}${h.reason?`<br>${esc(h.reason)}`:""}</span></div>`}).join(""):`<div class="empty">Tarix hali yozilmagan.</div>`}</div><div class="card-actions">${orderActionButtons(o)}</div>`}
 function openOrderDetails(id){const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return;openModal("Buyurtma #"+o.id,orderDetails(o))}
 function openOrderAction(id,next){const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return;const required=["cancelled","returned","return_rejected"].includes(next),label=meta(next).label;openModal(label,`<p class="muted">#${esc(o.id)} buyurtmani <b>${esc(label)}</b> holatiga o‘tkazasiz.</p><label class="field"><span>Izoh ${required?"(majburiy)":"(ixtiyoriy)"}</span><textarea id="orderActionReason" placeholder="Mijozga ko‘rinadigan izoh"></textarea></label><div class="modal-actions"><button class="btn btn-soft" data-modal-close type="button">Ortga</button><button class="btn ${next==="cancelled"?"btn-danger":next==="returned"?"btn-return":"btn-primary"}" id="orderActionSave" type="button">Tasdiqlash</button></div>`,()=>{$("orderActionSave")?.addEventListener("click",async e=>{const reason=String($("orderActionReason")?.value||"").trim();if(required&&reason.length<4)return toast("Sabab yozing","error");const b=e.currentTarget;b.disabled=true;try{const out=await api("order-lifecycle","admin_update_status",{orderId:o.id,status:next,reason});closeModal();toast(out.refund?.refunded?"Status yangilandi va mablag‘ qaytarildi":"Status yangilandi","success")}catch(err){toast("Xatolik: "+err.message,"error")}finally{b.disabled=false}})})}
 
