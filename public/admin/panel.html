@@ -2788,6 +2788,7 @@ button[data-x] i{
 <li class="nav-item"><a href="#" class="nav-link" data-view="support"><i class="fas fa-headset"></i><span>Qo‘llab-quvvatlash</span><b class="omadmin-badge" id="adminSupportBadge" hidden>0</b></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="notifications"><i class="fas fa-bell"></i><span>Bildirishnomalar</span></a></li>
 <li class="nav-item"><a href="./reviews.html" class="nav-link"><i class="fas fa-star"></i><span>Sharhlar va fikrlar</span></a></li>
+<li class="nav-item"><a href="./sellers.html" class="nav-link"><i class="fas fa-store"></i><span>Sellerlar</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="supportai"><i class="fas fa-robot"></i><span>AI yordamchi</span></a></li>
 <li class="nav-item"><a href="/admin-mobile/" class="nav-link" target="_blank" rel="noopener"><i class="fas fa-mobile-screen-button"></i><span>Mobil admin</span></a></li>
         <li class="nav-item"><a href="#" class="nav-link" data-view="stats"><i class="fas fa-chart-pie"></i><span>Statistika</span></a></li>
@@ -5463,7 +5464,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
                   ${productStatusPill(p)}
                   ${renderProductTypePill(p)}
                   <span class="tag" title="Sotilgan"><i class="fas fa-bag-shopping"></i> ${Number(p.soldCount||0)} ta</span>
-                  ${(state.role==="admin" && p.ownerEmail)?`<span class="tag" style="background:#F3EFFF;color:var(--primary);border-color:#DDD3FF"><i class="fas fa-user"></i> ${esc(p.ownerEmail)}</span>`:""}
+                  ${(state.role==="admin" && (p.sellerName||p.ownerEmail))?`<span class="tag" style="background:#F3EFFF;color:var(--primary);border-color:#DDD3FF"><i class="fas fa-store"></i> ${esc(p.sellerName||p.ownerEmail)}</span>`:""}
                 </div>
               </div>
             </div>
@@ -6035,13 +6036,24 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
       if(isV){
         data.ownerUid = user.uid;
         data.ownerEmail = normEmail(user.email);
+        data.ownerType = "seller";
+        data.createdByRole = data.createdByRole || "seller";
+        data.isOrzuMallVerified = false;
         // vendor create => pending; vendor edit => keep old status
         if(!state.editingId){
           data.status = "pending";
         }
       }else if(isA){
-        // admin create => approved by default
-        if(!state.editingId && !data.status) data.status = "approved";
+        // Admin-created products receive the OrzuMall verification mark.
+        // When admin edits a seller product, ownership remains unchanged.
+        if(!state.editingId){
+          data.status = "approved";
+          data.ownerType = "orzumall";
+          data.createdByRole = "admin";
+          data.isOrzuMallVerified = true;
+          data.sellerId = "orzumall";
+          data.sellerName = "OrzuMall";
+        }
       }
 
       // clean empty

@@ -2397,6 +2397,32 @@ function renderProductTypeBadge(p){
   return `<span class="authBadge ${escapeHtml(t)}" title="${label}">${icon}<span>${label}</span></span>`;
 }
 
+function omIsOrzuMallVerifiedProduct(p){
+  if(p?.isOrzuMallVerified === true) return true;
+  if(p?.isOrzuMallVerified === false) return false;
+  const ownerType=String(p?.ownerType||"").toLowerCase().trim();
+  const createdBy=String(p?.createdByRole||"").toLowerCase().trim();
+  const sellerId=String(p?.sellerId||"").toLowerCase().trim();
+  if(ownerType==="orzumall" || createdBy==="admin" || sellerId==="orzumall") return true;
+  // Legacy admin products did not have ownership fields.
+  return !(p?.sellerId || p?.ownerUid || p?.ownerEmail);
+}
+function renderOrzuMallVerifiedBadge(p,{full=false}={}){
+  if(!omIsOrzuMallVerifiedProduct(p)) return "";
+  return full
+    ? `<span class="omVerifiedFull" title="OrzuMall tomonidan joylangan va tekshirilgan"><i class="fa-solid fa-circle-check"></i><span>OrzuMall tasdiqlagan</span></span>`
+    : `<span class="omVerifiedIcon" title="OrzuMall tasdiqlagan" aria-label="OrzuMall tasdiqlagan"><i class="fa-solid fa-circle-check"></i></span>`;
+}
+function renderSellerMiniLine(p,{page=false}={}){
+  if(omIsOrzuMallVerifiedProduct(p)) return page ? renderOrzuMallVerifiedBadge(p,{full:true}) : "";
+  const name=String(p?.sellerName||"").trim();
+  if(!name) return "";
+  const logo=String(p?.sellerLogo||"").trim();
+  const score=Math.max(0,Math.min(100,Number(p?.sellerPopularity||0)||0));
+  const logoHtml=logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy">`:`<i class="fa-solid fa-store"></i>`;
+  return `<span class="${page?"ppSellerLine":"pcardSellerLine"}">${logoHtml}<b>${escapeHtml(name)}</b>${score?`<em><i class="fa-solid fa-fire"></i>${score}</em>`:""}</span>`;
+}
+
 function discountPct(price, oldPrice){
   const p = Number(price||0), o = Number(oldPrice||0);
   if(!o || o <= p) return 0;
@@ -2535,6 +2561,8 @@ for(const b of adminBadges.slice(0,3)){
 
 const badgeHTML = badgeHtmlParts.length ? `<div class="pbadgeStack">${badgeHtmlParts.join("")}</div>` : "";
 const authHTML = renderProductTypeBadge(p);
+const verifiedHTML = renderOrzuMallVerifiedBadge(p);
+const sellerMiniHTML = renderSellerMiniLine(p);
 
     const st = getStats(p.id);
     const showAvg = st.count ? st.avg : 0;
@@ -2545,6 +2573,7 @@ const authHTML = renderProductTypeBadge(p);
         <img class="pimg" src="${currentImg || ""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy"/>
         ${badgeHTML}
         ${authHTML?`<div class="authOnImg">${authHTML}</div>`:""}
+        ${verifiedHTML?`<div class="omVerifiedOnImg">${verifiedHTML}</div>`:""}
         <button class="favBtn ${isFav ? "active" : ""}" title="Sevimli" aria-label="Sevimli" aria-pressed="${isFav ? "true" : "false"}"><i class="fa-${isFav ? "solid" : "regular"} fa-heart" aria-hidden="true"></i></button>
       </div>
 
@@ -2557,6 +2586,7 @@ const authHTML = renderProductTypeBadge(p);
         <div class="pinstall" style="display:none"></div>
 
         <div class="pname clamp2">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
+        ${sellerMiniHTML}
         ${showCount ? `<div class="pratingInline compact"><i class="fa-solid fa-star" aria-hidden="true"></i> ${Number(showAvg).toFixed(1)} <span>(${showCount})</span></div>` : ""}
         <div class="omPowerRow">${omProductPowerMiniHtml(p)}</div>
 
@@ -4036,6 +4066,7 @@ function renderProductPage(){
             <div class="ppCatTrail">${catTrail}</div>
             ${tagsHtml?`<div class="ppTags">${tagsHtml}</div>`:""}
             ${renderProductTypeBadge(p)?`<div class="ppAuthRow">${renderProductTypeBadge(p)}</div>`:""}
+            ${renderSellerMiniLine(p,{page:true})?`<div class="ppSellerRow">${renderSellerMiniLine(p,{page:true})}</div>`:""}
             <h1>${escapeHtml(omProductText(p,"name",p.name||"Nomsiz mahsulot"))}</h1>
             <div class="ppPriceLine"><strong>${moneyUZS(pricing.price||0)}</strong>${pricing.oldPrice?`<del>${moneyUZS(pricing.oldPrice)}</del>`:""}</div>
           </div>

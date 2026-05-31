@@ -1,0 +1,19 @@
+
+/* v111 — seller system badges on customer site */
+.omVerifiedOnImg{position:absolute;top:8px;right:45px;z-index:5}
+.omVerifiedIcon{width:27px;height:27px;display:grid;place-items:center;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:2px solid rgba(255,255,255,.95);box-shadow:0 8px 16px rgba(37,99,235,.22)}
+.omVerifiedIcon i{font-size:13px}
+.pcardSellerLine{display:flex;align-items:center;gap:5px;min-width:0;margin-top:5px;color:#64748b;font-size:10px;font-weight:850}
+.pcardSellerLine img,.pcardSellerLine>i{width:17px;height:17px;min-width:17px;border-radius:6px;object-fit:cover;display:grid;place-items:center;background:#f3f4f6;color:#741a35}
+.pcardSellerLine b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcardSellerLine em{margin-left:auto;display:inline-flex;align-items:center;gap:3px;color:#f97316;font-size:9px;font-style:normal;font-weight:1000}
+.ppSellerRow{display:flex;align-items:center;gap:7px;margin-top:8px}
+.omVerifiedFull,.ppSellerLine{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 10px;border-radius:999px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:11px;font-weight:950}
+.omVerifiedFull i{color:#2563eb}
+.ppSellerLine img,.ppSellerLine>i{width:20px;height:20px;min-width:20px;border-radius:7px;object-fit:cover;display:grid;place-items:center;background:#fff;color:#741a35}
+.ppSellerLine em{display:inline-flex;align-items:center;gap:3px;margin-left:3px;color:#f97316;font-style:normal;font-weight:1000}
+@media(max-width:520px){
+  .omVerifiedOnImg{top:6px;right:39px}
+  .omVerifiedIcon{width:24px;height:24px}
+  .omVerifiedIcon i{font-size:12px}
+}
