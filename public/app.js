@@ -2410,8 +2410,8 @@ function omIsOrzuMallVerifiedProduct(p){
 function renderOrzuMallVerifiedBadge(p,{full=false}={}){
   if(!omIsOrzuMallVerifiedProduct(p)) return "";
   return full
-    ? `<span class="omVerifiedFull" title="OrzuMall tomonidan joylangan va tekshirilgan"><i class="fa-solid fa-circle-check"></i><span>OrzuMall tasdiqlagan</span></span>`
-    : `<span class="omVerifiedIcon" title="OrzuMall tasdiqlagan" aria-label="OrzuMall tasdiqlagan"><i class="fa-solid fa-circle-check"></i></span>`;
+    ? `<span class="omVerifiedFull" title="OrzuMall rasmiy mahsuloti"><i class="fa-solid fa-circle-check"></i><span>OrzuMall Rasmiy</span></span>`
+    : `<span class="omVerifiedIcon" title="OrzuMall Rasmiy" aria-label="OrzuMall Rasmiy"><i class="fa-solid fa-circle-check"></i></span>`;
 }
 function renderSellerMiniLine(p,{page=false}={}){
   if(omIsOrzuMallVerifiedProduct(p)) return page ? renderOrzuMallVerifiedBadge(p,{full:true}) : "";
@@ -2561,7 +2561,6 @@ for(const b of adminBadges.slice(0,3)){
 
 const badgeHTML = badgeHtmlParts.length ? `<div class="pbadgeStack">${badgeHtmlParts.join("")}</div>` : "";
 const authHTML = renderProductTypeBadge(p);
-const verifiedHTML = renderOrzuMallVerifiedBadge(p);
 const sellerMiniHTML = renderSellerMiniLine(p);
 
     const st = getStats(p.id);
@@ -2573,7 +2572,6 @@ const sellerMiniHTML = renderSellerMiniLine(p);
         <img class="pimg" src="${currentImg || ""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy"/>
         ${badgeHTML}
         ${authHTML?`<div class="authOnImg">${authHTML}</div>`:""}
-        ${verifiedHTML?`<div class="omVerifiedOnImg">${verifiedHTML}</div>`:""}
         <button class="favBtn ${isFav ? "active" : ""}" title="Sevimli" aria-label="Sevimli" aria-pressed="${isFav ? "true" : "false"}"><i class="fa-${isFav ? "solid" : "regular"} fa-heart" aria-hidden="true"></i></button>
       </div>
 

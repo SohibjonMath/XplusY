@@ -1,6 +1,5 @@
 
 /* v111 — seller system badges on customer site */
-.omVerifiedOnImg{position:absolute;top:8px;right:45px;z-index:5}
 .omVerifiedIcon{width:27px;height:27px;display:grid;place-items:center;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:2px solid rgba(255,255,255,.95);box-shadow:0 8px 16px rgba(37,99,235,.22)}
 .omVerifiedIcon i{font-size:13px}
 .pcardSellerLine{display:flex;align-items:center;gap:5px;min-width:0;margin-top:5px;color:#64748b;font-size:10px;font-weight:850}
@@ -13,7 +12,6 @@
 .ppSellerLine img,.ppSellerLine>i{width:20px;height:20px;min-width:20px;border-radius:7px;object-fit:cover;display:grid;place-items:center;background:#fff;color:#741a35}
 .ppSellerLine em{display:inline-flex;align-items:center;gap:3px;margin-left:3px;color:#f97316;font-style:normal;font-weight:1000}
 @media(max-width:520px){
-  .omVerifiedOnImg{top:6px;right:39px}
   .omVerifiedIcon{width:24px;height:24px}
   .omVerifiedIcon i{font-size:12px}
 }
