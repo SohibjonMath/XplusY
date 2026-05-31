@@ -184,6 +184,87 @@ function openOrderLabelPrint(id){
 function activeCancel(st){return ["new","paid","packing","shipping"].includes(normalizeStatus(st))}
 function orderActionButtons(o){const st=normalizeStatus(o.status),id=esc(o.id);let a=[];if(["new","paid"].includes(st))a.push(["packing","fa-box-open","Yig‘ishga olish","btn-next"]);if(st==="packing")a.push(["shipping","fa-truck-fast","Yetkazishga berish","btn-next"]);if(st==="shipping"){a.push(["delivered","fa-circle-check","Yetkazib berildi","btn-success"]);a.push(["returned","fa-rotate-left","Qaytarildi","btn-return"])}if(st==="delivered")a.push(["returned","fa-rotate-left","Qaytarildi","btn-return"]);if(activeCancel(st))a.push(["cancelled","fa-ban","Bekor qilish","btn-danger"]);let html=a.map(x=>`<button class="btn ${x[3]}" data-order-action="${id}" data-next="${x[0]}" type="button"><i class="fa-solid ${x[1]}"></i>${x[2]}</button>`).join("");if(st==="packing")html+=`<button class="btn btn-label" data-order-label="${id}" type="button"><i class="fa-solid fa-qrcode"></i>QR yorliq 58×40</button>`;return html}
 function matchesOrderFilter(o,filter){const st=normalizeStatus(o.status);return filter==="new"?["new","paid"].includes(st):st===filter}
+let orderQrScanner=null;
+let orderQrBusy=false;
+function orderQrModeConfig(mode){
+  const m=String(mode||"");
+  if(m==="packing")return {mode:m,title:"Yig‘ishdagi QR skaner",next:"shipping",accept:["packing"],done:"Buyurtma yetkazib berishga o‘tkazildi",hint:"Yig‘ilgan buyurtma QR kodini skanerlang",reason:"QR skaner orqali yetkazib berishga topshirildi"};
+  if(m==="shipping")return {mode:m,title:"Yetkazishdagi QR skaner",next:"delivered",accept:["shipping"],done:"Buyurtma yetkazildi holatiga o‘tkazildi",hint:"Yetkazilgan buyurtma QR kodini skanerlang",reason:"QR skaner orqali yetkazib berildi"};
+  if(m==="returned")return {mode:m,title:"Qaytarilgan QR skaner",next:"returned",accept:["shipping","delivered"],done:"Buyurtma qaytarilganlar ro‘yxatiga qo‘shildi",hint:"Qaytgan buyurtma QR kodini skanerlang",reason:"QR skaner orqali qaytarib olindi"};
+  return null;
+}
+function orderScanButton(mode){
+  const c=orderQrModeConfig(mode);if(!c)return "";
+  return `<button class="status-scan-btn" data-order-scan="${esc(mode)}" type="button"><i class="fa-solid fa-qrcode"></i><span>QR skaner</span></button>`;
+}
+function cleanOrderQrValue(raw){
+  let v=String(raw||"").trim();
+  try{const j=JSON.parse(v);v=String(j.orderNo||j.orderId||j.id||v).trim()}catch(_e){}
+  try{const u=new URL(v);v=String(u.searchParams.get("order")||u.searchParams.get("orderNo")||u.searchParams.get("id")||v).trim()}catch(_e){}
+  return v.replace(/^#/,"").replace(/^№\s*/,"").trim();
+}
+function comparableOrderCode(v){return String(v||"").trim().replace(/^#/,"").replace(/^№\s*/,"").replace(/\s+/g,"").toUpperCase()}
+function findOrderByQr(raw){
+  const code=comparableOrderCode(cleanOrderQrValue(raw));if(!code)return null;
+  return S.orders.find(o=>[o.id,o.numericId,o.orderNo,o.orderNumber,orderLabelNo(o)].some(v=>comparableOrderCode(v)===code))||null;
+}
+async function stopOrderQrScanner(){
+  const scanner=orderQrScanner;orderQrScanner=null;
+  if(scanner){try{await scanner.stop()}catch(_e){}try{await scanner.clear()}catch(_e){}}
+}
+async function processOrderQrScan(raw,mode){
+  if(orderQrBusy)return;
+  const cfg=orderQrModeConfig(mode);if(!cfg)return;
+  const statusEl=$("orderQrStatus");
+  const o=findOrderByQr(raw);
+  if(!o){if(statusEl)statusEl.innerHTML='<i class="fa-solid fa-circle-xmark"></i> Buyurtma topilmadi. QR kodni qayta skanerlang.';toast("Buyurtma topilmadi","error");return}
+  const current=normalizeStatus(o.status);
+  if(current===cfg.next){if(statusEl)statusEl.innerHTML='<i class="fa-solid fa-circle-info"></i> Bu buyurtma avvalroq kerakli bo‘limga o‘tkazilgan.';toast("Buyurtma allaqachon shu bo‘limda","success");return}
+  if(!cfg.accept.includes(current)){
+    const msg=`Bu QR ${meta(current).label} bo‘limidagi buyurtmaga tegishli.`;
+    if(statusEl)statusEl.innerHTML=`<i class="fa-solid fa-triangle-exclamation"></i> ${esc(msg)}`;
+    toast(msg,"error");return;
+  }
+  orderQrBusy=true;
+  if(statusEl)statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Status yangilanmoqda...';
+  try{
+    await api("order-lifecycle","admin_update_status",{orderId:o.id,status:cfg.next,reason:cfg.reason});
+    o.status=cfg.next;
+    try{navigator.vibrate?.([90,45,90])}catch(_e){}
+    await stopOrderQrScanner();
+    closeModal();
+    S.orderFilter=cfg.next;
+    renderOrders();
+    toast(cfg.done,"success");
+  }catch(err){
+    if(statusEl)statusEl.innerHTML=`<i class="fa-solid fa-circle-xmark"></i> ${esc(err.message||"Xatolik")}`;
+    toast("Xatolik: "+err.message,"error");
+  }finally{orderQrBusy=false}
+}
+async function startOrderQrCamera(mode){
+  const statusEl=$("orderQrStatus"),reader=$("orderQrReader");
+  if(!reader)return;
+  if(!window.Html5Qrcode){if(statusEl)statusEl.innerHTML='<i class="fa-solid fa-circle-xmark"></i> QR skaner kutubxonasi yuklanmadi. Pastdagi qo‘lda kiritish maydonidan foydalaning.';return}
+  await stopOrderQrScanner();
+  if(statusEl)statusEl.innerHTML='<i class="fa-solid fa-camera"></i> Kamera ishga tushirilmoqda...';
+  try{
+    const scanner=new window.Html5Qrcode("orderQrReader");orderQrScanner=scanner;
+    await scanner.start({facingMode:"environment"},{fps:10,qrbox:{width:230,height:230},aspectRatio:1},decoded=>processOrderQrScan(decoded,mode),()=>{});
+    if(statusEl)statusEl.innerHTML='<i class="fa-solid fa-qrcode"></i> QR kodni kamera ichiga joylang.';
+  }catch(err){
+    if(statusEl)statusEl.innerHTML='<i class="fa-solid fa-circle-exclamation"></i> Kamera ochilmadi. Ruxsatni tekshiring yoki kodni qo‘lda kiriting.';
+  }
+}
+function openOrderQrScanner(mode){
+  const cfg=orderQrModeConfig(mode);if(!cfg)return;
+  openModal(cfg.title,`<div class="qr-scan-shell"><div class="qr-scan-hero"><i class="fa-solid fa-qrcode"></i><div><b>${esc(cfg.hint)}</b><span>Skanerlangan buyurtma avtomatik ravishda <strong>${esc(meta(cfg.next).label)}</strong> holatiga o‘tadi.</span></div></div><div class="qr-reader-wrap"><div id="orderQrReader"></div></div><div class="qr-scan-status" id="orderQrStatus"><i class="fa-solid fa-camera"></i> Kamera tayyorlanmoqda...</div><button class="btn btn-primary btn-block" id="orderQrRetry" type="button"><i class="fa-solid fa-camera-rotate"></i>Kamerani qayta yoqish</button><div class="qr-manual-sep"><span>yoki</span></div><div class="qr-manual-row"><input id="orderQrManual" inputmode="numeric" autocomplete="off" placeholder="Buyurtma raqamini kiriting"><button class="btn btn-soft" id="orderQrManualGo" type="button"><i class="fa-solid fa-arrow-right"></i></button></div></div>`,()=>{
+    $("orderQrRetry")?.addEventListener("click",()=>startOrderQrCamera(mode));
+    const go=()=>processOrderQrScan($("orderQrManual")?.value||"",mode);
+    $("orderQrManualGo")?.addEventListener("click",go);
+    $("orderQrManual")?.addEventListener("keydown",e=>{if(e.key==="Enter")go()});
+    setTimeout(()=>startOrderQrCamera(mode),80);
+  });
+}
 function renderOrderChips(){const root=$("orderFilterChips");if(!root)return;const keys=["new","packing","shipping","delivered","cancelled","returned"];root.innerHTML=keys.map(k=>`<button class="chip ${S.orderFilter===k?"active":""}" data-order-filter="${k}" type="button">${meta(k).label} <b>${S.orders.filter(o=>matchesOrderFilter(o,k)).length}</b></button>`).join("")}
 function renderOrders(){
   const q=String($("ordersSearch")?.value||"").toLowerCase().trim();renderOrderChips();renderOrderAlertCenter();
@@ -191,7 +272,7 @@ function renderOrders(){
   const arr=S.orders.filter(o=>matchesOrderFilter(o,filter)&&(!q||`${o.id} ${orderOwner(o)} ${orderPhone(o)} ${o.numericId||""}`.toLowerCase().includes(q)));
   const newCount=S.orders.filter(o=>matchesOrderFilter(o,"new")).length,packingCount=S.orders.filter(o=>matchesOrderFilter(o,"packing")).length,shippingCount=S.orders.filter(o=>matchesOrderFilter(o,"shipping")).length;
   $("orderStats").innerHTML=`<div class="stat-card tint-brand"><div class="k">Yangi</div><div class="v">${newCount}</div></div><div class="stat-card"><div class="k">Yig‘ishda</div><div class="v">${packingCount}</div></div><div class="stat-card"><div class="k">Yetkazishda</div><div class="v">${shippingCount}</div></div>`;
-  const sm=meta(filter);const head=`<div class="status-section-head status-${esc(filter)}"><span><i class="fa-solid ${sm.icon}"></i>${esc(sm.label)} buyurtmalar</span><b>${arr.length}</b></div>`;
+  const sm=meta(filter);const head=`<div class="status-section-head status-${esc(filter)}"><span><i class="fa-solid ${sm.icon}"></i>${esc(sm.label)} buyurtmalar <b>${arr.length}</b></span>${orderScanButton(filter)}</div>`;
   const cards=arr.length?arr.map(o=>{const st=normalizeStatus(o.status),note=o.statusNote||o.cancellation?.reason||o.returnRequest?.resolutionReason||"",age=orderAgeMs(o),aging=(["new","paid"].includes(st)&&age>=ORDER_ALERT_NEW_URGENT_MS)||(st==="packing"&&age>=ORDER_ALERT_PACKING_URGENT_MS),ageMin=Math.max(1,Math.floor(age/60000));return `<article class="order-card status-${esc(st)} ${aging?"is-aging":""}" data-order-detail="${esc(o.id)}"><div class="card-top"><div><div class="order-code">BUYURTMA • <span class="mono">#${esc(o.id)}</span></div><div class="card-title">${esc(orderOwner(o))}</div>${aging?`<span class="aging-tag"><i class="fa-solid fa-triangle-exclamation"></i>${ageMin} daqiqadan beri kutmoqda</span>`:""}</div>${statusPill(st)}</div><div class="card-grid"><div class="mini-info"><span>Telefon</span><b>${esc(orderPhone(o))}</b></div><div class="mini-info"><span>Summa</span><b>${esc(money(orderTotal(o)))}</b></div><div class="mini-info"><span>To‘lov</span><b>${esc(o.provider||o.paymentType||"—")}</b></div><div class="mini-info"><span>Vaqt</span><b>${esc(dateFmt(o.createdAt))}</b></div></div>${note?`<div class="order-note">${esc(note)}</div>`:""}<div class="card-actions">${orderActionButtons(o)}<button class="btn btn-soft" data-order-detail-btn="${esc(o.id)}" type="button"><i class="fa-solid fa-eye"></i>Batafsil</button></div></article>`}).join(""):empty("fa-box-open",`${sm.label} buyurtma yo‘q.`);
   $("ordersList").innerHTML=head+cards;
 }
@@ -298,10 +379,10 @@ function openReviewReply(productId,reviewId){const r=S.reviews.find(x=>String(x.
 function openReviewDelete(productId,reviewId){const r=S.reviews.find(x=>String(x.productId)===String(productId)&&String(x.id)===String(reviewId));if(!r)return;const linked=!!(r.orderId||r.source==="order_feedback");openModal("Sharhni butunlay o‘chirish",`<div class="reply-box"><b>${esc(reviewOwner(r))}</b>${esc(r.text||"")}</div><div class="review-delete-warning"><i class="fa-solid fa-triangle-exclamation"></i><div><b>Bu amalni ortga qaytarib bo‘lmaydi.</b><span>${linked?"Buyurtmaga yozilgan fikr va unga bog‘langan mahsulot sharhlari ham o‘chadi.":"Mahsulot sharhi butunlay o‘chadi."}</span></div></div><div class="modal-actions"><button class="btn btn-soft" data-modal-close type="button">Ortga</button><button class="btn btn-danger" id="reviewDeleteConfirm" type="button"><i class="fa-solid fa-trash"></i> O‘chirish</button></div>`,()=>{$("reviewDeleteConfirm")?.addEventListener("click",async e=>{e.currentTarget.disabled=true;try{await api("mobile-admin","review_delete",{productId,reviewId});closeModal();await loadReviewsFromApi({silent:true});toast("Sharh o‘chirildi","success")}catch(err){toast("Xatolik: "+err.message,"error")}finally{e.currentTarget.disabled=false}})})}
 
 function openModal(title,body,onReady){$("modalHost").innerHTML=`<div class="modal-wrap"><div class="modal"><div class="modal-drag"></div><div class="modal-head"><b>${esc(title)}</b><button class="modal-close" data-modal-close type="button"><i class="fa-solid fa-xmark"></i></button></div><div class="modal-body">${body}</div></div></div>`;$("modalHost").querySelector(".modal-wrap")?.addEventListener("click",e=>{if(e.target.classList.contains("modal-wrap"))closeModal()});$("modalHost").querySelectorAll("[data-modal-close]").forEach(b=>b.addEventListener("click",closeModal));onReady?.()}
-function closeModal(){$("modalHost").innerHTML=""}
+function closeModal(){stopOrderQrScanner();$("modalHost").innerHTML=""}
 
 // Main navigation and delegated actions
-document.addEventListener("click",async e=>{const v=e.target.closest("[data-view]");if(v)return setView(v.dataset.view);const f=e.target.closest("[data-order-filter]");if(f){S.orderFilter=f.dataset.orderFilter;return renderOrders()}const bf=e.target.closest("[data-balance-filter]");if(bf){$("balanceFilterChips").dataset.active=bf.dataset.balanceFilter;return renderBalance()}const ol=e.target.closest("[data-order-label]");if(ol){e.stopPropagation();return openOrderLabelPrint(ol.dataset.orderLabel)}const oa=e.target.closest("[data-order-action]");if(oa){e.stopPropagation();return openOrderAction(oa.dataset.orderAction,oa.dataset.next)}const od=e.target.closest("[data-order-detail-btn],[data-order-detail]");if(od){const id=od.dataset.orderDetailBtn||od.dataset.orderDetail;if(id)return openOrderDetails(id)}const ta=e.target.closest("[data-topup-approve]");if(ta)return openTopupApprove(ta.dataset.topupApprove);const tr=e.target.closest("[data-topup-reject]");if(tr)return openTopupReject(tr.dataset.topupReject);const th=e.target.closest("[data-thread]");if(th)return openChat(th.dataset.thread);const nt=e.target.closest("[data-note-toggle]");if(nt){try{await api("mobile-admin","notification_toggle",{id:nt.dataset.noteToggle,active:nt.dataset.active!=="true"});toast("Yangilandi","success")}catch(err){toast(err.message,"error")}return}const nd=e.target.closest("[data-note-delete]");if(nd){if(!confirm("Bildirishnomani o‘chirasizmi?"))return;try{await api("mobile-admin","notification_delete",{id:nd.dataset.noteDelete});toast("O‘chirildi","success")}catch(err){toast(err.message,"error")}return}const rf=e.target.closest("[data-review-filter]");if(rf){S.reviewFilter=rf.dataset.reviewFilter||"pending";return renderReviews()}const ra=e.target.closest("[data-review-approve]");if(ra){ra.disabled=true;try{await reviewModerate(ra.dataset.reviewApprove,ra.dataset.reviewId,"approved","");await loadReviewsFromApi({silent:true});toast("Sharh tasdiqlandi","success")}catch(err){toast("Xatolik: "+err.message,"error")}finally{ra.disabled=false}return}const rj=e.target.closest("[data-review-reject]");if(rj)return openReviewReject(rj.dataset.reviewReject,rj.dataset.reviewId);const rr=e.target.closest("[data-review-reply]");if(rr)return openReviewReply(rr.dataset.reviewReply,rr.dataset.reviewId);const rd=e.target.closest("[data-review-delete]");if(rd)return openReviewDelete(rd.dataset.reviewDelete,rd.dataset.reviewId);const pp=e.target.closest("[data-period]");if(pp){S.turnoverPeriod=num(pp.dataset.period);document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x===pp));return renderTurnover()}});
+document.addEventListener("click",async e=>{const v=e.target.closest("[data-view]");if(v)return setView(v.dataset.view);const f=e.target.closest("[data-order-filter]");if(f){S.orderFilter=f.dataset.orderFilter;return renderOrders()}const bf=e.target.closest("[data-balance-filter]");if(bf){$("balanceFilterChips").dataset.active=bf.dataset.balanceFilter;return renderBalance()}const os=e.target.closest("[data-order-scan]");if(os){e.stopPropagation();return openOrderQrScanner(os.dataset.orderScan)}const ol=e.target.closest("[data-order-label]");if(ol){e.stopPropagation();return openOrderLabelPrint(ol.dataset.orderLabel)}const oa=e.target.closest("[data-order-action]");if(oa){e.stopPropagation();return openOrderAction(oa.dataset.orderAction,oa.dataset.next)}const od=e.target.closest("[data-order-detail-btn],[data-order-detail]");if(od){const id=od.dataset.orderDetailBtn||od.dataset.orderDetail;if(id)return openOrderDetails(id)}const ta=e.target.closest("[data-topup-approve]");if(ta)return openTopupApprove(ta.dataset.topupApprove);const tr=e.target.closest("[data-topup-reject]");if(tr)return openTopupReject(tr.dataset.topupReject);const th=e.target.closest("[data-thread]");if(th)return openChat(th.dataset.thread);const nt=e.target.closest("[data-note-toggle]");if(nt){try{await api("mobile-admin","notification_toggle",{id:nt.dataset.noteToggle,active:nt.dataset.active!=="true"});toast("Yangilandi","success")}catch(err){toast(err.message,"error")}return}const nd=e.target.closest("[data-note-delete]");if(nd){if(!confirm("Bildirishnomani o‘chirasizmi?"))return;try{await api("mobile-admin","notification_delete",{id:nd.dataset.noteDelete});toast("O‘chirildi","success")}catch(err){toast(err.message,"error")}return}const rf=e.target.closest("[data-review-filter]");if(rf){S.reviewFilter=rf.dataset.reviewFilter||"pending";return renderReviews()}const ra=e.target.closest("[data-review-approve]");if(ra){ra.disabled=true;try{await reviewModerate(ra.dataset.reviewApprove,ra.dataset.reviewId,"approved","");await loadReviewsFromApi({silent:true});toast("Sharh tasdiqlandi","success")}catch(err){toast("Xatolik: "+err.message,"error")}finally{ra.disabled=false}return}const rj=e.target.closest("[data-review-reject]");if(rj)return openReviewReject(rj.dataset.reviewReject,rj.dataset.reviewId);const rr=e.target.closest("[data-review-reply]");if(rr)return openReviewReply(rr.dataset.reviewReply,rr.dataset.reviewId);const rd=e.target.closest("[data-review-delete]");if(rd)return openReviewDelete(rd.dataset.reviewDelete,rd.dataset.reviewId);const pp=e.target.closest("[data-period]");if(pp){S.turnoverPeriod=num(pp.dataset.period);document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x===pp));return renderTurnover()}});
 $("ordersSearch").addEventListener("input",renderOrders);$("balanceSearch").addEventListener("input",renderBalance);$("supportSearch").addEventListener("input",renderSupport);$("reviewsSearch").addEventListener("input",renderReviews);$("drawerOpen").addEventListener("click",openDrawer);$("bottomMenu").addEventListener("click",openDrawer);$("drawerOverlay").addEventListener("click",closeDrawer);$("newNotification").addEventListener("click",openNewNotification);$("testNativePush")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;try{nativeRequestPushToken();await new Promise(r=>setTimeout(r,1600));const out=await api("admin-push-test","test",{});if(Number(out.sent||0)>0)toast(`Test push ${out.sent} ta qurilmaga yuborildi`,"success");else toast("FCM token hali serverda ro‘yxatdan o‘tmagan. Ilovani qayta ochib, bildirishnoma ruxsatini yoqing.","error")}catch(err){toast("Test push yuborilmadi: "+err.message,"error")}finally{b.disabled=false}});$("supportBack").addEventListener("click",closeChat);$("refreshView").addEventListener("click",()=>{startSubscriptions();toast("Ma’lumotlar yangilanmoqda")});$("ordersReload").addEventListener("click",()=>{startSubscriptions();toast("Buyurtmalar yangilanmoqda")});$("orderAlertEnable").addEventListener("click",enableOrderAlerts);$("orderAlertSnooze").addEventListener("click",snoozeOrderAlerts);$("chatForm").addEventListener("submit",async e=>{e.preventDefault();const text=String($("chatInput").value||"").trim(),uid=S.activeThread?.uid;if(!text||!uid)return;const b=e.currentTarget.querySelector("button");b.disabled=true;try{await api("mobile-admin","support_reply",{uid,text});$("chatInput").value=""}catch(err){toast("Javob yuborilmadi: "+err.message,"error")}finally{b.disabled=false}});$("chatToggle").addEventListener("click",async()=>{const uid=S.activeThread?.uid;if(!uid)return;const next=S.activeThread?.status==="closed"?"open":"closed";try{await api("mobile-admin","support_toggle",{uid,status:next});toast(next==="closed"?"Suhbat yopildi":"Suhbat qayta ochildi","success");closeChat()}catch(err){toast(err.message,"error")}});$("logoutBtn").addEventListener("click",async()=>{if(S.alertTimer)clearInterval(S.alertTimer);await signOut(auth);location.reload()});
 
 const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});

@@ -76,3 +76,56 @@ body{min-height:100dvh;padding-bottom:76px}.app-shell{min-height:100dvh}.login-s
 @media(max-width:760px){
   .btn-label{flex:1 1 100%}
 }
+
+/* v105 — workflow QR scanners for packing / shipping / returned */
+.status-section-head span b{
+  min-width:24px;
+  height:22px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid color-mix(in srgb,var(--accent) 22%,#fff);
+  font-size:10px;
+}
+.status-scan-btn{
+  min-height:34px;
+  padding:0 10px;
+  border:1px solid color-mix(in srgb,var(--accent) 26%,#fff);
+  border-radius:11px;
+  background:#fff;
+  color:var(--accent);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  font-size:10px;
+  font-weight:1000;
+  white-space:nowrap;
+  box-shadow:0 5px 12px rgba(15,23,42,.05);
+}
+.status-scan-btn i{font-size:13px}
+.qr-scan-shell{display:flex;flex-direction:column;gap:10px}
+.qr-scan-hero{display:flex;align-items:flex-start;gap:10px;padding:11px;border:1px solid #e5eaf1;border-radius:15px;background:linear-gradient(135deg,#f8fafc,#fff)}
+.qr-scan-hero>i{width:36px;height:36px;min-width:36px;display:grid;place-items:center;border-radius:12px;background:#111827;color:#fff;font-size:16px}
+.qr-scan-hero b{display:block;font-size:12px;color:#111827;line-height:1.25}
+.qr-scan-hero span{display:block;margin-top:4px;font-size:10px;color:#64748b;line-height:1.4}
+.qr-reader-wrap{overflow:hidden;border:1px solid #e2e8f0;border-radius:17px;background:#0f172a;padding:7px;min-height:258px}
+#orderQrReader{width:100%;min-height:242px;border-radius:12px;overflow:hidden;background:#0f172a}
+#orderQrReader video{border-radius:12px!important;object-fit:cover!important}
+#orderQrReader img{max-width:100%!important}
+.qr-scan-status{display:flex;align-items:flex-start;gap:7px;padding:9px 10px;border-radius:12px;background:#f8fafc;border:1px solid #e8edf4;color:#475569;font-size:11px;font-weight:800;line-height:1.35}
+.qr-scan-status i{margin-top:1px;color:#7f1d3d}
+.qr-manual-sep{display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:10px;font-weight:900;text-transform:uppercase}
+.qr-manual-sep:before,.qr-manual-sep:after{content:"";height:1px;flex:1;background:#e5eaf1}
+.qr-manual-row{display:grid;grid-template-columns:1fr 44px;gap:7px}
+.qr-manual-row input{width:100%;height:42px;padding:0 11px;border:1px solid #e5eaf1;border-radius:12px;background:#fff;font-size:13px;outline:0}
+.qr-manual-row .btn{height:42px;min-height:42px;padding:0}
+@media(max-width:420px){
+  .status-section-head{align-items:center}
+  .status-section-head span{min-width:0;flex-wrap:wrap}
+  .status-scan-btn{padding:0 8px;font-size:9px;gap:5px}
+  .status-scan-btn i{font-size:12px}
+  .qr-reader-wrap{min-height:238px}
+  #orderQrReader{min-height:222px}
+}
