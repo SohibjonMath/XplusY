@@ -7557,8 +7557,8 @@ function topupTimeStr(ts){
 }
 function topupBadge(status){
   const st = String(status||'pending').toLowerCase();
-  const label = statusUZ(st);
-  const cls = (st==='approved'||st==='cancelled'||st==='pending') ? st : 'other';
+  const label = st==='pending_click' ? 'Click to‘lovi kutilmoqda' : statusUZ(st);
+  const cls = (st==='pending_click' ? 'pending' : ((st==='approved'||st==='cancelled'||st==='pending') ? st : 'other'));
   return `<span class="status-pill status-${cls}">${escapeHtml(label)}</span>`;
 }
 
@@ -8194,7 +8194,7 @@ document.addEventListener('click', async (e)=>{
   const time = (ts)=>{ const n=ms(ts); return n?new Date(n).toLocaleString():'—'; };
   const providerKey = (r)=>{ const p=String(r?.provider||r?.paymentProvider||r?.paymentType||r?.gateway||r?.method||r?.paymentMethod||'').toLowerCase(); const hasClick=!!(r?.click_trans_id||r?.clickTransId||r?.click_paydoc_id||r?.clickPaydocId||r?.merchant_trans_id||r?.merchantTransId||r?.service_id||r?.serviceId); if(p.includes('click')||hasClick) return 'click'; if(p.includes('payme')||p.includes('paycom')||r?.paymeId||r?.paycomId) return 'payme'; if(p.includes('card')||p.includes('manual')||p.includes('karta')||p.includes('transfer')) return 'manual'; return r?.__src==='orders'?(p||'click'):'manual'; };
   const providerLabel = (k)=>k==='click'?'Click':(k==='payme'?'Payme':'Qo‘lda');
-  const statusKey = (r)=>{ const st=String(r?.status||r?.paymentStatus||r?.state||'pending').toLowerCase(); if(['paid','success','successful','completed','confirmed','done'].includes(st)) return 'paid'; if(['approved','accepted'].includes(st)) return 'approved'; if(['pending_payment','waiting','wait','created','new','processing','pending'].includes(st)) return 'pending'; if(['rejected','reject','declined','failed'].includes(st)) return 'rejected'; if(['cancelled','canceled','cancel'].includes(st)) return 'cancelled'; if(['error','timeout'].includes(st)) return 'error'; return st||'pending'; };
+  const statusKey = (r)=>{ const st=String(r?.status||r?.paymentStatus||r?.state||'pending').toLowerCase(); if(['paid','success','successful','completed','confirmed','done'].includes(st)) return 'paid'; if(['approved','accepted'].includes(st)) return 'approved'; if(['pending_click','pending_payment','waiting','wait','created','new','processing','pending'].includes(st)) return 'pending'; if(['rejected','reject','declined','failed'].includes(st)) return 'rejected'; if(['cancelled','canceled','cancel'].includes(st)) return 'cancelled'; if(['error','timeout'].includes(st)) return 'error'; return st||'pending'; };
   const statusLabel = (k)=>({paid:'To‘langan',approved:'Tasdiqlangan',pending:'Kutilmoqda',rejected:'Rad etilgan',cancelled:'Bekor qilingan',error:'Xatolik'}[k] || statusUZ(k) || k);
   const amountBase = (r)=>Number(r?.amountUZS ?? r?.amount ?? r?.summa ?? r?.price ?? r?.total ?? r?.totalUZS ?? 0)||0;
   const amountFinal = (r)=>Number(r?.finalAmountUZS ?? r?.finalAmount ?? r?.creditedAmountUZS ?? r?.creditAmountUZS ?? r?.totalUZS ?? r?.amountUZS ?? r?.amount ?? 0)||0;

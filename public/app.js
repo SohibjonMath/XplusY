@@ -3236,6 +3236,7 @@ function moneyHistoryCanonicalStatus(st,kind){
   if(kind==="refund") return "refunded";
   if(kind==="topup"){
     if(["approved","success","paid"].includes(raw)) return "approved";
+    if(["pending","waiting","pending_click","pending_payment"].includes(raw)) return "pending";
     if(["rejected","declined","failed"].includes(raw)) return "failed";
     if(["cancelled","canceled","canceled_by_admin"].includes(raw)) return "cancelled";
     return "new";
@@ -3251,6 +3252,8 @@ function statusLabel(st, kind){
 
   if(kind === "topup"){
     if(v === "approved" || v === "success") return "Tasdiqlangan";
+    if(v === "pending_click") return "Click to‘lovi kutilmoqda";
+    if(v === "pending_payment") return "To‘lov kutilmoqda";
     if(v === "pending" || v === "waiting") return "Kutilmoqda";
     if(v === "rejected" || v === "declined") return "Rad etilgan";
     if(v === "canceled" || v === "cancelled" || v === "canceled_by_admin") return "Bekor qilingan";
