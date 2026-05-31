@@ -1,0 +1,46 @@
+/* ===== v67 active mobile nav color fix ===== */
+:root{
+  --om67-red:#e11d48;
+  --om67-red-dark:#be123c;
+}
+@media (max-width: 768px){
+  .mobile-bottom-bar .nav-btn.active{
+    color:var(--om67-red-dark) !important;
+  }
+  .mobile-bottom-bar .nav-btn.active small,
+  .mobile-bottom-bar .nav-btn.active span:not(.badge){
+    color:var(--om67-red-dark) !important;
+  }
+  .mobile-bottom-bar .nav-btn.active .ico,
+  .mobile-bottom-bar .nav-btn.active .ico.home-logo-wrap,
+  .mobile-bottom-bar .nav-btn.active .ico i,
+  .mobile-bottom-bar .nav-btn.active .ico .fa,
+  .mobile-bottom-bar .nav-btn.active .ico .fa-solid,
+  .mobile-bottom-bar .nav-btn.active .ico .fa-regular,
+  .mobile-bottom-bar .nav-btn.active .ico svg,
+  .mobile-bottom-bar .nav-btn.active .ico svg *,
+  .mobile-bottom-bar .nav-btn.active .ico path{
+    color:var(--om67-red) !important;
+    fill:var(--om67-red) !important;
+    stroke:var(--om67-red) !important;
+  }
+  .mobile-bottom-bar .nav-btn.active .ico,
+  .mobile-bottom-bar .nav-btn.nav-home.active .ico.home-logo-wrap{
+    background:#ffffff !important;
+    border-color:#fecdd3 !important;
+    box-shadow:0 7px 15px rgba(225,29,72,.10) !important;
+  }
+  .mobile-bottom-bar .nav-btn.active .navHomeLogo{
+    filter:none !important;
+    opacity:1 !important;
+  }
+  /* badges remain white text */
+  .mobile-bottom-bar .badge,
+  .mobile-bottom-bar .nav-btn.active .badge,
+  #navFavBadge,
+  #navCartBadge{
+    color:#fff !important;
+    fill:#fff !important;
+    stroke:#fff !important;
+  }
+}
