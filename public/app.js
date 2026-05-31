@@ -1669,6 +1669,23 @@ function omRenderCartDeliverySummary(){
   const el = els.cartDeliverySummary || document.getElementById("cartDeliverySummary");
   if(!el) return;
   const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+
+  const bindCompact = ()=>{
+    const wrap = el.querySelector('.cartDeliveryCompact');
+    const toggle = el.querySelector('#cartDeliveryToggleBtn');
+    const body = el.querySelector('#cartDeliveryCompactBody');
+    if(!wrap || !toggle || !body) return;
+    const collapsedDefault = !!(window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+    const setOpen = (open)=>{
+      wrap.classList.toggle('isOpen', !!open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      body.hidden = !open;
+    };
+    setOpen(!collapsedDefault);
+    toggle.addEventListener('click', ()=> setOpen(body.hidden));
+    el.querySelector('#cartDeliveryChangeBtn')?.addEventListener('click', openCheckout, {once:true});
+  };
+
   if(!built || !built.ok){
     el.innerHTML = "";
     el.hidden = true;
@@ -1681,7 +1698,7 @@ function omRenderCartDeliverySummary(){
 
   if(!method){
     el.innerHTML = `
-      <div class="cartDeliveryPending">
+      <div class="cartDeliveryPending compactPending">
         <div class="cartDeliveryPendingIcon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></div>
         <div><b>Yetkazib berishni sozlang</b><span>Yakuniy summa yetkazish turi tanlangandan keyin ko‘rinadi.</span></div>
       </div>
@@ -1693,15 +1710,23 @@ function omRenderCartDeliverySummary(){
   const info = getCheckoutDeliveryInfo();
   if(!info.ok){
     el.innerHTML = `
-      <div class="cartDeliveryHead"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yetkazib berish</span><button type="button" id="cartDeliveryChangeBtn">Sozlash</button></div>
-      <div class="cartDeliveryGrid">
-        <div><span>Mahsulotlar</span><b>${moneyUZS(built.totalUZS)}</b></div>
-        <div><span>Yetkazish</span><b>—</b></div>
-        <div><span>Jami</span><b>—</b></div>
+      <div class="cartDeliveryCompact isSetupNeeded">
+        <button type="button" class="cartDeliveryCompactTop" id="cartDeliveryToggleBtn" aria-expanded="false">
+          <div class="cartDeliveryCompactLeft"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yetkazib berish</span></div>
+          <div class="cartDeliveryCompactRight"><b>Sozlash kerak</b><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></div>
+        </button>
+        <div class="cartDeliveryCompactBody" id="cartDeliveryCompactBody" hidden>
+          <div class="cartDeliveryGrid compactGrid">
+            <div><span>Mahsulotlar</span><b>${moneyUZS(built.totalUZS)}</b></div>
+            <div><span>Yetkazish</span><b>—</b></div>
+            <div><span>Jami</span><b>—</b></div>
+          </div>
+          <div class="cartDeliveryFree compactFree"><span>Lokatsiyani avto aniqlang</span><small>Yakuniy summa lokatsiya olingandan keyin hisoblanadi.</small></div>
+          <div class="cartDeliveryCompactActions"><button type="button" id="cartDeliveryChangeBtn">Sozlash</button></div>
+        </div>
       </div>
-      <div class="cartDeliveryFree"><span>Lokatsiyani avto aniqlang</span><small>Yakuniy summa lokatsiya olingandan keyin hisoblanadi.</small></div>
     `;
-    document.getElementById("cartDeliveryChangeBtn")?.addEventListener("click", openCheckout, {once:true});
+    bindCompact();
     try{ updateCartPrimaryCTA(); }catch(_e){}
     return { ready:false, productsTotalUZS: built.totalUZS };
   }
@@ -1719,15 +1744,23 @@ function omRenderCartDeliverySummary(){
   const smallText = method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : `${data.serviceLabel || rec?.label || "Yetkazib berish"}${rec?.etaText ? ` • ${rec.etaText}` : ""}`;
 
   el.innerHTML = `
-    <div class="cartDeliveryHead"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yakuniy hisob-kitob</span><button type="button" id="cartDeliveryChangeBtn">O‘zgartirish</button></div>
-    <div class="cartDeliveryGrid">
-      <div><span>Mahsulotlar</span><b>${moneyUZS(built.totalUZS)}</b></div>
-      <div><span>Yetkazish</span><b>${fee ? moneyUZS(fee) : "Bepul"}</b></div>
-      <div><span>Jami</span><b>${moneyUZS(totalWithDelivery)}</b></div>
+    <div class="cartDeliveryCompact isReady">
+      <button type="button" class="cartDeliveryCompactTop" id="cartDeliveryToggleBtn" aria-expanded="false">
+        <div class="cartDeliveryCompactLeft"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><span>Yakuniy hisob-kitob</span></div>
+        <div class="cartDeliveryCompactRight"><b>${moneyUZS(totalWithDelivery)}</b><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></div>
+      </button>
+      <div class="cartDeliveryCompactBody" id="cartDeliveryCompactBody" hidden>
+        <div class="cartDeliveryGrid compactGrid">
+          <div><span>Mahsulotlar</span><b>${moneyUZS(built.totalUZS)}</b></div>
+          <div><span>Yetkazish</span><b>${fee ? moneyUZS(fee) : "Bepul"}</b></div>
+          <div><span>Jami</span><b>${moneyUZS(totalWithDelivery)}</b></div>
+        </div>
+        <div class="cartDeliveryFree compactFree ${method === "pickup" || free?.reached ? "ok" : ""}"><span>${freeText}</span><small>${smallText}</small></div>
+        <div class="cartDeliveryCompactActions"><button type="button" id="cartDeliveryChangeBtn">O‘zgartirish</button></div>
+      </div>
     </div>
-    <div class="cartDeliveryFree ${method === "pickup" || free?.reached ? "ok" : ""}"><span>${freeText}</span><small>${smallText}</small></div>
   `;
-  document.getElementById("cartDeliveryChangeBtn")?.addEventListener("click", openCheckout, {once:true});
+  bindCompact();
   try{ updateCartPrimaryCTA(); }catch(_e){}
   return { ready:true, productsTotalUZS: built.totalUZS, deliveryFeeUZS: fee, totalWithDeliveryUZS: totalWithDelivery, quote };
 }
@@ -4813,24 +4846,27 @@ function renderCartPage(){
       <div class="cartMeta">
         <label class="cartPick">
           <input type="checkbox" class="cartPickBox" data-pick="${escapeHtml(ci.key)}" ${cartSelected.has(ci.key) ? "checked" : ""} />
-          <span></span>
+          <span><i class="fa-solid fa-check" aria-hidden="true"></i></span>
         </label>
         <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         <div class="cartWeightMini"><i class="fa-solid fa-weight-hanging" aria-hidden="true"></i> ${omFormatKg(omProductWeightKg(p))} × ${qty} = ${omFormatKg(omProductWeightKg(p) * qty)}</div>
         ${renderVariantLine(ci)}
         <div class="cartShip">${renderDeliveryBadge(p)}</div>
         ${(_normPType(p)==="cargo" || p.prepayRequired===true) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Oldindan to‘lov</span></div>` : ``}
-        <div class="cartRow">
-          <div class="price">${moneyUZS(vp.price||0)}</div>
-          <button class="removeBtn" title="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
-        </div>
-        <div class="cartRow">
-          <div class="qty">
-            <button data-q="-">−</button>
-            <span>${qty}</span>
-            <button data-q="+">+</button>
+        <div class="cartBottomLine">
+          <div class="cartPriceStack">
+            <div class="price">${moneyUZS(vp.price||0)}</div>
+            <div class="cartUnitNote">1 dona narxi</div>
           </div>
-          <div class="badge">${moneyUZS((vp.price||0)*qty)}</div>
+          <div class="cartActionsMini">
+            <div class="qty">
+              <button data-q="-" aria-label="Kamaytirish">−</button>
+              <span>${qty}</span>
+              <button data-q="+" aria-label="Ko‘paytirish">+</button>
+            </div>
+            <div class="badge">${moneyUZS((vp.price||0)*qty)}</div>
+            <button class="removeBtn" title="O‘chirish" aria-label="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+          </div>
         </div>
       </div>
     `;
