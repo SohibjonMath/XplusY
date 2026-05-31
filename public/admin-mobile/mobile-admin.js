@@ -135,33 +135,47 @@ function openOrderLabelPrint(id){
   const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return toast("Buyurtma topilmadi","error");
   const no=orderLabelNo(o);
   const qrData=encodeURIComponent(buildQrData(o));
-  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=320x320&ecc=L&qzone=1&data=${qrData}`;
+  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=360x360&ecc=L&qzone=1&data=${qrData}`;
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>Yorliq ${esc(no)}</title><style>
     @page{size:58mm 40mm;margin:0}
     *{box-sizing:border-box}
     html,body{width:58mm;height:40mm;margin:0;padding:0;background:#fff;color:#000;font-family:Arial,sans-serif}
-    .label{width:58mm;height:40mm;padding:2mm 2.1mm;display:grid;grid-template-rows:auto auto 1fr auto;gap:1mm;overflow:hidden}
-    .top{display:flex;align-items:flex-start;justify-content:space-between;gap:2mm;border-bottom:.25mm solid #000;padding-bottom:.7mm}
-    .brand{font-size:8.8pt;font-weight:900;line-height:1}.sub{font-size:5pt;font-weight:800;letter-spacing:.25mm;margin-top:.35mm}.ord{font-size:9.5pt;font-weight:900;line-height:1;white-space:nowrap}
-    .name{font-size:7.2pt;font-weight:900;line-height:1.08;max-height:5.2mm;overflow:hidden}
-    .phone{font-size:6.5pt;font-weight:800;line-height:1.05;margin-top:.3mm}
-    .middle{display:grid;grid-template-columns:1fr 18.8mm;gap:1.6mm;min-height:0}
-    .addrBox{display:flex;flex-direction:column;min-height:0}
-    .addrLabel{font-size:5.6pt;font-weight:900;line-height:1}
-    .addr{margin-top:.45mm;font-size:6pt;line-height:1.14;max-height:14mm;overflow:hidden;word-break:break-word}
-    .qrBox{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.4mm}
-    .qr{width:18.4mm;height:18.4mm;border:.25mm solid #000;border-radius:1.2mm;overflow:hidden;background:#fff}
+    .label{width:58mm;height:40mm;padding:1.6mm 1.8mm 1.5mm;display:grid;grid-template-rows:auto 1fr;gap:.8mm;overflow:hidden}
+    .top{display:flex;align-items:flex-start;justify-content:space-between;gap:1.4mm;border-bottom:.24mm solid #000;padding-bottom:.65mm}
+    .brand{font-size:8.6pt;font-weight:900;line-height:1}
+    .sub{font-size:4.7pt;font-weight:900;letter-spacing:.23mm;margin-top:.33mm;line-height:1}
+    .ord{font-size:9.2pt;font-weight:900;line-height:1;white-space:nowrap}
+    .body{display:grid;grid-template-columns:minmax(0,1fr) 18.5mm;gap:1.15mm;min-height:0}
+    .left{min-width:0;min-height:0;display:flex;flex-direction:column}
+    .name{font-size:7pt;font-weight:900;line-height:1.05;max-height:4.1mm;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .phone{font-size:6pt;font-weight:900;line-height:1.05;margin-top:.35mm;white-space:nowrap}
+    .addrLabel{font-size:5.25pt;font-weight:900;line-height:1;margin-top:.8mm}
+    .addr{margin-top:.35mm;font-size:5.45pt;line-height:1.13;max-height:13.4mm;overflow:hidden;word-break:break-word}
+    .orderFoot{margin-top:auto;border-top:.2mm solid #000;padding-top:.55mm;text-align:center}
+    .code{font-size:8.1pt;font-weight:900;letter-spacing:.42mm;line-height:1}
+    .hint{font-size:4.25pt;font-weight:900;line-height:1.05;margin-top:.35mm}
+    .qrSide{min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:.2mm dashed #000;padding-left:.9mm}
+    .qr{width:17.2mm;height:17.2mm;border:.23mm solid #000;border-radius:.9mm;overflow:hidden;background:#fff}
     .qr img{display:block;width:100%;height:100%;object-fit:cover}
-    .qrCap{font-size:4.4pt;font-weight:900;line-height:1;text-align:center}
-    .bottom{border-top:.25mm solid #000;padding-top:.7mm;text-align:center;margin-top:auto}
-    .code{font-size:8.4pt;font-weight:900;letter-spacing:.45mm;line-height:1}
-    .hint{font-size:4.7pt;font-weight:800;line-height:1.05;margin-top:.45mm}
+    .qrCap{font-size:4.5pt;font-weight:900;line-height:1;text-align:center;margin-top:.6mm}
   </style></head><body><div class="label">
     <div class="top"><div><div class="brand">OrzuMall</div><div class="sub">BUYURTMA YORLIG‘I</div></div><div class="ord">№ ${esc(no)}</div></div>
-    <div><div class="name">${esc(orderOwner(o))}</div><div class="phone">Tel: ${esc(orderPhone(o))}</div></div>
-    <div class="middle"><div class="addrBox"><div class="addrLabel">Yetkazib berish manzili:</div><div class="addr">${esc(orderAddress(o))}</div></div><div class="qrBox"><div class="qr"><img alt="QR" src="${qrUrl}"></div><div class="qrCap">Buyurtma QR</div></div></div>
-    <div class="bottom"><div class="code">${esc(no)}</div><div class="hint">Buyurtma raqamini tekshirib yopishtiring</div></div>
-  </div><script>window.onload=()=>{setTimeout(()=>{window.print()},240)};<\/script></body></html>`;
+    <div class="body">
+      <div class="left">
+        <div class="name">${esc(orderOwner(o))}</div>
+        <div class="phone">Tel: ${esc(orderPhone(o))}</div>
+        <div class="addrLabel">Yetkazib berish manzili:</div>
+        <div class="addr">${esc(orderAddress(o))}</div>
+        <div class="orderFoot"><div class="code">${esc(no)}</div><div class="hint">Buyurtma raqamini tekshirib yopishtiring</div></div>
+      </div>
+      <div class="qrSide"><div class="qr"><img id="labelQr" alt="QR" src="${qrUrl}"></div><div class="qrCap">Buyurtma QR</div></div>
+    </div>
+  </div><script>
+    const doPrint=()=>setTimeout(()=>window.print(),120);
+    const qr=document.getElementById("labelQr");
+    if(qr&&qr.complete) doPrint(); else if(qr) qr.onload=doPrint;
+    setTimeout(doPrint,1200);
+  <\/script></body></html>`;
   const w=window.open("","_blank","width=420,height=340");
   if(!w){toast("Pop-up bloklangan. Brauzerda ruxsat bering.","error");return}
   w.document.open();w.document.write(html);w.document.close();
