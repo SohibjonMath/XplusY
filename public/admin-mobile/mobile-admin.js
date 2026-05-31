@@ -127,21 +127,15 @@ function orderAddress(o){
 function orderLabelNo(o){return String(o.numericId||o.orderNo||o.orderNumber||o.id||"").trim();}
 function orderTotal(o){return num(o.totalUZS||o.amountUZS||o.total||o.amount)}
 function buildQrData(o){
-  const no=orderLabelNo(o);
-  const payload={
-    brand:"OrzuMall",
-    orderNo:no,
-    customer:orderOwner(o),
-    phone:orderPhone(o),
-    address:orderAddress(o)
-  };
-  return JSON.stringify(payload);
+  // Keep QR payload intentionally minimal so the QR uses the largest possible modules.
+  // The printed text already contains customer details; the QR only needs the order number.
+  return String(orderLabelNo(o)||"").trim();
 }
 function openOrderLabelPrint(id){
   const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return toast("Buyurtma topilmadi","error");
   const no=orderLabelNo(o);
   const qrData=encodeURIComponent(buildQrData(o));
-  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${qrData}`;
+  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=320x320&ecc=L&qzone=1&data=${qrData}`;
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>Yorliq ${esc(no)}</title><style>
     @page{size:58mm 40mm;margin:0}
     *{box-sizing:border-box}
@@ -151,12 +145,12 @@ function openOrderLabelPrint(id){
     .brand{font-size:8.8pt;font-weight:900;line-height:1}.sub{font-size:5pt;font-weight:800;letter-spacing:.25mm;margin-top:.35mm}.ord{font-size:9.5pt;font-weight:900;line-height:1;white-space:nowrap}
     .name{font-size:7.2pt;font-weight:900;line-height:1.08;max-height:5.2mm;overflow:hidden}
     .phone{font-size:6.5pt;font-weight:800;line-height:1.05;margin-top:.3mm}
-    .middle{display:grid;grid-template-columns:1fr 13.6mm;gap:1.6mm;min-height:0}
+    .middle{display:grid;grid-template-columns:1fr 18.8mm;gap:1.6mm;min-height:0}
     .addrBox{display:flex;flex-direction:column;min-height:0}
     .addrLabel{font-size:5.6pt;font-weight:900;line-height:1}
     .addr{margin-top:.45mm;font-size:6pt;line-height:1.14;max-height:14mm;overflow:hidden;word-break:break-word}
     .qrBox{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.4mm}
-    .qr{width:13.2mm;height:13.2mm;border:.25mm solid #000;border-radius:1.2mm;overflow:hidden;background:#fff}
+    .qr{width:18.4mm;height:18.4mm;border:.25mm solid #000;border-radius:1.2mm;overflow:hidden;background:#fff}
     .qr img{display:block;width:100%;height:100%;object-fit:cover}
     .qrCap{font-size:4.4pt;font-weight:900;line-height:1;text-align:center}
     .bottom{border-top:.25mm solid #000;padding-top:.7mm;text-align:center;margin-top:auto}
@@ -165,7 +159,7 @@ function openOrderLabelPrint(id){
   </style></head><body><div class="label">
     <div class="top"><div><div class="brand">OrzuMall</div><div class="sub">BUYURTMA YORLIG‘I</div></div><div class="ord">№ ${esc(no)}</div></div>
     <div><div class="name">${esc(orderOwner(o))}</div><div class="phone">Tel: ${esc(orderPhone(o))}</div></div>
-    <div class="middle"><div class="addrBox"><div class="addrLabel">Yetkazib berish manzili:</div><div class="addr">${esc(orderAddress(o))}</div></div><div class="qrBox"><div class="qr"><img alt="QR" src="${qrUrl}"></div><div class="qrCap">QR kod</div></div></div>
+    <div class="middle"><div class="addrBox"><div class="addrLabel">Yetkazib berish manzili:</div><div class="addr">${esc(orderAddress(o))}</div></div><div class="qrBox"><div class="qr"><img alt="QR" src="${qrUrl}"></div><div class="qrCap">Buyurtma QR</div></div></div>
     <div class="bottom"><div class="code">${esc(no)}</div><div class="hint">Buyurtma raqamini tekshirib yopishtiring</div></div>
   </div><script>window.onload=()=>{setTimeout(()=>{window.print()},240)};<\/script></body></html>`;
   const w=window.open("","_blank","width=420,height=340");
