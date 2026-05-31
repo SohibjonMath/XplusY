@@ -1,0 +1,604 @@
+/* ===== OrzuMall v65 — Home Cards + Product Detail + iOS Checkout + Mini Account Center ===== */
+:root{
+  --v65-red:#ef4444;
+  --v65-red2:#f43f5e;
+  --v65-dark:#111827;
+  --v65-muted:#64748b;
+  --v65-line:#e8edf5;
+  --v65-soft:#f8fafc;
+  --v65-rose:#fff5f6;
+  --v65-shadow:0 16px 36px rgba(15,23,42,.07);
+  --v65-shadow-soft:0 8px 22px rgba(15,23,42,.05);
+}
+
+/* =========================================================
+   HOME — clean marketplace product cards
+========================================================= */
+#view-home .productsCard{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+#view-home .searchCard{
+  border:1px solid var(--v65-line) !important;
+  border-radius:22px !important;
+  background:linear-gradient(180deg,#fff,#fbfcfe) !important;
+  box-shadow:var(--v65-shadow-soft) !important;
+  padding:10px !important;
+}
+#view-home #q.input{
+  min-height:46px !important;
+  border-radius:16px !important;
+  border:1px solid #e6ebf2 !important;
+  background:#f8fafc !important;
+  font-size:13px !important;
+  font-weight:750 !important;
+  padding:0 14px !important;
+}
+#view-home #q.input:focus{
+  border-color:#fecdd3 !important;
+  background:#fff !important;
+  box-shadow:0 0 0 4px rgba(244,63,94,.08) !important;
+}
+#view-home .searchPromo{
+  border:1px solid #e8edf5 !important;
+  border-radius:24px !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(244,63,94,.08), transparent 34%),
+    linear-gradient(180deg,#fff,#fbfcff) !important;
+  box-shadow:var(--v65-shadow-soft) !important;
+  padding:16px !important;
+  gap:14px !important;
+}
+#view-home .spKicker{color:#e11d48 !important;font-weight:1000 !important;letter-spacing:.08em !important}
+#view-home .spTitle{font-size:20px !important;font-weight:1000 !important;letter-spacing:-.03em !important;color:#0f172a !important}
+#view-home .spSub,#view-home .spHint{color:#64748b !important;font-weight:750 !important}
+#view-home .spBotBtn{
+  min-height:48px !important;
+  border-radius:17px !important;
+  border:1px solid #dbeafe !important;
+  background:linear-gradient(135deg,#0ea5e9,#2563eb) !important;
+  color:#fff !important;
+  box-shadow:0 14px 26px rgba(37,99,235,.18) !important;
+}
+#view-home .productsHead{
+  margin:18px 0 10px !important;
+  padding:0 2px !important;
+}
+#view-home .productsTitle{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  font-size:21px !important;
+  line-height:1 !important;
+  color:#0f172a !important;
+  font-weight:1000 !important;
+  letter-spacing:-.035em !important;
+}
+#view-home .productsTitle i{color:#ef4444 !important;font-size:18px !important}
+#view-home .productsCount{
+  border:1px solid #e8edf5 !important;
+  background:#fff !important;
+  color:#64748b !important;
+  border-radius:999px !important;
+  padding:5px 9px !important;
+  font-size:11px !important;
+  font-weight:1000 !important;
+}
+#view-home .sortSelect,
+#view-home .catBtnPc{
+  min-height:40px !important;
+  border-radius:14px !important;
+  border:1px solid #e8edf5 !important;
+  background:linear-gradient(180deg,#fff,#f8fafc) !important;
+  color:#334155 !important;
+  box-shadow:0 8px 18px rgba(15,23,42,.04) !important;
+  font-weight:900 !important;
+}
+#view-home .grid{
+  gap:13px !important;
+  margin-top:10px !important;
+}
+#view-home .pcard{
+  position:relative !important;
+  border-radius:22px !important;
+  border:1px solid #edf1f6 !important;
+  background:linear-gradient(180deg,#fff 0%,#fcfdff 100%) !important;
+  box-shadow:0 12px 28px rgba(15,23,42,.055) !important;
+  overflow:hidden !important;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease !important;
+}
+#view-home .pcard:hover{
+  transform:translateY(-3px) !important;
+  border-color:#fecdd3 !important;
+  box-shadow:0 18px 38px rgba(15,23,42,.09) !important;
+}
+#view-home .pmedia{
+  padding:9px 9px 0 !important;
+  background:#fff !important;
+}
+#view-home .pcard .pimg{
+  aspect-ratio:3 / 4 !important;
+  object-fit:contain !important;
+  padding:8px !important;
+  border:1px solid #f0f3f7 !important;
+  border-radius:17px !important;
+  background:radial-gradient(circle at 35% 18%,#fff 0%,#fbfcfe 58%,#f3f6fa 100%) !important;
+  transition:transform .22s ease !important;
+}
+#view-home .pcard:hover .pimg{transform:scale(1.025) !important}
+#view-home .pbadgeStack{left:15px !important;top:15px !important;gap:5px !important}
+#view-home .pbadge{
+  padding:5px 8px !important;
+  border-radius:999px !important;
+  font-size:10px !important;
+  font-weight:1000 !important;
+  line-height:1 !important;
+}
+#view-home .pbadge.discount{
+  border:0 !important;
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;
+  color:#fff !important;
+  box-shadow:0 8px 16px rgba(225,29,72,.18) !important;
+}
+#view-home .pbadge.meta{
+  border:1px solid rgba(226,232,240,.92) !important;
+  background:rgba(255,255,255,.92) !important;
+  color:#334155 !important;
+  box-shadow:0 6px 14px rgba(15,23,42,.05) !important;
+}
+#view-home .favBtn{
+  top:15px !important;
+  right:15px !important;
+  width:36px !important;
+  height:36px !important;
+  border-radius:14px !important;
+  border:1px solid #e8edf5 !important;
+  background:rgba(255,255,255,.94) !important;
+  color:#64748b !important;
+  box-shadow:0 8px 18px rgba(15,23,42,.06) !important;
+}
+#view-home .favBtn.active{color:#e11d48 !important;background:#fff5f6 !important;border-color:#fecdd3 !important}
+#view-home .pbody{padding:10px 11px 12px !important}
+#view-home .ppriceNow{
+  color:#ef4444 !important;
+  font-size:18px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.035em !important;
+}
+#view-home .ppriceOld{color:#94a3b8 !important;font-size:11px !important;font-weight:800 !important}
+#view-home .pname{
+  margin-top:8px !important;
+  min-height:36px !important;
+  color:#0f172a !important;
+  font-size:13px !important;
+  line-height:1.34 !important;
+  font-weight:850 !important;
+}
+#view-home .pratingInline{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:4px !important;
+  margin-top:7px !important;
+  color:#64748b !important;
+  font-size:11px !important;
+  font-weight:850 !important;
+}
+#view-home .pratingInline i{color:#f59e0b !important}
+#view-home .omPowerRow{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  margin-top:6px !important;
+  min-height:18px !important;
+  color:#94a3b8 !important;
+  font-size:10.5px !important;
+  font-weight:850 !important;
+}
+#view-home .omPowerRow span{display:inline-flex !important;align-items:center !important;gap:4px !important}
+#view-home .pcardFoot{
+  display:flex !important;
+  align-items:end !important;
+  justify-content:space-between !important;
+  gap:8px !important;
+  margin-top:8px !important;
+}
+#view-home .pship{min-width:0 !important;margin:0 !important}
+#view-home .shipBadge,
+#view-home .delivery-badge{
+  min-height:28px !important;
+  padding:0 8px !important;
+  border-radius:999px !important;
+  font-size:10px !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#view-home .iconPill.primary.cartOnly{
+  flex:0 0 42px !important;
+  width:42px !important;
+  height:42px !important;
+  border-radius:15px !important;
+  border:1px solid rgba(239,68,68,.14) !important;
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;
+  color:#fff !important;
+  box-shadow:0 12px 22px rgba(225,29,72,.18) !important;
+}
+#view-home .iconPill.primary.cartOnly:hover{transform:translateY(-1px) !important;box-shadow:0 15px 26px rgba(225,29,72,.23) !important}
+#view-home .loadMoreBtn{
+  min-height:46px !important;
+  border-radius:16px !important;
+  padding:0 18px !important;
+}
+#view-home .pagerHint{font-size:11px !important;line-height:1.4 !important}
+
+/* =========================================================
+   PRODUCT DETAIL — consistent premium product experience
+========================================================= */
+#view-product .productPageTop{
+  margin-bottom:10px !important;
+  padding:10px !important;
+  border:1px solid #e8edf5 !important;
+  border-radius:20px !important;
+  background:rgba(255,255,255,.90) !important;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 10px 24px rgba(15,23,42,.05) !important;
+}
+#view-product .productBackBtn,
+#view-product .productShareBtn{
+  width:42px !important;height:42px !important;min-width:42px !important;
+  border-radius:15px !important;border:1px solid #e8edf5 !important;
+  background:linear-gradient(180deg,#fff,#f8fafc) !important;
+  color:#475569 !important;box-shadow:none !important;
+}
+#view-product .ppGallery,
+#view-product .ppHeadCard,
+#view-product .ppCategoryCard,
+#view-product .ppVariantCard,
+#view-product .ppDesc,
+#view-product .ppReviewsCard{
+  border-color:#e8edf5 !important;
+  box-shadow:0 14px 32px rgba(15,23,42,.055) !important;
+}
+#view-product .ppMainImage{
+  background:radial-gradient(circle at 32% 18%,#fff 0%,#fbfcfe 58%,#f1f5f9 100%) !important;
+  border-color:#eef2f7 !important;
+}
+#view-product .ppHeadCard h1{color:#0f172a !important}
+#view-product .ppPriceLine strong{color:#ef4444 !important}
+#view-product .ppAction{
+  border-radius:15px !important;
+  background:linear-gradient(180deg,#fff,#fbfcfe) !important;
+  box-shadow:0 8px 18px rgba(15,23,42,.04) !important;
+}
+#view-product .ppStickyBuy{
+  border-radius:22px !important;
+  border:1px solid rgba(255,255,255,.86) !important;
+  background:rgba(255,255,255,.94) !important;
+  box-shadow:0 18px 44px rgba(15,23,42,.14) !important;
+}
+#view-product #productPageCartBtn{
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;
+  box-shadow:0 14px 26px rgba(225,29,72,.20) !important;
+}
+
+/* =========================================================
+   CHECKOUT — iOS bottom sheet / Telegram mini-app modal
+========================================================= */
+.checkoutOverlay,
+.paymentOverlay{
+  background:rgba(15,23,42,.52) !important;
+  backdrop-filter:blur(14px) saturate(1.1) !important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.1) !important;
+}
+.checkoutModal,
+.paymentModal{
+  position:relative !important;
+  border:1px solid rgba(255,255,255,.78) !important;
+  border-radius:28px !important;
+  background:linear-gradient(180deg,#fff,#fbfcfe) !important;
+  box-shadow:0 34px 94px rgba(2,6,23,.30) !important;
+  overflow:hidden !important;
+}
+.checkoutModal .checkoutHead,
+.paymentModal .paymentHead{
+  padding:16px !important;
+  border-bottom:1px solid #eef2f7 !important;
+  background:rgba(255,255,255,.94) !important;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.checkoutModal .checkoutTitle,
+.paymentModal .paymentTitle{
+  display:flex !important;align-items:center !important;gap:9px !important;
+  color:#0f172a !important;font-size:18px !important;font-weight:1000 !important;letter-spacing:-.025em !important;
+}
+.checkoutModal .checkoutTitle i,
+.paymentModal .paymentTitle i{color:#ef4444 !important}
+.checkoutModal .checkoutSub,
+.paymentModal .paymentSub{margin-top:4px !important;color:#64748b !important;font-size:12px !important;line-height:1.45 !important;font-weight:750 !important}
+.checkoutCloseBtn,
+.paymentCloseBtn{
+  width:40px !important;height:40px !important;min-width:40px !important;border-radius:14px !important;
+  border:1px solid #e8edf5 !important;background:#fff !important;color:#475569 !important;box-shadow:none !important;
+}
+.checkoutCompactSummary{
+  min-height:58px !important;
+  border:1px solid #fee2e2 !important;
+  border-radius:18px !important;
+  background:linear-gradient(135deg,#fff7f7,#fff) !important;
+  padding:12px 14px !important;
+  display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;
+  box-shadow:0 10px 20px rgba(225,29,72,.06) !important;
+}
+.checkoutCompactSummary span{color:#64748b !important;font-size:12px !important;font-weight:850 !important}
+.checkoutCompactSummary b{color:#ef4444 !important;font-size:20px !important;font-weight:1000 !important;letter-spacing:-.035em !important}
+.simpleCheckoutSection,
+.paymentFinalCard,
+.paymentDeliveryPreview{
+  border:1px solid #e8edf5 !important;
+  border-radius:19px !important;
+  background:linear-gradient(180deg,#fff,#fbfcfe) !important;
+  box-shadow:0 10px 22px rgba(15,23,42,.045) !important;
+}
+.simpleCheckoutSection{padding:13px !important}
+.checkoutSelect{
+  min-height:48px !important;
+  border-radius:14px !important;
+  border:1px solid #e1e7ef !important;
+  background:#f8fafc !important;
+  font-weight:850 !important;
+}
+.checkoutSelect:focus{border-color:#fecdd3 !important;box-shadow:0 0 0 4px rgba(244,63,94,.08) !important;background:#fff !important}
+.locateBtn,
+.locMetaBtn,
+.savedAddressChangeBtn,
+.deliveryMapApplyBtn{
+  min-height:44px !important;
+  border-radius:14px !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+}
+.locateBtn{
+  border:1px solid rgba(239,68,68,.14) !important;
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;
+  color:#fff !important;
+  box-shadow:0 12px 22px rgba(225,29,72,.16) !important;
+}
+.locMetaBtn,.savedAddressChangeBtn{
+  border:1px solid #fecdd3 !important;
+  background:#fff5f6 !important;
+  color:#be123c !important;
+  box-shadow:none !important;
+}
+.deliveryLocationStatus,
+.deliveryAutoOnlyNote,
+.omDeliveryCalcBox,
+.checkoutSubmitHint{
+  border-radius:15px !important;
+  font-size:12px !important;
+  line-height:1.45 !important;
+  font-weight:800 !important;
+}
+.deliveryInlineMapPanel{border-radius:18px !important;overflow:hidden !important;border:1px solid #e8edf5 !important;background:#fff !important}
+.checkoutFooter{
+  position:sticky !important;bottom:0 !important;z-index:5 !important;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom)) !important;
+  border-top:1px solid #eef2f7 !important;
+  background:rgba(255,255,255,.94) !important;
+  backdrop-filter:blur(14px) !important;
+  -webkit-backdrop-filter:blur(14px) !important;
+}
+.checkoutFinalTotalCard{
+  border:1px solid #e8edf5 !important;border-radius:17px !important;background:#f8fafc !important;padding:11px 12px !important;
+}
+.checkoutFinalTotalLabel{color:#94a3b8 !important;font-size:10px !important;font-weight:1000 !important;text-transform:uppercase !important;letter-spacing:.05em !important}
+.checkoutFinalTotalValue{color:#ef4444 !important;font-size:20px !important;font-weight:1000 !important;letter-spacing:-.035em !important}
+.checkoutFinalTotalSub{color:#64748b !important;font-size:11px !important;font-weight:750 !important;line-height:1.35 !important}
+#checkoutSubmit,
+#paymentSubmit{
+  min-height:50px !important;
+  border-radius:17px !important;
+  border:0 !important;
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;
+  color:#fff !important;
+  font-weight:1000 !important;
+  box-shadow:0 14px 26px rgba(225,29,72,.20) !important;
+}
+.paymentModal .paymentBody{padding:14px !important;display:grid !important;gap:12px !important}
+.paymentFinalCard{padding:14px !important}
+.paymentFinalCard span{font-size:11px !important;color:#94a3b8 !important;font-weight:1000 !important;text-transform:uppercase !important;letter-spacing:.04em !important}
+.paymentFinalCard b{display:block !important;margin-top:4px !important;color:#ef4444 !important;font-size:25px !important;font-weight:1000 !important;letter-spacing:-.04em !important}
+.paymentFinalCard small{display:block !important;margin-top:5px !important;color:#64748b !important;font-weight:750 !important}
+.paymentDeliveryChangeBtn{min-height:44px !important;border-radius:15px !important;border:1px solid #fecdd3 !important;background:#fff5f6 !important;color:#be123c !important;font-weight:950 !important}
+
+/* =========================================================
+   PROFILE — premium mini-account center
+========================================================= */
+#view-profile .viewHeader{
+  display:flex !important;align-items:center !important;justify-content:space-between !important;
+  margin:6px 0 12px !important;
+  background:transparent !important;
+}
+#view-profile .viewTitle{
+  color:#0f172a !important;
+  font-size:30px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.04em !important;
+}
+#view-profile .profileEditPill{
+  width:42px !important;height:42px !important;min-width:42px !important;padding:0 !important;
+  border-radius:15px !important;border:1px solid #fecdd3 !important;background:#fff5f6 !important;color:#be123c !important;
+  box-shadow:0 8px 18px rgba(225,29,72,.07) !important;
+}
+#view-profile .profileEditPill span{display:none !important}
+#view-profile .profilePage{gap:13px !important;padding-bottom:8px !important}
+#view-profile .profileHead{
+  position:relative !important;
+  overflow:hidden !important;
+  padding:16px !important;
+  border-radius:24px !important;
+  border:1px solid #ffe4e6 !important;
+  background:
+    radial-gradient(circle at 90% 0%,rgba(244,63,94,.14),transparent 36%),
+    linear-gradient(135deg,#fff 0%,#fff8f8 100%) !important;
+  box-shadow:0 16px 34px rgba(225,29,72,.08) !important;
+}
+#view-profile .profileAvatar{
+  width:62px !important;height:62px !important;
+  border-radius:20px !important;
+  display:grid !important;place-items:center !important;
+  border:1px solid rgba(255,255,255,.72) !important;
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;
+  color:#fff !important;
+  box-shadow:0 14px 24px rgba(225,29,72,.20) !important;
+}
+#view-profile .profileAvatar i{font-size:24px !important;color:#fff !important}
+#view-profile .profileName{color:#0f172a !important;font-size:20px !important;font-weight:1000 !important;letter-spacing:-.025em !important}
+#view-profile .profileUid{margin-top:4px !important;color:#64748b !important;font-size:12px !important;font-weight:800 !important}
+#view-profile #profileLogout{
+  width:40px !important;height:40px !important;min-width:40px !important;padding:0 !important;
+  border-radius:14px !important;border:1px solid #fee2e2 !important;background:#fff !important;color:#e11d48 !important;box-shadow:none !important;
+}
+#view-profile .formGrid,
+#view-profile .profileCard,
+#view-profile .activityPremium{
+  border:1px solid #e8edf5 !important;
+  border-radius:22px !important;
+  background:linear-gradient(180deg,#fff,#fbfcfe) !important;
+  box-shadow:0 14px 30px rgba(15,23,42,.055) !important;
+}
+#view-profile .formGrid{padding:14px !important;gap:11px !important}
+#view-profile .field span{margin-bottom:6px !important;color:#475569 !important;font-size:11px !important;font-weight:1000 !important;text-transform:uppercase !important;letter-spacing:.04em !important}
+#view-profile .field input,
+#view-profile .field select,
+#view-profile #topupAmount,
+#view-profile #savedAddressName{
+  min-height:46px !important;
+  border-radius:14px !important;
+  border:1px solid #e4eaf2 !important;
+  background:#f8fafc !important;
+  color:#0f172a !important;
+  font-size:13px !important;
+  font-weight:800 !important;
+  padding:0 12px !important;
+}
+#view-profile .field input:focus,
+#view-profile .field select:focus,
+#view-profile #topupAmount:focus,
+#view-profile #savedAddressName:focus{
+  border-color:#fecdd3 !important;background:#fff !important;box-shadow:0 0 0 4px rgba(244,63,94,.08) !important;outline:none !important;
+}
+#view-profile .hint{
+  padding:10px 12px !important;
+  border:1px solid #e8edf5 !important;
+  border-radius:14px !important;
+  background:#f8fafc !important;
+  color:#64748b !important;
+  font-size:11.5px !important;
+  font-weight:750 !important;
+  line-height:1.45 !important;
+}
+#view-profile .profileBottomBar{bottom:calc(84px + env(safe-area-inset-bottom)) !important}
+#view-profile #profileSave{
+  min-height:48px !important;border-radius:16px !important;border:0 !important;
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;color:#fff !important;
+  box-shadow:0 14px 26px rgba(225,29,72,.18) !important;font-weight:1000 !important;
+}
+#view-profile .savedAddressCard,
+#view-profile .walletPremium,
+#view-profile .activityPremium{overflow:hidden !important}
+#view-profile .savedAddressHead,
+#view-profile .walletHero,
+#view-profile .profileCardTop{
+  padding:14px !important;
+  border-bottom:1px solid #eef2f7 !important;
+  background:linear-gradient(180deg,#fff,#fbfcfe) !important;
+}
+#view-profile .savedAddressIcon,
+#view-profile .walletIcon{
+  width:42px !important;height:42px !important;border-radius:15px !important;
+  display:grid !important;place-items:center !important;
+  background:#fff5f6 !important;color:#e11d48 !important;
+  border:1px solid #fecdd3 !important;
+}
+#view-profile .profileCardTitle{color:#0f172a !important;font-size:15px !important;font-weight:1000 !important;letter-spacing:-.015em !important}
+#view-profile .profileCardSub{margin-top:3px !important;color:#64748b !important;font-size:11.5px !important;font-weight:750 !important;line-height:1.4 !important}
+#view-profile .savedAddressForm{padding:14px !important;display:grid !important;gap:9px !important}
+#view-profile #savedAddressDetectSave,
+#view-profile #topupBtn{
+  min-height:46px !important;border-radius:15px !important;border:0 !important;
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;color:#fff !important;
+  box-shadow:0 12px 22px rgba(225,29,72,.16) !important;font-weight:1000 !important;
+}
+#view-profile .savedAddressStatus{margin:0 14px 12px !important;padding:10px !important;border-radius:13px !important;border:1px solid #e8edf5 !important;background:#f8fafc !important;color:#64748b !important;font-size:11px !important;font-weight:750 !important}
+#view-profile .savedAddressList{padding:0 14px 14px !important;display:grid !important;gap:8px !important}
+#view-profile .walletGrid{padding:14px !important;display:grid !important;gap:10px !important}
+#view-profile .walletBalanceBox,
+#view-profile .walletTopupBox{
+  border:1px solid #e8edf5 !important;border-radius:18px !important;background:#f8fafc !important;padding:12px !important;
+}
+#view-profile .walletAmount{color:#ef4444 !important;font-size:25px !important;font-weight:1000 !important;letter-spacing:-.045em !important}
+#view-profile .walletTopupRow{display:grid !important;grid-template-columns:1fr auto !important;gap:8px !important;align-items:center !important}
+#view-profile .walletInputWrap{min-height:46px !important;border-radius:14px !important;border:1px solid #e4eaf2 !important;background:#fff !important;padding:0 10px !important}
+#view-profile .activityCardTop{display:grid !important;gap:12px !important}
+#view-profile .activityTabs{display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important}
+#view-profile .activityTab{
+  min-height:40px !important;border-radius:14px !important;border:1px solid #e8edf5 !important;background:#fff !important;color:#64748b !important;font-size:12px !important;font-weight:950 !important;box-shadow:none !important;
+}
+#view-profile .activityTab.isActive{border-color:#fecdd3 !important;background:#fff5f6 !important;color:#be123c !important}
+#view-profile .activityBody{padding:12px 14px 14px !important}
+#view-profile .activityPanelHead{display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;margin-bottom:10px !important}
+#view-profile .activityPanelTitle{color:#0f172a !important;font-size:14px !important;font-weight:1000 !important}
+#view-profile .activityPanelSub{margin-top:3px !important;color:#64748b !important;font-size:11px !important;font-weight:750 !important}
+#view-profile .ordersList{padding:0 !important;display:grid !important;gap:9px !important}
+#view-profile .orderItem,
+#view-profile .moneyHistoryItem{
+  border:1px solid #e8edf5 !important;border-radius:16px !important;background:#fff !important;padding:11px !important;box-shadow:0 6px 16px rgba(15,23,42,.035) !important;
+}
+
+/* =========================================================
+   MOBILE tuning
+========================================================= */
+@media (max-width: 768px){
+  #view-home .searchPromo{padding:13px !important;border-radius:20px !important}
+  #view-home .spTitle{font-size:18px !important}
+  #view-home .grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important}
+  #view-home .pcard{border-radius:18px !important}
+  #view-home .pmedia{padding:7px 7px 0 !important}
+  #view-home .pcard .pimg{padding:5px !important;border-radius:14px !important}
+  #view-home .pbody{padding:8px 8px 9px !important}
+  #view-home .ppriceNow{font-size:15px !important}
+  #view-home .pname{font-size:12px !important;min-height:33px !important;margin-top:6px !important}
+  #view-home .omPowerRow{font-size:9px !important;gap:6px !important}
+  #view-home .shipBadge,#view-home .delivery-badge{font-size:8.8px !important;padding:0 6px !important;min-height:25px !important}
+  #view-home .iconPill.primary.cartOnly{width:38px !important;height:38px !important;flex-basis:38px !important;border-radius:13px !important}
+  #view-home .favBtn{top:12px !important;right:12px !important;width:32px !important;height:32px !important;border-radius:12px !important}
+  #view-home .pbadgeStack{left:12px !important;top:12px !important}
+  #view-home .pbadge{font-size:9px !important;padding:4px 6px !important}
+  #view-product .productPageTop{border-radius:18px !important;padding:8px !important}
+  .checkoutModal,.paymentModal{border-radius:26px 26px 0 0 !important;border-bottom:0 !important}
+  .checkoutModal::before,.paymentModal::before{
+    content:"";display:block;width:42px;height:5px;border-radius:999px;background:#dbe3ed;margin:8px auto 0;
+  }
+  .checkoutModal .checkoutHead,.paymentModal .paymentHead{padding:12px 13px !important}
+  .checkoutModal .checkoutBody{padding:11px 12px 12px !important}
+  .checkoutFooter{padding:10px 12px calc(10px + env(safe-area-inset-bottom)) !important}
+  #view-profile .viewTitle{font-size:24px !important}
+  #view-profile .profileHead{padding:14px !important;border-radius:21px !important}
+  #view-profile .profileAvatar{width:56px !important;height:56px !important;border-radius:18px !important}
+  #view-profile .profileName{font-size:18px !important}
+  #view-profile .formGrid,#view-profile .profileCard,#view-profile .activityPremium{border-radius:19px !important}
+  #view-profile .walletTopupRow{grid-template-columns:1fr !important}
+}
+@media (max-width: 390px){
+  #view-home .ppriceNow{font-size:14px !important}
+  #view-home .pname{font-size:11.5px !important}
+  #view-home .omPowerRow{display:none !important}
+  #view-home .shipBadge,#view-home .delivery-badge{max-width:88px !important}
+}

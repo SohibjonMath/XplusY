@@ -1,4 +1,51 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[functions]
+  node_bundler = "zisi"
+
+# If someone opens /public/... (old links), send to root path
 [[redirects]]
-from = "/tg-install"
-to = "/tg-install.html"
-status = 200
+  from = "/public/*"
+  to = "/:splat"
+  status = 301
+  force = true
+
+# Optional clean API prefix (you can use /api/payme if you want)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# Admin panel routes (static)
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/index.html"
+  status = 200
+  force = false
+
+
+# No SPA fallback: project uses real .html pages and hash routing
+
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+
+
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"

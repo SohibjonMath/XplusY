@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="uz">
+<head>
+    <!-- FAVICON -->
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+<meta charset="utf-8" />
+  
+    <link rel="icon" type="image/webp" sizes="32x32" href="/favicon.webp">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <!-- Prevent browser caching -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="theme-color" content="#dc2626" />
+  <title>Kirish — OrzuMall</title>
+
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --primary:#2E8B57;
+      --primary2:#1f6e44;
+      --border: rgba(15,23,42,.10);
+      --ring: rgba(46,139,87,.22);
+      --shadow: 0 18px 50px rgba(15,23,42,.14);
+      --r: 22px;
+      --safe: env(safe-area-inset-bottom,0px);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
+      color:var(--text);
+      background:
+        radial-gradient(900px 700px at 18% 0%, rgba(46,139,87,.14), transparent 60%),
+        radial-gradient(900px 700px at 85% 15%, rgba(99,102,241,.10), transparent 60%),
+        var(--bg);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wrap{min-height:100%; display:grid; place-items:center; padding:22px 16px calc(22px + var(--safe));}
+    .card{width:min(460px,100%); background: rgba(255,255,255,.92); border:1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); overflow:hidden;}
+    .top{padding:18px 18px 10px; text-align:center;}
+    .logo{width:120px;height:120px;margin:0 auto 12px;display:grid;place-items:center;background:transparent;border:0;box-shadow:none;overflow:visible}
+    .logo img{width:100%;height:100%;object-fit:contain;display:block;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent}
+    h1{margin:0}
+    .brand-title{font-size:24px;font-weight:900;letter-spacing:.2px;line-height:1.1;margin-top:2px;text-align:center}
+    .brand-title .orzu{color:#111827}
+    .brand-title .mall{color:#ef4444}
+    p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px 0;}
+    .tab{border:1px solid var(--border);background:rgba(255,255,255,.82);border-radius:14px;padding:10px 12px;cursor:pointer;font-weight:900;color:#111}
+    .tab:not(.active){color:#334155}
+    .tab.active{background:rgba(46,139,87,.14);border-color:rgba(46,139,87,.30);color:var(--primary)}
+    .body{padding:12px 16px 18px}
+    .field{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+    .field label{font-size:12px;color:var(--muted)}
+    .input{display:flex;align-items:center;gap:10px;border:1px solid var(--border);background:rgba(255,255,255,.86);border-radius:16px;padding:12px 12px;box-shadow:0 10px 22px rgba(15,23,42,.06)}
+    .input i{color:var(--muted)}
+    .input input{border:none;outline:none;background:transparent;width:100%;font-size:14px;color:var(--text)}
+    .input:focus-within{border-color:rgba(46,139,87,.45);box-shadow:0 0 0 6px var(--ring)}
+    .row{display:flex;gap:10px;align-items:center}
+    .iconbtn{height:44px;width:44px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.84);cursor:pointer;display:grid;place-items:center;color:#334155}
+    .cta{width:100%;border:none;border-radius:16px;padding:12px 14px;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-weight:900;box-shadow:0 14px 28px rgba(46,139,87,.26);cursor:pointer;margin-top:8px}
+    .hint{margin-top:10px;font-size:12px;color:var(--muted)}
+    .hint a{color:var(--primary);font-weight:700;text-decoration:none}
+    .hint a:hover{text-decoration:underline}
+    .footer{padding:0 16px 16px;text-align:center;color:rgba(100,116,139,.9);font-size:12px}
+    .notice{display:none;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(15,23,42,.10);background:rgba(255,255,255,.7);font-size:12px;color:#0f172a}
+    .notice.err{border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.08)}
+    .notice.ok{border-color: rgba(46,139,87,.35); background: rgba(46,139,87,.08)}
+
+    /* Splash loading */
+    .splash{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;
+      background:rgba(2,6,23,.55);backdrop-filter: blur(8px);-webkit-backdrop-filter: blur(8px);
+    }
+    .splash.show{display:flex}
+    .splashCard{width:min(360px, calc(100% - 48px));background:rgba(255,255,255,.92);border:1px solid var(--border);
+      border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.22);padding:16px 16px 14px;display:flex;gap:12px;align-items:center;
+    }
+    .spinner{width:34px;height:34px;border-radius:999px;border:3px solid rgba(46,139,87,.22);border-top-color: var(--primary);
+      animation: spin 1s linear infinite;flex:0 0 auto;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .splashTxt{display:flex;flex-direction:column;gap:2px}
+    .splashTxt b{font-size:14px}
+    .splashTxt span{font-size:12px;color:var(--muted)}
+  </style>
+
+  <meta name="theme-color" content="#dc2626" />
+
+
+
+
+<link rel="stylesheet" href="/theme-redwhite.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="logo"><img src="./login-logo.webp" alt="OrzuMall logo" /></div>
+        <h1 class="brand-title"><span class="orzu">Orzu</span><span class="mall">Mall</span></h1>
+        <p>zamonaviy xaridlar dunyosiga xush kelibsiz!</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" id="tabLogin" type="button">Kirish</button>
+        <button class="tab" id="tabSignup" type="button">Ro‘yxatdan o‘tish</button>
+      </div>
+
+      <div class="body">
+        <div class="notice" id="notice"></div>
+
+        <!-- Login form -->
+        <form id="loginForm" autocomplete="on">
+          <div class="field">
+            <label>Telefon raqam</label>
+            <div class="input">
+              <i class="fa-solid fa-phone"></i>
+              <input id="loginPhone" inputmode="tel" placeholder="+998901234567" autocomplete="tel" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Parol</label>
+            <div class="row">
+              <div class="input" style="flex:1">
+                <i class="fa-solid fa-lock"></i>
+                <input id="loginPass" type="password" placeholder="Parol" autocomplete="current-password" required />
+              </div>
+              <button class="iconbtn" type="button" id="toggleLoginPass" title="Ko‘rsatish/Yashirish"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
+
+          <button class="cta" type="submit" id="loginBtn">
+            <i class="fa-solid fa-right-to-bracket" style="margin-right:8px"></i> Kirish
+          </button>
+
+          <div class="hint"><a id="forgotLink" href="https://t.me/OrzuMallUZ_bot" target="_blank" rel="noopener">Parol esdan chiqdimi?</a> — parolni tiklash uchun botga yozing.</div>
+        </form>
+
+        <!-- Signup form -->
+        <form id="signupForm" style="display:none" autocomplete="on">
+          <!-- Ro'yxatdan o'tishda profil ma'lumotlari to'liq so'raladi (bitta users/{uid} hujjat) -->
+          <div class="row" style="gap:12px">
+            <div class="field" style="flex:1">
+              <label>Ism</label>
+              <div class="input">
+                <i class="fa-solid fa-user"></i>
+                <input id="signupFirstName" placeholder="Ism" autocomplete="given-name" required />
+              </div>
+            </div>
+            <div class="field" style="flex:1">
+              <label>Familiya</label>
+              <div class="input">
+                <i class="fa-solid fa-user"></i>
+                <input id="signupLastName" placeholder="Familiya" autocomplete="family-name" required />
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Telefon raqam</label>
+            <div class="input">
+              <i class="fa-solid fa-phone"></i>
+              <input id="signupPhone" inputmode="tel" placeholder="+998901234567" autocomplete="tel" required />
+            </div>
+          </div>
+
+          <div class="row" style="gap:12px">
+            <div class="field" style="flex:1">
+              <label>Viloyat</label>
+              <div class="input">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <select id="signupRegion" required>
+                  <option value="">Viloyatni tanlang</option>
+                </select>
+              </div>
+            </div>
+            <div class="field" style="flex:1">
+              <label>Tuman</label>
+              <div class="input">
+                <i class="fa-solid fa-location-dot"></i>
+                <select id="signupDistrict" required>
+                  <option value="">Tumanni tanlang</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Pochta</label>
+            <div class="input">
+              <i class="fa-solid fa-envelopes-bulk"></i>
+              <select id="signupPost" required>
+                <option value="">Pochta indeks</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Parol</label>
+            <div class="row">
+              <div class="input" style="flex:1">
+                <i class="fa-solid fa-lock"></i>
+                <input id="signupPass" type="password" placeholder="Parol" autocomplete="new-password" required />
+              </div>
+              <button class="iconbtn" type="button" id="toggleSignupPass" title="Ko‘rsatish/Yashirish"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Parolni qayta kiriting</label>
+            <div class="input">
+              <i class="fa-solid fa-lock"></i>
+              <input id="signupPass2" type="password" placeholder="Qayta parol" autocomplete="new-password" required />
+            </div>
+          </div>
+
+          <button class="cta" type="submit" id="signupBtn">
+            <i class="fa-solid fa-user-plus" style="margin-right:8px"></i> Ro‘yxatdan o‘tish
+          </button>
+
+          <div class="hint">Ro‘yxatdan o‘tganda sizga avtomatik ID beriladi.</div>
+        </form>
+      </div>
+
+      <div class="footer">© OrzuMall</div>
+    </div>
+  </div>
+
+  <!-- Splash: Kuting... -->
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splashCard" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="splashTxt">
+        <b>Kuting...</b>
+        <span>Tekshirilmoqda va yuklanmoqda</span>
+      </div>
+    </div>
+  </div>
+<script type="module" src="./login.js"></script>
+</body>
+</html>

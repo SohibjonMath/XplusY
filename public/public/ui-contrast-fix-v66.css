@@ -1,0 +1,240 @@
+/* =========================================================
+   OrzuMall v66 — universal button contrast safeguard
+   Prevents text/icons from blending into button backgrounds.
+========================================================= */
+
+/* Icons and labels should follow the final button foreground color. */
+button i,
+button svg,
+button svg path,
+button .btnLabel,
+button > span:not(.chipCount):not(.badge):not(.balAmt):not(.balCur),
+a.btn i,
+a.btn svg,
+a.btn .btnLabel{
+  color:inherit !important;
+}
+
+/* Main CTA buttons: white text/icon on red or dark-red premium backgrounds. */
+.btn.primary,
+.btn:not(.ghost):not(.small):not(.nfBtn),
+#orderBtnPage,
+#checkoutSubmit,
+#paymentSubmit,
+#productPageCartBtn,
+#ppReviewSend,
+#topupBtn,
+#topupNext,
+#topupSubmit,
+#savedAddressDetectSave,
+#paymeBtn,
+#vConfirm,
+.deliveryMapApplyBtn,
+.qvMainCta,
+.favPrimaryBtn,
+.revBtn,
+.iconPill.primary.cartOnly{
+  color:#ffffff !important;
+}
+.btn.primary i,
+.btn.primary span,
+.btn:not(.ghost):not(.small):not(.nfBtn) i,
+.btn:not(.ghost):not(.small):not(.nfBtn) span,
+#orderBtnPage i,
+#orderBtnPage span,
+#checkoutSubmit i,
+#checkoutSubmit span,
+#paymentSubmit i,
+#paymentSubmit span,
+#productPageCartBtn i,
+#productPageCartBtn span,
+#ppReviewSend i,
+#ppReviewSend span,
+#topupBtn i,
+#topupBtn span,
+#topupNext i,
+#topupNext span,
+#topupSubmit i,
+#topupSubmit span,
+#savedAddressDetectSave i,
+#savedAddressDetectSave span,
+#paymeBtn i,
+#paymeBtn span,
+#vConfirm i,
+#vConfirm span,
+.deliveryMapApplyBtn i,
+.deliveryMapApplyBtn span,
+.qvMainCta i,
+.qvMainCta span,
+.favPrimaryBtn i,
+.favPrimaryBtn span,
+.revBtn i,
+.revBtn span,
+.iconPill.primary.cartOnly i,
+.iconPill.primary.cartOnly span{
+  color:#ffffff !important;
+  fill:#ffffff !important;
+  stroke:currentColor !important;
+}
+
+/* White / light buttons: dark text and icons for reliable contrast. */
+.btn.ghost,
+.ghostBtn,
+.iconBtn,
+.avatarBtn,
+.balChip,
+.balPlus,
+.catBtnPc,
+.locMetaBtn,
+.locateBtn,
+.savedAddressChangeBtn,
+.paymentDeliveryChangeBtn,
+.copyBtn,
+.qtyBtn,
+.removeBtn,
+.profileEditPill,
+.activityTab,
+.orderActionBtn,
+.favGhostBtn,
+.favRemoveBtn,
+.ppAction,
+.qvMovedBtn,
+.qvClose,
+.miniClose,
+.navBtn,
+.productBackBtn,
+.productShareBtn,
+.checkoutCloseBtn,
+.paymentCloseBtn,
+.mapPanelCloseBtn,
+.topupCloseBtn,
+.savedAddressDelete{
+  color:#334155 !important;
+}
+.btn.ghost i,
+.btn.ghost span,
+.ghostBtn i,
+.ghostBtn span,
+.iconBtn i,
+.iconBtn span:not(.chipCount),
+.avatarBtn i,
+.balChip i,
+.balPlus i,
+.catBtnPc i,
+.locMetaBtn i,
+.locMetaBtn span,
+.locateBtn i,
+.locateBtn span,
+.savedAddressChangeBtn i,
+.savedAddressChangeBtn span,
+.paymentDeliveryChangeBtn i,
+.paymentDeliveryChangeBtn span,
+.copyBtn i,
+.copyBtn span,
+.qtyBtn i,
+.removeBtn i,
+.profileEditPill i,
+.profileEditPill span,
+.activityTab i,
+.activityTab span,
+.orderActionBtn i,
+.orderActionBtn span,
+.favGhostBtn i,
+.favGhostBtn span,
+.favRemoveBtn i,
+.favRemoveBtn span,
+.ppAction i,
+.ppAction span,
+.qvMovedBtn i,
+.qvMovedBtn span,
+.qvClose i,
+.miniClose i,
+.navBtn i,
+.productBackBtn i,
+.productShareBtn i,
+.checkoutCloseBtn i,
+.paymentCloseBtn i,
+.mapPanelCloseBtn i,
+.topupCloseBtn i,
+.savedAddressDelete i{
+  color:inherit !important;
+  fill:currentColor !important;
+  stroke:currentColor !important;
+}
+
+/* Red-accent light buttons: visible red foreground. */
+.btn.ghost,
+.ghostBtn,
+.savedAddressChangeBtn,
+.paymentDeliveryChangeBtn,
+.removeBtn,
+.favRemoveBtn,
+.savedAddressDelete,
+.profileEditPill.danger,
+.iconPill.danger{
+  color:#be123c !important;
+}
+
+/* Active tabs and selected controls. */
+.activityTab.isActive,
+.ppAction.active,
+.mobile-bottom-bar .nav-btn.active{
+  color:#be123c !important;
+}
+.mobile-bottom-bar .nav-btn.active .ico,
+.mobile-bottom-bar .nav-btn.active .ico i,
+.mobile-bottom-bar .nav-btn.active .ico svg,
+.mobile-bottom-bar .nav-btn.active .ico svg path{
+  color:#ffffff !important;
+  fill:#ffffff !important;
+  stroke:#ffffff !important;
+}
+.mobile-bottom-bar .nav-btn:not(.active) .ico,
+.mobile-bottom-bar .nav-btn:not(.active) .ico i{
+  color:#475569 !important;
+}
+
+/* Header count badges must always stay readable. */
+.chipCount,
+.mobile-bottom-bar .badge,
+#navFavBadge,
+#navCartBadge{
+  color:#ffffff !important;
+}
+
+/* Disabled CTA buttons: readable but visibly disabled. */
+button:disabled,
+.btn:disabled{
+  opacity:.62 !important;
+  cursor:not-allowed !important;
+}
+button:disabled i,
+button:disabled span{
+  color:inherit !important;
+}
+
+/* Compact icon-only cart buttons remain clear on cards. */
+.iconPill.primary.cartOnly,
+.pBtn.iconOnly,
+.favPrimaryBtn{
+  color:#ffffff !important;
+}
+.pBtn.iconOnly i,
+.iconPill.primary.cartOnly i,
+.favPrimaryBtn i{
+  color:#ffffff !important;
+}
+
+/* Quantity and close buttons: keep symbols visible. */
+.qty button,
+.qtyBtn,
+.removeBtn,
+.iconBtn,
+.checkoutCloseBtn,
+.paymentCloseBtn,
+.mapPanelCloseBtn,
+.topupCloseBtn,
+.miniClose,
+.qvClose{
+  text-shadow:none !important;
+}

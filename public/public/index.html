@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="uz" class="om-view-home">
+<head>
+    <!-- FAVICON -->
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+<meta charset="utf-8" />
+  
+    <link rel="icon" type="image/webp" sizes="32x32" href="/favicon.webp">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+<meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover" />
+  <!-- Static files use versioned URLs, so the browser may safely cache them for faster startup. -->
+  <title>OrzuMall</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260531_v73_card_pending_final_fix" />
+
+  <meta name="theme-color" content="#dc2626" />
+
+
+
+
+<link rel="stylesheet" href="/theme-redwhite.css?v=20260531_v73_card_pending_final_fix">
+  <link rel="stylesheet" href="./i18n.css?v=20260530_v49_mobile_header_tools" />
+  <link rel="stylesheet" href="./checkout-v42.css?v=20260530_v42_payment_flow" />
+  <link rel="stylesheet" href="./customer-center.css?v=20260530_v55_customer_native_push" />
+  <link rel="stylesheet" href="./order-lifecycle-v46.css?v=20260530_v46_premium_status_history" />
+  <link rel="stylesheet" href="./cart-clean-v59.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./mobile-nav-cart-premium-v63.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./ui-premium-v64.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./ui-premium-v65.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./ui-contrast-fix-v66.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./ui-nav-fix-v67.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./ui-profile-fix-v68.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./ui-icon-contrast-fix-v69.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./ui-card-cart-red-v72.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="./ui-final-card-pending-fix-v73.css?v=20260531_v73_card_pending_final_fix" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" referrerpolicy="no-referrer" />
+</head>
+<body class="om-view-home">
+  <header class="topbar">
+    <div class="mobileSearchHead" aria-label="Qidiruv">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input id="mobileHeadSearch" type="text" placeholder="Mahsulot va toifalarni qidiring" />
+    </div>
+    <div class="userbox userboxLeft" id="userbox">
+      <button class="avatarBtn" id="avatarBtn" title="Profil">
+        <span class="avatarIcon" id="avatarIcon" aria-hidden="true">
+          <i class="fa-solid fa-user"></i>
+        </span>
+      </button>
+      <div class="balGroup" role="group" aria-label="Balans">
+        <button class="balChip" id="balHeaderBtn" title="Balans" type="button">
+          <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+          <span class="balAmt" id="balHeader">0</span>
+          <span class="balCur">so‘m</span>
+        </button>
+        <button class="balPlus" id="balTopupQuick" title="Balans to‘ldirish" aria-label="Balans to‘ldirish" type="button">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        </button>
+      </div>
+</div>
+
+    <div class="brand brandCenter">
+      <div class="logo">
+        <a class="logoLink" id="homeLink" href="#home" title="Bosh sahifa">
+          <img class="logoImg" src="./logo.webp" alt="OrzuMall.uz logo" />
+        </a>
+      </div>
+    </div>
+
+    <div class="actions actionsRight">
+      <button class="iconBtn badgeBtn" id="favViewBtn" title="Sevimlilar">
+        <i class="fa-solid fa-heart" aria-hidden="true"></i>
+        <span class="chipCount" id="favCount">0</span>
+      </button>
+      <button class="iconBtn badgeBtn" id="cartBtn" title="Savatcha">
+        <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+        <span class="chipCount" id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+
+<section class="view active" id="view-home">      <!-- Search strip: header va mahsulotlar orasida -->
+<section class="card productsCard">
+
+    <section class="card searchCard" aria-label="Qidiruv">
+      <div class="searchRow">
+        <div class="searchTitle">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <span>Qidiruv</span>
+        </div>
+        <div class="tools toolsTop" id="toolsTop">
+          <!-- Mobile: qidiruv icon -> bosilganda input ochiladi -->
+          <button class="iconBtn searchToggleBtn" id="searchToggleBtn" type="button" title="Qidirish" aria-label="Qidirish">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          </button>
+          <input class="input" id="q" placeholder="Mahsulot va toifalarni qidiring" />
+        </div>
+      </div>
+    </section>
+
+    
+
+      <div class="row">
+
+    <!-- Not found request / Telegram bot -->
+<!-- Not found modal -->
+</div>
+      </div>
+    </div>
+
+
+
+<section class="searchPromo" id="searchPromo">
+  <div class="spLeft">
+    <div class="spKicker">OrzuMall Search</div>
+    <div class="spTitle">Topa olmadingiz?</div>
+    <div class="spSub">Rasm yoki qisqa izoh yuboring — bot topib beradi.</div>
+    <div class="spHint">
+      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+      Kiyim, elektronika, uy-ro‘zg‘or va boshqa kategoriyalar.
+    </div>
+  </div>
+  <div class="spRight">
+    <a class="spBotBtn" href="https://t.me/OrzuMallSearch_bot" target="_blank" rel="noopener">
+      <i class="fa-brands fa-telegram" aria-hidden="true"></i>
+      <div class="spBotText">
+        <div class="spBotTop">@OrzuMallSearch_bot</div>
+        <div class="spBotBottom">Botga yuborish</div>
+      </div>
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+    </a>
+  </div>
+</section>
+
+
+        <div class="productsHead">
+          <div class="productsTitleWrap">
+            <h2 class="productsTitle">
+              <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+              <span>Mahsulotlar</span>
+            </h2>
+            <span id="productsCount" class="productsCount" aria-label="Mahsulotlar soni">0 ta</span>
+          </div>
+          <button class="catBtnPc" id="pcCatBtn" type="button" title="Kategoriya">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Kategoriya</span>
+          </button>
+          <select class="select sortSelect" id="sort">
+            <option value="popular">Ommabop</option>
+            <option value="price_asc">Narx ↑</option>
+            <option value="price_desc">Narx ↓</option>
+            <option value="new">Yangi</option>
+          </select>
+        </div>
+</div>
+<div class="grid" id="grid"></div>
+<div class="pager" id="productsPager">
+  <button class="btn loadMoreBtn" id="loadMoreBtn" type="button">Yana yuklash</button>
+  <div class="pagerHint muted" id="loadMoreHint">Ko‘proq mahsulotlar uchun “Yana yuklash”ni bosing yoki pastga scroll qiling.</div>
+  <div class="sentinel" id="loadMoreSentinel" aria-hidden="true"></div>
+</div>
+      <div class="empty" id="empty" hidden>Hech narsa topilmadi.</div>
+    </section>
+  
+</section>
+
+
+
+<section class="view product-detail-view" id="view-product" hidden>
+  <div class="productPage" id="productPage">
+    <div class="productPageTop">
+      <button class="productBackBtn" id="productBackBtn" type="button" aria-label="Orqaga">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      </button>
+      <div class="productPageTitle">
+        <strong>Mahsulot tafsiloti</strong>
+        <span>OrzuMall premium product page</span>
+      </div>
+      <button class="productShareBtn" id="productShareBtn" type="button" aria-label="Ulashish">
+        <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="productPageContent" id="productPageContent">
+      <div class="productPageLoading">Mahsulot yuklanmoqda...</div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="view-categories" hidden>
+  <div class="viewHeader">
+    <div class="viewTitle">Kategoriya</div>
+    <button class="iconBtn viewBack" id="catBackBtn" type="button" title="Orqaga">←</button>
+  </div>
+  <div class="viewBody">
+    <div class="crumbs" id="catCrumbs"></div>
+    <div class="catList" id="catList"></div>
+    <div class="catEmpty muted" id="catEmpty" hidden>Kategoriya topilmadi.</div>
+    <div class="viewActions">
+      <button class="btn" id="catApplyBtn" type="button">Mahsulotlarni ko‘rish</button>
+      <button class="btn ghost" id="catClearBtn" type="button">Filterni tozalash</button>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="view-fav" hidden>
+  <div class="viewHeader favPremiumHeader">
+    <div>
+      <div class="viewTitle">Sevimlilar</div>
+      <div class="viewSub">Yoqtirgan mahsulotlaringiz bir joyda.</div>
+    </div>
+    <div class="countPill favCountPill" id="favCountPillPage">0</div>
+  </div>
+  <div class="viewBody favPremiumBody">
+    <div id="favPageList"></div>
+    <div class="panelEmpty favPremiumEmpty" id="favPageEmpty" hidden>
+      <div class="favEmptyIcon"><i class="fa-regular fa-heart" aria-hidden="true"></i></div>
+      <div class="favEmptyTitle">Sevimlilar hozircha bo‘sh</div>
+      <div class="favEmptyText">Yoqgan mahsulotlaringizni yurakcha orqali shu bo‘limga saqlang.</div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="view-cart" hidden>
+  <div class="viewHeader cartPremiumHeader">
+    <div>
+      <div class="viewTitle">Savat</div>
+      <div class="viewSub">Tanlangan mahsulotlaringiz shu yerda jamlanadi.</div>
+    </div>
+    <div class="countPill cartCountPill" id="cartCountPillPage">0</div>
+  </div>
+  <div class="viewBody cartPremiumBody">
+    <div class="cartTopRow cartSelectCard">
+      <div class="cartTopLeft">
+        <div class="cartTopIcon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></div>
+        <div>
+          <div class="cartTopTitle">Buyurtma uchun tanlash</div>
+          <div class="cartTopText">Kerakli mahsulotlarni belgilang yoki hammasini tanlang.</div>
+        </div>
+      </div>
+      <label class="checkRow"><input type="checkbox" id="cartSelectAllPage" /> <span>Hammasini tanlash</span></label>
+    </div>
+    <div id="cartPageList"></div>
+    <div class="panelEmpty cartPremiumEmpty" id="cartPageEmpty" hidden>
+      <div class="cartEmptyIcon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></div>
+      <div class="cartEmptyTitle">Savatingiz hozircha bo‘sh</div>
+      <div class="cartEmptyText">Mahsulotlarni savatga qo‘shsangiz, buyurtma shu yerda shakllanadi.</div>
+    </div>
+
+    <div class="panelBottom cartPremiumBottom" id="cartPageBottom">
+      <div class="cartSummaryTop">
+        <div>
+          <div class="muted cartSummaryLabel">Tanlangan mahsulotlar</div>
+          <div class="cartSelectedInfo" id="cartSelectedInfo">0 ta tanlangan</div>
+        </div>
+        <div class="total" id="cartTotalPage">0 so‘m</div>
+      </div>
+      <div class="cartSummaryNote" id="cartSummaryNote">Buyurtma berishda tanlangan mahsulotlar hisoblanadi.</div>
+      <div class="cartDeliverySummary" id="cartDeliverySummary"></div>
+      <div class="panelActions">
+        <button class="btn primary" id="orderBtnPage" type="button"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Yetkazib berishni sozlash</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="checkoutOverlay" id="checkoutOverlay" hidden>
+        <div class="checkoutSheet checkoutModal" id="checkoutSheet" role="dialog" aria-modal="true" aria-label="Yetkazib berishni sozlash" hidden>
+          <div class="checkoutHead">
+            <div>
+              <div class="checkoutTitle"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Yetkazib berishni sozlash</div>
+              <div class="checkoutSub">Yetkazish usuli va manzilni sozlang. Keyingi buyurtmalarda bu oynani qayta ochish shart bo‘lmaydi.</div>
+            </div>
+            <button class="iconBtn checkoutCloseBtn" id="checkoutClose" type="button" aria-label="Yopish"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+          </div>
+
+          <div class="checkoutBody">
+            <div class="checkoutCompactSummary" id="checkoutCompactSummary">
+              <span>0 ta tanlangan</span>
+              <b>0 so‘m</b>
+            </div>
+
+            <div class="deliveryTypeBox simpleCheckoutSection" id="deliveryTypeBox">
+              <label class="simpleSelectLabel" for="deliveryMethodSelect">
+                <span><i class="fa-solid fa-route" aria-hidden="true"></i> Yetkazish usuli</span>
+                <select class="checkoutSelect" id="deliveryMethodSelect">
+                  <option value="">Yetkazish usulini tanlang</option>
+                  <option value="pickup">Do‘kondan olib ketish — bepul</option>
+                  <option value="delivery">Manzilga yetkazib berish</option>
+                </select>
+              </label>
+
+              <div class="deliveryAddressBox" id="deliveryAddressBox" hidden>
+                <div class="savedAddressCheckout" id="savedAddressCheckoutWrap" hidden>
+                  <div class="savedAddressCheckoutTop">
+                    <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                    <span>Saqlangan manzil</span>
+                  </div>
+                  <div class="savedAddressCheckoutRow">
+                    <select class="checkoutSelect" id="savedDeliveryAddressSelect"></select>
+                    <button class="savedAddressChangeBtn" id="deliveryUseNewLocation" type="button">Yangi lokatsiya</button>
+                  </div>
+                </div>
+                <button class="locateBtn" id="deliveryLocateBtn" type="button">
+                  <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
+                  <span>Joylashuvni avto aniqlash</span>
+                </button>
+                <div class="deliveryLocationStatus" id="deliveryLocationStatus">Yetkazib berish uchun lokatsiyani avto aniqlang.</div>
+                <button class="locMetaBtn deliveryMapMainBtn" id="deliveryMapToggleBtn" type="button">
+                  <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+                  <span>Xaritadan belgilash</span>
+                </button>
+                <div class="deliveryLocationActions" id="deliveryLocationActions" hidden>
+                  <button class="locMetaBtn" id="copyDeliveryCoordsBtn" type="button"><i class="fa-regular fa-copy" aria-hidden="true"></i> Koordinatani nusxalash</button>
+                  <a class="locMetaBtn" id="openDeliveryMapBtn" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-google" aria-hidden="true"></i> Google Maps</a>
+                  <a class="locMetaBtn" id="openDeliveryYandexBtn" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-map" aria-hidden="true"></i> Yandex Maps</a>
+                </div>
+                <div class="deliveryInlineMapPanel" id="deliveryInlineMapPanel" hidden>
+                  <div class="deliveryInlineMapHead">
+                    <div>
+                      <b><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Xaritadan tekshirish yoki belgilash</b>
+                      <span>Xaritadagi kerakli joyni bosing. Belgini surish ham mumkin.</span>
+                    </div>
+                    <button class="mapPanelCloseBtn" id="deliveryMapCloseBtn" type="button" aria-label="Xaritani yopish"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                  </div>
+                  <div class="deliveryInlineMap" id="deliveryInlineMap" aria-label="Yetkazib berish manzilini belgilash xaritasi"></div>
+                  <div class="deliveryInlineMapFoot">
+                    <div class="deliveryMapDraftText" id="deliveryMapDraftText">Nuqtani xaritadan tanlang.</div>
+                    <button class="deliveryMapApplyBtn" id="deliveryMapApplyBtn" type="button" hidden><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Tanlangan nuqtani qo‘llash</button>
+                  </div>
+                </div>
+                <div class="omDeliveryCalcBox" id="deliveryEstimateBox" hidden>
+                  <div class="omDeliveryCalcHead">
+                    <i class="fa-solid fa-route" aria-hidden="true"></i>
+                    <span>Yetkazib berish hisob-kitobi</span>
+                  </div>
+                  <div id="deliveryEstimateContent" class="omDeliveryCalcContent">Avto lokatsiya aniqlangandan keyin hisoblanadi.</div>
+                </div>
+                <div class="deliveryAutoOnlyNote">
+                  Xatolik bo‘lmasligi uchun manzil matni qo‘lda yozilmaydi. GPS lokatsiyasi yoki xaritada belgilangan aniq nuqta ishlatiladi.
+                </div>
+              </div>
+            </div>
+
+            <div class="checkoutSubmitHint" id="checkoutSubmitHint">Davom etish uchun yetkazish usulini tanlang.</div>
+          </div>
+          <div class="checkoutFooter">
+            <div class="checkoutActionBar">
+              <div class="checkoutFinalTotalCard" id="checkoutFinalTotal">
+                <span class="checkoutFinalTotalLabel">Yakuniy summa</span>
+                <b class="checkoutFinalTotalValue">0 so‘m</b>
+                <small class="checkoutFinalTotalSub">Yetkazish usuli tanlangandan keyin jami summa shu yerda ko‘rinadi.</small>
+              </div>
+              <button class="btn primary" id="checkoutSubmit" type="button" hidden><i class="fa-solid fa-arrow-right" aria-hidden="true"></i> Davom etish — to‘lov turini tanlash</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<div class="paymentOverlay" id="paymentOverlay" hidden>
+  <div class="paymentModal" id="paymentModal" role="dialog" aria-modal="true" aria-label="To‘lov turini tanlash" hidden>
+    <div class="paymentHead">
+      <div>
+        <div class="paymentTitle"><i class="fa-solid fa-wallet" aria-hidden="true"></i> To‘lov turini tanlang</div>
+        <div class="paymentSub">Har bir buyurtma oldidan to‘lov usulini tasdiqlang.</div>
+      </div>
+      <button class="iconBtn paymentCloseBtn" id="paymentClose" type="button" aria-label="Yopish"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </div>
+    <div class="paymentBody">
+      <div class="paymentFinalCard">
+        <span>To‘lanadigan jami summa</span>
+        <b id="paymentFinalTotal">0 so‘m</b>
+        <small id="paymentProductsInfo">Mahsulotlar va yetkazish hisob-kitobi.</small>
+      </div>
+      <div class="paymentDeliveryPreview" id="paymentDeliveryPreview"></div>
+      <div class="payType simpleCheckoutSection">
+        <label class="simpleSelectLabel" for="payTypeSelect">
+          <span><i class="fa-solid fa-wallet" aria-hidden="true"></i> To‘lov turi</span>
+          <select class="checkoutSelect" id="payTypeSelect">
+            <option value="cash">Naqd — buyurtma topshirilganda</option>
+            <option value="balance" id="payTypeBalanceOption">Balansdan to‘lash</option>
+          </select>
+        </label>
+        <div class="muted tiny" id="payRuleNote"></div>
+      </div>
+      <button class="btn primary paymentSubmitBtn" id="paymentSubmit" type="button"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Buyurtmani tasdiqlash</button>
+      <button class="paymentDeliveryChangeBtn" id="paymentDeliveryChangeBtn" type="button"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Yetkazib berishni o‘zgartirish</button>
+    </div>
+  </div>
+</div>
+
+<section class="view" id="view-profile" hidden>
+  <div class="viewHeader">
+    <div class="viewTitle">Profil</div>
+    <div class="viewHeaderActions">
+      <button class="iconPill profileEditPill" id="profileEditBtn" title="Tahrirlash" aria-label="Tahrirlash" type="button"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Tahrirlash</span></button>
+    </div>
+  </div>
+  <div class="viewBody profilePage">
+    
+        <div class="profileHead">
+          <div class="profileHeadLeft">
+            <div class="profileAvatar" id="profileAvatar"></div>
+            <div class="profileMeta">
+              <div class="profileName" id="profileName">—</div>
+              <div class="profileUid" id="profileNumericId">—</div>
+            </div>
+          </div>
+          <button class="iconPill danger" id="profileLogout" type="button" title="Chiqish" aria-label="Chiqish"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+
+        <div class="formGrid">
+          <label class="field">
+            <span>Ism</span>
+            <input id="pfFirstName" type="text" placeholder="Ism" autocomplete="given-name" />
+          </label>
+
+          <label class="field">
+            <span>Familiya</span>
+            <input id="pfLastName" type="text" placeholder="Familiya" autocomplete="family-name" />
+          </label>
+
+          <label class="field">
+            <span>Telefon raqam</span>
+            <input id="pfPhone" type="tel" placeholder="+998 90 123 45 67" autocomplete="tel" />
+          </label>
+
+          <label class="field">
+            <span>Viloyat</span>
+            <select id="pfRegion"></select>
+          </label>
+
+          <label class="field">
+            <span>Tuman</span>
+            <select id="pfDistrict"></select>
+          </label>
+
+          <label class="field">
+            <span>Pochta</span>
+            <select id="pfPost"></select>
+          </label>
+        </div>
+
+        <div class="hint" id="profileHint">Ma’lumotlarni bir marta to‘ldirasiz. Keyin faqat ✏️ orqali tahrirlash mumkin.</div>
+
+        <div class="modalBottom profileBottomBar">
+      <button class="btn" id="profileSave" type="button" hidden>Saqlash</button>
+          </div>
+
+        <div class="profileCard savedAddressCard" id="savedAddressCard">
+          <div class="savedAddressHead">
+            <div>
+              <div class="profileCardTitle">Yetkazib berish manzillari</div>
+              <div class="profileCardSub">Faqat avto lokatsiya orqali saqlanadi.</div>
+            </div>
+            <div class="savedAddressIcon"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i></div>
+          </div>
+          <div class="savedAddressForm">
+            <input id="savedAddressName" type="text" placeholder="Masalan: Uyim / Ishim" />
+            <button class="btn primary" id="savedAddressDetectSave" type="button">
+              <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
+              <span>Avto aniqlab saqlash</span>
+            </button>
+          </div>
+          <div class="savedAddressStatus" id="savedAddressStatus">Manzil qo‘lda yozilmaydi, faqat avto lokatsiya saqlanadi.</div>
+          <div class="savedAddressList" id="savedAddressList"></div>
+        </div>
+
+        <!-- Wallet / Balance (manual top-up) -->
+        <div class="profileCard walletPremium" id="walletCard">
+          <div class="walletHero">
+            <div class="walletIcon" aria-hidden="true"><i class="fa-solid fa-wallet"></i></div>
+            <div class="walletHeroText">
+              <div class="profileCardTitle">Balans</div>
+              <div class="profileCardSub">Ichki hisob va tezkor to‘ldirish.</div>
+            </div>
+            <div class="walletStatusPill"><span></span> Aktiv</div>
+          </div>
+
+          <div class="walletGrid">
+            <div class="walletBalanceBox">
+              <div class="walletBalanceTop">
+                <div class="walletBalanceIcon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></div>
+                <div class="walletBalancePill"><span></span> Joriy hisob</div>
+              </div>
+              <div class="walletMiniLabel">Joriy balans</div>
+              <div class="walletAmount" id="balProfile">0 so'm</div>
+              <div class="walletSmallText">Ichki hamyon</div>
+              
+            </div>
+
+            <div class="walletTopupBox">
+              <div class="walletMiniLabel">To‘ldirish</div>
+              <div class="walletSmallText" id="topupHint">Min. 1000 so‘m</div>
+              <div class="walletTopupRow">
+                <label class="walletInputWrap" for="topupAmount">
+                  <i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i>
+                  <input id="topupAmount" inputmode="numeric" placeholder="Masalan: 100000" />
+                </label>
+                <button class="btn primary walletTopupBtn" id="topupBtn" type="button">
+                  <i class="fa-solid fa-circle-plus" aria-hidden="true"></i>
+                  Click orqali
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Card Top-up Modal -->
+        <div class="modalOverlay topupOverlay" id="topupModal" hidden>
+          <div class="modalCard topupModalCard" role="dialog" aria-modal="true" aria-label="Balans to'ldirish">
+            <div class="modalTop topupModalTop">
+              <div class="modalTitle topupModalTitle">
+                <span class="topupTitleIcon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
+                <span>Balans to‘ldirish</span>
+              </div>
+              <button class="iconBtn topupCloseBtn" id="topupClose" title="Yopish" aria-label="Yopish">✕</button>
+            </div>
+            <div class="modalBody topupModalBody">
+
+              <div id="topupStep1" class="topupStep">
+                <div class="topupNotice">
+                  <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                  <div>Karta orqali to‘lov so‘rovini yuboring. Admin tasdiqlagandan keyin summa balansingizga qo‘shiladi.</div>
+                </div>
+
+                <div class="topupFormGrid">
+                  <label class="field topupField">
+                    <span>Karta raqami</span>
+                    <input id="payerCard" inputmode="numeric" placeholder="8600 1234 5678 9012" />
+                  </label>
+                  <label class="field topupField">
+                    <span>Summa (so‘m)</span>
+                    <input id="payerAmount" inputmode="numeric" placeholder="Masalan: 100000" />
+                  </label>
+                  <label class="field topupField">
+                    <span>Ism</span>
+                    <input id="payerFirst" placeholder="Ismingiz" />
+                  </label>
+                  <label class="field topupField">
+                    <span>Familiya</span>
+                    <input id="payerLast" placeholder="Familiyangiz" />
+                  </label>
+                </div>
+
+                <div class="modalBottom topupActions">
+                  <button class="btn ghost" id="topupCancel1" type="button">Bekor</button>
+                  <button class="btn primary" id="topupNext" type="button">Davom etish</button>
+                </div>
+              </div>
+
+              <div id="topupStep2" class="topupStep" hidden>
+                <div class="transferCard">
+                  <div class="transferTop">
+                    <div>
+                      <div class="transferTitle">Pulni shu kartaga o‘tkazing</div>
+                      <div class="transferSub" id="cardpayNote">—</div>
+                    </div>
+                    <div class="transferBadge">2-bosqich</div>
+                  </div>
+
+                  <div class="adminCardBox">
+                    <div class="adminCardLabel">Karta egasi</div>
+                    <div class="adminCardHolder" id="adminCardHolder">—</div>
+
+                    <div class="adminCardLabel" style="margin-top:12px">Karta raqami</div>
+                    <div class="adminCardRow">
+                      <div class="adminCardNumber mono" id="adminCardNumber">—</div>
+                      <button class="copyBtn" type="button" data-copy="#adminCardNumber" title="Nusxa olish" aria-label="Nusxa olish">
+                        <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="confirmAmountBox">
+                    <div>
+                      <div class="walletMiniLabel">Yuboriladigan summa</div>
+                      <div class="walletSmallText">So‘rovdagi summa</div>
+                    </div>
+                    <div class="confirmAmount" id="confirmAmount">—</div>
+                  </div>
+                </div>
+
+                <label class="field receiptField">
+                  <span>Chek (screenshot/PDF)</span>
+                  <input id="receiptFile" class="fileInput" type="file" accept="image/*,application/pdf" />
+                </label>
+                <div class="topupNotice small" id="topupHint2"><i class="fa-solid fa-paperclip" aria-hidden="true"></i><div>Chekni yuklang va so‘rovni yuboring.</div></div>
+
+                <div class="modalBottom topupActions split">
+                  <button class="btn ghost" id="topupBack" type="button"><i class="fa-solid fa-arrow-left"></i> Orqaga</button>
+                  <button class="btn primary" id="topupSubmit" type="button"><i class="fa-solid fa-paper-plane"></i> Yuborish</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="profileCompactStack">
+
+          <div class="profileCard activityPremium" id="activityCard">
+            <div class="profileCardTop activityCardTop">
+              <div>
+                <div class="profileCardTitle">Faollik tarixi</div>
+                <div class="profileCardSub">Mablag‘ harakati va buyurtmalar tarixini bitta joyda kuzating.</div>
+              </div>
+              <div class="activityTabs" role="tablist" aria-label="Faollik tarixi bo‘limlari">
+                <button class="activityTab isActive" id="activityTabMoney" type="button" role="tab" aria-selected="true">Mablag‘lar</button>
+                <button class="activityTab" id="activityTabOrders" type="button" role="tab" aria-selected="false">Buyurtmalar</button>
+              </div>
+            </div>
+            <div class="activityBody">
+              <section class="activityPanel" id="activityMoneyPanel">
+                <div class="activityPanelHead">
+                  <div>
+                    <div class="activityPanelTitle">Mablag‘lar tarixi</div>
+                    <div class="activityPanelSub">Balans to‘ldirish va balansdan yechimlar.</div>
+                  </div>
+                  <span class="countPill" id="moneyHistoryCount">0</span>
+                </div>
+                <div class="ordersList" id="moneyHistoryList"></div>
+                <div class="empty" id="moneyHistoryEmpty" hidden>Hozircha mablag‘ harakati yo‘q.</div>
+              </section>
+
+              <section class="activityPanel" id="activityOrdersPanel" hidden>
+                <div class="activityPanelHead">
+                  <div>
+                    <div class="activityPanelTitle">Buyurtmalarim</div>
+                    <div class="activityPanelSub">Oxirgi buyurtmalar ro‘yxati.</div>
+                  </div>
+                  <button class="iconPill" id="ordersReload" type="button" title="Yangilash" aria-label="Yangilash">⟳</button>
+                </div>
+                <div class="ordersList" id="ordersList"></div>
+                <div class="empty" id="ordersEmpty" hidden>Hozircha buyurtmalar yo‘q.</div>
+              </section>
+            </div>
+          </div>
+
+        </div>
+
+          <div class="modalOverlay" id="orderActionModal" hidden>
+            <div class="modalCard orderLifecycleActionCard" role="dialog" aria-modal="true" aria-label="Buyurtma amali">
+              <div class="modalTop">
+                <div class="modalTitle"><i class="fa-solid fa-box-open" aria-hidden="true"></i> <span id="orderActionTitle">Buyurtma amali</span></div>
+                <button class="iconBtn" id="orderActionClose" type="button" aria-label="Yopish"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <div class="modalBody orderLifecycleActionBody">
+                <div class="orderActionSummary" id="orderActionSummary"></div>
+                <div class="orderActionHelp" id="orderActionHelp"></div>
+                <div class="orderCancelReasonWrap" id="orderCancelReasonWrap" hidden>
+                  <label class="field">
+                    <span>Bekor qilish sababini tanlang</span>
+                    <select id="orderCancelReasonSelect" class="orderCancelReasonSelect">
+                      <option value="">Sababni tanlang</option>
+                      <option value="Adashib buyurtma berdim">Adashib buyurtma berdim</option>
+                      <option value="Mahsulotni noto‘g‘ri tanladim">Mahsulotni noto‘g‘ri tanladim</option>
+                      <option value="Yetkazib berish muddati menga to‘g‘ri kelmadi">Yetkazib berish muddati menga to‘g‘ri kelmadi</option>
+                      <option value="Yetkazib berish narxi menga to‘g‘ri kelmadi">Yetkazib berish narxi menga to‘g‘ri kelmadi</option>
+                      <option value="To‘lov usulini o‘zgartirmoqchiman">To‘lov usulini o‘zgartirmoqchiman</option>
+                      <option value="Manzil yoki telefon raqamini noto‘g‘ri kiritdim">Manzil yoki telefon raqamini noto‘g‘ri kiritdim</option>
+                      <option value="Boshqa joydan xarid qildim">Boshqa joydan xarid qildim</option>
+                      <option value="other">Boshqa sabab</option>
+                    </select>
+                  </label>
+                  <label class="field" id="orderCancelReasonOtherWrap" hidden>
+                    <span>Boshqa sababni yozing</span>
+                    <textarea id="orderCancelReasonOther" rows="3" maxlength="1000" placeholder="Sababni qisqacha yozing..."></textarea>
+                  </label>
+                </div>
+                <label class="field" id="orderActionReasonWrap">
+                  <span id="orderActionReasonLabel">Sabab yoki izoh</span>
+                  <textarea id="orderActionReason" rows="4" maxlength="1000" placeholder="Batafsil yozing..."></textarea>
+                </label>
+                <div class="orderReviewStarsWrap" id="orderReviewStarsWrap" hidden>
+                  <div class="orderReviewStarsTitle">Mahsulotlarni baholang</div>
+                  <div class="orderReviewStars" id="orderReviewStars" role="radiogroup" aria-label="Baholash">
+                    <button type="button" data-review-star="1" aria-label="1 yulduz">★</button>
+                    <button type="button" data-review-star="2" aria-label="2 yulduz">★</button>
+                    <button type="button" data-review-star="3" aria-label="3 yulduz">★</button>
+                    <button type="button" data-review-star="4" aria-label="4 yulduz">★</button>
+                    <button type="button" data-review-star="5" aria-label="5 yulduz">★</button>
+                  </div>
+                  <div class="orderReviewStarsHint" id="orderReviewStarsHint">Bahoni tanlang.</div>
+                </div>
+              </div>
+              <div class="modalBottom orderLifecycleActionBottom">
+                <button class="ghostBtn" id="orderActionCancel" type="button">Yopish</button>
+                <button class="btn primary" id="orderActionSubmit" type="button"><i class="fa-solid fa-paper-plane"></i> Yuborish</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modalOverlay" id="orderReceiptModal" hidden>
+            <div class="modalCard orderReceiptCard" role="dialog" aria-modal="true" aria-label="Buyurtma cheki">
+              <div class="modalTop">
+                <div class="modalTitle"><i class="fa-solid fa-receipt" aria-hidden="true"></i> Buyurtma cheki</div>
+                <button class="iconBtn" id="orderReceiptClose" type="button" aria-label="Yopish"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <div class="modalBody">
+                <div id="orderReceiptContent"></div>
+              </div>
+              <div class="modalBottom" style="display:flex;gap:10px;justify-content:flex-end;margin-top:0">
+                <button class="ghostBtn" id="orderReceiptPrint" type="button"><i class="fa-solid fa-print"></i> Chop etish</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+</div>
+      
+    
+  </div>
+</section>
+
+</main>
+
+  <script type="module" src="./firebase-config.js"></script>
+  <script type="module" src="./cardpay-config.js"></script>
+  <script src="./telegram-config.js"></script>
+<script src="./i18n.js?v=20260530_v49_mobile_select"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" referrerpolicy="no-referrer"></script>
+<script type="module" src="./app.js?v=20260531_v73_card_pending_final_fix"></script>
+<script type="module" src="./customer-center.js?v=20260530_v55_customer_native_push"></script>
+
+  
+
+  <!-- Fullscreen image viewer (gallery) -->
+  <!-- Fullscreen image viewer (gallery) -->
+  <div class="imgViewer" id="imgViewer" hidden>
+    <div class="imgViewerBackdrop" id="imgViewerBackdrop"></div>
+
+    <div class="imgViewerShell qvShell qvShellSolo" role="dialog" aria-modal="true" aria-label="Rasm ko‘rish">
+      <button class="qvClose" id="imgViewerClose" title="Yopish" aria-label="Yopish">✕</button>
+
+      <div class="qvMedia qvMediaSolo qvProLayout">
+        <div class="qvGalleryPane">
+          <div class="qvStage">
+            <button class="navBtn navPrev" id="imgPrev" title="Oldingi" aria-label="Oldingi">◀</button>
+            <img class="imgViewerImg qvImg" id="imgViewerImg" alt="product" />
+            <button class="navBtn navNext" id="imgNext" title="Keyingi" aria-label="Keyingi">▶</button>
+          </div>
+          <div class="thumbRow qvThumbs" id="imgThumbs"></div>
+        </div>
+
+        <aside class="qvProductPane" aria-label="Mahsulot ma'lumotlari">
+          <div class="qvProHead">
+            <div class="qvCategoryTrail" id="qvCategoryTrail"></div>
+            <div class="qvTags qvTagsTop" id="qvTags"></div>
+            <div class="qvTopMeta">
+              <span class="qvBadge" id="qvBadge"></span>
+              <span class="qvRating" id="qvRating"></span>
+            </div>
+            <h3 class="qvName" id="imgViewerName">Mahsulot</h3>
+            <div class="qvPriceRow">
+              <div class="qvPrice" id="qvPrice"></div>
+              <div class="qvOldPrice" id="qvOldPrice"></div>
+            </div>
+          </div>
+
+          <div class="qvProMetrics" id="qvProMetrics"></div>
+          <div class="qvCategoryCard" id="qvCategoryCard"></div>
+          <div class="qvVariantBox" id="qvVariantBox"></div>
+          <p class="qvDesc" id="imgViewerDesc" hidden></p>
+
+          <div class="qvTrustGrid" id="qvTrustGrid"></div>
+
+          <div class="qvMovedActions" id="qvMovedActions" aria-label="Mahsulot amallari">
+            <button class="qvMovedBtn" id="qvInfoBtn" type="button" title="Tavsif" aria-label="Tavsif">
+              <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              <span>Tavsif</span>
+            </button>
+            <button class="qvMovedBtn" id="qvVideoBtn" type="button" title="Video" aria-label="Video">
+              <i class="fa-brands fa-youtube" aria-hidden="true"></i>
+              <span>Video</span>
+            </button>
+          </div>
+
+          <div class="qvInfoBottom">
+            <button class="qvMainCta" id="viewerCart" type="button">
+              <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+              <span>Savatga qo‘shish</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+<!-- Mini modal: Info / YouTube / Reviews (opened from card action icons) -->
+  <div class="miniModal" id="miniModal" hidden>
+    <div class="miniBackdrop" id="miniBackdrop"></div>
+    <div class="miniShell" role="dialog" aria-modal="true" aria-label="Ma'lumot">
+      <button class="miniClose" id="miniClose" type="button" title="Yopish" aria-label="Yopish">✕</button>
+      <div class="miniHead">
+        <div class="miniTitle" id="miniTitle">Ma'lumot</div>
+      </div>
+      <div class="miniBody" id="miniBody"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay" hidden></div>
+
+  <aside class="sidePanel" id="sidePanel" hidden>
+    <div class="panelTop">
+      <div class="panelTitle" id="panelTitle">Savatcha</div>
+      <button class="iconBtn" id="panelClose" title="Yopish">✕</button>
+    </div>
+
+    <div class="panelBody">
+      <div id="panelList"></div>
+      <div class="panelEmpty" id="panelEmpty" hidden>Hozircha bo‘sh.</div>
+    </div>
+
+    <div class="panelBottom" id="panelBottom">
+      <div class="totalRow" id="totalRow">
+        <div class="muted">Jami</div>
+        <div class="total" id="cartTotal">0 so‘m</div>
+      </div>
+      <button class="btn" id="paymeBtn"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Rasmiylashtirish</button>
+      <div class="panelSecondaryActions">
+        <button class="btn ghost" id="tgShareBtn">Telegramga yuborish</button>
+        <button class="btn ghost" id="clearBtn">Tozalash</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Variant select modal (opened on Add to Cart when product has colors/sizes) -->
+  <div class="vOverlay" id="vOverlay" hidden>
+    <div class="vCard" role="dialog" aria-modal="true" aria-label="Variant tanlash">
+      <div class="vTop">
+        <div class="vTitle">Variant tanlang</div>
+        <button class="iconBtn" id="vClose" title="Yopish">✕</button>
+      </div>
+
+      <div class="vBody">
+        <div class="vProd">
+          <img class="vImg" id="vImg" alt="product" />
+          <div class="vMeta">
+            <div class="vName" id="vName">—</div>
+            <div class="vPrice" id="vPrice">0 so‘m</div>
+          </div>
+        </div>
+
+        <div class="vBlock" id="vColors" hidden>
+          <div class="vLabel">Rang</div>
+          <div class="vRow" id="vColorRow"></div>
+          <div class="vHint" id="vColorHint" hidden>Iltimos, rangni tanlang</div>
+        </div>
+
+        <div class="vBlock" id="vSizes" hidden>
+          <div class="vLabel">O‘lcham</div>
+          <div class="vRow wrap" id="vSizeRow"></div>
+          <div class="vHint" id="vSizeHint" hidden>Iltimos, o‘lchamni tanlang</div>
+        </div>
+
+        <div class="vBlock">
+          <div class="vLabel">Miqdor</div>
+          <div class="qtyRow">
+            <button class="qtyBtn" id="vMinus" aria-label="Kamaytirish">−</button>
+            <div class="qtyVal" id="vQty">1</div>
+            <button class="qtyBtn" id="vPlus" aria-label="Ko‘paytirish">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="vBottom">
+        <button class="btn ghost" id="vCancel">Bekor</button>
+        <button class="btn" id="vConfirm">Savatchaga qo‘shish</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Mobile App Bottom Bar -->
+  <nav class="mobile-bottom-bar" aria-label="Mobile navigation">
+    <button class="nav-btn nav-home active" data-tab="home" type="button">
+      <span class="ico home-logo-wrap" aria-hidden="true"><img class="navHomeLogo" src="./favicon-192.webp" alt=""></span>
+      <small>Bosh sahifa</small>
+    </button>
+    <button class="nav-btn" data-tab="categories" type="button">
+      <span class="ico" aria-hidden="true"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span>
+      <small>Kategoriya</small>
+    </button>
+    <button class="nav-btn" data-tab="fav" type="button">
+      <span class="ico" aria-hidden="true"><i class="fa-solid fa-heart" aria-hidden="true"></i></span>
+      <small>Sevimlilar</small>
+      <b class="badge" id="navFavBadge" hidden>0</b>
+    </button>
+    <button class="nav-btn" data-tab="cart" type="button">
+      <span class="ico" aria-hidden="true"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></span>
+      <small>Savat</small>
+      <b class="badge" id="navCartBadge" hidden>0</b>
+    </button>
+    <button class="nav-btn" data-tab="profile" type="button">
+      <span class="ico" aria-hidden="true"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
+      <small>Profil</small>
+    </button>
+  </nav>
+</body>
+</html>

@@ -1,0 +1,7 @@
+// Send a native test push only to the authenticated customer's registered devices.
+const admin=require('firebase-admin');
+const {pushToCustomer}=require('./_customerPush');
+function initAdmin(){if(admin.apps.length)return;const b64=process.env.FIREBASE_SERVICE_ACCOUNT_B64;if(!b64)throw new Error('Missing env FIREBASE_SERVICE_ACCOUNT_B64');const serviceAccount=JSON.parse(Buffer.from(b64,'base64').toString('utf8'));admin.initializeApp({credential:admin.credential.cert(serviceAccount)});}
+function json(statusCode,body){return{statusCode,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'},body:JSON.stringify(body)}}
+function bearer(event){const h=event.headers?.authorization||event.headers?.Authorization||'';const m=h.match(/^Bearer\s+(.+)$/i);return m?m[1]:''}
+exports.handler=async event=>{try{initAdmin();if(event.httpMethod!=='POST')return json(405,{ok:false,error:'method_not_allowed'});const t=bearer(event);if(!t)return json(401,{ok:false,error:'unauthorized'});let d;try{d=await admin.auth().verifyIdToken(t)}catch(_){return json(401,{ok:false,error:'bad_token'})}const out=await pushToCustomer(admin.firestore(),d.uid,{title:'OrzuMall — test push',body:'Native bildirishnoma muvaffaqiyatli ishlayapti.',channelId:'orzumall_general_voice_v2',data:{type:'test_push',url:'https://orzumall.uz/'}});return json(200,{ok:true,...out})}catch(e){return json(500,{ok:false,error:'server_error',detail:String(e?.message||e).slice(0,220)})}};

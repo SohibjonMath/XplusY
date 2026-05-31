@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#6f1731">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>OrzuMall Admin</title>
+  <link rel="icon" href="/favicon.webp">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./mobile-admin.css">
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <img class="login-logo" src="/logo.webp" alt="OrzuMall">
+      <div class="login-kicker">MOBIL BOSHQARUV</div>
+      <h1>OrzuMall Admin</h1>
+      <p>Buyurtmalar, balans, aylanma, mijozlar bilan aloqa va sharhlarni telefondan boshqaring.</p>
+      <button class="btn btn-primary btn-block" id="loginBtn" type="button"><i class="fa-brands fa-google"></i> Google orqali kirish</button>
+      <div class="login-note">Faqat OrzuMall admin huquqiga ega Gmail akkauntlar kira oladi.</div>
+      <div class="alert error" id="loginError" hidden></div>
+    </div>
+  </div>
+
+  <div class="app-shell" id="appShell" hidden>
+    <header class="app-header">
+      <button class="head-icon" id="drawerOpen" type="button" aria-label="Menyu"><i class="fa-solid fa-bars"></i></button>
+      <div class="brand">
+        <img src="/favicon.webp" alt="">
+        <div><b>OrzuMall</b><span>Admin mobil boshqaruv</span></div>
+      </div>
+      <button class="head-icon" id="refreshView" type="button" aria-label="Yangilash"><i class="fa-solid fa-rotate"></i></button>
+    </header>
+
+    <div class="drawer-overlay" id="drawerOverlay" hidden></div>
+    <aside class="drawer" id="drawer" aria-label="Asosiy menyu">
+      <div class="drawer-brand">
+        <img src="/favicon.webp" alt="">
+        <div><b>OrzuMall Admin</b><span id="adminEmail">—</span></div>
+      </div>
+      <nav class="drawer-nav">
+        <button class="nav-btn active" data-view="orders" type="button"><i class="fa-solid fa-cart-shopping"></i><span>Buyurtmalar</span><em id="badgeOrders" hidden>0</em></button>
+        <button class="nav-btn" data-view="balance" type="button"><i class="fa-solid fa-wallet"></i><span>Balans</span><em id="badgeBalance" hidden>0</em></button>
+        <button class="nav-btn" data-view="turnover" type="button"><i class="fa-solid fa-chart-line"></i><span>Aylanma</span></button>
+        <button class="nav-btn" data-view="support" type="button"><i class="fa-solid fa-headset"></i><span>Qo‘llab-quvvatlash</span><em id="badgeSupport" hidden>0</em></button>
+        <button class="nav-btn" data-view="notifications" type="button"><i class="fa-solid fa-bell"></i><span>Bildirishnomalar</span></button>
+        <button class="nav-btn" data-view="reviews" type="button"><i class="fa-solid fa-star"></i><span>Sharhlar</span><em id="badgeReviews" hidden>0</em></button>
+      </nav>
+      <div class="drawer-foot">
+        <a href="/admin/panel.html" target="_blank" rel="noopener"><i class="fa-solid fa-display"></i> Katta admin panel</a>
+        <button id="logoutBtn" type="button"><i class="fa-solid fa-right-from-bracket"></i> Chiqish</button>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <section class="view active" id="view-orders" data-title="Buyurtmalar">
+        <div class="page-head">
+          <div><span class="eyebrow">REAL VAQTDA</span><h2>Buyurtmalar</h2><p>Statuslarni navbat bilan boshqaring.</p></div>
+          <button class="round-add" id="ordersReload" type="button" aria-label="Yangilash"><i class="fa-solid fa-rotate"></i></button>
+        </div>
+        <section class="order-alert-center" id="orderAlertCenter" hidden>
+          <div class="order-alert-head">
+            <div class="order-alert-title"><span class="alarm-dot"></span><div><b>Diqqat markazi</b><small>Harakat talab qiladigan buyurtmalar</small></div></div>
+            <button class="alert-settings-btn" id="orderAlertEnable" type="button"><i class="fa-solid fa-bell"></i><span>Signalni yoqish</span></button>
+          </div>
+          <div class="order-alert-grid">
+            <button class="alert-count alert-new" data-order-filter="new" type="button"><i class="fa-solid fa-cart-plus"></i><span>Yangi buyurtmalar</span><b id="alertNewCount">0</b><small id="alertNewHint">Yig‘ishga oling</small></button>
+            <button class="alert-count alert-packing" data-order-filter="packing" type="button"><i class="fa-solid fa-box-open"></i><span>Yig‘ishdagi buyurtmalar</span><b id="alertPackingCount">0</b><small id="alertPackingHint">Yetkazishga bering</small></button>
+          </div>
+          <div class="order-alert-bottom">
+            <div id="orderAlertMessage"><i class="fa-solid fa-circle-info"></i><span>Buyurtmalar nazorat ostida.</span></div>
+            <button class="alert-snooze" id="orderAlertSnooze" type="button"><i class="fa-regular fa-clock"></i> 5 daqiqaga tinchitish</button>
+          </div>
+        </section>
+        <div class="stat-row" id="orderStats"></div>
+        <div class="toolbar sticky-tools">
+          <label class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="ordersSearch" placeholder="ID, ism yoki telefon"></label>
+          <div class="chips" id="orderFilterChips"></div>
+        </div>
+        <div class="cards" id="ordersList"></div>
+      </section>
+
+      <section class="view" id="view-balance" data-title="Balans">
+        <div class="page-head">
+          <div><span class="eyebrow">CLICK / BALANS</span><h2>Balans so‘rovlari</h2><p>Tushumlarni tez tasdiqlang yoki rad eting.</p></div>
+        </div>
+        <div class="stat-row" id="balanceStats"></div>
+        <div class="toolbar sticky-tools">
+          <label class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="balanceSearch" placeholder="ID, telefon yoki karta"></label>
+          <div class="chips" id="balanceFilterChips"></div>
+        </div>
+        <div class="cards" id="balanceList"></div>
+      </section>
+
+      <section class="view" id="view-turnover" data-title="Aylanma">
+        <div class="page-head">
+          <div><span class="eyebrow">MOLIYAVIY TAHLIL</span><h2>Aylanma</h2><p>Buyurtmalar va balans to‘ldirishlar kesimida.</p></div>
+        </div>
+        <div class="period-tabs" id="turnoverPeriods">
+          <button data-period="1" type="button">Bugun</button><button class="active" data-period="7" type="button">7 kun</button><button data-period="30" type="button">30 kun</button><button data-period="0" type="button">Hammasi</button>
+        </div>
+        <div class="analytics-grid" id="turnoverStats"></div>
+        <div class="section-title"><span>Oxirgi operatsiyalar</span><small id="turnoverState">—</small></div>
+        <div class="cards" id="turnoverList"></div>
+      </section>
+
+      <section class="view" id="view-support" data-title="Qo‘llab-quvvatlash">
+        <div id="supportThreadsScreen">
+          <div class="page-head">
+            <div><span class="eyebrow">MIJOZLAR BILAN ALOQA</span><h2>Qo‘llab-quvvatlash</h2><p>AI topshirgan va yangi murojaatlarga javob bering.</p></div>
+          </div>
+          <label class="search standalone"><i class="fa-solid fa-magnifying-glass"></i><input id="supportSearch" placeholder="Ism, telefon yoki UID"></label>
+          <div class="cards" id="supportList"></div>
+        </div>
+        <div class="chat-screen" id="supportChatScreen" hidden>
+          <div class="chat-head">
+            <button class="head-icon subtle" id="supportBack" type="button"><i class="fa-solid fa-arrow-left"></i></button>
+            <div><b id="chatName">Mijoz</b><span id="chatMeta">—</span></div>
+            <button class="head-icon subtle" id="chatToggle" type="button" title="Yopish"><i class="fa-solid fa-check"></i></button>
+          </div>
+          <div class="chat-messages" id="chatMessages"></div>
+          <form class="chat-compose" id="chatForm"><textarea id="chatInput" rows="1" placeholder="OrzuMall nomidan javob yozing..."></textarea><button type="submit"><i class="fa-solid fa-paper-plane"></i></button></form>
+        </div>
+      </section>
+
+      <section class="view" id="view-notifications" data-title="Bildirishnomalar">
+        <div class="page-head">
+          <div><span class="eyebrow">XABAR MARKAZI</span><h2>Bildirishnomalar</h2><p>Barchaga yoki bitta mijozga xabar yuboring.</p></div>
+          <button class="round-add" id="newNotification" type="button"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <section class="native-push-test-card">
+          <div class="native-push-test-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+          <div class="native-push-test-copy"><b>Android native push</b><span>Ilova fon rejimida yoki yopiq turganda ham yangi buyurtma signalini tekshiring.</span></div>
+          <button class="btn btn-primary" id="testNativePush" type="button"><i class="fa-solid fa-bell"></i> Test push</button>
+        </section>
+        <div class="cards" id="notificationsList"></div>
+      </section>
+
+      <section class="view" id="view-reviews" data-title="Sharhlar">
+        <div class="page-head">
+          <div><span class="eyebrow">ORZUMALL NOMIDAN</span><h2>Sharhlar</h2><p>Xaridor fikrlarini ko‘ring va javob yozing.</p></div>
+        </div>
+        <div class="stat-row" id="reviewsStats"></div>
+        <label class="search standalone"><i class="fa-solid fa-magnifying-glass"></i><input id="reviewsSearch" placeholder="Mahsulot, ism yoki sharh"></label>
+        <div class="cards" id="reviewsList"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Tezkor navigatsiya">
+      <button class="active" data-view="orders" type="button"><i class="fa-solid fa-cart-shopping"></i><span>Buyurtma</span><em id="bottomOrdersBadge" hidden>0</em></button>
+      <button data-view="balance" type="button"><i class="fa-solid fa-wallet"></i><span>Balans</span></button>
+      <button data-view="turnover" type="button"><i class="fa-solid fa-chart-line"></i><span>Aylanma</span></button>
+      <button data-view="support" type="button"><i class="fa-solid fa-headset"></i><span>Chat</span><em id="bottomSupportBadge" hidden>0</em></button>
+      <button id="bottomMenu" type="button"><i class="fa-solid fa-bars"></i><span>Menu</span></button>
+    </nav>
+  </div>
+
+  <div class="modal-host" id="modalHost"></div>
+  <div class="toast-host" id="toastHost"></div>
+  <script type="module" src="./mobile-admin.js"></script>
+</body>
+</html>

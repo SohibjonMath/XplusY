@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  
+    <link rel="icon" type="image/webp" sizes="32x32" href="/favicon.webp">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#dc2626" />
+  <title>OrzuMall • Premium | Variantli Sotuv Statistikasi</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #f0f7f3;
+      --bg-secondary: #e4efe8;
+      --card-white: #ffffff;
+      --card-glass: rgba(255, 255, 255, 0.85);
+      --brand: #1f8b57;
+      --brand-dark: #146b42;
+      --brand-light: #d4f0e4;
+      --brand-glow: rgba(31, 139, 87, 0.2);
+      --text-primary: #1a2e26;
+      --text-secondary: #5a7a6b;
+      --text-muted: #8aa397;
+      --border: #e2ede6;
+      --success: #2ecc71;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+      --info: #3498db;
+      --purple: #9b59b6;
+      --orange: #e67e22;
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.1);
+      --radius-sm: 12px;
+      --radius-md: 20px;
+      --radius-lg: 28px;
+    }
+
+    body.dark {
+      --bg-primary: #0f1915;
+      --bg-secondary: #1a2a24;
+      --card-white: #1e2f28;
+      --card-glass: rgba(30, 40, 35, 0.9);
+      --text-primary: #eef3ef;
+      --text-secondary: #9bb3a8;
+      --text-muted: #6a8a7a;
+      --border: #2d4038;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .glass-card {
+      background: var(--card-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .glass-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .solid-card {
+      background: var(--card-white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+
+    .app {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(145deg, var(--brand), var(--brand-dark));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 10px 25px var(--brand-glow);
+    }
+
+    .logo h1 {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--brand), #2b9b6b);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .live-badge {
+      background: rgba(31, 139, 87, 0.15);
+      backdrop-filter: blur(4px);
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 44px;
+      background: var(--card-white);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: var(--brand);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .kpi-premium {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-item {
+      background: linear-gradient(135deg, var(--card-white), var(--card-glass));
+      border-radius: var(--radius-md);
+      padding: 24px 20px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .kpi-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--brand);
+    }
+
+    .kpi-item .kpi-icon {
+      font-size: 32px;
+      color: var(--brand);
+      margin-bottom: 16px;
+    }
+
+    .kpi-item .kpi-value {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .kpi-item .kpi-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stats-hero {
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 32px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stats-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }
+
+    .stats-hero h2 {
+      font-size: 28px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stats-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 32px;
+      align-items: flex-end;
+    }
+
+    .date-range-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .range-pill {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(4px);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 40px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .range-pill.active {
+      background: white;
+      color: var(--brand);
+    }
+
+    .range-pill:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .date-input-group {
+      display: flex;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 6px 16px;
+      border-radius: 60px;
+      backdrop-filter: blur(4px);
+    }
+
+    .date-input-group input {
+      background: transparent;
+      border: none;
+      color: white;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .date-input-group input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .date-input-group input:focus {
+      outline: none;
+    }
+
+    .group-select {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 40px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card-premium {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .stat-card-premium:hover {
+      transform: translateY(-4px);
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .stat-card-premium .stat-number {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .stat-card-premium .stat-label {
+      font-size: 12px;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .chart-premium {
+      background: var(--card-white);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .chart-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .chart-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chart-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chart-btn.active {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+    }
+
+    canvas {
+      max-height: 380px;
+      width: 100%;
+    }
+
+    .top-products {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .product-rank-card {
+      background: var(--card-white);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .product-rank-card h3 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rank-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .rank-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .rank-item:hover {
+      transform: translateX(4px);
+      background: var(--brand-light);
+    }
+
+    .rank-number {
+      width: 32px;
+      height: 32px;
+      background: var(--brand);
+      color: white;
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .rank-info {
+      flex: 1;
+    }
+
+    .rank-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .rank-stats {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .rank-value {
+      font-weight: 700;
+      color: var(--brand);
+      font-size: 16px;
+    }
+
+    .variant-badge {
+      display: inline-block;
+      background: #e8f3ec;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #1f6e46;
+      margin-left: 8px;
+    }
+
+    .section-card {
+      background: var(--card-white);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: var(--radius-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      font-weight: 700;
+      color: var(--brand-dark);
+      background: rgba(31, 139, 87, 0.05);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-warning { background: #fff3e0; color: #b45309; }
+    .badge-success { background: #e0f2e9; color: #1f8b57; }
+    .badge-info { background: #e0f0ff; color: #1e6f9f; }
+
+    .threshold-input {
+      width: 90px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card-white);
+      text-align: center;
+    }
+
+    .btn-save {
+      background: var(--brand);
+      border: none;
+      padding: 6px 14px;
+      border-radius: 30px;
+      color: white;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .copy-code {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px dashed var(--brand);
+      background: rgba(31, 139, 87, 0.08);
+      color: var(--brand-dark);
+      font-weight: 700;
+      cursor: pointer;
+      user-select: all;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .copy-code:hover {
+      background: rgba(31, 139, 87, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .copy-code.copied {
+      background: rgba(46, 204, 113, 0.15);
+      border-color: var(--success);
+    }
+
+    .pager {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .pager-info {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .pager-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pager-btn {
+      border: 1px solid var(--border);
+      background: var(--card-white);
+      color: var(--text-primary);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pager-btn:hover:not(:disabled) {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+    }
+
+    .pager-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .variant-expand-btn {
+      background: transparent;
+      border: none;
+      color: var(--brand);
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    .variant-details {
+      display: none;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: var(--bg-primary);
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .variant-details.show {
+      display: block;
+    }
+
+    @media (max-width: 1200px) {
+      .kpi-premium { grid-template-columns: repeat(2, 1fr); }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .top-products { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      .kpi-premium { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .stats-controls { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+
+<link rel="stylesheet" href="/theme-redwhite.css">
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-chart-pie"></i></div>
+      <div>
+        <h1>OrzuMall Analytics</h1>
+        <p style="font-size: 13px; color: var(--text-secondary);">Variantli mahsulotlar tahlili | Real-time monitoring</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="live-badge" id="liveStatus"><i class="fas fa-circle" style="color: #2ecc71; font-size: 10px;"></i> Live</div>
+      <div class="icon-btn" id="darkModeToggle"><i class="fas fa-moon"></i></div>
+      <div class="icon-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i></div>
+      <div class="icon-btn" id="exportExcelBtn"><i class="fas fa-file-excel"></i></div>
+    </div>
+  </div>
+
+  <div class="kpi-premium">
+    <div class="kpi-item"><div class="kpi-icon"><i class="fas fa-chart-line"></i></div><div class="kpi-value" id="totalRevenue">0 so‘m</div><div class="kpi-label">Umumiy savdo</div></div>
+    <div class="kpi-item"><div class="kpi-icon"><i class="fas fa-coins"></i></div><div class="kpi-value" id="totalProfit">0 so‘m</div><div class="kpi-label">Sof foyda</div></div>
+    <div class="kpi-item"><div class="kpi-icon"><i class="fas fa-hand-holding-usd"></i></div><div class="kpi-value" id="totalCredit">0 so‘m</div><div class="kpi-label">Nasiya qoldig‘i</div></div>
+    <div class="kpi-item"><div class="kpi-icon"><i class="fas fa-warehouse"></i></div><div class="kpi-value" id="inventoryValue">0 so‘m</div><div class="kpi-label">Ombor tannarx qiymati</div></div>
+    <div class="kpi-item"><div class="kpi-icon"><i class="fas fa-tags"></i></div><div class="kpi-value" id="inventorySellValue">0 so‘m</div><div class="kpi-label">Ombor sotuv qiymati</div></div>
+    <div class="kpi-item"><div class="kpi-icon"><i class="fas fa-sack-dollar"></i></div><div class="kpi-value" id="inventoryPotentialProfit">0 so‘m</div><div class="kpi-label">Potensial foyda</div></div>
+  </div>
+
+  <div class="stats-hero">
+    <h2><i class="fas fa-chart-simple"></i> Sotuv statistikasi</h2>
+    
+    <div class="stats-controls">
+      <div class="date-range-buttons">
+        <button class="range-pill" data-range="today">📆 Bugun</button>
+        <button class="range-pill" data-range="week">📊 Haftalik</button>
+        <button class="range-pill" data-range="month">📅 Oylik</button>
+        <button class="range-pill" data-range="quarter">🎯 3 oylik</button>
+        <button class="range-pill" data-range="year">📈 Yillik</button>
+        <button class="range-pill active" data-range="custom">⚙️ Ixtiyoriy</button>
+      </div>
+      <div class="date-input-group">
+        <i class="fas fa-calendar-alt"></i>
+        <input type="date" id="startDate" placeholder="Boshlanish">
+        <span>-</span>
+        <input type="date" id="endDate" placeholder="Tugash">
+      </div>
+      <select id="groupBy" class="group-select">
+        <option value="day">📅 Kunlik</option>
+        <option value="week">📆 Haftalik</option>
+        <option value="month">📊 Oylik</option>
+      </select>
+      <button id="applyStatsBtn" class="range-pill" style="background: white; color: var(--brand);">📊 Tahlil qilish</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card-premium"><div class="stat-number" id="statSalesCount">0</div><div class="stat-label">Jami sotuvlar</div></div>
+      <div class="stat-card-premium"><div class="stat-number" id="statItemsSold">0</div><div class="stat-label">Sotilgan dona</div></div>
+      <div class="stat-card-premium"><div class="stat-number" id="statAvgCheck">0 so‘m</div><div class="stat-label">O‘rtacha chek</div></div>
+      <div class="stat-card-premium"><div class="stat-number" id="statMaxDay">0 so‘m</div><div class="stat-label">Eng yuqori kunlik savdo</div></div>
+    </div>
+  </div>
+
+  <div class="chart-premium">
+    <div class="chart-header">
+      <h3><i class="fas fa-chart-line" style="color: var(--brand);"></i> Savdo dinamikasi</h3>
+      <div class="chart-actions">
+        <button class="chart-btn" data-chart-type="line">📈 Chiziqli</button>
+        <button class="chart-btn" data-chart-type="bar">📊 Ustunli</button>
+      </div>
+    </div>
+    <canvas id="salesChart" height="320"></canvas>
+  </div>
+
+  <div class="top-products">
+    <div class="product-rank-card">
+      <h3><i class="fas fa-trophy" style="color: #f39c12;"></i> Eng ko‘p sotilganlar <span class="variant-badge">Variantlar bilan</span></h3>
+      <div class="rank-list" id="topProductsList"></div>
+    </div>
+    <div class="product-rank-card">
+      <h3><i class="fas fa-gem" style="color: var(--brand);"></i> Eng foydali mahsulotlar</h3>
+      <div class="rank-list" id="topProfitList"></div>
+    </div>
+  </div>
+
+  <div class="top-products">
+    <div class="product-rank-card">
+      <h3><i class="fas fa-palette" style="color: #9b59b6;"></i> Eng ko‘p sotilgan variantlar</h3>
+      <div class="rank-list" id="topVariantsList"></div>
+    </div>
+    <div class="product-rank-card">
+      <h3><i class="fas fa-chart-simple" style="color: #e67e22;"></i> Eng foydali variantlar</h3>
+      <div class="rank-list" id="topVariantProfitList"></div>
+    </div>
+  </div>
+
+  <div class="top-products">
+    <div class="product-rank-card">
+      <h3><i class="fas fa-triangle-exclamation" style="color: #e74c3c;"></i> Zararli mahsulotlar</h3>
+      <div class="rank-list" id="lossProductsList"></div>
+    </div>
+    <div class="product-rank-card">
+      <h3><i class="fas fa-box-open" style="color: #f39c12;"></i> Pul yotib qolgan mahsulotlar</h3>
+      <div class="rank-list" id="deadStockList"></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i> Kam qolgan mahsulotlar <span class="live-badge" id="lowStockCount" style="margin-left: auto;">0 ta</span></div>
+    <div class="table-wrapper">
+      <table id="lowStockTable">
+        <thead>
+          <tr><th>Kod / Barcode</th><th>Mahsulot / Variant</th><th>Tannarx</th><th>Sotuv narxi</th><th>Qoldiq</th><th>Holat</th></tr>
+        </thead>
+        <tbody id="lowStockTbody"><tr><td colspan="6">Yuklanmoqda...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pager" id="lowStockPager"></div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><i class="fas fa-boxes"></i> Mahsulotlar tahlili <span class="live-badge" id="productCount" style="margin-left: auto;">0 ta</span></div>
+    <div class="table-wrapper">
+      <table id="productsTable">
+        <thead>
+          <tr><th>Kod</th><th>Mahsulot nomi</th><th>Variantlar</th><th>Umumiy qoldiq</th><th>Sotilgan</th><th>Umumiy tushum</th><th>Foyda</th><th>Holat</th></tr>
+        </thead>
+        <tbody id="productsTbody"><tr><td colspan="8">Yuklanmoqda...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pager" id="productsPager"></div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><i class="fas fa-hand-holding-usd"></i> Nasiya jurnali <span class="live-badge" id="creditCount" style="margin-left: auto;">0 ta</span></div>
+    <div class="table-wrapper">
+      <table id="creditsTable">
+        <thead>
+          <tr><th>Mijoz</th><th>Telefon</th><th>Berilgan</th><th>Muddati</th><th>Summa</th><th>Qoldiq</th><th>Holat</th></tr>
+        </thead>
+        <tbody id="creditsTbody"><tr><td colspan="7">Yuklanmoqda...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, collection, getDocs, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyADOv69HBuAJkaYs2Ukgab-VgqkJIv1Cro",
+    authDomain: "orzumall.firebaseapp.com",
+    projectId: "orzumall",
+    storageBucket: "orzumall.firebasestorage.app",
+    messagingSenderId: "873732887270",
+    appId: "1:873732887270:web:15b73dbb37f4fdabe8a127"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  
+  let products = [], sales = [], credits = [];
+  let salesChart = null;
+  let currentChartType = 'line';
+  let currentStats = { startDate: null, endDate: null, groupBy: 'day' };
+  let expandedProducts = new Set();
+
+  const fmtMoney = (val) => new Intl.NumberFormat('uz-UZ').format(Math.round(val || 0)) + ' so‘m';
+  const fmtNumber = (val) => new Intl.NumberFormat('uz-UZ').format(val || 0);
+  const parseDate = (d) => d?.toDate ? d.toDate() : (d ? new Date(d) : null);
+  const escapeHtml = (s) => String(s || '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[m]);
+  const normalizePhone = (v) => String(v || '').replace(/\D/g, '');
+
+  const PAGE_SIZE = 10;
+  const pageState = { lowStock: 1, products: 1 };
+
+  function paginate(list, page, size = PAGE_SIZE) {
+    const total = list.length;
+    const totalPages = Math.max(1, Math.ceil(total / size));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const start = (safePage - 1) * size;
+    const end = start + size;
+    return {
+      items: list.slice(start, end),
+      total,
+      totalPages,
+      page: safePage,
+      start: total ? start + 1 : 0,
+      end: Math.min(end, total)
+    };
+  }
+
+  function renderPager(targetId, key, meta) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    if (meta.total <= PAGE_SIZE) {
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = `
+      <div class="pager-info">${meta.total} tadan ${meta.start}-${meta.end} ko‘rsatilmoqda</div>
+      <div class="pager-actions">
+        <button class="pager-btn" data-page-key="${key}" data-page-action="prev" ${meta.page <= 1 ? 'disabled' : ''}>← Oldingi</button>
+        <div class="pager-info">${meta.page}/${meta.totalPages}-sahifa</div>
+        <button class="pager-btn" data-page-key="${key}" data-page-action="next" ${meta.page >= meta.totalPages ? 'disabled' : ''}>Keyingi →</button>
+      </div>
+    `;
+  }
+
+  async function loadAllData() {
+    const [prodSnap, salesSnap, creditsSnap] = await Promise.all([
+      getDocs(collection(db, "products")),
+      getDocs(query(collection(db, "sales"), orderBy("createdAt", "desc"))),
+      getDocs(collection(db, "credits"))
+    ]);
+    products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    credits = creditsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAll();
+  }
+
+  function subscribeLive() {
+    onSnapshot(collection(db, "products"), (snap) => { products = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderAll(); });
+    onSnapshot(query(collection(db, "sales"), orderBy("createdAt", "desc")), (snap) => { sales = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderAll(); });
+    onSnapshot(collection(db, "credits"), (snap) => { credits = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderAll(); });
+    document.getElementById("liveStatus").innerHTML = '<i class="fas fa-circle" style="color:#2ecc71;"></i> Live (real-time)';
+  }
+
+  function getFilteredSales() {
+    let filtered = [...sales];
+    if (currentStats.startDate) {
+      const start = new Date(currentStats.startDate); start.setHours(0,0,0,0);
+      filtered = filtered.filter(s => { const d = parseDate(s.createdAt); return d && d >= start; });
+    }
+    if (currentStats.endDate) {
+      const end = new Date(currentStats.endDate); end.setHours(23,59,59,999);
+      filtered = filtered.filter(s => { const d = parseDate(s.createdAt); return d && d <= end; });
+    }
+    return filtered;
+  }
+
+  function getFilteredCredits() {
+    let filtered = [...credits];
+    if (currentStats.startDate) {
+      const start = new Date(currentStats.startDate); start.setHours(0,0,0,0);
+      filtered = filtered.filter(c => {
+        const baseDate = c.givenDate ? new Date(c.givenDate) : parseDate(c.createdAt);
+        return baseDate && baseDate >= start;
+      });
+    }
+    if (currentStats.endDate) {
+      const end = new Date(currentStats.endDate); end.setHours(23,59,59,999);
+      filtered = filtered.filter(c => {
+        const baseDate = c.givenDate ? new Date(c.givenDate) : parseDate(c.createdAt);
+        return baseDate && baseDate <= end;
+      });
+    }
+    return filtered;
+  }
+
+  // Variantli mahsulotlar uchun sotuv statistikasi
+  function getVariantSalesStats(salesList) {
+    const variantStats = new Map(); // key: variantId or productId_variantId
+    const productStats = new Map();
+    
+    salesList.forEach(sale => {
+      if (!sale.items) return;
+      sale.items.forEach(item => {
+        const variantId = item.variantId;
+        const productId = item.productId;
+        const name = item.name || "Nomsiz";
+        const color = item.color || '';
+        const size = item.size || '';
+        const qty = item.qty || 0;
+        const revenue = item.finalLineUZS || (item.priceUZS * qty);
+        const cost = (item.costUZS || 0) * qty;
+        
+        if (variantId) {
+          // Variantli mahsulot
+          const key = `${productId}_${variantId}`;
+          if (!variantStats.has(key)) {
+            variantStats.set(key, {
+              productId,
+              variantId,
+              name: name,
+              color,
+              size,
+              qty: 0,
+              revenue: 0,
+              cost: 0
+            });
+          }
+          const stat = variantStats.get(key);
+          stat.qty += qty;
+          stat.revenue += revenue;
+          stat.cost += cost;
+        } else {
+          // Oddiy mahsulot
+          if (!productStats.has(productId)) {
+            productStats.set(productId, {
+              id: productId,
+              name: name,
+              qty: 0,
+              revenue: 0,
+              cost: 0
+            });
+          }
+          const stat = productStats.get(productId);
+          stat.qty += qty;
+          stat.revenue += revenue;
+          stat.cost += cost;
+        }
+      });
+    });
+    
+    return { variantStats, productStats };
+  }
+
+  function getGroupKey(date, groupBy) {
+    const d = new Date(date);
+    if (groupBy === 'day') return d.toISOString().slice(0,10);
+    if (groupBy === 'week') {
+      const weekNum = Math.ceil((d.getDate() - d.getDay() + 1) / 7);
+      return `${d.getFullYear()}-W${weekNum}`;
+    }
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+
+  function renderAll() {
+    const filteredSales = getFilteredSales();
+    const filteredCredits = getFilteredCredits();
+    const { variantStats, productStats } = getVariantSalesStats(filteredSales);
+    
+    const totalRevenue = filteredSales.reduce((sum, s) => sum + (s.totalUZS || 0), 0);
+    const totalCost = filteredSales.reduce((sum, s) => sum + (s.items?.reduce((acc, it) => acc + ((it.costUZS || 0) * (it.qty || 0)), 0) || 0), 0);
+    const totalProfit = totalRevenue - totalCost;
+    const totalItems = filteredSales.reduce((sum, s) => sum + (s.items?.reduce((acc, it) => acc + (it.qty || 0), 0) || 0), 0);
+    const salesCount = filteredSales.length;
+    const avgCheck = salesCount ? totalRevenue / salesCount : 0;
+    
+    const dailyMap = new Map();
+    filteredSales.forEach(s => {
+      const date = parseDate(s.createdAt)?.toISOString().slice(0,10);
+      if (date) dailyMap.set(date, (dailyMap.get(date) || 0) + (s.totalUZS || 0));
+    });
+    const maxDaily = Math.max(...dailyMap.values(), 0);
+    
+    document.getElementById("statSalesCount").innerHTML = fmtNumber(salesCount);
+    document.getElementById("statItemsSold").innerHTML = fmtNumber(totalItems);
+    document.getElementById("statAvgCheck").innerHTML = fmtMoney(avgCheck);
+    document.getElementById("statMaxDay").innerHTML = fmtMoney(maxDaily);
+    
+    const groupedData = new Map();
+    filteredSales.forEach(s => {
+      const date = parseDate(s.createdAt);
+      if (!date) return;
+      const key = getGroupKey(date, currentStats.groupBy);
+      groupedData.set(key, (groupedData.get(key) || 0) + (s.totalUZS || 0));
+    });
+    const sortedGroups = [...groupedData.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+    const labels = sortedGroups.map(g => g[0]);
+    const data = sortedGroups.map(g => g[1]);
+    
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    if (salesChart) salesChart.destroy();
+    salesChart = new Chart(ctx, {
+      type: currentChartType,
+      data: { labels, datasets: [{ label: 'Savdo summasi (so‘m)', data, borderColor: '#1f8b57', backgroundColor: currentChartType === 'bar' ? '#1f8b5740' : '#1f8b5715', borderWidth: 2, tension: 0.3, fill: currentChartType === 'line' }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: (ctx) => fmtMoney(ctx.raw) } } } }
+    });
+    
+    // Top products (oddiy + variantli mahsulotlar jamlangan)
+    const productTotalMap = new Map();
+    for (const [key, stat] of productStats) {
+      productTotalMap.set(stat.id, {
+        id: stat.id,
+        name: stat.name,
+        qty: stat.qty,
+        revenue: stat.revenue,
+        profit: stat.revenue - stat.cost,
+        hasVariants: false
+      });
+    }
+    for (const [key, stat] of variantStats) {
+      const product = products.find(p => p.id === stat.productId);
+      const productName = product?.name || stat.name;
+      if (!productTotalMap.has(stat.productId)) {
+        productTotalMap.set(stat.productId, {
+          id: stat.productId,
+          name: productName,
+          qty: 0,
+          revenue: 0,
+          profit: 0,
+          hasVariants: true,
+          variants: []
+        });
+      }
+      const pStat = productTotalMap.get(stat.productId);
+      pStat.qty += stat.qty;
+      pStat.revenue += stat.revenue;
+      pStat.profit += (stat.revenue - stat.cost);
+      if (!pStat.variants) pStat.variants = [];
+      pStat.variants.push({
+        color: stat.color,
+        size: stat.size,
+        qty: stat.qty,
+        revenue: stat.revenue,
+        profit: stat.revenue - stat.cost,
+        variantId: stat.variantId
+      });
+    }
+    
+    const topByQty = [...productTotalMap.values()].sort((a,b) => b.qty - a.qty).slice(0,8);
+    const topByProfit = [...productTotalMap.values()].sort((a,b) => b.profit - a.profit).slice(0,8);
+    
+    document.getElementById("topProductsList").innerHTML = topByQty.map((p, idx) => `
+      <div class="rank-item">
+        <div class="rank-number">${idx+1}</div>
+        <div class="rank-info">
+          <div class="rank-name">${escapeHtml(p.name)} ${p.hasVariants ? '<span class="variant-badge">🎨 variantli</span>' : ''}</div>
+          <div class="rank-stats">${fmtNumber(p.qty)} dona sotilgan</div>
+        </div>
+        <div class="rank-value">${fmtMoney(p.revenue)}</div>
+      </div>
+    `).join('') || '<div style="padding: 20px; text-align: center;">Maʼlumot yo‘q</div>';
+    
+    document.getElementById("topProfitList").innerHTML = topByProfit.map((p, idx) => `
+      <div class="rank-item">
+        <div class="rank-number">${idx+1}</div>
+        <div class="rank-info">
+          <div class="rank-name">${escapeHtml(p.name)}</div>
+          <div class="rank-stats">Foyda: ${fmtMoney(p.profit)}</div>
+        </div>
+        <div class="rank-value">${fmtMoney(p.revenue)}</div>
+      </div>
+    `).join('') || '<div style="padding: 20px; text-align: center;">Maʼlumot yo‘q</div>';
+    
+    // Top variants
+    const topVariants = [...variantStats.values()].sort((a,b) => b.qty - a.qty).slice(0,8);
+    const topVariantProfit = [...variantStats.values()].sort((a,b) => (b.revenue - b.cost) - (a.revenue - a.cost)).slice(0,8);
+    
+    document.getElementById("topVariantsList").innerHTML = topVariants.map((v, idx) => {
+      const variantInfo = [v.color, v.size].filter(Boolean).join(' · ');
+      return `
+        <div class="rank-item">
+          <div class="rank-number">${idx+1}</div>
+          <div class="rank-info">
+            <div class="rank-name">${escapeHtml(v.name)} ${variantInfo ? `<span class="variant-badge">${escapeHtml(variantInfo)}</span>` : ''}</div>
+            <div class="rank-stats">${fmtNumber(v.qty)} dona</div>
+          </div>
+          <div class="rank-value">${fmtMoney(v.revenue)}</div>
+        </div>
+      `;
+    }).join('') || '<div style="padding: 20px; text-align: center;">Maʼlumot yo‘q</div>';
+    
+    document.getElementById("topVariantProfitList").innerHTML = topVariantProfit.map((v, idx) => {
+      const variantInfo = [v.color, v.size].filter(Boolean).join(' · ');
+      const profit = v.revenue - v.cost;
+      return `
+        <div class="rank-item">
+          <div class="rank-number">${idx+1}</div>
+          <div class="rank-info">
+            <div class="rank-name">${escapeHtml(v.name)} ${variantInfo ? `<span class="variant-badge">${escapeHtml(variantInfo)}</span>` : ''}</div>
+            <div class="rank-stats">Foyda: ${fmtMoney(profit)}</div>
+          </div>
+          <div class="rank-value">${fmtMoney(v.revenue)}</div>
+        </div>
+      `;
+    }).join('') || '<div style="padding: 20px; text-align: center;">Maʼlumot yo‘q</div>';
+    
+    // Inventory stats (variantlarni hisobga olgan holda)
+    const inventoryStats = products.reduce((acc, p) => {
+      let totalCostValue = 0;
+      let totalSellValue = 0;
+      let totalStock = 0;
+      
+      if (p.isVariant && p.variants) {
+        p.variants.forEach(v => {
+          const stock = Number(v.stock) || 0;
+          const cost = Number(v.costUZS) || 0;
+          const price = Number(v.priceUZS) || 0;
+          totalCostValue += stock * cost;
+          totalSellValue += stock * price;
+          totalStock += stock;
+          
+          // Zararli variantlar
+          if (stock > 0 && price > 0 && cost > 0 && price < cost) {
+            acc.lossProducts.push({
+              name: `${p.name} (${[v.color, v.size].filter(Boolean).join(', ')})`,
+              stock,
+              cost,
+              price,
+              lossPerItem: cost - price,
+              totalLoss: (cost - price) * stock
+            });
+          }
+          
+          // Sotilmagan variantlar
+          const variantSales = variantStats.get(`${p.id}_${v.id}`);
+          const soldQty = variantSales?.qty || 0;
+          if (stock > 0 && soldQty === 0) {
+            acc.deadStock.push({
+              name: `${p.name} (${[v.color, v.size].filter(Boolean).join(', ')})`,
+              stock,
+              invested: stock * cost
+            });
+          }
+        });
+      } else {
+        const stock = Number(p.inventory?.stock ?? p.stock ?? 0);
+        const cost = Number(p.costUZS ?? p.inventory?.costUZS ?? 0);
+        const price = Number(p.priceUZS ?? p.sellPriceUZS ?? p.inventory?.sellPriceUZS ?? 0);
+        totalCostValue = stock * cost;
+        totalSellValue = stock * price;
+        totalStock = stock;
+        
+        const productSales = productStats.get(p.id);
+        const soldQty = productSales?.qty || 0;
+        
+        if (stock > 0 && price > 0 && cost > 0 && price < cost) {
+          acc.lossProducts.push({
+            name: p.name || p.code,
+            stock,
+            cost,
+            price,
+            lossPerItem: cost - price,
+            totalLoss: (cost - price) * stock
+          });
+        }
+        
+        if (stock > 0 && soldQty === 0) {
+          acc.deadStock.push({
+            name: p.name || p.code,
+            stock,
+            invested: stock * cost
+          });
+        }
+      }
+      
+      acc.totalCost += totalCostValue;
+      acc.totalSell += totalSellValue;
+      acc.totalProfit += (totalSellValue - totalCostValue);
+      
+      return acc;
+    }, {
+      totalCost: 0,
+      totalSell: 0,
+      totalProfit: 0,
+      lossProducts: [],
+      deadStock: []
+    });
+    
+    const totalCreditOpen = credits
+      .filter(c => c.status !== 'closed')
+      .reduce((s, c) => s + (Number(c.totalUZS || 0) - Number(c.paidUZS || 0)), 0);
+    
+    document.getElementById("totalRevenue").innerHTML = fmtMoney(totalRevenue);
+    document.getElementById("totalProfit").innerHTML = fmtMoney(totalProfit);
+    document.getElementById("totalCredit").innerHTML = fmtMoney(totalCreditOpen);
+    document.getElementById("inventoryValue").innerHTML = fmtMoney(inventoryStats.totalCost);
+    document.getElementById("inventorySellValue").innerHTML = fmtMoney(inventoryStats.totalSell);
+    document.getElementById("inventoryPotentialProfit").innerHTML = fmtMoney(inventoryStats.totalProfit);
+    
+    const lossProducts = inventoryStats.lossProducts.sort((a,b) => b.totalLoss - a.totalLoss).slice(0,8);
+    document.getElementById("lossProductsList").innerHTML = lossProducts.map((p, idx) => `
+      <div class="rank-item">
+        <div class="rank-number">${idx + 1}</div>
+        <div class="rank-info">
+          <div class="rank-name">${escapeHtml(p.name)}</div>
+          <div class="rank-stats">Stock: ${fmtNumber(p.stock)} dona · Zarar: ${fmtMoney(p.lossPerItem)}/dona</div>
+        </div>
+        <div class="rank-value">-${fmtMoney(p.totalLoss)}</div>
+      </div>
+    `).join('') || '<div style="padding: 20px; text-align: center;">Zararli mahsulot yo‘q</div>';
+    
+    const deadStock = inventoryStats.deadStock.sort((a,b) => b.invested - a.invested).slice(0,8);
+    document.getElementById("deadStockList").innerHTML = deadStock.map((p, idx) => `
+      <div class="rank-item">
+        <div class="rank-number">${idx + 1}</div>
+        <div class="rank-info">
+          <div class="rank-name">${escapeHtml(p.name)}</div>
+          <div class="rank-stats">Sotilmagan: ${fmtNumber(p.stock)} dona</div>
+        </div>
+        <div class="rank-value">${fmtMoney(p.invested)}</div>
+      </div>
+    `).join('') || '<div style="padding: 20px; text-align: center;">Pul yotib qolgan mahsulot yo‘q</div>';
+    
+    // Low stock (variantlarni ham hisobga olgan holda)
+    const lowStockItems = [];
+    products.forEach(p => {
+      if (p.isVariant && p.variants) {
+        p.variants.forEach(v => {
+          const stock = Number(v.stock) || 0;
+          const threshold = p.lowThreshold ?? 5;
+          if (stock <= threshold) {
+            lowStockItems.push({
+              code: p.code,
+              variantInfo: `${v.color || ''} ${v.size || ''}`.trim(),
+              costUZS: v.costUZS,
+              priceUZS: v.priceUZS,
+              stock,
+              threshold,
+              isVariant: true,
+              variantId: v.id
+            });
+          }
+        });
+      } else {
+        const stock = Number(p.inventory?.stock ?? p.stock ?? 0);
+        const threshold = p.lowThreshold ?? 5;
+        if (stock <= threshold) {
+          lowStockItems.push({
+            code: p.code || p.id,
+            variantInfo: '',
+            costUZS: p.costUZS ?? p.inventory?.costUZS ?? 0,
+            priceUZS: p.priceUZS ?? p.sellPriceUZS ?? p.inventory?.sellPriceUZS ?? 0,
+            stock,
+            threshold,
+            isVariant: false
+          });
+        }
+      }
+    });
+    
+    lowStockItems.sort((a,b) => a.stock - b.stock);
+    document.getElementById("lowStockCount").innerHTML = `${lowStockItems.length} ta`;
+    const lowStockPaged = paginate(lowStockItems, pageState.lowStock);
+    pageState.lowStock = lowStockPaged.page;
+    document.getElementById("lowStockTbody").innerHTML = lowStockPaged.items.map(item => `
+      <tr>
+        <td><button class="copy-code mono" data-copy="${escapeHtml(item.code)}"><i class="fas fa-copy"></i> ${escapeHtml(item.code)}</button></td>
+        <td>${escapeHtml(item.variantInfo)}</td>
+        <td>${fmtMoney(item.costUZS)}</td>
+        <td>${fmtMoney(item.priceUZS)}</td>
+        <td><span class="status-badge ${item.stock <= 0 ? 'badge-danger' : 'badge-warning'}">${fmtNumber(item.stock)}</span></td>
+        <td>${item.stock <= 0 ? '<span class="status-badge badge-danger">Tugagan</span>' : '<span class="status-badge badge-warning">Kam</span>'}</td>
+      </tr>
+    `).join('');
+    renderPager("lowStockPager", "lowStock", lowStockPaged);
+    
+    // Products table
+    document.getElementById("productCount").innerHTML = `${products.length} ta`;
+    const productsList = products.map(p => {
+      let totalStock = 0;
+      let variantCount = 0;
+      let variantDetails = [];
+      
+      if (p.isVariant && p.variants) {
+        variantCount = p.variants.length;
+        p.variants.forEach(v => {
+          totalStock += Number(v.stock) || 0;
+          variantDetails.push(`${v.color || ''} ${v.size || ''}: ${v.stock || 0}`);
+        });
+      } else {
+        totalStock = Number(p.inventory?.stock ?? p.stock ?? 0);
+      }
+      
+      const stats = productStats.get(p.id) || { qty: 0, revenue: 0, profit: 0 };
+      const threshold = Number(p.lowThreshold ?? 5);
+      const status = totalStock <= 0 ? 'Tugagan' : (totalStock <= threshold ? 'Kam' : 'Yetarli');
+      const statusClass = totalStock <= 0 ? 'badge-danger' : (totalStock <= threshold ? 'badge-warning' : 'badge-success');
+      
+      return {
+        ...p,
+        totalStock,
+        variantCount,
+        variantDetails,
+        soldQty: stats.qty,
+        revenue: stats.revenue,
+        profit: stats.revenue - stats.cost,
+        status,
+        statusClass
+      };
+    });
+    
+    const productsPaged = paginate(productsList, pageState.products);
+    pageState.products = productsPaged.page;
+    document.getElementById("productsTbody").innerHTML = productsPaged.items.map(p => `
+      <tr>
+        <td><button class="copy-code mono" data-copy="${escapeHtml(p.code)}"><i class="fas fa-copy"></i> ${escapeHtml(p.code)}</button></td>
+        <td>
+          ${escapeHtml(p.name || 'Nomsiz')}
+          ${p.variantCount > 0 ? `<button class="variant-expand-btn" data-id="${p.id}"><i class="fas fa-chevron-down"></i> ${p.variantCount} variant</button>` : ''}
+          <div class="variant-details" id="variant-${p.id}">
+            ${p.variantDetails.map(d => `<div class="rank-stats">• ${escapeHtml(d)}</div>`).join('')}
+          </div>
+        </td>
+        <td>${p.variantCount > 0 ? `<span class="variant-badge">${p.variantCount} ta variant</span>` : 'Oddiy'}</td>
+        <td>${fmtNumber(p.totalStock)}</td>
+        <td><strong>${fmtNumber(p.soldQty)}</strong> dona</td>
+        <td>${fmtMoney(p.revenue)}</td>
+        <td class="badge-success">${fmtMoney(p.profit)}</td>
+        <td><span class="status-badge ${p.statusClass}">${p.status}</span></td>
+      </tr>
+    `).join('');
+    renderPager("productsPager", "products", productsPaged);
+    
+    // Credits table
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById("creditsTbody").innerHTML = credits.slice(0,50).map(c => {
+      const remaining = (c.totalUZS || 0) - (c.paidUZS || 0);
+      const status = c.status === 'closed' ? 'Yopilgan' : (c.dueDate && c.dueDate <= today ? 'Muddati o‘tgan' : 'Ochiq');
+      const statusClass = status === 'Yopilgan' ? 'badge-success' : (status === 'Muddati o‘tgan' ? 'badge-danger' : 'badge-warning');
+      return `<tr>
+        <td><strong>${escapeHtml(c.fullName || c.firstName || 'Mijoz')}</strong></td>
+        <td>${escapeHtml(c.phone1 || '-')}</td>
+        <td>${escapeHtml(c.givenDate || '-')}</td>
+        <td>${escapeHtml(c.dueDate || '-')}</td>
+        <td>${fmtMoney(c.totalUZS || 0)}</td>
+        <td>${fmtMoney(remaining)}</td>
+        <td><span class="status-badge ${statusClass}">${status}</span></td>
+      </tr>`;
+    }).join('');
+    document.getElementById("creditCount").innerHTML = `${credits.length} ta`;
+  }
+  
+  // Variantlarni kengaytirish/yopish
+  document.addEventListener('click', (e) => {
+    const expandBtn = e.target.closest('.variant-expand-btn');
+    if (expandBtn) {
+      const id = expandBtn.dataset.id;
+      const detailsDiv = document.getElementById(`variant-${id}`);
+      if (detailsDiv) {
+        detailsDiv.classList.toggle('show');
+        expandBtn.innerHTML = detailsDiv.classList.contains('show') ? 
+          `<i class="fas fa-chevron-up"></i> Yopish` : 
+          `<i class="fas fa-chevron-down"></i> ${expandBtn.textContent.match(/\d+/)?.[0] || ''} variant`;
+      }
+    }
+  });
+  
+  function applyStats() {
+    currentStats.startDate = document.getElementById("startDate").value;
+    currentStats.endDate = document.getElementById("endDate").value;
+    currentStats.groupBy = document.getElementById("groupBy").value;
+    renderAll();
+  }
+  
+  function setQuickRange(range) {
+    const end = new Date();
+    const start = new Date();
+    if (range === 'today') {
+      start.setHours(0,0,0,0);
+      end.setHours(23,59,59,999);
+    } else if (range === 'week') start.setDate(end.getDate() - 7);
+    else if (range === 'month') start.setMonth(end.getMonth() - 1);
+    else if (range === 'quarter') start.setMonth(end.getMonth() - 3);
+    else if (range === 'year') start.setFullYear(end.getFullYear() - 1);
+    document.getElementById("startDate").value = start.toISOString().slice(0,10);
+    document.getElementById("endDate").value = end.toISOString().slice(0,10);
+    applyStats();
+  }
+  
+  // Export to Excel
+  function exportToExcel() {
+    const data = products.map(p => {
+      if (p.isVariant && p.variants) {
+        return p.variants.map(v => ({
+          'Kod': p.code,
+          'Mahsulot nomi': p.name,
+          'Variant': `${v.color || ''} ${v.size || ''}`.trim(),
+          'Tannarx': v.costUZS || 0,
+          'Sotuv narxi': v.priceUZS || 0,
+          'Qoldiq': v.stock || 0
+        }));
+      }
+      return [{
+        'Kod': p.code,
+        'Mahsulot nomi': p.name || '',
+        'Variant': 'Oddiy',
+        'Tannarx': p.costUZS || 0,
+        'Sotuv narxi': p.priceUZS || 0,
+        'Qoldiq': p.stock || 0
+      }];
+    }).flat();
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Mahsulotlar');
+    XLSX.writeFile(wb, `OrzuMall_mahsulotlar_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }
+  
+  document.querySelectorAll(".range-pill").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".range-pill").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      if (btn.dataset.range !== "custom") setQuickRange(btn.dataset.range);
+    };
+  });
+  
+  document.querySelectorAll(".chart-btn").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".chart-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentChartType = btn.dataset.chartType;
+      renderAll();
+    };
+  });
+  
+  document.getElementById("applyStatsBtn").onclick = () => applyStats();
+  document.getElementById("groupBy").onchange = () => applyStats();
+  document.getElementById("darkModeToggle").onclick = () => document.body.classList.toggle("dark");
+  document.getElementById("refreshBtn").onclick = () => loadAllData();
+  document.getElementById("exportExcelBtn").onclick = () => exportToExcel();
+  
+  document.addEventListener('click', async (e) => {
+    const pagerBtn = e.target.closest('.pager-btn');
+    if (pagerBtn) {
+      const key = pagerBtn.getAttribute('data-page-key');
+      const action = pagerBtn.getAttribute('data-page-action');
+      if (key && action) {
+        pageState[key] += action === 'next' ? 1 : -1;
+        if (pageState[key] < 1) pageState[key] = 1;
+        renderAll();
+      }
+      return;
+    }
+    
+    const btn = e.target.closest('.copy-code');
+    if (!btn) return;
+    const textToCopy = btn.getAttribute('data-copy') || btn.textContent.trim();
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const temp = document.createElement('textarea');
+        temp.value = textToCopy;
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        document.body.appendChild(temp);
+        temp.focus();
+        temp.select();
+        document.execCommand('copy');
+        temp.remove();
+      }
+      const oldHtml = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = '<i class="fas fa-check"></i> Nusxalandi';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = oldHtml;
+      }, 1200);
+    } catch (err) {
+      console.error('Copy error:', err);
+      alert('Nusxa olishda xatolik yuz berdi');
+    }
+  });
+  
+  const end = new Date();
+  const start = new Date(); start.setDate(start.getDate() - 30);
+  document.getElementById("startDate").value = start.toISOString().slice(0,10);
+  document.getElementById("endDate").value = end.toISOString().slice(0,10);
+  
+  loadAllData().then(() => subscribeLive());
+</script>
+</body>
+</html>
