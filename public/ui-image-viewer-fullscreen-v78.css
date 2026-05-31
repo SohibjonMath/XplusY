@@ -1,0 +1,95 @@
+/* v78 — fullscreen viewer quality fix: bigger image + cleaner thumb strip */
+.imgViewer.imageOnly .qvGalleryPane{
+  padding:10px 10px calc(86px + env(safe-area-inset-bottom)) !important;
+  justify-content:stretch !important;
+}
+.imgViewer.imageOnly .qvStage{
+  flex:1 1 100% !important;
+  min-height:calc(100dvh - 106px - env(safe-area-inset-bottom)) !important;
+  border-radius:22px !important;
+  padding:8px 52px !important;
+  background:rgba(255,255,255,.035) !important;
+  border:1px solid rgba(255,255,255,.06) !important;
+  box-shadow:none !important;
+}
+.imgViewer.imageOnly .qvImg,
+.imgViewer.imageOnly .imgViewerImg{
+  transform:scale(1.38) !important;
+  transform-origin:center center !important;
+  filter:drop-shadow(0 24px 44px rgba(0,0,0,.28)) !important;
+}
+.imgViewer.imageOnly .navBtn{
+  background:rgba(148,163,184,.58) !important;
+  border-color:rgba(255,255,255,.16) !important;
+  width:46px !important;
+  min-width:46px !important;
+  height:46px !important;
+  border-radius:16px !important;
+}
+.imgViewer.imageOnly .navPrev{left:12px !important;}
+.imgViewer.imageOnly .navNext{right:12px !important;}
+.imgViewer.imageOnly .qvThumbs{
+  max-width:min(86vw,520px) !important;
+  padding:6px 8px !important;
+  gap:8px !important;
+  border-radius:999px !important;
+  background:rgba(17,24,39,.56) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 10px 28px rgba(0,0,0,.22) !important;
+}
+.imgViewer.imageOnly .thumb{
+  width:58px !important;
+  min-width:58px !important;
+  height:58px !important;
+  min-height:58px !important;
+  padding:4px !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.08) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+}
+.imgViewer.imageOnly .thumb img{
+  border-radius:12px !important;
+}
+.imgViewer.imageOnly .thumb::after{
+  display:none !important;
+}
+.imgViewer.imageOnly .thumb.active{
+  transform:none !important;
+  background:rgba(255,255,255,.14) !important;
+  border-color:#ef4444 !important;
+  box-shadow:0 0 0 2px rgba(239,68,68,.34) !important;
+}
+@media (max-width: 768px){
+  .imgViewer.imageOnly .qvGalleryPane{
+    padding:8px 8px calc(84px + env(safe-area-inset-bottom)) !important;
+  }
+  .imgViewer.imageOnly .qvStage{
+    min-height:calc(100dvh - 98px - env(safe-area-inset-bottom)) !important;
+    padding:8px 40px !important;
+    border-radius:18px !important;
+  }
+  .imgViewer.imageOnly .qvImg,
+  .imgViewer.imageOnly .imgViewerImg{
+    transform:scale(1.48) !important;
+  }
+  .imgViewer.imageOnly .navBtn{
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    border-radius:14px !important;
+  }
+  .imgViewer.imageOnly .qvThumbs{
+    max-width:calc(100vw - 24px) !important;
+    padding:5px 7px !important;
+    gap:7px !important;
+    bottom:calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+  .imgViewer.imageOnly .thumb{
+    width:52px !important;
+    min-width:52px !important;
+    height:52px !important;
+    min-height:52px !important;
+    border-radius:15px !important;
+  }
+  .imgViewer.imageOnly .thumb img{border-radius:11px !important;}
+}
