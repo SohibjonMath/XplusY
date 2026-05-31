@@ -8079,3 +8079,292 @@ html.modalOpen,body.modalOpen{overflow:hidden!important}
   .ppReviewComposer{padding:10px;border-radius:17px}.ppReviewComposerTop{align-items:flex-start;flex-direction:column;gap:6px}.ppReviewStars{align-self:flex-start}.ppReviewStar{font-size:25px}
   #ppReviewText{min-height:76px;font-size:12px}.ppReviewItem{padding:10px;border-radius:16px}.ppReviewItem p{font-size:12px}
 }
+
+
+/* ===== v57 premium compact buttons + larger review stars ===== */
+:root{
+  --om-btn-red:#e11d48;
+  --om-btn-red2:#fb7185;
+  --om-btn-ink:#0f172a;
+  --om-btn-line:#e5e7eb;
+  --om-btn-soft:#fff7f8;
+}
+
+.btn,
+.ghostBtn,
+.savedAddressChangeBtn,
+.deliveryMapApplyBtn,
+.locMetaBtn,
+.locateBtn,
+.activityTab,
+.copyBtn,
+.qvMovedBtn,
+.qvMainCta,
+.paymentDeliveryChangeBtn,
+.savedAddressDetectSave,
+#productPageCartBtn,
+#ppReviewSend,
+#orderActionCancel,
+#orderReceiptPrint{
+  min-height:44px;
+  border-radius:16px !important;
+  font-weight:900 !important;
+  letter-spacing:-.01em;
+  transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease, color .16s ease;
+}
+.btn,
+#productPageCartBtn,
+#ppReviewSend,
+.deliveryMapApplyBtn,
+#paymentSubmit,
+#checkoutSubmit,
+#orderActionSubmit,
+#topupBtn,
+#topupNext,
+#topupSubmit,
+#savedAddressDetectSave,
+#paymeBtn,
+#vConfirm{
+  background:linear-gradient(135deg,var(--om-btn-red) 0%, var(--om-btn-red2) 100%) !important;
+  color:#fff !important;
+  border:1px solid rgba(255,255,255,.20) !important;
+  box-shadow:0 14px 30px rgba(225,29,72,.22) !important;
+}
+.btn.ghost,
+.ghostBtn,
+.savedAddressChangeBtn,
+.locMetaBtn,
+.locateBtn,
+.copyBtn,
+.qvMovedBtn,
+.paymentDeliveryChangeBtn,
+#orderActionCancel,
+#orderReceiptPrint,
+#tgShareBtn,
+#clearBtn,
+#vCancel,
+#topupCancel1,
+#topupBack,
+#catClearBtn{
+  background:linear-gradient(180deg,#ffffff 0%, #fff7f8 100%) !important;
+  color:#be123c !important;
+  border:1px solid #fecdd3 !important;
+  box-shadow:0 10px 24px rgba(244,63,94,.10) !important;
+}
+.btn:hover,
+.ghostBtn:hover,
+.savedAddressChangeBtn:hover,
+.deliveryMapApplyBtn:hover,
+.locMetaBtn:hover,
+.locateBtn:hover,
+.activityTab:hover,
+.copyBtn:hover,
+.qvMovedBtn:hover,
+.qvMainCta:hover,
+.paymentDeliveryChangeBtn:hover,
+.savedAddressDetectSave:hover,
+#productPageCartBtn:hover,
+#ppReviewSend:hover{
+  transform:translateY(-1px);
+}
+.iconBtn,
+.qtyBtn,
+.mobile-bottom-bar .nav-btn,
+.ppAction,
+.productBackBtn,
+.productShareBtn,
+.qvClose,
+.navBtn,
+.topupCloseBtn,
+.paymentCloseBtn,
+.checkoutCloseBtn,
+.mapPanelCloseBtn,
+.miniClose,
+.panelClose,
+#ordersReload,
+#profileLogout,
+.profileEditPill,
+.copyBtn{
+  border-radius:16px !important;
+  box-shadow:0 12px 26px rgba(15,23,42,.08) !important;
+  border:1px solid rgba(226,232,240,.95) !important;
+  background:linear-gradient(180deg,#ffffff 0%, #f8fafc 100%) !important;
+}
+.iconBtn:hover,
+.qtyBtn:hover,
+.mobile-bottom-bar .nav-btn:hover,
+.ppAction:hover,
+.productBackBtn:hover,
+.productShareBtn:hover,
+.qvClose:hover,
+.navBtn:hover,
+#ordersReload:hover,
+#profileLogout:hover,
+.profileEditPill:hover{
+  transform:translateY(-1px);
+  box-shadow:0 16px 32px rgba(15,23,42,.12) !important;
+}
+.mobile-bottom-bar{
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  background:rgba(255,255,255,.88) !important;
+  border-top:1px solid rgba(226,232,240,.95) !important;
+  box-shadow:0 -12px 34px rgba(15,23,42,.08);
+}
+.mobile-bottom-bar .nav-btn{
+  min-height:56px;
+  gap:5px;
+}
+.mobile-bottom-bar .nav-btn .ico{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  background:#fff5f6;
+  color:#e11d48;
+}
+.mobile-bottom-bar .nav-btn.active{
+  color:#be123c;
+  background:linear-gradient(180deg,#fff 0%, #fff5f6 100%) !important;
+  border-color:#fecdd3 !important;
+}
+.mobile-bottom-bar .nav-btn.active .ico{
+  background:linear-gradient(135deg,var(--om-btn-red) 0%, var(--om-btn-red2) 100%);
+  color:#fff;
+  box-shadow:0 10px 20px rgba(225,29,72,.22);
+}
+.mobile-bottom-bar .nav-btn small{
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:-.01em;
+}
+
+/* Product-page reviews */
+.ppReviewStars{gap:8px !important}
+.ppReviewStar{
+  font-size:36px !important;
+  padding:0 4px !important;
+  text-shadow:0 4px 10px rgba(245,158,11,.14);
+}
+.ppReviewStar:hover,
+.ppReviewStar:focus-visible{transform:scale(1.08);color:#f59e0b}
+.ppReviewStar.active{color:#f59e0b}
+
+/* Order review modal stars */
+#orderReviewStars{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+#orderReviewStars [data-review-star],
+.revStars .starBtn,
+.starBtn{
+  min-width:50px;
+  width:50px;
+  height:50px;
+  border-radius:18px !important;
+  font-size:28px !important;
+  box-shadow:0 10px 24px rgba(15,23,42,.06);
+}
+#orderReviewStars [data-review-star]{
+  border:1px solid #e5e7eb;
+  background:linear-gradient(180deg,#fff,#fffaf0);
+  color:#cbd5e1;
+}
+#orderReviewStars [data-review-star].isActive{color:#f59e0b;border-color:#f4c84b;box-shadow:0 12px 26px rgba(245,158,11,.18)}
+.miniShell .starBtn,
+.revStars .starBtn{width:52px !important;height:52px !important;border-radius:18px !important}
+.miniShell .starBtn img{width:28px !important;height:28px !important}
+
+/* Compact buttons with icons */
+.omHasIcon{display:inline-flex !important;align-items:center;justify-content:center;gap:8px}
+.omHasIcon > i{font-size:15px;line-height:1;flex:0 0 auto}
+.omHasIcon > .btnLabel{display:inline-block;line-height:1.1}
+
+/* General compacting on mobile */
+@media (max-width: 768px){
+  .btn,
+  .ghostBtn,
+  .savedAddressChangeBtn,
+  .deliveryMapApplyBtn,
+  .locMetaBtn,
+  .locateBtn,
+  .activityTab,
+  .copyBtn,
+  .qvMovedBtn,
+  .qvMainCta,
+  .paymentDeliveryChangeBtn,
+  #productPageCartBtn,
+  #ppReviewSend,
+  #orderActionCancel,
+  #orderActionSubmit,
+  #orderReceiptPrint{
+    min-height:42px !important;
+    padding:0 12px !important;
+    font-size:12px !important;
+    gap:6px !important;
+  }
+  .iconBtn,
+  .qtyBtn,
+  .productBackBtn,
+  .productShareBtn,
+  .qvClose,
+  .navBtn,
+  .topupCloseBtn,
+  .paymentCloseBtn,
+  .checkoutCloseBtn,
+  .mapPanelCloseBtn,
+  .miniClose,
+  .panelClose,
+  #ordersReload,
+  #profileLogout,
+  .profileEditPill{
+    min-width:42px !important;
+    width:42px;
+    height:42px !important;
+    padding:0 !important;
+  }
+  .ppAction{min-height:46px !important;border-radius:16px !important}
+  .ppAction i{font-size:15px}
+  .ppAction span{display:none !important}
+  .profileEditPill span{display:none !important}
+  .activityTabs{gap:8px}
+  .activityTab{flex:1}
+  .loadMoreBtn{min-height:42px !important;border-radius:16px !important}
+  .savedAddressChangeBtn,
+  .deliveryMapApplyBtn,
+  .locMetaBtn,
+  .locateBtn,
+  .copyBtn{font-size:11px !important}
+  .omIconOnlyMobile{
+    min-width:42px !important;
+    width:auto;
+    padding:0 11px !important;
+    gap:0 !important;
+  }
+  .omIconOnlyMobile > .btnLabel{display:none !important}
+  .omIconOnlyMobile > i{font-size:16px !important}
+  .mobile-bottom-bar .nav-btn{
+    min-height:52px;
+    border-radius:18px !important;
+  }
+  .mobile-bottom-bar .nav-btn small{font-size:9.5px}
+  .mobile-bottom-bar .nav-btn .ico{width:32px;height:32px;border-radius:11px}
+  .ppReviewStar{font-size:40px !important}
+  #orderReviewStars [data-review-star],
+  .revStars .starBtn,
+  .starBtn{
+    min-width:54px;
+    width:54px;
+    height:54px;
+    font-size:30px !important;
+  }
+}
+@media (max-width: 420px){
+  .mobile-bottom-bar .nav-btn small{display:none}
+  .mobile-bottom-bar .nav-btn{min-height:50px;gap:0}
+  .mobile-bottom-bar .nav-btn .ico{width:34px;height:34px}
+  .omIconOnlyMobile{min-width:40px !important;padding:0 10px !important}
+}

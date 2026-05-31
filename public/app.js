@@ -7988,3 +7988,65 @@ window.addEventListener('load', ()=>setTimeout(orzuMoveProfileSocialToBottom, 12
 })();
 
 try{ window.openProductPage = openProductPage; }catch(_e){}
+
+
+// ===== v57 premium compact buttons enhancer =====
+(function(){
+  const cfg = [
+    ['#catApplyBtn','fa-solid fa-filter','Ko‘rish'],
+    ['#catClearBtn','fa-solid fa-rotate-left','Tozalash'],
+    ['#deliveryUseNewLocation','fa-solid fa-location-dot','Yangi lokatsiya'],
+    ['#deliveryLocateBtn','fa-solid fa-crosshairs','Aniqlash'],
+    ['#deliveryMapToggleBtn','fa-solid fa-map-location-dot','Xarita'],
+    ['#copyDeliveryCoordsBtn','fa-regular fa-copy','Nusxalash'],
+    ['#deliveryMapApplyBtn','fa-solid fa-circle-check','Qo‘llash'],
+    ['#checkoutSubmit','fa-solid fa-arrow-right','Davom etish'],
+    ['#paymentSubmit','fa-solid fa-circle-check','Tasdiqlash'],
+    ['#paymentDeliveryChangeBtn','fa-solid fa-truck-fast','Yetkazib berish'],
+    ['#profileSave','fa-solid fa-floppy-disk','Saqlash'],
+    ['#savedAddressDetectSave','fa-solid fa-location-crosshairs','Saqlash'],
+    ['#topupBtn','fa-solid fa-wallet','To‘ldirish'],
+    ['#topupCancel1','fa-solid fa-xmark','Bekor'],
+    ['#topupNext','fa-solid fa-arrow-right','Davom'],
+    ['#topupBack','fa-solid fa-arrow-left','Orqaga'],
+    ['#topupSubmit','fa-solid fa-paper-plane','Yuborish'],
+    ['#orderActionCancel','fa-solid fa-xmark','Yopish'],
+    ['#orderActionSubmit','fa-solid fa-paper-plane','Yuborish'],
+    ['#orderReceiptPrint','fa-solid fa-print','Chop'],
+    ['#paymeBtn','fa-solid fa-bag-shopping','Rasmiylashtirish'],
+    ['#tgShareBtn','fa-brands fa-telegram','Telegram'],
+    ['#clearBtn','fa-solid fa-trash','Tozalash'],
+    ['#vCancel','fa-solid fa-xmark','Bekor'],
+    ['#vConfirm','fa-solid fa-cart-plus','Qo‘shish'],
+    ['#productPageCartBtn','fa-solid fa-cart-plus','Savatga qo‘shish'],
+    ['#ppReviewSend','fa-solid fa-paper-plane','Sharh yuborish'],
+    ['#orderBtnPage','fa-solid fa-truck-fast','Yetkazib berish'],
+    ['#loadMoreBtn','fa-solid fa-angles-down','Yana']
+  ];
+
+  function apply(){
+    const compact = window.innerWidth <= 768;
+    cfg.forEach(([sel, icon, label])=>{
+      document.querySelectorAll(sel).forEach(el=>{
+        if(!el) return;
+        if(!el.dataset.pmInit){
+          el.dataset.pmInit = '1';
+          const text = (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g,' ').trim();
+          if(text) el.dataset.pmLabel = text;
+        }
+        const lbl = label || el.dataset.pmLabel || 'Tugma';
+        el.classList.add('omHasIcon');
+        el.innerHTML = `<i class="${icon}" aria-hidden="true"></i><span class="btnLabel">${lbl}</span>`;
+        el.setAttribute('title', lbl);
+        if(!el.getAttribute('aria-label')) el.setAttribute('aria-label', lbl);
+        const iconOnlyMobile = !['#productPageCartBtn','#paymentSubmit','#checkoutSubmit','#paymeBtn','#ppReviewSend','#orderBtnPage'].includes(sel);
+        el.classList.toggle('omIconOnlyMobile', compact && iconOnlyMobile);
+      });
+    });
+  }
+
+  window.addEventListener('load', apply);
+  window.addEventListener('resize', apply);
+  document.addEventListener('click', ()=> setTimeout(apply, 50), true);
+  setTimeout(apply, 0);
+})();
