@@ -8050,3 +8050,42 @@ try{ window.openProductPage = openProductPage; }catch(_e){}
   document.addEventListener('click', ()=> setTimeout(apply, 50), true);
   setTimeout(apply, 0);
 })();
+
+// ===== v58 universal super-premium cart-button enhancer =====
+(function(){
+  const cartSelectors = [
+    'button[data-act="cart"]',
+    '#productPageCartBtn',
+    '#viewerCart',
+    '#vConfirm',
+    '.favPrimaryBtn[data-add]',
+    '.pBtn[data-add]',
+    '#orderBtnPage',
+    '#paymeBtn',
+    '#cartBtn',
+    '.mobile-bottom-bar .nav-btn[data-tab="cart"]',
+    '#cartDeliveryChangeBtn'
+  ];
+  const query = cartSelectors.join(',');
+  function decorate(root){
+    const nodes=[];
+    if(root?.matches?.(query)) nodes.push(root);
+    root?.querySelectorAll?.(query).forEach(el=>nodes.push(el));
+    nodes.forEach(btn=>{
+      btn.classList.add('omCartAction');
+      if(!btn.getAttribute('aria-label')){
+        btn.setAttribute('aria-label', (btn.textContent||'Savat').replace(/\s+/g,' ').trim() || 'Savat');
+      }
+    });
+  }
+  decorate(document);
+  new MutationObserver(mutations=>mutations.forEach(m=>m.addedNodes.forEach(node=>{
+    if(node.nodeType===1) decorate(node);
+  }))).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('pointerdown',e=>{
+    const btn=e.target.closest?.(query);
+    if(!btn) return;
+    btn.classList.add('omCartPressed');
+    setTimeout(()=>btn.classList.remove('omCartPressed'),170);
+  },{passive:true});
+})();
