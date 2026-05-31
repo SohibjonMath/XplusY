@@ -227,3 +227,9 @@ body{padding-bottom:80px!important}
 
 /* v108 bulk accept */
 .bulk-accept-btn{background:linear-gradient(135deg,#111827,#7f1d3d)!important;color:#fff!important;border-color:transparent!important;box-shadow:0 8px 18px rgba(17,24,39,.16)!important}.bulk-accept-btn i{color:#fff!important}.bulk-accept-btn span{color:#fff!important}.order-alert-bottom{justify-content:flex-start!important}.order-alert-bottom .alert-snooze{display:none!important}
+
+/* v110 — return reason chooser */
+.return-reason-card{display:flex;align-items:center;gap:9px;padding:10px;border-radius:14px;background:linear-gradient(135deg,#f0fdfa,#fff);border:1px solid #99f6e4}
+.return-reason-card>i{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#ccfbf1;color:#0f766e}
+.return-reason-card b{display:block;font-size:12px;color:#134e4a}
+.return-reason-card span{display:block;margin-top:2px;font-size:10px;color:#64748b}

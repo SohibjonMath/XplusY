@@ -2926,8 +2926,17 @@ function orderActorLabel(v){
   if(s === "orzumall" || s === "admin") return "OrzuMall";
   return "Tizim";
 }
+function customerVisibleOrderReason(reason,status){
+  const raw=String(reason||"").trim();
+  if(omOrderStatusKey(status)==="returned" && /^QR skaner orqali qaytarib olindi$/i.test(raw)) return "Buyurtma mijoz tomonidan qaytarildi";
+  return raw;
+}
 function orderStatusNote(order){
-  return String(order?.statusNote || order?.cancellation?.reason || order?.returnRequest?.resolutionReason || order?.returnRequest?.reason || "").trim();
+  const raw=String(order?.statusNote || order?.cancellation?.reason || order?.returnRequest?.resolutionReason || order?.returnRequest?.reason || "").trim();
+  return customerVisibleOrderReason(raw,order?.status);
+}
+function orderStatusReasonTitle(order){
+  return omOrderStatusKey(order?.status)==="returned" ? "Qaytarish sababi" : `${orderActorLabel(order?.statusActor || order?.cancellation?.by || order?.returnRequest?.resolvedBy || "system")} izohi`;
 }
 function orderTimelineHTML(order){
   const list = Array.isArray(order?.statusHistory) ? order.statusHistory.slice() : [];
@@ -2942,9 +2951,9 @@ function orderTimelineHTML(order){
   return `<div class="orderTimeline"><div class="orderTimelineTitle">Buyurtma harakati</div>${list.map(x=>{
     const when=fmtDate(x?.at)||"";
     const actor=orderActorLabel(x?.actorType);
-    const reason=String(x?.reason||"").trim();
+    const reason=customerVisibleOrderReason(x?.reason||"",x?.status);
     const timelineClass=orderStatusClass(x?.status||"");
-    return `<div class="orderTimelineItem ${timelineClass}"><span class="orderTimelineDot"><i class="fa-solid ${escapeHtml(orderStatusIcon(x?.status||''))}" aria-hidden="true"></i></span><div class="orderTimelineText"><b>${escapeHtml(orderStatusLabel(x?.status||""))}</b>${escapeHtml([actor,when].filter(Boolean).join(" • "))}${reason?`<br><span>Izoh: ${escapeHtml(reason)}</span>`:""}</div></div>`;
+    return `<div class="orderTimelineItem ${timelineClass}"><span class="orderTimelineDot"><i class="fa-solid ${escapeHtml(orderStatusIcon(x?.status||''))}" aria-hidden="true"></i></span><div class="orderTimelineText"><b>${escapeHtml(orderStatusLabel(x?.status||""))}</b>${escapeHtml([actor,when].filter(Boolean).join(" • "))}${reason?`<br><span>${omOrderStatusKey(x?.status)==="returned"?"Sabab":"Izoh"}: ${escapeHtml(reason)}</span>`:""}</div></div>`;
   }).join("")}</div>`;
 }
 
@@ -2980,6 +2989,7 @@ function buildOrderReceiptHTML(order){
   const mapUrl = order?.shipping?.mapUrl || (order?.shipping?.lat && order?.shipping?.lng ? `https://maps.google.com/?q=${order.shipping.lat},${order.shipping.lng}` : '');
   const statusReason = orderStatusNote(order);
   const statusActor = orderActorLabel(order?.statusActor || order?.cancellation?.by || order?.returnRequest?.resolvedBy || 'system');
+  const statusReasonTitle = orderStatusReasonTitle(order);
   const review = order?.orderReview || null;
   const items = Array.isArray(order?.items) ? order.items : [];
   const itemsHtml = items.length ? items.map((it)=>{
@@ -3019,7 +3029,7 @@ function buildOrderReceiptHTML(order){
         <div class="orderReceiptBox"><div class="k">Manzil</div><div class="v">${escapeHtml(addr)}${mapUrl ? `<br><a href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">Xaritada ochish</a>` : ''}</div></div>
       </div>
 
-      ${statusReason ? `<div class="orderStatusReason"><b>${escapeHtml(statusActor)} izohi:</b> ${escapeHtml(statusReason)}</div>` : ''}
+      ${statusReason ? `<div class="orderStatusReason"><b>${escapeHtml(statusReasonTitle)}:</b> ${escapeHtml(statusReason)}</div>` : ''}
       ${orderTimelineHTML(order)}
       ${review ? `<div class="orderReviewSaved"><b>Fikr bildirildi${String(review.moderationStatus||"pending")==="approved" ? "" : " • admin tasdig‘i kutilmoqda"}:</b> ${'★'.repeat(Number(review.stars||0))}${'☆'.repeat(Math.max(0,5-Number(review.stars||0)))}<br>${escapeHtml(review.text||'')}${review.adminReply?.text ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(review.adminReply.text)}</span></div>` : ""}</div>` : ''}
 
@@ -3256,7 +3266,7 @@ function renderOrders(orders){
         ${provider ? `<span class="orderPill">${escapeHtml(providerLabel(provider))}</span>` : ""}
         ${when ? `<span class="orderPill">${escapeHtml(when)}</span>` : ""}
       </div>
-      ${orderStatusNote(o) ? `<div class="orderStatusReason"><b>${escapeHtml(orderActorLabel(o.statusActor || o.cancellation?.by || 'system'))} izohi:</b> ${escapeHtml(orderStatusNote(o))}</div>` : ""}
+      ${orderStatusNote(o) ? `<div class="orderStatusReason"><b>${escapeHtml(orderStatusReasonTitle(o))}:</b> ${escapeHtml(orderStatusNote(o))}</div>` : ""}
       ${o.orderReview ? `<div class="orderReviewSaved"><b>Fikr bildirildi${String(o.orderReview.moderationStatus||"pending")==="approved" ? "" : " • admin tasdig‘i kutilmoqda"}:</b> ${'★'.repeat(Number(o.orderReview.stars||0))}${'☆'.repeat(Math.max(0,5-Number(o.orderReview.stars||0)))}<br>${escapeHtml(o.orderReview.text||'')}${o.orderReview.adminReply?.text ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(o.orderReview.adminReply.text)}</span></div>` : ""}</div>` : ''}
       <div class="orderActions">${orderCustomerActionButtonsHTML(o)}</div>
     `;

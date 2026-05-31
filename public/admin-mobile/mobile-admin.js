@@ -190,7 +190,7 @@ function orderQrModeConfig(mode){
   const m=String(mode||"");
   if(m==="packing")return {mode:m,title:"Yig‘ishdagi QR skaner",next:"shipping",accept:["packing"],done:"Buyurtma yetkazib berishga o‘tkazildi",hint:"Yig‘ilgan buyurtma QR kodini skanerlang",reason:"QR skaner orqali yetkazib berishga topshirildi"};
   if(m==="shipping")return {mode:m,title:"Yetkazishdagi QR skaner",next:"delivered",accept:["shipping"],done:"Buyurtma yetkazildi holatiga o‘tkazildi",hint:"Yetkazilgan buyurtma QR kodini skanerlang",reason:"QR skaner orqali yetkazib berildi"};
-  if(m==="returned")return {mode:m,title:"Qaytarilgan QR skaner",next:"returned",accept:["shipping","delivered"],done:"Buyurtma qaytarilganlar ro‘yxatiga qo‘shildi",hint:"Qaytgan buyurtma QR kodini skanerlang",reason:"QR skaner orqali qaytarib olindi"};
+  if(m==="returned")return {mode:m,title:"Qaytarilgan QR skaner",next:"returned",accept:["shipping","delivered"],done:"Buyurtma qaytarilganlar ro‘yxatiga qo‘shildi",hint:"Qaytgan buyurtma QR kodini skanerlang",reason:"Buyurtma mijoz tomonidan qaytarildi"};
   return null;
 }
 function orderScanButton(mode){
@@ -225,6 +225,75 @@ async function stopOrderQrScanner(){
   const scanner=orderQrScanner;orderQrScanner=null;
   if(scanner){try{await scanner.stop()}catch(_e){}try{await scanner.clear()}catch(_e){}}
 }
+const RETURN_REASON_OPTIONS=[
+  "Buyurtma mijoz tomonidan qaytarildi",
+  "Puli to‘lanmadi",
+  "Manzilda mijoz mavjud emas",
+  "Mijoz buyurtmani olishdan bosh tortdi",
+  "Mahsulot mijozga mos kelmadi",
+  "__other__"
+];
+function returnReasonOptionsHtml(selected=""){
+  return RETURN_REASON_OPTIONS.map(x=>{
+    const label=x==="__other__"?"Boshqa sabab":x;
+    return `<option value="${esc(x)}" ${x===selected?"selected":""}>${esc(label)}</option>`;
+  }).join("");
+}
+function bindReturnReasonCustom(){
+  const sel=$("returnReasonSelect"),wrap=$("returnReasonCustomWrap");
+  const sync=()=>{if(wrap)wrap.hidden=sel?.value!=="__other__"};
+  sel?.addEventListener("change",sync);sync();
+}
+function getSelectedReturnReason(){
+  const sel=$("returnReasonSelect");
+  const custom=String($("returnReasonCustom")?.value||"").trim();
+  return sel?.value==="__other__"?custom:String(sel?.value||"").trim();
+}
+async function finalizeOrderQrTransition(o,cfg,reason){
+  if(orderQrBusy)return;
+  orderQrBusy=true;
+  try{
+    await api("order-lifecycle","admin_update_status",{orderId:o.id,status:cfg.next,reason:String(reason||cfg.reason||"").trim()});
+    o.status=cfg.next;
+    try{navigator.vibrate?.([90,45,90])}catch(_e){}
+    await stopOrderQrScanner();
+    closeModal();
+    S.orderFilter=cfg.next;
+    renderOrders();
+    toast(cfg.done,"success");
+  }catch(err){
+    const statusEl=$("orderQrStatus");
+    if(statusEl)statusEl.innerHTML=`<i class="fa-solid fa-circle-xmark"></i> ${esc(err.message||"Xatolik")}`;
+    toast("Xatolik: "+err.message,"error");
+  }finally{orderQrBusy=false}
+}
+function openReturnedQrReason(o,cfg){
+  openModal("Qaytarish sababini tanlang",`
+    <div class="return-reason-card">
+      <i class="fa-solid fa-rotate-left"></i>
+      <div><b>#${esc(o.id)}</b><span>${esc(orderOwner(o))}</span></div>
+    </div>
+    <label class="field">
+      <span>Qaytarish sababi</span>
+      <select id="returnReasonSelect">${returnReasonOptionsHtml("Buyurtma mijoz tomonidan qaytarildi")}</select>
+    </label>
+    <label class="field" id="returnReasonCustomWrap" hidden>
+      <span>Boshqa sabab</span>
+      <textarea id="returnReasonCustom" placeholder="Mijozga ko‘rinadigan sabab"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-soft" data-modal-close type="button">Ortga</button>
+      <button class="btn btn-return" id="returnQrReasonSave" type="button">Qaytarildi deb belgilash</button>
+    </div>`,()=>{
+      bindReturnReasonCustom();
+      $("returnQrReasonSave")?.addEventListener("click",async e=>{
+        const reason=getSelectedReturnReason();
+        if(reason.length<4)return toast("Sababni tanlang yoki yozing","error");
+        e.currentTarget.disabled=true;
+        await finalizeOrderQrTransition(o,cfg,reason);
+      });
+    });
+}
 async function processOrderQrScan(raw,mode){
   if(orderQrBusy)return;
   const cfg=orderQrModeConfig(mode);if(!cfg)return;
@@ -238,21 +307,15 @@ async function processOrderQrScan(raw,mode){
     if(statusEl)statusEl.innerHTML=`<i class="fa-solid fa-triangle-exclamation"></i> ${esc(msg)}`;
     toast(msg,"error");return;
   }
-  orderQrBusy=true;
-  if(statusEl)statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Status yangilanmoqda...';
-  try{
-    await api("order-lifecycle","admin_update_status",{orderId:o.id,status:cfg.next,reason:cfg.reason});
-    o.status=cfg.next;
-    try{navigator.vibrate?.([90,45,90])}catch(_e){}
+  if(cfg.mode==="returned"){
+    orderQrBusy=true;
     await stopOrderQrScanner();
     closeModal();
-    S.orderFilter=cfg.next;
-    renderOrders();
-    toast(cfg.done,"success");
-  }catch(err){
-    if(statusEl)statusEl.innerHTML=`<i class="fa-solid fa-circle-xmark"></i> ${esc(err.message||"Xatolik")}`;
-    toast("Xatolik: "+err.message,"error");
-  }finally{orderQrBusy=false}
+    orderQrBusy=false;
+    setTimeout(()=>openReturnedQrReason(o,cfg),70);
+    return;
+  }
+  await finalizeOrderQrTransition(o,cfg,cfg.reason);
 }
 async function startOrderQrCamera(mode){
   const statusEl=$("orderQrStatus"),reader=$("orderQrReader");
@@ -291,7 +354,44 @@ function renderOrders(){
 }
 function orderDetails(o){const hist=Array.isArray(o.statusHistory)?o.statusHistory:[],st0=normalizeStatus(o.status);return `<div class="detail-row"><div class="mini-info"><span>Mijoz</span><b>${esc(orderOwner(o))}</b></div><div class="mini-info"><span>Telefon</span><b>${esc(orderPhone(o))}</b></div><div class="mini-info"><span>Jami</span><b>${esc(money(orderTotal(o)))}</b></div><div class="mini-info"><span>To‘lov</span><b>${esc(o.provider||"—")}</b></div></div><div class="mini-info"><span>Yetkazish</span><b>${esc(o.shipping?.methodLabel||o.shipping?.serviceLabel||"—")}</b></div>${orderAddress(o)?`<div class="order-note">${esc(orderAddress(o))}</div>`:""}${st0==="packing"?`<button class="btn btn-label label-wide" data-order-label="${esc(o.id)}" type="button"><i class="fa-solid fa-qrcode"></i>58×40 QR yorliq chiqarish</button>`:""}<div class="section-title"><span>Status tarixi</span></div><div class="timeline">${hist.length?hist.slice().reverse().map(h=>{const st=normalizeStatus(h.status);return `<div class="timeline-item status-${esc(st)}"><b>${esc(meta(st).label)} • ${esc(h.actorName||h.actorType||"Tizim")}</b><span>${esc(dateFmt(h.at,true))}${h.reason?`<br>${esc(h.reason)}`:""}</span></div>`}).join(""):`<div class="empty">Tarix hali yozilmagan.</div>`}</div><div class="card-actions">${orderActionButtons(o)}</div>`}
 function openOrderDetails(id){const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return;openModal("Buyurtma #"+o.id,orderDetails(o))}
-function openOrderAction(id,next){const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return;const required=["cancelled","returned","return_rejected"].includes(next),label=meta(next).label;openModal(label,`<p class="muted">#${esc(o.id)} buyurtmani <b>${esc(label)}</b> holatiga o‘tkazasiz.</p><label class="field"><span>Izoh ${required?"(majburiy)":"(ixtiyoriy)"}</span><textarea id="orderActionReason" placeholder="Mijozga ko‘rinadigan izoh"></textarea></label><div class="modal-actions"><button class="btn btn-soft" data-modal-close type="button">Ortga</button><button class="btn ${next==="cancelled"?"btn-danger":next==="returned"?"btn-return":"btn-primary"}" id="orderActionSave" type="button">Tasdiqlash</button></div>`,()=>{$("orderActionSave")?.addEventListener("click",async e=>{const reason=String($("orderActionReason")?.value||"").trim();if(required&&reason.length<4)return toast("Sabab yozing","error");const b=e.currentTarget;b.disabled=true;try{const out=await api("order-lifecycle","admin_update_status",{orderId:o.id,status:next,reason});closeModal();toast(out.refund?.refunded?"Status yangilandi va mablag‘ qaytarildi":"Status yangilandi","success")}catch(err){toast("Xatolik: "+err.message,"error")}finally{b.disabled=false}})})}
+function openOrderAction(id,next){
+  const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return;
+  const required=["cancelled","returned","return_rejected"].includes(next),label=meta(next).label;
+  const returned=next==="returned";
+  const reasonField=returned?`
+    <label class="field">
+      <span>Qaytarish sababi</span>
+      <select id="returnReasonSelect">${returnReasonOptionsHtml("Buyurtma mijoz tomonidan qaytarildi")}</select>
+    </label>
+    <label class="field" id="returnReasonCustomWrap" hidden>
+      <span>Boshqa sabab</span>
+      <textarea id="returnReasonCustom" placeholder="Mijozga ko‘rinadigan sabab"></textarea>
+    </label>`:`
+    <label class="field">
+      <span>Izoh ${required?"(majburiy)":"(ixtiyoriy)"}</span>
+      <textarea id="orderActionReason" placeholder="Mijozga ko‘rinadigan izoh"></textarea>
+    </label>`;
+  openModal(label,`
+    <p class="muted">#${esc(o.id)} buyurtmani <b>${esc(label)}</b> holatiga o‘tkazasiz.</p>
+    ${reasonField}
+    <div class="modal-actions">
+      <button class="btn btn-soft" data-modal-close type="button">Ortga</button>
+      <button class="btn ${next==="cancelled"?"btn-danger":next==="returned"?"btn-return":"btn-primary"}" id="orderActionSave" type="button">Tasdiqlash</button>
+    </div>`,()=>{
+      if(returned)bindReturnReasonCustom();
+      $("orderActionSave")?.addEventListener("click",async e=>{
+        const reason=returned?getSelectedReturnReason():String($("orderActionReason")?.value||"").trim();
+        if(required&&reason.length<4)return toast("Sabab yozing","error");
+        const b=e.currentTarget;b.disabled=true;
+        try{
+          const out=await api("order-lifecycle","admin_update_status",{orderId:o.id,status:next,reason});
+          closeModal();
+          toast(out.refund?.refunded?"Status yangilandi va mablag‘ qaytarildi":"Status yangilandi","success");
+        }catch(err){toast("Xatolik: "+err.message,"error")}
+        finally{b.disabled=false}
+      });
+    });
+}
 async function acceptAllNewOrders(){
   const orders=S.orders.filter(o=>matchesOrderFilter(o,"new"));
   if(!orders.length)return toast("Yangi buyurtma yo‘q");
