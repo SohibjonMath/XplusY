@@ -39,6 +39,39 @@ async function resolveTopupUid(db,r){
   }
   return "";
 }
+async function relatedReviewRefs(db,reviewId,review={}){
+  const refs=[];
+  const seen=new Set();
+  function push(ref){const path=ref.path;if(!seen.has(path)){seen.add(path);refs.push(ref)}}
+  const uid=safeId(review.uid||reviewId);
+  const orderId=safeId(review.orderId);
+  if(orderId&&uid){
+    try{
+      const os=await db.doc(`orders/${orderId}`).get();
+      const items=os.exists&&Array.isArray(os.data()?.items)?os.data().items:[];
+      for(const it of items){
+        const pid=safeId(it.productId||it.id||"");
+        if(pid)push(db.doc(`products/${pid}/reviews/${uid}`));
+      }
+    }catch(_e){}
+  }
+  return refs;
+}
+async function setReviewAndOrder(db,productId,reviewId,review,patch){
+  const batch=db.batch();
+  const primary=db.doc(`products/${productId}/reviews/${reviewId}`);
+  const refs=await relatedReviewRefs(db,reviewId,review);
+  const all=[primary,...refs];
+  const seen=new Set();
+  for(const ref of all){
+    if(!ref||seen.has(ref.path))continue;
+    seen.add(ref.path);
+    batch.set(ref,patch,{merge:true});
+  }
+  const orderId=safeId(review.orderId);
+  if(orderId) batch.set(db.doc(`orders/${orderId}`),{orderReview:{...(review||{}),...patch},updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await batch.commit();
+}
 
 exports.handler=async(event)=>{
   try{
@@ -67,15 +100,19 @@ exports.handler=async(event)=>{
       const writes=[];let ordersUpdated=0,reviewsUpdated=0;
       for(const d of ordersSnap.docs){
         const o=d.data()||{},u=userCache.get(String(o.uid||""))||{},name=publicCustomerName(u,publicCustomerName(o,"Mijoz")),firstName=cleanPublicName(u.firstName||o.firstName)||null,lastName=cleanPublicName(u.lastName||o.lastName)||null;
-        if(name!==o.userName||firstName!==o.firstName||lastName!==o.lastName||cleanPublicName(o.orderReview?.authorName)!==cleanPublicName(name)){
+        const legacyOrderReview=!!(o.orderReview&&typeof o.orderReview==="object"&&!o.orderReview.moderationStatus);
+        if(name!==o.userName||firstName!==o.firstName||lastName!==o.lastName||cleanPublicName(o.orderReview?.authorName)!==cleanPublicName(name)||legacyOrderReview){
           const data={userName:name,firstName,lastName,nameRepairedAt:admin.firestore.FieldValue.serverTimestamp()};
-          if(o.orderReview&&typeof o.orderReview==="object")data.orderReview={...o.orderReview,authorName:name,firstName,lastName};
+          if(o.orderReview&&typeof o.orderReview==="object")data.orderReview={...o.orderReview,authorName:name,firstName,lastName,...(legacyOrderReview?{moderationStatus:"approved",isPublic:true,moderationMigratedAt:admin.firestore.Timestamp.now()}: {})};
           writes.push({ref:d.ref,data});ordersUpdated++;
         }
       }
       for(const d of reviewsSnap.docs){
         const r=d.data()||{},u=userCache.get(String(r.uid||d.id||""))||{},name=publicCustomerName(u,publicCustomerName(r,"Mijoz")),firstName=cleanPublicName(u.firstName||r.firstName)||null,lastName=cleanPublicName(u.lastName||r.lastName)||null;
-        if(name!==r.authorName||firstName!==r.firstName||lastName!==r.lastName){writes.push({ref:d.ref,data:{authorName:name,firstName,lastName,nameRepairedAt:admin.firestore.FieldValue.serverTimestamp()}});reviewsUpdated++}
+        const patch={};
+        if(name!==r.authorName||firstName!==r.firstName||lastName!==r.lastName) Object.assign(patch,{authorName:name,firstName,lastName,nameRepairedAt:admin.firestore.FieldValue.serverTimestamp()});
+        if(!r.moderationStatus) Object.assign(patch,{moderationStatus:"approved",isPublic:true,approvedAt:r.updatedAt||r.createdAt||admin.firestore.FieldValue.serverTimestamp(),moderationMigratedAt:admin.firestore.FieldValue.serverTimestamp()});
+        if(Object.keys(patch).length){writes.push({ref:d.ref,data:patch});reviewsUpdated++}
       }
       for(let i=0;i<writes.length;i+=400){const batch=db.batch();for(const w of writes.slice(i,i+400))batch.set(w.ref,w.data,{merge:true});await batch.commit()}
       return json(200,{ok:true,ordersUpdated,reviewsUpdated});
@@ -141,11 +178,28 @@ exports.handler=async(event)=>{
       const id=safeId(body.id);if(!id)return json(400,{ok:false,error:"id_required"});await db.doc(`notifications/${id}`).delete();return json(200,{ok:true});
     }
 
+    if(action==="review_moderate"){
+      const productId=safeId(body.productId),reviewId=safeId(body.reviewId),status=String(body.status||"").toLowerCase(),reason=safeText(body.reason,600);
+      if(!productId||!reviewId||!["approved","rejected"].includes(status))return json(400,{ok:false,error:"review_moderation_required"});
+      const ref=db.doc(`products/${productId}/reviews/${reviewId}`),snap=await ref.get();if(!snap.exists)return json(404,{ok:false,error:"review_not_found"});
+      const review=snap.data()||{},now=admin.firestore.FieldValue.serverTimestamp();
+      const patch={
+        moderationStatus:status,isPublic:status==="approved",moderationReason:reason,moderatedBy:adminEmail,moderatedAt:now,moderationUpdatedAt:now,updatedAt:now,
+        approvedAt:status==="approved"?now:null,rejectedAt:status==="rejected"?now:null
+      };
+      await setReviewAndOrder(db,productId,reviewId,review,patch);
+      const title=status==="approved"?"Sharhingiz tasdiqlandi":"Sharhingiz tasdiqlanmadi";
+      const msg=status==="approved"?"Fikringiz OrzuMall sahifasida namoyish qilindi.":(reason||"Sharhingiz moderatsiyadan o‘tmadi.");
+      await notify(db,review.uid||reviewId,title,msg,"review").catch(()=>{});
+      return json(200,{ok:true,status});
+    }
+
     if(action==="review_reply"){
       const productId=safeId(body.productId),reviewId=safeId(body.reviewId),text=safeText(body.text,1200);if(!productId||!reviewId||text.length<2)return json(400,{ok:false,error:"review_reply_required"});
       const ref=db.doc(`products/${productId}/reviews/${reviewId}`),snap=await ref.get();if(!snap.exists)return json(404,{ok:false,error:"review_not_found"});
       const review=snap.data()||{};const now=admin.firestore.FieldValue.serverTimestamp();
-      await ref.set({adminReply:{authorName:"OrzuMall",text,updatedAt:now,adminEmail},adminReplyText:text,adminRepliedAt:now,updatedAt:now},{merge:true});
+      const patch={adminReply:{authorName:"OrzuMall",text,updatedAt:now,adminEmail},adminReplyText:text,adminRepliedAt:now,updatedAt:now};
+      await setReviewAndOrder(db,productId,reviewId,review,patch);
       await notify(db,review.uid||reviewId,"OrzuMall sharhingizga javob berdi",text.slice(0,280),"review").catch(()=>{});
       return json(200,{ok:true});
     }

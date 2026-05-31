@@ -892,7 +892,10 @@ async function refreshStats(productId, force=false){
   if(!force && cached && (now - (cached.ts||0) < 20000)) return getStats(productId);
 
   try{
-    const baseRef = collection(db, "products", productId, "reviews");
+    const baseRef = query(
+      collection(db, "products", productId, "reviews"),
+      where("moderationStatus", "==", "approved")
+    );
     const agg = await getAggregateFromServer(baseRef, {
       count: count(),
       avg: average("stars")
@@ -926,8 +929,8 @@ function subscribeReviews(productId){
 
   const q = query(
     collection(db, "products", productId, "reviews"),
-    orderBy("createdAt", "desc"),
-    limit(30)
+    where("moderationStatus", "==", "approved"),
+    limit(60)
   );
   let statsDebounce = null;
   unsubReviews = onSnapshot(q, async (snap)=>{
@@ -943,7 +946,8 @@ function subscribeReviews(productId){
         ts: d.createdAt?.toMillis ? d.createdAt.toMillis() : 0
       });
     });
-    renderReviewsList(await omEnrichReviewAuthors(list));
+    list.sort((a,b)=>Number(b.ts||0)-Number(a.ts||0));
+    renderReviewsList(await omEnrichReviewAuthors(list.slice(0,30)));
 
     if(statsDebounce) clearTimeout(statsDebounce);
     statsDebounce = setTimeout(async ()=>{
@@ -3016,7 +3020,7 @@ function buildOrderReceiptHTML(order){
 
       ${statusReason ? `<div class="orderStatusReason"><b>${escapeHtml(statusActor)} izohi:</b> ${escapeHtml(statusReason)}</div>` : ''}
       ${orderTimelineHTML(order)}
-      ${review ? `<div class="orderReviewSaved"><b>Fikr bildirildi:</b> ${'★'.repeat(Number(review.stars||0))}${'☆'.repeat(Math.max(0,5-Number(review.stars||0)))}<br>${escapeHtml(review.text||'')}</div>` : ''}
+      ${review ? `<div class="orderReviewSaved"><b>Fikr bildirildi${String(review.moderationStatus||"pending")==="approved" ? "" : " • admin tasdig‘i kutilmoqda"}:</b> ${'★'.repeat(Number(review.stars||0))}${'☆'.repeat(Math.max(0,5-Number(review.stars||0)))}<br>${escapeHtml(review.text||'')}${review.adminReply?.text ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(review.adminReply.text)}</span></div>` : ""}</div>` : ''}
 
       <div class="orderReceiptItems">${itemsHtml}</div>
 
@@ -3145,7 +3149,7 @@ function openOrderActionModal(type, orderId){
     if(submit) submit.innerHTML='<i class="fa-solid fa-ban"></i> Bekor qilish';
   }else{
     if(title) title.textContent='Buyurtmaga fikr bildirish';
-    if(help) help.textContent='Bu tasdiqlangan xarid fikri sifatida mahsulot sahifalarida ko‘rinadi.';
+    if(help) help.textContent='Fikringiz admin tekshiruvidan keyin mahsulot sahifasida ko‘rinadi. OrzuMall javob qaytarishi mumkin.';
     if(reasonLabel) reasonLabel.textContent='Fikringiz';
     if(reason) reason.placeholder='Mahsulot va xizmat haqida fikringizni yozing';
     if(submit) submit.innerHTML='<i class="fa-solid fa-star"></i> Fikrni saqlash';
@@ -3187,7 +3191,7 @@ async function submitOrderAction(){
     if(!resp.ok || !out.ok) throw new Error(out.error||'action_failed');
     closeOrderActionModal();
     if(type==='cancel') toast(out.refund?.refunded?'Buyurtma bekor qilindi va mablag‘ balansga qaytarildi.':'Buyurtma bekor qilindi.','success');
-    else toast('Fikringiz saqlandi. Rahmat!','success');
+    else toast('Fikringiz yuborildi. Admin tasdiqlagach namoyish qilinadi.','success');
   }catch(e){
     const code=String(e?.message||'');
     const map={cancel_not_allowed:'Yetkazib berilgan buyurtmani bekor qilib bo‘lmaydi. Operatorga yozing.',review_not_allowed:'Fikr faqat yetkazib berilgan buyurtmaga yoziladi.'};
@@ -3252,7 +3256,7 @@ function renderOrders(orders){
         ${when ? `<span class="orderPill">${escapeHtml(when)}</span>` : ""}
       </div>
       ${orderStatusNote(o) ? `<div class="orderStatusReason"><b>${escapeHtml(orderActorLabel(o.statusActor || o.cancellation?.by || 'system'))} izohi:</b> ${escapeHtml(orderStatusNote(o))}</div>` : ""}
-      ${o.orderReview ? `<div class="orderReviewSaved"><b>Fikr bildirildi:</b> ${'★'.repeat(Number(o.orderReview.stars||0))}${'☆'.repeat(Math.max(0,5-Number(o.orderReview.stars||0)))}<br>${escapeHtml(o.orderReview.text||'')}</div>` : ''}
+      ${o.orderReview ? `<div class="orderReviewSaved"><b>Fikr bildirildi${String(o.orderReview.moderationStatus||"pending")==="approved" ? "" : " • admin tasdig‘i kutilmoqda"}:</b> ${'★'.repeat(Number(o.orderReview.stars||0))}${'☆'.repeat(Math.max(0,5-Number(o.orderReview.stars||0)))}<br>${escapeHtml(o.orderReview.text||'')}${o.orderReview.adminReply?.text ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(o.orderReview.adminReply.text)}</span></div>` : ""}</div>` : ''}
       <div class="orderActions">${orderCustomerActionButtonsHTML(o)}</div>
     `;
     els.ordersList.appendChild(row);
@@ -3835,7 +3839,7 @@ function omProductPageReviewsSectionHtml(){
         <div>
           <span class="ppReviewsEyebrow"><i class="fa-solid fa-comments"></i> Xaridorlar fikri</span>
           <h2>Sharhlar</h2>
-          <p>Mahsulot haqidagi fikrlarni shu yerda ko‘ring va baho qoldiring.</p>
+          <p>Faqat admin tasdiqlagan sharhlar ko‘rinadi. Fikringiz tekshiruvdan keyin chiqadi.</p>
         </div>
         <div class="ppReviewSummary" id="ppReviewStats">
           <strong>—</strong><span>Yuklanmoqda...</span>
@@ -3851,7 +3855,7 @@ function omProductPageReviewsSectionHtml(){
         </div>
         <textarea id="ppReviewText" maxlength="400" rows="3" placeholder="Fikringizni qisqa va aniq yozing..."></textarea>
         <div class="ppReviewComposerBottom">
-          <span id="ppReviewChar">0/400</span>
+          <span id="ppReviewChar">0/400 • admin tekshiruvi</span>
           <button type="button" id="ppReviewSend"><i class="fa-solid fa-paper-plane"></i> Sharh yuborish</button>
         </div>
       </div>
@@ -3901,7 +3905,11 @@ async function omLoadProductPageReviews(productId, {force=false}={}){
   }
 
   try{
-    const reviewsQ = query(collection(db, "products", id, "reviews"), orderBy("createdAt", "desc"), limit(30));
+    const reviewsQ = query(
+      collection(db, "products", id, "reviews"),
+      where("moderationStatus", "==", "approved"),
+      limit(60)
+    );
     const [snap, st] = await Promise.all([
       getDocs(reviewsQ),
       refreshStats(id, !!force)
@@ -3920,10 +3928,11 @@ async function omLoadProductPageReviews(productId, {force=false}={}){
         ts:d.createdAt?.toMillis ? d.createdAt.toMillis() : 0
       });
     });
+    list.sort((a,b)=>Number(b.ts||0)-Number(a.ts||0));
     const currentRoot = els.productPageContent;
     const currentList = currentRoot?.querySelector("#ppReviewsList");
     const currentStats = currentRoot?.querySelector("#ppReviewStats");
-    const enrichedList=await omEnrichReviewAuthors(list);
+    const enrichedList=await omEnrichReviewAuthors(list.slice(0,30));
     if(currentList) currentList.innerHTML = omProductPageReviewListHtml(enrichedList);
     if(currentStats) currentStats.innerHTML = `<strong><i class="fa-solid fa-star"></i> ${Number(st.avg||0).toFixed(1)}</strong><span>${Number(st.count||0)} ta sharh</span>`;
   }catch(_e){
@@ -3945,29 +3954,17 @@ async function omSubmitProductPageReview(p){
   const stars = Math.max(1, Math.min(5, Number(omProductPageReviews.stars)||5));
   if(sendEl){ sendEl.disabled=true; sendEl.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Yuborilmoqda...'; }
   try{
-    const identity=await omCurrentPublicIdentity(user);
-    const authorName=identity.authorName;
-    const revRef = doc(db, "products", id, "reviews", user.uid);
-    await runTransaction(db, async (tx)=>{
-      const old = await tx.get(revRef);
-      const prev = old.exists() ? (old.data()||{}) : {};
-      tx.set(revRef, {
-        uid:user.uid,
-        authorName,
-        firstName:identity.firstName || null,
-        lastName:identity.lastName || null,
-        stars,
-        text,
-        createdAt:prev.createdAt || serverTimestamp(),
-        updatedAt:serverTimestamp()
-      }, {merge:true});
+    const token=await user.getIdToken();
+    const resp=await fetch("/.netlify/functions/review-submit",{
+      method:"POST",
+      headers:{"content-type":"application/json","authorization":"Bearer "+token},
+      body:JSON.stringify({action:"submit_review",productId:id,stars,text})
     });
+    const out=await resp.json().catch(()=>({}));
+    if(!resp.ok || !out.ok) throw new Error(out.error||"review_submit_failed");
     if(textEl) textEl.value="";
     const charEl=els.productPageContent?.querySelector("#ppReviewChar"); if(charEl) charEl.textContent="0/400";
-    statsCache.delete(id);
-    await omLoadProductPageReviews(id, {force:true});
-    try{ applyFilterSort(); }catch(_e){}
-    toast("Sharhingiz saqlandi.");
+    toast("Sharhingiz yuborildi. Admin tasdiqlagach saytda ko‘rinadi.");
   }catch(_e){
     toast("Sharh yuborilmadi. Qayta urinib ko‘ring.", "error");
   }finally{

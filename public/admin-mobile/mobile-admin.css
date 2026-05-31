@@ -42,3 +42,17 @@ body{min-height:100dvh;padding-bottom:76px}.app-shell{min-height:100dvh}.login-s
 .native-push-test-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.native-push-test-copy b{font-size:13px;color:#1e3a8a}.native-push-test-copy span{font-size:10px;line-height:1.45;color:#64748b;font-weight:750}
 .native-push-test-card .btn{white-space:nowrap}
 @media(max-width:420px){.native-push-test-card{grid-template-columns:42px 1fr}.native-push-test-icon{width:42px;height:42px}.native-push-test-card .btn{grid-column:1/-1;width:100%}}
+
+/* v96 — Review moderation & order-feedback analytics */
+.review-filter-chips{margin:0 0 12px}.review-filter-chips .chip b{margin-left:4px}
+.review-analysis{margin:0 0 12px;padding:13px;border-radius:18px;background:linear-gradient(145deg,#fff,#fff7fa);border:1px solid #f2d9e2;box-shadow:var(--shadow2)}
+.review-analysis-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.review-analysis-head div{display:flex;flex-direction:column;gap:3px}.review-analysis-head b{font-size:13px;color:#4f1730}.review-analysis-head span{font-size:10px;line-height:1.35;color:#8b5d6f}.review-analysis-head i{width:35px;height:35px;display:grid;place-items:center;border-radius:12px;background:#fff;color:var(--brand);border:1px solid #f2d9e2}
+.review-analysis-bars{display:grid;gap:8px;margin-top:11px}.review-analysis-bars div span{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:#64748b}.review-analysis-bars em{font-style:normal;font-weight:1000}.review-analysis-bars i{display:block;height:6px;margin-top:4px;border-radius:999px;background:#f0e3e8;overflow:hidden}.review-analysis-bars u{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#7d1d3b,#e11d48);text-decoration:none}
+.review-card.review-pending{--accent:#d97706}.review-card.review-approved{--accent:#059669}.review-card.review-rejected{--accent:#e11d48}
+.review-meta-line{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:5px}
+.review-status,.review-source{display:inline-flex;align-items:center;gap:4px;min-height:22px;padding:0 7px;border-radius:999px;font-size:9px;font-weight:1000;white-space:nowrap}
+.review-status.pending{background:#fff7ed;color:#b45309;border:1px solid #fed7aa}.review-status.approved{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}.review-status.rejected{background:#fff1f2;color:#be123c;border:1px solid #fecdd3}
+.review-source{background:#f8fafc;color:#64748b;border:1px solid #e5e9f0}.review-order-id{display:block;margin-top:3px;color:#94a3b8;font-size:9px;font-weight:850}
+.review-reason{margin-top:9px;padding:9px 10px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:11px;line-height:1.45}.review-reason b{display:block;margin-bottom:3px}
+.review-card footer{align-items:flex-end;flex-direction:column}.review-card footer>span{width:100%}.review-actions{display:flex;flex-wrap:wrap;gap:6px;width:100%}.review-actions .btn{min-height:34px;padding:0 9px;font-size:10px;flex:1 1 auto}
+@media(min-width:760px){.review-analysis-bars{grid-template-columns:repeat(3,1fr)}.review-card footer{align-items:center;flex-direction:row}.review-card footer>span{width:auto}.review-actions{width:auto;justify-content:flex-end}}

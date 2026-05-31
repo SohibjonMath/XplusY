@@ -183,9 +183,17 @@ exports.handler=async(event)=>{
       const now=admin.firestore.FieldValue.serverTimestamp();
       const identity=await loadCustomerIdentity(db,uid,order);
       const authorName=safeText(identity.authorName||"Mijoz",160);
-      const review={uid,orderId,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,createdAt:now,updatedAt:now,verifiedPurchase:true};
+      const review={
+        uid,orderId,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,
+        createdAt:now,updatedAt:now,submittedAt:now,verifiedPurchase:true,source:"order_feedback",
+        moderationStatus:"pending",isPublic:false,moderationReason:"",moderationUpdatedAt:now
+      };
       const batch=db.batch();
-      batch.set(orderRef,{userName:authorName,firstName:identity.firstName,lastName:identity.lastName,orderReview:{uid,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,verifiedPurchase:true,updatedAt:admin.firestore.Timestamp.now()},reviewedAt:now,updatedAt:now},{merge:true});
+      batch.set(orderRef,{
+        userName:authorName,firstName:identity.firstName,lastName:identity.lastName,
+        orderReview:{uid,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,verifiedPurchase:true,source:"order_feedback",moderationStatus:"pending",isPublic:false,updatedAt:admin.firestore.Timestamp.now()},
+        reviewedAt:now,updatedAt:now
+      },{merge:true});
       const items=Array.isArray(order.items)?order.items:[];
       const used=new Set();
       for(const it of items){
@@ -195,7 +203,7 @@ exports.handler=async(event)=>{
         batch.set(db.doc(`products/${pid}/reviews/${uid}`),{...review,productId:pid},{merge:true});
       }
       await batch.commit();
-      return json(200,{ok:true,status:"review_saved"});
+      return json(200,{ok:true,status:"review_pending"});
     }
 
     if(action==="admin_update_status"){

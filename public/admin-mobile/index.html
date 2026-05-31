@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="preconnect" href="https://www.gstatic.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./mobile-admin.css">
+  <link rel="stylesheet" href="./mobile-admin.css?v=20260531_v96_review_moderation">
 </head>
 <body>
   <div class="login-screen" id="loginScreen">
@@ -145,6 +145,8 @@
           <div><span class="eyebrow">ORZUMALL NOMIDAN</span><h2>Sharhlar</h2><p>Xaridor fikrlarini ko‘ring va javob yozing.</p></div>
         </div>
         <div class="stat-row" id="reviewsStats"></div>
+        <section class="review-analysis" id="reviewAnalysis"></section>
+        <div class="chips review-filter-chips" id="reviewFilterChips"></div>
         <label class="search standalone"><i class="fa-solid fa-magnifying-glass"></i><input id="reviewsSearch" placeholder="Mahsulot, ism yoki sharh"></label>
         <div class="cards" id="reviewsList"></div>
       </section>
@@ -161,6 +163,6 @@
 
   <div class="modal-host" id="modalHost"></div>
   <div class="toast-host" id="toastHost"></div>
-  <script type="module" src="./mobile-admin.js?v=20260531_v95_customer_names"></script>
+  <script type="module" src="./mobile-admin.js?v=20260531_v96_review_moderation"></script>
 </body>
 </html>
