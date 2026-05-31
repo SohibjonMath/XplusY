@@ -8106,10 +8106,10 @@ try{ window.openProductPage = openProductPage; }catch(_e){}
     ['#deliveryMapApplyBtn','fa-solid fa-circle-check','Qo‘llash'],
     ['#checkoutSubmit','fa-solid fa-arrow-right','Davom etish'],
     ['#paymentSubmit','fa-solid fa-circle-check','Tasdiqlash'],
-    ['#paymentDeliveryChangeBtn','fa-solid fa-truck-fast','Yetkazib berish'],
+    ['#paymentDeliveryChangeBtn','fa-solid fa-truck-fast','Yetkazib berishni o‘zgartirish'],
     ['#profileSave','fa-solid fa-floppy-disk','Saqlash'],
-    ['#savedAddressDetectSave','fa-solid fa-location-crosshairs','Saqlash'],
-    ['#topupBtn','fa-solid fa-wallet','To‘ldirish'],
+    ['#savedAddressDetectSave','fa-solid fa-location-crosshairs','Lokatsiyani aniqlash va saqlash'],
+    ['#topupBtn','fa-solid fa-wallet','Balansni to‘ldirish'],
     ['#topupCancel1','fa-solid fa-xmark','Bekor'],
     ['#topupNext','fa-solid fa-arrow-right','Davom'],
     ['#topupBack','fa-solid fa-arrow-left','Orqaga'],
@@ -8143,7 +8143,7 @@ try{ window.openProductPage = openProductPage; }catch(_e){}
         el.innerHTML = `<i class="${icon}" aria-hidden="true"></i><span class="btnLabel">${lbl}</span>`;
         el.setAttribute('title', lbl);
         if(!el.getAttribute('aria-label')) el.setAttribute('aria-label', lbl);
-        const iconOnlyMobile = !['#productPageCartBtn','#paymentSubmit','#checkoutSubmit','#paymeBtn','#ppReviewSend','#orderBtnPage'].includes(sel);
+        const iconOnlyMobile = !['#productPageCartBtn','#paymentSubmit','#checkoutSubmit','#paymeBtn','#ppReviewSend','#orderBtnPage','#paymentDeliveryChangeBtn','#savedAddressDetectSave','#topupBtn'].includes(sel);
         el.classList.toggle('omIconOnlyMobile', compact && iconOnlyMobile);
       });
     });
