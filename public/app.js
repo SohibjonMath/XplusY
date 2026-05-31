@@ -5629,6 +5629,8 @@ function renderSavedAddressesUI(){
   if(status){
     status.textContent = arr.length ? `${arr.length} ta manzil saqlandi.` : "Manzil qo‘lda yozilmaydi, faqat avto lokatsiya saqlanadi.";
   }
+  const countPill = document.getElementById("savedAddressCountPill");
+  if(countPill) countPill.textContent = String(arr.length || 0);
 
   const wrap = document.getElementById("savedAddressCheckoutWrap");
   const sel = document.getElementById("savedDeliveryAddressSelect");
@@ -8069,6 +8071,94 @@ window.addEventListener('load', ()=>setTimeout(orzuMoveProfileSocialToBottom, 12
   syncToHead();
 })();
 
+
+// Compact/collapsible profile sections
+(function(){
+  const KEY = 'om_profile_section_state_v91';
+  function readState(){
+    try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(_){ return {}; }
+  }
+  function writeState(next){
+    try{ localStorage.setItem(KEY, JSON.stringify(next || {})); }catch(_){ }
+  }
+  function wrapSectionBody(card, head, selectors){
+    if(!card || !head) return null;
+    let body = card.querySelector(':scope > .omCompactSectionBody');
+    if(body) return body;
+    body = document.createElement('div');
+    body.className = 'omCompactSectionBody';
+    head.insertAdjacentElement('afterend', body);
+    (selectors || []).forEach(sel=>{
+      card.querySelectorAll(sel).forEach(node=>{ if(node !== head) body.appendChild(node); });
+    });
+    return body;
+  }
+  function addControls(head, opts){
+    if(!head || head.querySelector('.omSectionToggle')) return head.querySelector('.omSectionToggle');
+    let right = head.querySelector('.omSectionHeadRight');
+    if(!right){
+      right = document.createElement('div');
+      right.className = 'omSectionHeadRight';
+      head.appendChild(right);
+    }
+    if(opts.countId && !document.getElementById(opts.countId)){
+      const pill = document.createElement('span');
+      pill.className = 'countPill omSectionCount';
+      pill.id = opts.countId;
+      pill.textContent = String(opts.countValue || 0);
+      right.prepend(pill);
+    }
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'iconPill omSectionToggle';
+    btn.setAttribute('aria-label', 'Yig‘ish / ochish');
+    btn.innerHTML = '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>';
+    right.appendChild(btn);
+    return btn;
+  }
+  function bindSection(key, cardSel, headSel, bodySelectors, collapsedDefault){
+    const card = document.querySelector(cardSel);
+    const head = card?.querySelector(headSel);
+    if(!card || !head) return;
+    const body = wrapSectionBody(card, head, bodySelectors);
+    if(!body) return;
+    card.classList.add('omCompactSection');
+    head.classList.add('omSectionHead');
+    const countId = key === 'savedAddress' ? 'savedAddressCountPill' : '';
+    const toggleBtn = addControls(head, {countId, countValue:0});
+    const state = readState();
+    const collapsed = typeof state[key] === 'boolean' ? state[key] : !!collapsedDefault;
+    setCollapsed(card, body, collapsed);
+    const applyIcon = ()=>{
+      const on = !body.hidden;
+      card.classList.toggle('omOpen', on);
+      toggleBtn?.setAttribute('aria-expanded', String(on));
+    };
+    applyIcon();
+    const doToggle = ()=>{
+      toggleCollapsed(card, body);
+      applyIcon();
+      const next = readState();
+      next[key] = !!body.hidden;
+      writeState(next);
+    };
+    if(!head.dataset.omBound){
+      head.dataset.omBound = '1';
+      head.tabIndex = 0;
+      head.addEventListener('click', (e)=>{
+        if(e.target.closest('button, a, input, select, textarea, label')) return;
+        doToggle();
+      });
+      head.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doToggle(); }
+      });
+      toggleBtn?.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); doToggle(); });
+    }
+  }
+  bindSection('wallet', '#walletCard', '.walletHero', ['.walletGrid'], false);
+  bindSection('savedAddress', '#savedAddressCard', '.savedAddressHead', ['.savedAddressForm', '.savedAddressStatus', '.savedAddressList'], true);
+  bindSection('activity', '#activityCard', '.activityCardTop', ['.activityBody'], true);
+})();
 
 // Compact profile activity tabs (money/orders in one card)
 (function(){
