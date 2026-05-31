@@ -4863,12 +4863,11 @@ function renderCartPage(){
               <button data-q="+" aria-label="Ko‘paytirish">+</button>
             </div>
             <div class="badge">${moneyUZS((vp.price||0)*qty)}</div>
-            <div class="cartTinyActions">
+            <div class="cartTinyActions cartTinyActionsSolo">
               <label class="cartPick cartPickInline" title="Tanlash" aria-label="Tanlash">
                 <input type="checkbox" class="cartPickBox" data-pick="${escapeHtml(ci.key)}" ${cartSelected.has(ci.key) ? "checked" : ""} />
                 <span><i class="fa-solid fa-check" aria-hidden="true"></i></span>
               </label>
-              <button class="removeBtn" title="O‘chirish" aria-label="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
             </div>
           </div>
         </div>
