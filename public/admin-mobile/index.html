@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://www.gstatic.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="./mobile-admin.css?v=20260531_v106_nav_qr_launcher">
-  <link rel="stylesheet" href="./mobile-admin-premium-v107.css?v=20260531_v107_mobile_premium">
+  <link rel="stylesheet" href="./mobile-admin-premium-v107.css?v=20260531_v108_bulk_accept">
 </head>
 <body>
   <div class="login-screen" id="loginScreen">
@@ -66,7 +66,7 @@
         <section class="order-alert-center" id="orderAlertCenter" hidden>
           <div class="order-alert-head">
             <div class="order-alert-title"><span class="alarm-dot"></span><div><b>Diqqat markazi</b><small>Harakat talab qiladigan buyurtmalar</small></div></div>
-            <button class="alert-settings-btn" id="orderAlertEnable" type="button"><i class="fa-solid fa-bell"></i><span>Signalni yoqish</span></button>
+            <button class="alert-settings-btn bulk-accept-btn" id="orderAcceptAllNew" type="button"><i class="fa-solid fa-box-check"></i><span>Hammasini qabul</span></button>
           </div>
           <div class="order-alert-grid">
             <button class="alert-count alert-new" data-order-filter="new" type="button"><i class="fa-solid fa-cart-plus"></i><span>Yangi buyurtmalar</span><b id="alertNewCount">0</b><small id="alertNewHint">Yig‘ishga oling</small></button>
@@ -74,7 +74,7 @@
           </div>
           <div class="order-alert-bottom">
             <div id="orderAlertMessage"><i class="fa-solid fa-circle-info"></i><span>Buyurtmalar nazorat ostida.</span></div>
-            <button class="alert-snooze" id="orderAlertSnooze" type="button"><i class="fa-regular fa-clock"></i> 5 daqiqaga tinchitish</button>
+            
           </div>
         </section>
         <div class="stat-row" id="orderStats"></div>
