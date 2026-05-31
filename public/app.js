@@ -3673,10 +3673,23 @@ function omProductPageTagsHtml(p){
 
 function omProductPageGalleryHtml(p, imgs){
   const main = imgs[0] || "";
+  const total = Math.max(1, imgs.length || 1);
   return `<div class="ppGallery">
-    <div class="ppMainImage"><img id="productPageImg" src="${escapeHtml(main)}" alt="${escapeHtml(omProductText(p,"name",p.name||"Mahsulot"))}" loading="eager"></div>
-    <div class="ppThumbs" id="productPageThumbs">
-      ${imgs.map((src,i)=>`<button type="button" class="ppThumb ${i===0?"active":""}" data-pp-img="${escapeHtml(src)}"><img src="${escapeHtml(src)}" alt="thumb" loading="lazy"></button>`).join("")}
+    <div class="ppGalleryShell">
+      <div class="ppThumbRail">
+        <div class="ppThumbs" id="productPageThumbs">
+          ${imgs.map((src,i)=>`<button type="button" class="ppThumb ${i===0?"active":""}" data-pp-index="${i}" data-pp-img="${escapeHtml(src)}" aria-label="Rasm ${i+1}"><img src="${escapeHtml(src)}" alt="thumb" loading="lazy"></button>`).join("")}
+        </div>
+      </div>
+      <div class="ppMainStage">
+        <div class="ppGalleryTools">
+          <div class="ppGalleryCount" id="productPageImgCount">1 / ${total}</div>
+          ${total > 1 ? `<div class="ppGalleryNav"><button type="button" class="ppGalleryArrow" id="productPagePrev" aria-label="Oldingi rasm"><i class="fa-solid fa-chevron-left"></i></button><button type="button" class="ppGalleryArrow" id="productPageNext" aria-label="Keyingi rasm"><i class="fa-solid fa-chevron-right"></i></button></div>` : ``}
+        </div>
+        <button type="button" class="ppMainImage ppMainImageBtn" id="productPageMainBtn" aria-label="Rasmni katta ko‘rish">
+          <img id="productPageImg" src="${escapeHtml(main)}" alt="${escapeHtml(omProductText(p,"name",p.name||"Mahsulot"))}" loading="eager">
+        </button>
+      </div>
     </div>
   </div>`;
 }
@@ -3931,14 +3944,48 @@ function bindProductPage(p){
       omOpenTagFromQuickView(btn.getAttribute("data-pp-tag") || btn.textContent || "");
     });
   });
-  root.querySelectorAll(".ppThumb").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const src = btn.getAttribute("data-pp-img") || "";
-      const img = root.querySelector("#productPageImg");
-      if(img) img.src = src;
-      root.querySelectorAll(".ppThumb").forEach(x=>x.classList.toggle("active", x===btn));
+  const galleryThumbs = Array.from(root.querySelectorAll(".ppThumb"));
+  const galleryImages = galleryThumbs.map(btn=>btn.getAttribute("data-pp-img") || "").filter(Boolean);
+  const galleryMainImg = root.querySelector("#productPageImg");
+  const galleryMainBtn = root.querySelector("#productPageMainBtn");
+  const galleryCount = root.querySelector("#productPageImgCount");
+  let galleryIndex = Math.max(0, galleryThumbs.findIndex(btn=>btn.classList.contains("active")));
+
+  const syncGallery = (nextIndex, opts={})=>{
+    const total = galleryImages.length || 1;
+    galleryIndex = Math.max(0, Math.min(total - 1, Number(nextIndex) || 0));
+    const src = galleryImages[galleryIndex] || galleryImages[0] || "";
+    if(galleryMainImg) galleryMainImg.src = src;
+    if(galleryCount) galleryCount.textContent = `${galleryIndex + 1} / ${total}`;
+    galleryThumbs.forEach((thumb, idx)=>{
+      const active = idx === galleryIndex;
+      thumb.classList.toggle("active", active);
+      if(active && opts.scroll !== false){
+        try{ thumb.scrollIntoView({ behavior:"smooth", block:"nearest", inline:"center" }); }catch(_e){}
+      }
+    });
+  };
+
+  galleryThumbs.forEach((btn, idx)=>{
+    btn.addEventListener("click", ()=> syncGallery(idx));
+  });
+  root.querySelector("#productPagePrev")?.addEventListener("click", ()=> syncGallery(galleryIndex - 1));
+  root.querySelector("#productPageNext")?.addEventListener("click", ()=> syncGallery(galleryIndex + 1));
+  galleryMainBtn?.addEventListener("click", ()=>{
+    openImageViewer({
+      productId: p.id,
+      title: omProductText(p,"name",p.name||"Mahsulot"),
+      pricing: getVariantPricing(p, getSel(p)),
+      rating: Number(p?.rating || 0),
+      reviewsCount: Number(p?.reviewsCount || p?.reviews || 0),
+      tags: omProductTags(p),
+      images: galleryImages,
+      startIndex: galleryIndex,
+      onSelect: (i)=>syncGallery(i, {scroll:false}),
+      imageOnly: true
     });
   });
+  syncGallery(galleryIndex, {scroll:false});
   root.querySelector("#productPageCartBtn")?.addEventListener("click", ()=> handleAddToCart(p, { openCartAfter:false }));
   root.querySelector("[data-pp-info]")?.addEventListener("click", ()=> openMini("info", p.id));
   root.querySelector("[data-pp-video]")?.addEventListener("click", ()=> openMini("video", p.id));
