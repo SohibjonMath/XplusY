@@ -6486,3 +6486,7 @@ body select{
   }
   #balTopupQuick.balPlus i,.balPlus#balTopupQuick i,.balPlus i{font-size:16px!important;}
 }
+
+
+/* v56: review popup button removed; keep two remaining quick-view actions balanced */
+.qvMovedActions{grid-template-columns:repeat(2,minmax(0,1fr))!important}

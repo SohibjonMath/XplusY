@@ -3403,6 +3403,7 @@ function setActiveNav(tab){
 }
 
 function showView(tab){
+  if(tab !== "product" && activeTab === "product") omProductPageReviews.token += 1;
   const map = {
     home: els.viewHome,
     product: els.viewProduct,
@@ -3661,6 +3662,184 @@ function omProductPageGalleryHtml(p, imgs){
   </div>`;
 }
 
+
+// ---------- Product detail reviews (always open at the bottom) ----------
+// Lightweight by design: reviews are fetched only while the product page is open.
+// This replaces the extra Sharhlar popup button and avoids a permanent realtime listener.
+const omProductPageReviews = { productId:"", token:0, stars:5, hover:0 };
+
+function omPageReviewStarsHtml(){
+  const shown = omProductPageReviews.hover || omProductPageReviews.stars || 5;
+  return Array.from({length:5}, (_,idx)=>{
+    const n = idx + 1;
+    return `<button type="button" class="ppReviewStar ${n<=shown?"active":""}" data-pp-review-star="${n}" aria-label="${n} yulduz" title="${n} / 5">★</button>`;
+  }).join("");
+}
+
+function omProductPageReviewsSectionHtml(){
+  return `
+    <section class="ppReviewsCard" id="ppReviewsCard" aria-label="Mahsulot sharhlari">
+      <div class="ppReviewsHead">
+        <div>
+          <span class="ppReviewsEyebrow"><i class="fa-solid fa-comments"></i> Xaridorlar fikri</span>
+          <h2>Sharhlar</h2>
+          <p>Mahsulot haqidagi fikrlarni shu yerda ko‘ring va baho qoldiring.</p>
+        </div>
+        <div class="ppReviewSummary" id="ppReviewStats">
+          <strong>—</strong><span>Yuklanmoqda...</span>
+        </div>
+      </div>
+      <div class="ppReviewComposer">
+        <div class="ppReviewComposerTop">
+          <div>
+            <b>Mahsulotni baholang</b>
+            <span>1 dan 5 gacha yulduz tanlang</span>
+          </div>
+          <div class="ppReviewStars" id="ppReviewStars">${omPageReviewStarsHtml()}</div>
+        </div>
+        <textarea id="ppReviewText" maxlength="400" rows="3" placeholder="Fikringizni qisqa va aniq yozing..."></textarea>
+        <div class="ppReviewComposerBottom">
+          <span id="ppReviewChar">0/400</span>
+          <button type="button" id="ppReviewSend"><i class="fa-solid fa-paper-plane"></i> Sharh yuborish</button>
+        </div>
+      </div>
+      <div class="ppReviewsList" id="ppReviewsList">
+        <div class="ppReviewsLoading"><i class="fa-solid fa-spinner fa-spin"></i> Sharhlar yuklanmoqda...</div>
+      </div>
+    </section>`;
+}
+
+function omProductPageReviewListHtml(list){
+  if(!Array.isArray(list) || !list.length){
+    return `<div class="ppReviewEmpty"><i class="fa-regular fa-message"></i><b>Hozircha sharh yo‘q</b><span>Birinchi bo‘lib fikr qoldiring.</span></div>`;
+  }
+  return list.map((r)=>{
+    const score = Math.max(0, Math.min(5, Number(r.stars)||0));
+    const stars = "★".repeat(score) + "☆".repeat(5-score);
+    return `<article class="ppReviewItem">
+      <div class="ppReviewItemTop">
+        <div class="ppReviewAvatar"><i class="fa-solid fa-user"></i></div>
+        <div class="ppReviewAuthor"><b>${escapeHtml(r.author||"Foydalanuvchi")}</b><span>${escapeHtml(formatDate(r.ts)||"Yaqinda")}</span></div>
+        <div class="ppReviewItemStars" aria-label="${score} yulduz">${stars}</div>
+      </div>
+      ${r.text ? `<p>${escapeHtml(r.text)}</p>` : `<p class="muted">Baho qoldirilgan.</p>`}
+      ${r.adminReply ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
+    </article>`;
+  }).join("");
+}
+
+function omSyncPageReviewStars(){
+  const wrap = els.productPageContent?.querySelector("#ppReviewStars");
+  if(wrap) wrap.innerHTML = omPageReviewStarsHtml();
+}
+
+async function omLoadProductPageReviews(productId, {force=false}={}){
+  const id = String(productId||"").trim();
+  if(!id) return;
+  omProductPageReviews.productId = id;
+  const token = ++omProductPageReviews.token;
+  const pageRoot = els.productPageContent;
+  const listEl = pageRoot?.querySelector("#ppReviewsList");
+  const statsEl = pageRoot?.querySelector("#ppReviewStats");
+  if(!listEl || !statsEl) return;
+
+  const cached = getStats(id);
+  if(cached.count){
+    statsEl.innerHTML = `<strong><i class="fa-solid fa-star"></i> ${Number(cached.avg||0).toFixed(1)}</strong><span>${cached.count} ta sharh</span>`;
+  }
+
+  try{
+    const reviewsQ = query(collection(db, "products", id, "reviews"), orderBy("createdAt", "desc"), limit(30));
+    const [snap, st] = await Promise.all([
+      getDocs(reviewsQ),
+      refreshStats(id, !!force)
+    ]);
+    if(token !== omProductPageReviews.token || activeTab !== "product" || String(activeProductId||"") !== id) return;
+
+    const list=[];
+    snap.forEach((docu)=>{
+      const d=docu.data()||{};
+      list.push({
+        uid:d.uid||docu.id,
+        author:d.authorName||"Foydalanuvchi",
+        stars:Number(d.stars)||0,
+        text:String(d.text||""),
+        adminReply:String(d.adminReply?.text||d.adminReplyText||""),
+        ts:d.createdAt?.toMillis ? d.createdAt.toMillis() : 0
+      });
+    });
+    const currentRoot = els.productPageContent;
+    const currentList = currentRoot?.querySelector("#ppReviewsList");
+    const currentStats = currentRoot?.querySelector("#ppReviewStats");
+    if(currentList) currentList.innerHTML = omProductPageReviewListHtml(list);
+    if(currentStats) currentStats.innerHTML = `<strong><i class="fa-solid fa-star"></i> ${Number(st.avg||0).toFixed(1)}</strong><span>${Number(st.count||0)} ta sharh</span>`;
+  }catch(_e){
+    if(token !== omProductPageReviews.token) return;
+    const currentList = els.productPageContent?.querySelector("#ppReviewsList");
+    if(currentList) currentList.innerHTML = `<div class="ppReviewEmpty"><i class="fa-solid fa-triangle-exclamation"></i><b>Sharhlarni yuklab bo‘lmadi</b><span>Internetni tekshirib, sahifani qayta oching.</span></div>`;
+  }
+}
+
+async function omSubmitProductPageReview(p){
+  const id = String(p?.id||"").trim();
+  if(!id) return;
+  const user = auth.currentUser;
+  if(!user){ toast("Sharh qoldirish uchun avval tizimga kiring.", "error"); return; }
+  const textEl = els.productPageContent?.querySelector("#ppReviewText");
+  const sendEl = els.productPageContent?.querySelector("#ppReviewSend");
+  const text = String(textEl?.value||"").trim().slice(0,400);
+  if(text && text.length < 2){ toast("Sharh matni kamida 2 ta belgidan iborat bo‘lsin.", "error"); return; }
+  const stars = Math.max(1, Math.min(5, Number(omProductPageReviews.stars)||5));
+  if(sendEl){ sendEl.disabled=true; sendEl.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Yuborilmoqda...'; }
+  try{
+    const authorName = String(user.displayName || user.email || "Foydalanuvchi");
+    const revRef = doc(db, "products", id, "reviews", user.uid);
+    await runTransaction(db, async (tx)=>{
+      const old = await tx.get(revRef);
+      const prev = old.exists() ? (old.data()||{}) : {};
+      tx.set(revRef, {
+        uid:user.uid,
+        authorName,
+        stars,
+        text,
+        createdAt:prev.createdAt || serverTimestamp(),
+        updatedAt:serverTimestamp()
+      }, {merge:true});
+    });
+    if(textEl) textEl.value="";
+    const charEl=els.productPageContent?.querySelector("#ppReviewChar"); if(charEl) charEl.textContent="0/400";
+    statsCache.delete(id);
+    await omLoadProductPageReviews(id, {force:true});
+    try{ applyFilterSort(); }catch(_e){}
+    toast("Sharhingiz saqlandi.");
+  }catch(_e){
+    toast("Sharh yuborilmadi. Qayta urinib ko‘ring.", "error");
+  }finally{
+    const btn=els.productPageContent?.querySelector("#ppReviewSend");
+    if(btn){ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Sharh yuborish'; }
+  }
+}
+
+function omBindProductPageReviews(p){
+  const root = els.productPageContent;
+  if(!root || !p) return;
+  omProductPageReviews.stars = 5;
+  omProductPageReviews.hover = 0;
+  root.querySelector("#ppReviewStars")?.addEventListener("click", (e)=>{
+    const btn=e.target.closest("[data-pp-review-star]");
+    if(!btn) return;
+    omProductPageReviews.stars=Math.max(1,Math.min(5,Number(btn.dataset.ppReviewStar)||5));
+    omProductPageReviews.hover=0;
+    omSyncPageReviewStars();
+  });
+  root.querySelector("#ppReviewText")?.addEventListener("input", (e)=>{
+    const out=root.querySelector("#ppReviewChar");
+    if(out) out.textContent=`${Math.min(400,String(e.target.value||"").length)}/400`;
+  });
+  root.querySelector("#ppReviewSend")?.addEventListener("click", ()=>omSubmitProductPageReview(p));
+  omLoadProductPageReviews(p.id);
+}
+
 function renderProductPage(){
   const root = els.productPageContent;
   if(!root) return;
@@ -3703,7 +3882,6 @@ function renderProductPage(){
           <div class="ppActionGrid">
             <button type="button" class="ppAction" data-pp-info><i class="fa-solid fa-circle-info"></i><span>Tavsif</span></button>
             <button type="button" class="ppAction" data-pp-video><i class="fa-brands fa-youtube"></i><span>Video</span></button>
-            <button type="button" class="ppAction" data-pp-reviews><i class="fa-solid fa-message"></i><span>Sharhlar</span></button>
             <button type="button" class="ppAction ${favOn?"active":""}" data-pp-fav><i class="fa-${favOn?"solid":"regular"} fa-heart"></i><span>Sevimli</span></button>
           </div>
           ${desc?`<details class="ppDesc"><summary>Tavsifni ko‘rish</summary><p>${escapeHtml(desc)}</p></details>`:""}
@@ -3713,6 +3891,7 @@ function renderProductPage(){
         <div><span>Jami</span><strong>${moneyUZS(pricing.price||0)}</strong></div>
         <button type="button" id="productPageCartBtn"><i class="fa-solid fa-cart-shopping"></i> Savatga qo‘shish</button>
       </div>
+      ${omProductPageReviewsSectionHtml()}
     </div>`;
   bindProductPage(p);
   try{ omI18nRefresh(40); }catch(_e){}
@@ -3744,7 +3923,7 @@ function bindProductPage(p){
   root.querySelector("#productPageCartBtn")?.addEventListener("click", ()=> handleAddToCart(p, { openCartAfter:false }));
   root.querySelector("[data-pp-info]")?.addEventListener("click", ()=> openMini("info", p.id));
   root.querySelector("[data-pp-video]")?.addEventListener("click", ()=> openMini("video", p.id));
-  root.querySelector("[data-pp-reviews]")?.addEventListener("click", ()=> openMini("reviews", p.id));
+  omBindProductPageReviews(p);
   root.querySelector("[data-pp-fav]")?.addEventListener("click", (e)=>{
     e.preventDefault();
     if(favs.has(p.id)) favs.delete(p.id); else { favs.add(p.id); logEvent('favorite', p.id); }
@@ -3950,7 +4129,7 @@ function renderViewer(){
   const hasNav = imgs.length > 1;
   if(els.imgPrev) els.imgPrev.style.display = hasNav ? "" : "none";
   if(els.imgNext) els.imgNext.style.display = hasNav ? "" : "none";
-  if(!viewer.imageOnly) renderReviewsUI(viewer.productId);
+  // Legacy inline viewer reviews were removed. Product-page reviews load only at the page bottom.
   omI18nRefresh(80);
 }
 
@@ -5898,7 +6077,12 @@ async function loadProductsPage(){
     buildCategoryTree();
     applyFilterSort();
     if(activeTab==="product") renderProductPage();
-    preloadProductMetrics(arr.map(p=>p.id)).then(()=>{ try{ applyFilterSort(); if(activeTab==="categories") renderCategoriesPage(); if(activeTab==="product") renderProductPage(); }catch(e){} });
+    // Warm only a few metrics while the browser is idle. Product docs already contain mirrored counters,
+    // so a 24-request burst and a second full grid rebuild are unnecessary.
+    const metricIds = arr.slice(0, 8).map(p=>p.id);
+    const warmMetrics = ()=>preloadProductMetrics(metricIds).catch(()=>{});
+    if("requestIdleCallback" in window) window.requestIdleCallback(warmMetrics, {timeout:1800});
+    else window.setTimeout(warmMetrics, 900);
     if(activeTab==="categories") renderCategoriesPage();
 
     // If fewer than page size, we reached the end
@@ -5938,7 +6122,7 @@ async function loadProducts(){
         if(e && e.isIntersecting){
           loadProductsPage();
         }
-      }, { root: null, rootMargin: "1200px 0px", threshold: 0.01 });
+      }, { root: null, rootMargin: "420px 0px", threshold: 0.01 });
       io.observe(sentinel);
     }
   }catch(e){}
@@ -6098,12 +6282,6 @@ document.getElementById("qvVideoBtn")?.addEventListener("click", (e)=>{
   e.stopPropagation();
   if(viewer?.productId) openMini("video", viewer.productId);
 });
-document.getElementById("qvReviewsBtn")?.addEventListener("click", (e)=>{
-  e.preventDefault();
-  e.stopPropagation();
-  if(viewer?.productId) openMini("reviews", viewer.productId);
-});
-
 
 // swipe (mobile) for image viewer
 (() => {
