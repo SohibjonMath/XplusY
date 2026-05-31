@@ -72,6 +72,32 @@ async function setReviewAndOrder(db,productId,reviewId,review,patch){
   if(orderId) batch.set(db.doc(`orders/${orderId}`),{orderReview:{...(review||{}),...patch},updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
   await batch.commit();
 }
+async function deleteReviewAndOrder(db,productId,reviewId,review={},adminEmail="orzumall"){
+  const batch=db.batch();
+  const primary=db.doc(`products/${productId}/reviews/${reviewId}`);
+  const refs=await relatedReviewRefs(db,reviewId,review);
+  const all=[primary,...refs];
+  const seen=new Set();
+  let deletedReviews=0;
+  for(const ref of all){
+    if(!ref||seen.has(ref.path))continue;
+    seen.add(ref.path);
+    batch.delete(ref);
+    deletedReviews++;
+  }
+  const orderId=safeId(review.orderId);
+  if(orderId){
+    batch.set(db.doc(`orders/${orderId}`),{
+      orderReview:admin.firestore.FieldValue.delete(),
+      reviewedAt:admin.firestore.FieldValue.delete(),
+      reviewDeletedAt:admin.firestore.FieldValue.serverTimestamp(),
+      reviewDeletedBy:safeText(adminEmail,160),
+      updatedAt:admin.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+  }
+  await batch.commit();
+  return {deletedReviews,orderReviewCleared:!!orderId};
+}
 async function listReviewsForAdmin(db){
   const snap=await db.collectionGroup("reviews").limit(900).get();
   const raw=snap.docs.map(d=>({id:d.id,productId:d.ref.parent.parent?.id||d.data()?.productId||"",...(d.data()||{})}));
@@ -222,6 +248,16 @@ exports.handler=async(event)=>{
       await setReviewAndOrder(db,productId,reviewId,review,patch);
       await notify(db,review.uid||reviewId,"OrzuMall sharhingizga javob berdi",text.slice(0,280),"review").catch(()=>{});
       return json(200,{ok:true});
+    }
+
+    if(action==="review_delete"){
+      const productId=safeId(body.productId),reviewId=safeId(body.reviewId);
+      if(!productId||!reviewId)return json(400,{ok:false,error:"review_delete_required"});
+      const ref=db.doc(`products/${productId}/reviews/${reviewId}`),snap=await ref.get();
+      if(!snap.exists)return json(404,{ok:false,error:"review_not_found"});
+      const review=snap.data()||{};
+      const result=await deleteReviewAndOrder(db,productId,reviewId,review,adminEmail);
+      return json(200,{ok:true,...result});
     }
 
     return json(400,{ok:false,error:"unknown_action"});
