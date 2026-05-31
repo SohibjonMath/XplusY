@@ -1,0 +1,395 @@
+/* v94 — compact category and favorites pages */
+
+/* =========================================================
+   CATEGORY PAGE
+========================================================= */
+#view-categories .viewHeader{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:10px !important;
+  margin:0 0 10px !important;
+  padding:3px 0 0 !important;
+}
+#view-categories .viewTitle{
+  color:#0f172a !important;
+  font-size:24px !important;
+  line-height:1.05 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.035em !important;
+}
+#view-categories .viewBack{
+  width:38px !important;
+  min-width:38px !important;
+  height:38px !important;
+  padding:0 !important;
+  border-radius:13px !important;
+  border:1px solid #e7ecf3 !important;
+  background:#fff !important;
+  color:#475569 !important;
+  box-shadow:0 6px 14px rgba(15,23,42,.045) !important;
+}
+#view-categories .viewBody{
+  padding-bottom:92px !important;
+}
+#view-categories .crumbs{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  gap:6px !important;
+  margin:0 0 8px !important;
+  padding:0 0 3px !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  scrollbar-width:none !important;
+}
+#view-categories .crumbs::-webkit-scrollbar{display:none !important;}
+#view-categories .crumb{
+  flex:0 0 auto !important;
+  min-height:27px !important;
+  height:27px !important;
+  padding:0 9px !important;
+  border-radius:999px !important;
+  border:1px solid #e5eaf1 !important;
+  background:#fff !important;
+  color:#64748b !important;
+  font-size:10px !important;
+  font-weight:900 !important;
+  box-shadow:none !important;
+}
+#view-categories .crumb:last-child{
+  border-color:#fecdd3 !important;
+  background:#fff5f6 !important;
+  color:#be123c !important;
+}
+#view-categories .catList{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:6px !important;
+}
+#view-categories .catItem{
+  position:relative !important;
+  overflow:hidden !important;
+  min-height:52px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:8px !important;
+  padding:7px 9px 7px 10px !important;
+  border-radius:14px !important;
+  border:1px solid #e9eef5 !important;
+  background:linear-gradient(180deg,#fff 0%,#fcfdff 100%) !important;
+  box-shadow:0 5px 14px rgba(15,23,42,.04) !important;
+}
+#view-categories .catItem::before{
+  width:3px !important;
+  opacity:.88 !important;
+  background:linear-gradient(180deg,#ef4444,#fb7185) !important;
+}
+#view-categories .catName{
+  min-width:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:9px !important;
+  color:#0f172a !important;
+  font-size:12.5px !important;
+  line-height:1.2 !important;
+  font-weight:950 !important;
+}
+#view-categories .catName span{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+#view-categories .catName i,
+#view-categories .catName .catIconImg{
+  width:32px !important;
+  min-width:32px !important;
+  height:32px !important;
+  border-radius:11px !important;
+}
+#view-categories .catName i{
+  display:grid !important;
+  place-items:center !important;
+  color:#e11d48 !important;
+  background:#fff5f6 !important;
+  border:1px solid #fecdd3 !important;
+  box-shadow:none !important;
+  font-size:13px !important;
+}
+#view-categories .catName .catIconImg{
+  object-fit:contain !important;
+  padding:4px !important;
+  background:#fff !important;
+  border:1px solid #edf1f6 !important;
+  box-shadow:none !important;
+}
+#view-categories .catMeta{
+  display:flex !important;
+  align-items:center !important;
+  gap:5px !important;
+}
+#view-categories .catCount{
+  min-width:25px !important;
+  height:25px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 7px !important;
+  border-radius:999px !important;
+  background:#f8fafc !important;
+  border:1px solid #e7ecf3 !important;
+  color:#64748b !important;
+  font-size:10px !important;
+  font-weight:950 !important;
+  opacity:1 !important;
+}
+#view-categories .catArrow{
+  width:25px !important;
+  min-width:25px !important;
+  height:25px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:9px !important;
+  background:#fff5f6 !important;
+  border:1px solid #fecdd3 !important;
+  color:#e11d48 !important;
+  font-size:15px !important;
+  line-height:1 !important;
+  opacity:1 !important;
+}
+#view-categories .catItemEmpty{
+  opacity:.62 !important;
+}
+#view-categories .viewActions{
+  position:sticky !important;
+  bottom:calc(74px + env(safe-area-inset-bottom,0px)) !important;
+  z-index:6 !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:7px !important;
+  margin-top:9px !important;
+  padding:8px !important;
+  border-radius:15px !important;
+  border:1px solid #e8edf4 !important;
+  background:rgba(255,255,255,.96) !important;
+  box-shadow:0 10px 24px rgba(15,23,42,.08) !important;
+  backdrop-filter:blur(14px) !important;
+  -webkit-backdrop-filter:blur(14px) !important;
+}
+#view-categories .viewActions .btn{
+  min-height:38px !important;
+  height:38px !important;
+  padding:0 9px !important;
+  border-radius:11px !important;
+  font-size:11px !important;
+  font-weight:950 !important;
+  gap:6px !important;
+}
+#view-categories #catApplyBtn{
+  color:#fff !important;
+  border:0 !important;
+  background:linear-gradient(135deg,#b91c1c,#ef4444 62%,#fb7185) !important;
+  box-shadow:0 8px 16px rgba(225,29,72,.15) !important;
+}
+#view-categories #catClearBtn{
+  color:#64748b !important;
+  border:1px solid #e6ebf2 !important;
+  background:#fff !important;
+}
+
+/* =========================================================
+   FAVORITES PAGE
+========================================================= */
+#view-fav .favPremiumHeader{
+  align-items:center !important;
+  margin:0 0 8px !important;
+  padding:3px 0 0 !important;
+}
+#view-fav .viewTitle{
+  font-size:21px !important;
+  line-height:1.05 !important;
+  letter-spacing:-.035em !important;
+}
+#view-fav .viewSub{
+  margin-top:3px !important;
+  font-size:10.5px !important;
+  line-height:1.2 !important;
+}
+#view-fav .favCountPill{
+  min-width:28px !important;
+  height:28px !important;
+  font-size:10.5px !important;
+  box-shadow:none !important;
+}
+#view-fav .favPremiumBody{
+  padding-top:0 !important;
+  padding-bottom:84px !important;
+}
+#view-fav #favPageList{
+  gap:7px !important;
+}
+#view-fav .favPremiumCard{
+  grid-template-columns:76px minmax(0,1fr) !important;
+  gap:8px !important;
+  align-items:center !important;
+  padding:8px !important;
+  border-radius:16px !important;
+  border:1px solid #e9eef5 !important;
+  background:linear-gradient(180deg,#fff,#fdfdff) !important;
+  box-shadow:0 6px 16px rgba(15,23,42,.045) !important;
+}
+#view-fav .favPremiumCard:hover{
+  transform:none !important;
+  box-shadow:0 8px 18px rgba(15,23,42,.06) !important;
+}
+#view-fav .favImgWrap{
+  width:76px !important;
+  align-self:center !important;
+}
+#view-fav .favCardImg{
+  width:76px !important;
+  height:84px !important;
+  padding:4px !important;
+  border-radius:12px !important;
+  border:1px solid #edf1f6 !important;
+  background:#fff !important;
+}
+#view-fav .favContent{
+  gap:4px !important;
+}
+#view-fav .favTopRow{
+  min-height:24px !important;
+  justify-content:flex-start !important;
+  gap:5px !important;
+  flex-wrap:nowrap !important;
+}
+#view-fav .favRating{
+  max-width:100% !important;
+  min-height:22px !important;
+  padding:0 7px !important;
+  gap:4px !important;
+  font-size:9.5px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#view-fav .favRating i{font-size:9px !important;}
+#view-fav .favMiniBadge{
+  display:none !important;
+}
+#view-fav .favRemoveBtn{
+  position:static !important;
+  width:25px !important;
+  min-width:25px !important;
+  height:25px !important;
+  margin-left:auto !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border-radius:8px !important;
+  border:1px solid #fee2e2 !important;
+  background:#fff !important;
+  color:#ef4444 !important;
+  box-shadow:none !important;
+}
+#view-fav .favRemoveBtn i{font-size:11px !important;}
+#view-fav .favTitle{
+  font-size:11.5px !important;
+  line-height:1.2 !important;
+  font-weight:950 !important;
+  -webkit-line-clamp:2 !important;
+}
+#view-fav .favPriceRow{
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  flex-wrap:wrap !important;
+  gap:5px !important;
+}
+#view-fav .favPrice{
+  font-size:14px !important;
+  line-height:1 !important;
+  letter-spacing:-.025em !important;
+}
+#view-fav .favShip .shipBadge,
+#view-fav .favShip .delivery-badge{
+  min-height:21px !important;
+  height:21px !important;
+  max-width:112px !important;
+  padding:0 6px !important;
+  border-radius:999px !important;
+  font-size:8.5px !important;
+  line-height:21px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+#view-fav .favActions{
+  grid-template-columns:1fr 1fr !important;
+  gap:5px !important;
+  margin-top:1px !important;
+}
+#view-fav .favGhostBtn,
+#view-fav .favPrimaryBtn{
+  min-height:31px !important;
+  height:31px !important;
+  padding:0 7px !important;
+  border-radius:10px !important;
+  gap:5px !important;
+  font-size:10px !important;
+  box-shadow:none !important;
+}
+#view-fav .favGhostBtn i,
+#view-fav .favPrimaryBtn i{font-size:10px !important;}
+#view-fav .favPrimaryBtn{
+  background:linear-gradient(135deg,#b91c1c,#ef4444) !important;
+}
+#view-fav .favPremiumEmpty{
+  gap:7px !important;
+  padding:20px 14px !important;
+  border-radius:18px !important;
+}
+#view-fav .favEmptyIcon{
+  width:52px !important;
+  height:52px !important;
+  border-radius:17px !important;
+  font-size:20px !important;
+}
+#view-fav .favEmptyTitle{font-size:15px !important;}
+#view-fav .favEmptyText{font-size:11px !important;line-height:1.35 !important;}
+
+/* PC: compact but allow two-column use of the available width */
+@media (min-width: 900px){
+  #view-categories .catList{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+  #view-fav #favPageList{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:9px !important;
+  }
+  #view-fav .favPremiumCard{
+    grid-template-columns:84px minmax(0,1fr) !important;
+    padding:9px !important;
+  }
+  #view-fav .favImgWrap,
+  #view-fav .favCardImg{width:84px !important;}
+  #view-fav .favCardImg{height:92px !important;}
+}
+
+@media (max-width: 380px){
+  #view-fav .favPremiumCard{
+    grid-template-columns:70px minmax(0,1fr) !important;
+    gap:7px !important;
+    padding:7px !important;
+  }
+  #view-fav .favImgWrap,
+  #view-fav .favCardImg{width:70px !important;}
+  #view-fav .favCardImg{height:78px !important;}
+  #view-fav .favGhostBtn span,
+  #view-fav .favPrimaryBtn span{font-size:9.5px !important;}
+  #view-categories .catItem{min-height:49px !important;}
+  #view-categories .catName{font-size:12px !important;}
+}
