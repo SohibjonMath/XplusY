@@ -45,10 +45,7 @@
   <link rel="stylesheet" href="./ui-image-viewer-fullscreen-v77.css?v=20260531_v77_fullscreen_image_viewer" />
   <link rel="stylesheet" href="./ui-image-viewer-fullscreen-v78.css?v=20260531_v78_fullscreen_image_quality_fix" />
   <link rel="stylesheet" href="./ui-image-viewer-fullscreen-v79.css?v=20260531_v79_real_fullscreen_reset" />
-  <link rel="stylesheet" href="./ui-cart-compact-v80.css?v=20260531_v80_compact_cart_mobile" />
-  <link rel="stylesheet" href="./ui-cart-uzum-compact-v81.css?v=20260531_v81_cart_uzum_compact" />
-  <link rel="stylesheet" href="./ui-cart-marketplace-final-v82.css?v=20260531_v82_cart_marketplace_final" />
-  <link rel="stylesheet" href="./ui-cart-spacing-fix-v83.css?v=20260531_v83_cart_spacing_fix" />
+  <link rel="stylesheet" href="./ui-cart-final-layout-v84.css?v=20260531_v84_cart_final_layout" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" referrerpolicy="no-referrer" />
 </head>
 <body class="om-view-home">
@@ -242,21 +239,25 @@
   <div class="viewHeader cartPremiumHeader">
     <div>
       <div class="viewTitle">Savat</div>
-      <div class="viewSub">Tanlangan mahsulotlaringiz shu yerda jamlanadi.</div>
+      <div class="viewSub">Mahsulotlarni tekshiring va buyurtmani rasmiylashtiring.</div>
     </div>
     <div class="countPill cartCountPill" id="cartCountPillPage">0</div>
   </div>
   <div class="viewBody cartPremiumBody">
-    <div class="cartTopRow cartSelectCard">
-      <div class="cartTopLeft">
-        <div class="cartTopIcon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></div>
-        <div>
-          <div class="cartTopTitle">Buyurtma uchun tanlash</div>
-          <div class="cartTopText">Kerakli mahsulotlarni belgilang yoki hammasini tanlang.</div>
+    <div class="cartToolbar" aria-label="Savat boshqaruvi">
+      <div class="cartToolbarLeft">
+        <div class="cartToolbarIcon"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></div>
+        <div class="cartToolbarText">
+          <b>Savatdagi mahsulotlar</b>
+          <span id="cartToolbarHint">0 ta mahsulot</span>
         </div>
       </div>
-      <label class="checkRow"><input type="checkbox" id="cartSelectAllPage" /> <span>Hammasini tanlash</span></label>
+      <div class="cartToolbarActions">
+        <label class="cartCheckAll"><input type="checkbox" id="cartSelectAllPage" /><span><i class="fa-solid fa-check" aria-hidden="true"></i></span><em>Barchasi</em></label>
+        <button class="cartClearBtn" id="clearCartPage" type="button" title="Savatni tozalash" aria-label="Savatni tozalash"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+      </div>
     </div>
+
     <div id="cartPageList"></div>
     <div class="panelEmpty cartPremiumEmpty" id="cartPageEmpty" hidden>
       <div class="cartEmptyIcon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></div>
@@ -267,17 +268,16 @@
     <div class="panelBottom cartPremiumBottom" id="cartPageBottom">
       <div class="cartSummaryTop">
         <div>
-          <div class="muted cartSummaryLabel">Tanlangan mahsulotlar</div>
-          <div class="cartSelectedInfo" id="cartSelectedInfo">0 ta tanlangan</div>
+          <div class="muted cartSummaryLabel">Tanlandi</div>
+          <div class="cartSelectedInfo" id="cartSelectedInfo">0 ta mahsulot</div>
         </div>
         <div class="total" id="cartTotalPage">0 so‘m</div>
       </div>
-      <div class="cartSummaryNote" id="cartSummaryNote">Buyurtma berishda tanlangan mahsulotlar hisoblanadi.</div>
+      <div class="cartSummaryNote" id="cartSummaryNote" hidden>Buyurtma berishda tanlangan mahsulotlar hisoblanadi.</div>
       <div class="cartDeliverySummary" id="cartDeliverySummary"></div>
       <div class="panelActions">
-        <button class="btn primary" id="orderBtnPage" type="button"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Yetkazib berishni sozlash</button>
+        <button class="btn primary" id="orderBtnPage" type="button"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Yetkazib berish</button>
       </div>
-
     </div>
   </div>
 </section>

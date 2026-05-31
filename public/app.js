@@ -4826,6 +4826,8 @@ function renderCartPage(){
   const selectedInfoEl = document.getElementById("cartSelectedInfo");
   const summaryNoteEl = document.getElementById("cartSummaryNote");
   if(countEl) countEl.textContent = String(list.length);
+  const toolbarHintEl = document.getElementById("cartToolbarHint");
+  if(toolbarHintEl) toolbarHintEl.textContent = list.length ? `${list.length} ta mahsulot` : "Savat bo‘sh";
   els.cartPageEmpty.hidden = list.length !== 0;
 
   let total = 0;
@@ -4905,7 +4907,7 @@ function renderCartPage(){
   }
 
   if(els.cartTotalPage) els.cartTotalPage.textContent = moneyUZS(total);
-  if(selectedInfoEl) selectedInfoEl.textContent = `${selectedCount} ta tanlangan`;
+  if(selectedInfoEl) selectedInfoEl.textContent = `${selectedCount} ta mahsulot`;
   if(summaryNoteEl) summaryNoteEl.textContent = list.length ? `Savatchada ${list.length} ta mahsulot bor. Tanlangan vazn: ${omFormatKg(selectedWeightKg)}.` : "Savatcha bo‘sh.";
   if(els.checkoutCompactSummary){
     els.checkoutCompactSummary.innerHTML = `<span>${selectedCount} ta tanlangan • ${omFormatKg(selectedWeightKg)}</span><b>${moneyUZS(total)}</b>`;
