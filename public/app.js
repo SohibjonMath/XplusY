@@ -3135,14 +3135,39 @@ async function submitOrderAction(){
   }
 }
 
+let currentOrdersFilter = "all";
+function filterOrdersByKey(arr, key){
+  const list = Array.isArray(arr) ? arr : [];
+  const k = String(key || 'all');
+  if(k === 'all') return list;
+  return list.filter(o=>{
+    const s = omOrderStatusKey(o?.status || '');
+    if(k === 'active') return ['new','paid','packing','shipping'].includes(s);
+    if(k === 'delivered') return s === 'delivered';
+    if(k === 'cancelled') return s === 'cancelled' || s === 'failed';
+    if(k === 'returns') return ['return_requested','returned','return_rejected','refunded'].includes(s);
+    return true;
+  });
+}
+function syncOrderFilterUI(){
+  document.querySelectorAll('#orderFilterBar .orderFilterChip').forEach(btn=>{
+    const on = btn.dataset.orderFilter === currentOrdersFilter;
+    btn.classList.toggle('isActive', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+}
+
 function renderOrders(orders){
   if(!els.ordersList || !els.ordersEmpty) return;
   const arr = Array.isArray(orders) ? orders : [];
   ordersCache = arr;
+  const filtered = filterOrdersByKey(arr, currentOrdersFilter);
+  syncOrderFilterUI();
   els.ordersList.innerHTML = "";
-  els.ordersEmpty.hidden = arr.length !== 0;
+  els.ordersEmpty.hidden = filtered.length !== 0;
+  if(els.ordersEmpty) els.ordersEmpty.textContent = filtered.length ? '' : 'Tanlangan filter bo‘yicha buyurtma topilmadi.';
 
-  for(const o of arr){
+  for(const o of filtered){
     const id = String(o.id || "").slice(-6);
     const total = moneyUZS(Number(o.totalUZS||0));
     const status = (o.status||"").toString();
@@ -5617,7 +5642,7 @@ function renderSavedAddressesUI(){
         row.innerHTML = `
           <div class="savedAddressItemIcon"><i class="fa-solid fa-location-dot" aria-hidden="true"></i></div>
           <div class="savedAddressItemText">
-            <b>${escapeHtml(omAddressTitle(a, i))}</b>
+            <div class="savedAddressItemTop"><b>${escapeHtml(omAddressTitle(a, i))}</b><span class="savedAddressMiniPill">${i===0 ? 'Asosiy' : 'Saqlangan'}</span></div>
             <span>${escapeHtml(omAddressLine(a) || "Manzil ma’lumoti yo‘q")}</span>
           </div>
           <button type="button" class="savedAddressDelete" data-del="${escapeHtml(String(a.id || ""))}" title="O‘chirish" aria-label="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
@@ -7164,6 +7189,19 @@ let unsubUserDoc = null;
     if(els.profileName) els.profileName.textContent = name;
     if(els.profileNumericId) els.profileNumericId.textContent = numericId ? `ID: OM${numericId}` : "—";
 
+    const quick = document.getElementById('profileQuickRow');
+    if(quick){
+      const chips = [];
+      const phone = String(meta?.phone || '').trim();
+      const region = String(meta?.region || '').trim();
+      const district = String(meta?.district || '').trim();
+      if(phone) chips.push(`<span class="profileQuickChip"><i class="fa-solid fa-phone"></i>${escapeHtml(phone)}</span>`);
+      const place = [region, district].filter(Boolean).join(' • ');
+      if(place) chips.push(`<span class="profileQuickChip"><i class="fa-solid fa-location-dot"></i>${escapeHtml(place)}</span>`);
+      quick.innerHTML = chips.join('');
+      quick.hidden = !chips.length;
+    }
+
     if(els.profileAvatar){
       const photo = user.photoURL;
       if(photo){
@@ -7341,6 +7379,8 @@ async function syncUser(user){
         }
       }
     }
+
+    renderHeader(user, { ...meta, region: saved?.region || u.region || "", district: saved?.district || u.district || "" });
 
     // start in view mode; editing only via ✏️
     setEditing(false);
@@ -8180,6 +8220,17 @@ window.addEventListener('load', ()=>setTimeout(orzuMoveProfileSocialToBottom, 12
   tabMoney.addEventListener('click', ()=> setProfileActivityTab('money'));
   tabOrders.addEventListener('click', ()=> setProfileActivityTab('orders'));
   setProfileActivityTab('money');
+})();
+
+(function(){
+  document.querySelectorAll('#orderFilterBar .orderFilterChip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      currentOrdersFilter = btn.dataset.orderFilter || 'all';
+      syncOrderFilterUI();
+      renderOrders(ordersCache || []);
+    });
+  });
+  syncOrderFilterUI();
 })();
 
 try{ window.openProductPage = openProductPage; }catch(_e){}
