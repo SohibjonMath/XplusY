@@ -4758,12 +4758,12 @@ function renderFavPage(){
     item.innerHTML = `
       <div class="favImgWrap">
         <img class="favCardImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
-        <button class="favRemoveBtn" title="Sevimlidan olib tashlash" aria-label="Sevimlidan olib tashlash"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
       </div>
       <div class="favContent">
         <div class="favTopRow">
           ${ratingHtml}
           <span class="favMiniBadge">Sevimli</span>
+          <button class="favRemoveBtn" title="Sevimlidan olib tashlash" aria-label="Sevimlidan olib tashlash"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
         <div class="favTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         <div class="favPriceRow">
@@ -4846,10 +4846,6 @@ function renderCartPage(){
     item.innerHTML = `
       <img class="cartImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
       <div class="cartMeta">
-        <label class="cartPick">
-          <input type="checkbox" class="cartPickBox" data-pick="${escapeHtml(ci.key)}" ${cartSelected.has(ci.key) ? "checked" : ""} />
-          <span><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-        </label>
         <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         <div class="cartWeightMini"><i class="fa-solid fa-weight-hanging" aria-hidden="true"></i> ${omFormatKg(omProductWeightKg(p))} × ${qty} = ${omFormatKg(omProductWeightKg(p) * qty)}</div>
         ${renderVariantLine(ci)}
@@ -4867,6 +4863,10 @@ function renderCartPage(){
               <button data-q="+" aria-label="Ko‘paytirish">+</button>
             </div>
             <div class="badge">${moneyUZS((vp.price||0)*qty)}</div>
+            <label class="cartPick cartPickInline">
+              <input type="checkbox" class="cartPickBox" data-pick="${escapeHtml(ci.key)}" ${cartSelected.has(ci.key) ? "checked" : ""} />
+              <span><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+            </label>
             <button class="removeBtn" title="O‘chirish" aria-label="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
           </div>
         </div>
