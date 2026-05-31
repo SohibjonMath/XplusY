@@ -80,7 +80,7 @@ async function notify(db, uid, title, text, type="order"){
       targetType:"uid", targetUid:uid, type, title:safeText(title,160), body:safeText(text,800), text:safeText(text,800),
       createdAt:admin.firestore.FieldValue.serverTimestamp(), active:true
     });
-    await pushToCustomer(db,uid,{title:safeText(title,160),body:safeText(text,500),channelId:type==="order"?"orzumall_orders_voice_v2":"orzumall_general_voice_v2",data:{type,url:"https://orzumall.uz/#profile"}}).catch(()=>{});
+    await pushToCustomer(db,uid,{title:safeText(title,160),body:safeText(text,500),channelId:type==="order"?"orzumall_orders_voice_v3":"orzumall_general_voice_v3",data:{type,url:"https://orzumall.uz/#profile"}}).catch(()=>{});
   }catch(_e){}
 }
 async function txUpdateWithOptionalRefund(db, orderId, updater){

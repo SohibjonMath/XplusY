@@ -10,6 +10,7 @@ const {
   approxEqualAmount,
   normalizeReqId,
 } = require("./_clickCommon");
+const { pushToCustomer } = require("./_customerPush");
 
 exports.handler = async (event) => {
   try {
@@ -99,6 +100,8 @@ exports.handler = async (event) => {
 
     const confirmId = Date.now();
     let txError = null;
+    let credited = false;
+    let paidUid = "";
     await db.runTransaction(async (tx) => {
       const latest = await tx.get(reqRef);
       if (!latest.exists) throw new Error("TOPUP_NOT_FOUND");
@@ -122,6 +125,8 @@ exports.handler = async (event) => {
       }
       const user = userSnap.data() || {};
       const currentBalance = Number(user.balanceUZS || 0) || 0;
+      paidUid = uid;
+      credited = true;
       tx.set(userRef, {
         balanceUZS: currentBalance + Math.round(amount),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -148,6 +153,20 @@ exports.handler = async (event) => {
     });
 
     if (txError) return json(200, txError);
+
+    if (credited && paidUid) {
+      const added = Math.round(amount);
+      const title = "Balansingiz to‘ldirildi";
+      const text = `CLICK orqali ${added.toLocaleString("uz-UZ")} so‘m balansingizga qo‘shildi.`;
+      await db.collection("notifications").add({
+        targetType: "uid", targetUid: paidUid, type: "balance", title, body: text, text,
+        active: true, createdAt: admin.firestore.FieldValue.serverTimestamp()
+      }).catch(() => {});
+      await pushToCustomer(db, paidUid, {
+        title, body: text, channelId: "orzumall_general_voice_v3",
+        data: { type: "balance", url: "https://orzumall.uz/#profile" }
+      }).catch(() => {});
+    }
 
     return json(200, {
       click_trans_id: payload.click_trans_id,

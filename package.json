@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.8.0",
-  "description": "OrzuMall premium store v54 with browser-safe Android admin login, manual Android FCM fallback, token registration, native push test and order alerts",
+  "version": "1.9.0",
+  "description": "OrzuMall customer site v74 with Android website-connected native push token registration and FCM delivery",
   "engines": {
     "node": "18.x"
   },

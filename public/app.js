@@ -3220,8 +3220,11 @@ function renderMoneyHistory(items){
     const left = document.createElement("div");
     left.style.minWidth = "0";
     const historyStatusKey=moneyHistoryCanonicalStatus(st,it.kind);
+    const historyIconHtml = historyStatusKey === "pending"
+      ? `<span class="moneyHistoryPendingGlyph" aria-hidden="true">⏳</span>`
+      : `<i class="fa-solid ${escapeHtml(orderStatusIcon(historyStatusKey))}" aria-hidden="true"></i>`;
     left.innerHTML = `
-      <div class="moneyHistoryTitleRow"><span class="moneyHistoryStatusIcon"><i class="fa-solid ${escapeHtml(orderStatusIcon(historyStatusKey))}" aria-hidden="true"></i></span><div class="orderId">${escapeHtml(title)}</div></div>
+      <div class="moneyHistoryTitleRow"><span class="moneyHistoryStatusIcon">${historyIconHtml}</span><div class="orderId">${escapeHtml(title)}</div></div>
       <div class="orderMeta">${when ? `<span class="orderPill">${when}</span>` : ""}${st ? ` <span class="orderPill ${moneyHistoryStatusClass(st,it.kind)}">${escapeHtml(statusLabel(st, it.kind))}</span>` : ""}</div>
       ${it.note ? `<div class="orderMeta" style="margin-top:6px"><b>Izoh:</b> ${escapeHtml(it.note)}</div>` : ""}
     `.trim();
