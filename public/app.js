@@ -6775,6 +6775,16 @@ async function startClickTopup(prefillAmount){
 }
 
 // ===== Manual Card Topup (Admin approve) =====
+function syncTopupStepper(step){
+  const n = Number(step || 1) === 2 ? 2 : 1;
+  document.querySelectorAll('#topupStepper [data-topup-mark]').forEach(mark=>{
+    const active = Number(mark.getAttribute('data-topup-mark')) <= n;
+    const current = Number(mark.getAttribute('data-topup-mark')) === n;
+    mark.classList.toggle('isActive', active);
+    mark.classList.toggle('isCurrent', current);
+  });
+  document.getElementById('topupStepper')?.classList.toggle('isStep2', n === 2);
+}
 function openTopupModal(prefillAmount){
   const modal = document.getElementById('topupModal');
   if(!modal) return;
@@ -6784,6 +6794,7 @@ function openTopupModal(prefillAmount){
   const step2 = document.getElementById('topupStep2');
   if(step1) step1.hidden = false;
   if(step2) step2.hidden = true;
+  syncTopupStepper(1);
 
   const amtIn = document.getElementById('payerAmount');
   const tAmt = document.getElementById('topupAmount');
@@ -6859,6 +6870,7 @@ async function goTopupStep2(){
   const step2 = document.getElementById('topupStep2');
   if(step1) step1.hidden = true;
   if(step2) step2.hidden = false;
+  syncTopupStepper(2);
 }
 
 async function submitTopupRequest(){
@@ -7662,6 +7674,7 @@ document.addEventListener('click', (e)=>{
     const s2 = document.getElementById('topupStep2');
     if(s1) s1.hidden = false;
     if(s2) s2.hidden = true;
+    syncTopupStepper(1);
     return;
   }
   if(x.id==='topupSubmit') return void submitTopupRequest();
@@ -8196,7 +8209,7 @@ window.addEventListener('load', ()=>setTimeout(orzuMoveProfileSocialToBottom, 12
     }
   }
   bindSection('wallet', '#walletCard', '.walletHero', ['.walletGrid'], false);
-  bindSection('savedAddress', '#savedAddressCard', '.savedAddressHead', ['.savedAddressForm', '.savedAddressStatus', '.savedAddressList'], true);
+  bindSection('savedAddress', '#savedAddressCard', '.savedAddressHead', ['.savedAddressGuide', '.savedAddressForm', '.savedAddressStatus', '.savedAddressList'], true);
   bindSection('activity', '#activityCard', '.activityCardTop', ['.activityBody'], true);
 })();
 
