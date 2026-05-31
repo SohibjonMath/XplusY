@@ -2382,9 +2382,10 @@ function omProductTypeIconSrc(type){
 }
 function omProductTypeLabel(type){
   const t = String(type || "").toLowerCase().trim();
-  if(t === "original") return omTrText("Asl mahsulot");
-  if(t === "oem") return "OEM";
-  if(t === "replica") return "Copy";
+  // Customer-friendly labels
+  if(t === "original") return "Original";
+  if(t === "oem") return "Zavod mahsuloti";
+  if(t === "replica") return "Nusxa";
   return omTrText(t || "Mahsulot turi");
 }
 function renderProductTypeBadge(p){

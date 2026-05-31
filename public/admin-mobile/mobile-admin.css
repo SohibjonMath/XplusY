@@ -58,3 +58,21 @@ body{min-height:100dvh;padding-bottom:76px}.app-shell{min-height:100dvh}.login-s
 @media(min-width:760px){.review-analysis-bars{grid-template-columns:repeat(3,1fr)}.review-card footer{align-items:center;flex-direction:row}.review-card footer>span{width:auto}.review-actions{width:auto;justify-content:flex-end}}
 /* v98 — permanent review deletion */
 .review-delete-warning{display:flex;align-items:flex-start;gap:10px;margin-top:10px;padding:11px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}.review-delete-warning>i{width:30px;height:30px;min-width:30px;display:grid;place-items:center;border-radius:10px;background:#ffedd5;color:#c2410c}.review-delete-warning b{display:block;font-size:11px}.review-delete-warning span{display:block;margin-top:3px;font-size:10.5px;line-height:1.4;color:#9a3412}
+
+/* v100 — 58x40 order label print button */
+.btn-label{
+  background:linear-gradient(135deg,#111827,#7f1d3d)!important;
+  color:#fff!important;
+  border-color:transparent!important;
+  box-shadow:0 10px 20px rgba(127,29,61,.16)!important;
+}
+.btn-label i{color:#fff!important}
+.label-wide{
+  width:100%;
+  min-height:42px;
+  margin:10px 0;
+  border-radius:14px;
+}
+@media(max-width:760px){
+  .btn-label{flex:1 1 100%}
+}
