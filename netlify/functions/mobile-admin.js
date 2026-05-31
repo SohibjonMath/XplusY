@@ -72,6 +72,21 @@ async function setReviewAndOrder(db,productId,reviewId,review,patch){
   if(orderId) batch.set(db.doc(`orders/${orderId}`),{orderReview:{...(review||{}),...patch},updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
   await batch.commit();
 }
+async function listReviewsForAdmin(db){
+  const snap=await db.collectionGroup("reviews").limit(900).get();
+  const raw=snap.docs.map(d=>({id:d.id,productId:d.ref.parent.parent?.id||d.data()?.productId||"",...(d.data()||{})}));
+  const ids=[...new Set(raw.map(r=>String(r.uid||r.id||"").trim()).filter(Boolean))];
+  const userCache=new Map();
+  for(let i=0;i<ids.length;i+=180){
+    const chunk=ids.slice(i,i+180);
+    const docs=await db.getAll(...chunk.map(id=>db.doc(`users/${id}`)));
+    docs.forEach((s,idx)=>userCache.set(chunk[idx],s.exists?(s.data()||{}):{}));
+  }
+  return raw.map(r=>{
+    const u=userCache.get(String(r.uid||r.id||""))||{};
+    return {...r,authorName:publicCustomerName(u,publicCustomerName(r,"Mijoz")),firstName:cleanPublicName(u.firstName||r.firstName)||null,lastName:cleanPublicName(u.lastName||r.lastName)||null};
+  });
+}
 
 exports.handler=async(event)=>{
   try{
@@ -84,6 +99,11 @@ exports.handler=async(event)=>{
     let body={};try{body=event.body?JSON.parse(event.body):{}}catch(_){return json(400,{ok:false,error:"invalid_json"})}
     const action=safeText(body.action,80);
     const adminEmail=normEmail(decoded.email)||"orzumall";
+
+    if(action==="reviews_list"){
+      const reviews=await listReviewsForAdmin(db);
+      return json(200,{ok:true,reviews});
+    }
 
     if(action==="repair_customer_names"){
       const ordersSnap=await db.collection("orders").limit(600).get();
