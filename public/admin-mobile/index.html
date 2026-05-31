@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="preconnect" href="https://www.gstatic.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./mobile-admin.css?v=20260531_v105_workflow_qr_scanner">
+  <link rel="stylesheet" href="./mobile-admin.css?v=20260531_v106_nav_qr_launcher">
 </head>
 <body>
   <div class="login-screen" id="loginScreen">
@@ -155,7 +155,7 @@
     <nav class="bottom-nav" aria-label="Tezkor navigatsiya">
       <button class="active" data-view="orders" type="button"><i class="fa-solid fa-cart-shopping"></i><span>Buyurtma</span><em id="bottomOrdersBadge" hidden>0</em></button>
       <button data-view="balance" type="button"><i class="fa-solid fa-wallet"></i><span>Balans</span></button>
-      <button data-view="turnover" type="button"><i class="fa-solid fa-chart-line"></i><span>Aylanma</span></button>
+      <button id="bottomQrLauncher" class="qr-nav-btn" type="button"><i class="fa-solid fa-qrcode"></i><span>QR skaner</span></button>
       <button data-view="support" type="button"><i class="fa-solid fa-headset"></i><span>Chat</span><em id="bottomSupportBadge" hidden>0</em></button>
       <button id="bottomMenu" type="button"><i class="fa-solid fa-bars"></i><span>Menu</span></button>
     </nav>
@@ -164,6 +164,6 @@
   <div class="modal-host" id="modalHost"></div>
   <div class="toast-host" id="toastHost"></div>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script type="module" src="./mobile-admin.js?v=20260531_v105_workflow_qr_scanner"></script>
+  <script type="module" src="./mobile-admin.js?v=20260531_v106_nav_qr_launcher"></script>
 </body>
 </html>
