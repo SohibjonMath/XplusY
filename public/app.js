@@ -2797,10 +2797,23 @@ function orderStatusClass(s){
 function orderStatusIcon(s){
   const v=omOrderStatusKey(s);
   const m={
-    new:"fa-sparkles",paid:"fa-circle-check",packing:"fa-box-open",shipping:"fa-truck-fast",
-    delivered:"fa-circle-check",cancelled:"fa-ban",return_requested:"fa-clock-rotate-left",
-    returned:"fa-rotate-left",return_rejected:"fa-circle-xmark",failed:"fa-triangle-exclamation",
-    refunded:"fa-arrow-rotate-left",approved:"fa-circle-check",success:"fa-circle-check"
+    new:"fa-sparkles",
+    pending:"fa-clock",
+    waiting:"fa-clock",
+    pending_payment:"fa-clock",
+    pending_click:"fa-clock",
+    paid:"fa-circle-check",
+    packing:"fa-box-open",
+    shipping:"fa-truck-fast",
+    delivered:"fa-circle-check",
+    cancelled:"fa-ban",
+    return_requested:"fa-clock-rotate-left",
+    returned:"fa-rotate-left",
+    return_rejected:"fa-circle-xmark",
+    failed:"fa-triangle-exclamation",
+    refunded:"fa-arrow-rotate-left",
+    approved:"fa-circle-check",
+    success:"fa-circle-check"
   };
   return m[v]||"fa-receipt";
 }
