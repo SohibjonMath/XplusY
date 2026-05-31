@@ -1,0 +1,94 @@
+/* v83 — fix excessive empty spaces in cart */
+@media (max-width: 768px){
+  #view-cart{
+    padding-top:0 !important;
+  }
+  #view-cart .viewHeader,
+  #view-cart .cartPremiumHeader{
+    margin:0 0 8px !important;
+    padding:2px 0 8px !important;
+  }
+  #view-cart .viewTitle{font-size:18px !important; line-height:1 !important;}
+  #view-cart .viewSub{margin-top:2px !important; font-size:10px !important; line-height:1.2 !important;}
+  #view-cart .cartCountPill{min-width:24px !important; height:24px !important; font-size:10px !important;}
+
+  #view-cart .viewBody,
+  #view-cart .cartPremiumBody{
+    padding-top:0 !important;
+    padding-bottom:80px !important;
+    display:flex !important;
+    flex-direction:column !important;
+    gap:8px !important;
+  }
+  #view-cart .cartPremiumBody > *{margin-top:0 !important; margin-bottom:0 !important;}
+
+  /* Top select card: remove huge blank space */
+  #view-cart .cartTopRow,
+  #view-cart .cartSelectCard{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    align-items:center !important;
+    justify-content:initial !important;
+    flex-direction:row !important;
+    min-height:auto !important;
+    height:auto !important;
+    padding:8px 10px !important;
+    gap:8px !important;
+    border-radius:14px !important;
+  }
+  #view-cart .cartTopLeft{
+    display:flex !important;
+    align-items:center !important;
+    gap:8px !important;
+    min-width:0 !important;
+  }
+  #view-cart .cartTopIcon{
+    width:30px !important;
+    height:30px !important;
+    min-width:30px !important;
+    border-radius:10px !important;
+  }
+  #view-cart .cartTopIcon i{font-size:12px !important;}
+  #view-cart .cartTopTitle{font-size:11px !important; line-height:1.1 !important;}
+  #view-cart .cartTopText{display:none !important;}
+  #view-cart .checkRow{
+    width:auto !important;
+    min-height:26px !important;
+    height:26px !important;
+    padding:0 8px !important;
+    border-radius:999px !important;
+    font-size:9.5px !important;
+    justify-content:center !important;
+    white-space:nowrap !important;
+  }
+  #view-cart .checkRow input{width:12px !important; height:12px !important;}
+
+  /* Cart list tighter */
+  #cartPageList{gap:6px !important; margin-top:0 !important;}
+  #view-cart .cartItem,
+  #view-cart .premiumCartItem{
+    margin:0 !important;
+  }
+
+  /* Bottom summary more compact */
+  #view-cart .cartPremiumBottom{
+    margin-top:0 !important;
+    padding:8px !important;
+    border-radius:14px !important;
+  }
+  #view-cart .cartSummaryTop{padding-bottom:5px !important; gap:6px !important;}
+  #view-cart .cartSelectedInfo{font-size:10.5px !important;}
+  #view-cart #cartTotalPage{font-size:14px !important;}
+
+  /* Keep delivery area compact */
+  #view-cart .cartDeliverySummary{margin:5px 0 !important;}
+  #view-cart .cartDeliveryCompactTop{min-height:34px !important; padding:7px 9px !important;}
+  #view-cart .cartDeliveryCompactBody{padding:0 7px 7px !important;}
+  #view-cart .cartDeliveryGrid.compactGrid{gap:4px !important; margin-top:6px !important;}
+  #view-cart .compactFree,
+  #view-cart .compactPending{margin-top:5px !important; padding:6px 8px !important;}
+  #view-cart .cartDeliveryCompactActions{margin-top:6px !important;}
+  #view-cart .cartDeliveryCompactActions button{min-height:30px !important;}
+  #view-cart .panelActions{margin-top:6px !important;}
+  #view-cart #orderBtnPage{min-height:38px !important; height:38px !important; border-radius:12px !important; font-size:11.5px !important;}
+}
