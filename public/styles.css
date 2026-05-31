@@ -8606,3 +8606,53 @@ html.modalOpen,body.modalOpen{overflow:hidden!important}
     font-size: 9px !important;
   }
 }
+
+
+/* ===== v62 cart bottom-nav visual fix ===== */
+@media (max-width: 768px){
+  .mobile-bottom-bar .nav-btn[data-tab="cart"] .ico,
+  .mobile-bottom-bar .nav-btn[data-tab="cart"] .ico i{
+    color:#475569 !important;
+  }
+  .mobile-bottom-bar .nav-btn[data-tab="cart"].active .ico,
+  .mobile-bottom-bar .nav-btn[data-tab="cart"].active .ico i,
+  .mobile-bottom-bar .nav-btn[data-tab="cart"].active .ico svg,
+  .mobile-bottom-bar .nav-btn[data-tab="cart"].active .ico path{
+    color:#ffffff !important;
+    fill:#ffffff !important;
+    stroke:#ffffff !important;
+  }
+  .mobile-bottom-bar .nav-btn[data-tab="cart"] .ico i{
+    font-size:17px !important;
+    transform:translateY(0.5px);
+    text-shadow:none !important;
+  }
+  .mobile-bottom-bar .nav-btn[data-tab="cart"].active .ico{
+    background: linear-gradient(135deg,#ef4444 0%, #f43f5e 100%) !important;
+    box-shadow: 0 14px 26px rgba(225,29,72,.24) !important;
+  }
+  .mobile-bottom-bar .nav-btn[data-tab="cart"] .badge{
+    top: 1px !important;
+    right: 2px !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    padding: 0 4px !important;
+    font-size: 9px !important;
+    border-width: 2px !important;
+  }
+  .mobile-bottom-bar .nav-btn[data-tab="cart"].active{
+    padding-right: 5px !important;
+  }
+}
+@media (max-width: 420px){
+  .mobile-bottom-bar .nav-btn[data-tab="cart"] .badge{
+    top: 0px !important;
+    right: 1px !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    font-size: 8.5px !important;
+  }
+  .mobile-bottom-bar .nav-btn[data-tab="cart"] .ico i{
+    font-size:16px !important;
+  }
+}
