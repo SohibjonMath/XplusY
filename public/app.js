@@ -115,7 +115,7 @@ function tgOrderCreatedHTML(o){
     `Buyurtma ID: <code>${tgEscape(o.orderId||o.id||"")}</code>`,
     o.uid ? `UID: <code>${tgEscape(o.uid)}</code>` : "",
     o.numericId ? `User ID: <b>${tgEscape(o.numericId)}</b>` : "",
-    o.userName ? `Ism: <b>${tgEscape(o.userName)}</b>` : "",
+    omOrderPublicName(o,"") ? `Ism: <b>${tgEscape(omOrderPublicName(o,""))}</b>` : "",
     o.userPhone ? `Tel: <b>${tgEscape(o.userPhone)}</b>` : "",
     `To'lov: <b>${pay}</b>`,
     `Summa: <b>${sum}</b> so'm`,
@@ -806,6 +806,68 @@ function omSaveOrdersHistoryCache(uid,arr){ omWriteScopedCache(OM_ORDER_HISTORY_
 function omLoadTopupHistoryCache(uid){ return Array.isArray(omReadScopedCache(OM_TOPUP_HISTORY_CACHE_PREFIX,uid,[])) ? omReadScopedCache(OM_TOPUP_HISTORY_CACHE_PREFIX,uid,[]) : []; }
 function omSaveTopupHistoryCache(uid,arr){ omWriteScopedCache(OM_TOPUP_HISTORY_CACHE_PREFIX,uid,Array.isArray(arr)?arr:[]); }
 
+/* =========================
+   Public customer names
+   Internal Firebase pseudo-email is never shown as a customer name.
+========================= */
+function omCleanPublicPersonName(value){
+  const s=String(value == null ? "" : value).trim().replace(/\s+/g," ");
+  if(!s || s.includes("@")) return "";
+  return s;
+}
+function omPublicNameFromRecord(record={}, fallback="Foydalanuvchi"){
+  const first=omCleanPublicPersonName(record?.firstName);
+  const last=omCleanPublicPersonName(record?.lastName);
+  const full=[first,last].filter(Boolean).join(" ").trim();
+  if(full) return full;
+  for(const candidate of [record?.name,record?.fullName,record?.displayName,record?.userName,record?.customerName,record?.authorName]){
+    const clean=omCleanPublicPersonName(candidate);
+    if(clean) return clean;
+  }
+  return fallback;
+}
+const omPublicUserCache=new Map();
+async function omGetPublicUserRecord(uid,{force=false}={}){
+  const id=String(uid||"").trim();
+  if(!id) return {};
+  if(!force && omPublicUserCache.has(id)) return omPublicUserCache.get(id)||{};
+  try{
+    const snap=await getDoc(doc(db,"users",id));
+    const data=snap.exists() ? (snap.data()||{}) : {};
+    omPublicUserCache.set(id,data);
+    return data;
+  }catch(_e){
+    return omPublicUserCache.get(id)||{};
+  }
+}
+async function omResolvePublicReviewAuthor(uid,fallbackName=""){
+  const cleanFallback=omCleanPublicPersonName(fallbackName)||"Foydalanuvchi";
+  const userRecord=await omGetPublicUserRecord(uid);
+  return omPublicNameFromRecord(userRecord,cleanFallback);
+}
+async function omEnrichReviewAuthors(list){
+  return await Promise.all((Array.isArray(list)?list:[]).map(async r=>({
+    ...r,
+    author:await omResolvePublicReviewAuthor(r?.uid,r?.author)
+  })));
+}
+async function omCurrentPublicIdentity(user=auth.currentUser){
+  const uid=String(user?.uid||"").trim();
+  let record={};
+  try{ record=uid ? await omGetPublicUserRecord(uid,{force:true}) : {}; }catch(_e){}
+  if(uid && currentUser?.uid===uid && profileCache && typeof profileCache==="object") record={...record,...profileCache};
+  const firstName=omCleanPublicPersonName(record?.firstName);
+  const lastName=omCleanPublicPersonName(record?.lastName);
+  const authorName=omPublicNameFromRecord(record,omCleanPublicPersonName(user?.displayName)||"Foydalanuvchi");
+  return {authorName,firstName,lastName};
+}
+function omOrderPublicName(order,fallback="Mijoz"){
+  return omPublicNameFromRecord({
+    ...(order||{}),
+    name:order?.userName || order?.name || order?.fullName || order?.customerName || ""
+  },fallback);
+}
+
 // ---------------- Reviews (Firestore, realtime) ----------------
 // Reviews subcollection: products/{productId}/reviews/{uid} -> {uid, authorName, stars, text, createdAt, updatedAt}
 // Rating/Count: Firestore Aggregate (real, server-side), statsCache bilan tezlashtiramiz.
@@ -868,7 +930,7 @@ function subscribeReviews(productId){
     limit(30)
   );
   let statsDebounce = null;
-  unsubReviews = onSnapshot(q, (snap)=>{
+  unsubReviews = onSnapshot(q, async (snap)=>{
     const list = [];
     snap.forEach((docu)=>{
       const d = docu.data() || {};
@@ -881,7 +943,7 @@ function subscribeReviews(productId){
         ts: d.createdAt?.toMillis ? d.createdAt.toMillis() : 0
       });
     });
-    renderReviewsList(list);
+    renderReviewsList(await omEnrichReviewAuthors(list));
 
     if(statsDebounce) clearTimeout(statsDebounce);
     statsDebounce = setTimeout(async ()=>{
@@ -2906,7 +2968,7 @@ function buildOrderReceiptHTML(order){
   const created = fmtDate(order?.createdAt) || "—";
   const status = orderStatusLabel(order?.status || "") || "—";
   const provider = providerLabel(order?.provider || "") || (order?.provider || "—");
-  const customer = order?.userName || [order?.firstName, order?.lastName].filter(Boolean).join(" ") || "—";
+  const customer = omOrderPublicName(order,"—");
   const phone = order?.userPhone || order?.shipping?.phone || "—";
   const deliveryLabel = order?.shipping?.methodLabel || (order?.shipping?.method === 'delivery' ? 'Yetkazib berish' : (order?.shipping?.method === 'pickup' ? 'Do‘kondan olib ketish' : '—'));
   const addr = order?.shipping?.addressText || [order?.shipping?.region, order?.shipping?.district, order?.shipping?.post, order?.shipping?.address].filter(Boolean).join(' / ') || [order?.region, order?.district, order?.post].filter(Boolean).join(' / ') || "—";
@@ -3861,7 +3923,8 @@ async function omLoadProductPageReviews(productId, {force=false}={}){
     const currentRoot = els.productPageContent;
     const currentList = currentRoot?.querySelector("#ppReviewsList");
     const currentStats = currentRoot?.querySelector("#ppReviewStats");
-    if(currentList) currentList.innerHTML = omProductPageReviewListHtml(list);
+    const enrichedList=await omEnrichReviewAuthors(list);
+    if(currentList) currentList.innerHTML = omProductPageReviewListHtml(enrichedList);
     if(currentStats) currentStats.innerHTML = `<strong><i class="fa-solid fa-star"></i> ${Number(st.avg||0).toFixed(1)}</strong><span>${Number(st.count||0)} ta sharh</span>`;
   }catch(_e){
     if(token !== omProductPageReviews.token) return;
@@ -3882,7 +3945,8 @@ async function omSubmitProductPageReview(p){
   const stars = Math.max(1, Math.min(5, Number(omProductPageReviews.stars)||5));
   if(sendEl){ sendEl.disabled=true; sendEl.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Yuborilmoqda...'; }
   try{
-    const authorName = String(user.displayName || user.email || "Foydalanuvchi");
+    const identity=await omCurrentPublicIdentity(user);
+    const authorName=identity.authorName;
     const revRef = doc(db, "products", id, "reviews", user.uid);
     await runTransaction(db, async (tx)=>{
       const old = await tx.get(revRef);
@@ -3890,6 +3954,8 @@ async function omSubmitProductPageReview(p){
       tx.set(revRef, {
         uid:user.uid,
         authorName,
+        firstName:identity.firstName || null,
+        lastName:identity.lastName || null,
         stars,
         text,
         createdAt:prev.createdAt || serverTimestamp(),
@@ -4501,7 +4567,8 @@ async function openMini(kind, productId){
       miniSendEl.textContent = "Yuborilmoqda...";
 
       try{
-        const authorName = (user.displayName || user.email || "Foydalanuvchi").toString();
+        const identity=await omCurrentPublicIdentity(user);
+        const authorName=identity.authorName;
         const revRef = doc(db, "products", String(p.id), "reviews", user.uid);
 
         await runTransaction(db, async (tx) => {
@@ -4512,6 +4579,8 @@ async function openMini(kind, productId){
           tx.set(revRef, {
             uid: user.uid,
             authorName,
+            firstName:identity.firstName || null,
+            lastName:identity.lastName || null,
             stars,
             text,
             updatedAt: serverTimestamp(),
@@ -4540,7 +4609,7 @@ async function openMini(kind, productId){
       orderBy("createdAt", "desc"),
       limit(30)
     );
-    miniState.unsub = onSnapshot(q, (snap)=>{
+    miniState.unsub = onSnapshot(q, async (snap)=>{
       const list = [];
       snap.forEach((docu)=>{
         const d = docu.data() || {};
@@ -4553,8 +4622,9 @@ async function openMini(kind, productId){
           ts: d.createdAt?.toMillis ? d.createdAt.toMillis() : 0
         });
       });
+      const enrichedList=await omEnrichReviewAuthors(list);
       listWrap.innerHTML = "";
-      listWrap.appendChild(renderMiniReviewsList(list));
+      listWrap.appendChild(renderMiniReviewsList(enrichedList));
     }, ()=>{});
   }
 
@@ -6469,7 +6539,8 @@ els.revSend?.addEventListener("click", async ()=>{
   els.revSend.textContent = "Yuborilmoqda...";
 
   try{
-    const authorName = (user.displayName || user.email || "Foydalanuvchi").toString();
+    const identity=await omCurrentPublicIdentity(user);
+    const authorName=identity.authorName;
     const revRef = doc(db, "products", productId, "reviews", user.uid);
 
     await runTransaction(db, async (tx) => {
@@ -6480,6 +6551,8 @@ els.revSend?.addEventListener("click", async ()=>{
       tx.set(revRef, {
         uid: user.uid,
         authorName,
+        firstName:identity.firstName || null,
+        lastName:identity.lastName || null,
         stars,
         text,
         updatedAt: serverTimestamp(),
@@ -6584,7 +6657,7 @@ async function createOrderDoc({orderId, provider, status, items, totalUZS, amoun
     const uSnap = await getDoc(userRef);
     const u = uSnap.exists() ? (uSnap.data() || {}) : {};
     profileCache = u;
-    userName = (u.name || currentUser.displayName || currentUser.email || "User").toString();
+    userName = omPublicNameFromRecord(u,omCleanPublicPersonName(currentUser.displayName)||"Mijoz");
     userPhone = (u.phone || "").toString();
     numericId = (u.numericId != null ? String(u.numericId) : null);
     userTgChatId = (u.telegramChatId || u.tgChatId || "").toString().trim() || null;
@@ -6594,7 +6667,7 @@ async function createOrderDoc({orderId, provider, status, items, totalUZS, amoun
     district = (u.district || "").toString() || null;
     post = (u.post || "").toString() || null;
   }catch(_e){
-    userName = (currentUser.displayName || currentUser.email || "User").toString();
+    userName = omCleanPublicPersonName(currentUser.displayName) || "Mijoz";
     userPhone = "";
     numericId = null;
     userTgChatId = null;
@@ -7003,7 +7076,9 @@ async function payWithBalance(built, shipping){
       orderId,
       uid,
       numericId: (u.numericId != null ? String(u.numericId) : null),
-      userName: u.name || null,
+      userName: omPublicNameFromRecord(u,"Mijoz"),
+      firstName: omCleanPublicPersonName(u.firstName) || null,
+      lastName: omCleanPublicPersonName(u.lastName) || null,
       userPhone: u.phone || null,
       userTgChatId: (u.telegramChatId||u.tgChatId||null),
       status: 'new',
@@ -7194,7 +7269,7 @@ let unsubUserDoc = null;
   }
 
   function renderHeader(user, meta){
-    const name = (meta?.name || user?.displayName || user?.email || user?.phoneNumber || "User").toString();
+    const name = omPublicNameFromRecord(meta||{},omCleanPublicPersonName(user?.displayName)||"Foydalanuvchi");
     const numericId = (meta?.numericId || "").toString();
     const initial = (name || "U").trim().slice(0,1).toUpperCase();
 
@@ -7296,7 +7371,7 @@ async function syncUser(user){
     }
 
     const displayName = (user.displayName || "").toString();
-    const fallbackName = (user.email || user.phoneNumber || "User").toString();
+    const fallbackName = omCleanPublicPersonName(user.displayName) || "Foydalanuvchi";
 
     const firstFromDoc = (u.firstName || "").toString().trim();
     const lastFromDoc = (u.lastName || "").toString().trim();
@@ -7469,6 +7544,7 @@ async function syncUser(user){
     (async ()=>{
       try{
         await setDoc(doc(db, "users", currentUser.uid), payload, { merge: true });
+        omPublicUserCache.set(currentUser.uid,{...(omPublicUserCache.get(currentUser.uid)||{}),...payload});
         profileCache = { ...(profileCache||{}), ...payload };
       }catch(err){
         console.warn("save profile firestore error", err);

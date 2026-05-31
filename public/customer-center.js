@@ -1,3 +1,4 @@
+function cleanSupportName(v){const s=String(v||'').trim().replace(/\s+/g,' ');return !s||s.includes('@')?'':s}
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
 import {
@@ -151,7 +152,7 @@ async function askSupportAi(messageId,text){
 async function sendQuickMessage(text){const input=$('omccChatInput');if(!input)return;input.value=String(text||'');$('omccChatForm')?.requestSubmit();}
 async function sendMessage(e){
   e.preventDefault();const input=$('omccChatInput'),btn=$('omccSend');const text=String(input?.value||'').trim();if(!S.user||!text)return;btn.disabled=true;
-  try{await loadProfile();const uid=S.user.uid;const p=S.profile||{};const name=[p.firstName,p.lastName].filter(Boolean).join(' ').trim()||p.name||S.user.displayName||'Mijoz';const phone=p.phone||p.userPhone||'';const ref=await addDoc(collection(db,'support_threads',uid,'messages'),{text,sender:'user',uid,createdAt:serverTimestamp()});await setDoc(doc(db,'support_threads',uid),{uid,userName:name,userPhone:phone,userEmail:S.user.email||'',numericId:p.numericId||p.userPublicId||'',status:'open',needsHuman:true,aiState:'queued',lastMessage:text,lastSender:'user',updatedAt:serverTimestamp(),adminUnreadCount:increment(1),pendingAiCount:increment(1),userUnreadCount:0},{merge:true});input.value='';askSupportAi(ref.id,text);}
+  try{await loadProfile();const uid=S.user.uid;const p=S.profile||{};const name=[cleanSupportName(p.firstName),cleanSupportName(p.lastName)].filter(Boolean).join(' ').trim()||cleanSupportName(p.name)||cleanSupportName(S.user.displayName)||'Mijoz';const phone=p.phone||p.userPhone||'';const ref=await addDoc(collection(db,'support_threads',uid,'messages'),{text,sender:'user',uid,createdAt:serverTimestamp()});await setDoc(doc(db,'support_threads',uid),{uid,userName:name,userPhone:phone,userEmail:S.user.email||'',numericId:p.numericId||p.userPublicId||'',status:'open',needsHuman:true,aiState:'queued',lastMessage:text,lastSender:'user',updatedAt:serverTimestamp(),adminUnreadCount:increment(1),pendingAiCount:increment(1),userUnreadCount:0},{merge:true});input.value='';askSupportAi(ref.id,text);}
   catch(err){toast('Xabar yuborilmadi. Internet yoki Firestore qoidalarini tekshiring.');}
   finally{btn.disabled=false;input?.focus();}
 }

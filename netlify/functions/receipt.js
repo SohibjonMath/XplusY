@@ -145,7 +145,6 @@ exports.handler = async (event) => {
       reqId ? `\n<b>So‘rov ID:</b> <code>${escapeHtml(reqId)}</code>` : '',
       numericId ? `\n<b>User ID:</b> <code>${escapeHtml(numericId)}</code>` : '',
       uid ? `\n<b>UID:</b> <code>${escapeHtml(uid)}</code>` : '',
-      email ? `\n<b>Email:</b> ${escapeHtml(email)}` : '',
       `\n<b>Summa:</b> <b>${escapeHtml(String(amountUZS||''))}</b> so‘m`,
       (payerFirst||payerLast) ? `\n<b>Ism:</b> ${escapeHtml((payerFirst||'') + ' ' + (payerLast||''))}` : '',
       payerCardMasked ? `\n<b>Yuborgan karta:</b> ${escapeHtml(payerCardMasked)}` : (payerCardLast4 ? `\n<b>Yuborgan karta:</b> **** ${escapeHtml(payerCardLast4)}` : ''),

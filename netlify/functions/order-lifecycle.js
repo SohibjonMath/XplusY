@@ -21,6 +21,20 @@ function bearer(event){
 function safeText(v, max=800){ return String(v == null ? "" : v).trim().slice(0,max); }
 function safeId(v){ const s=String(v||"").trim(); return s && s.length<=128 && !s.includes("/") ? s : ""; }
 function num(v){ const n=Number(v); return Number.isFinite(n) ? n : 0; }
+function cleanPublicName(v){ const s=String(v==null?"":v).trim().replace(/\s+/g," "); return !s || s.includes("@") ? "" : s; }
+function publicCustomerName(record={}, fallback="Mijoz"){
+  const full=[cleanPublicName(record?.firstName),cleanPublicName(record?.lastName)].filter(Boolean).join(" ").trim();
+  return full || cleanPublicName(record?.name) || cleanPublicName(record?.fullName) || cleanPublicName(record?.userName) || cleanPublicName(record?.displayName) || fallback;
+}
+async function loadCustomerIdentity(db,uid,order={}){
+  let user={};
+  try{ const snap=await db.doc(`users/${uid}`).get(); user=snap.exists?(snap.data()||{}):{}; }catch(_e){}
+  return {
+    firstName:cleanPublicName(user.firstName||order.firstName)||null,
+    lastName:cleanPublicName(user.lastName||order.lastName)||null,
+    authorName:publicCustomerName(user,publicCustomerName(order,"Mijoz"))
+  };
+}
 function normalizeStatus(v){
   const s=String(v||"").trim().toLowerCase();
   const map={ pending:"new", pending_cash:"new", pending_payment:"new", shared_telegram:"new", telegram:"new", processing:"packing", shipped:"shipping", completed:"delivered", canceled:"cancelled", rejected:"cancelled", declined:"cancelled" };
@@ -137,7 +151,7 @@ exports.handler=async(event)=>{
         if(String(order.uid||"")!==uid) throw new Error("FORBIDDEN");
         const st=normalizeStatus(order.status);
         if(!["new","paid","packing","shipping"].includes(st)) throw new Error("CANCEL_NOT_ALLOWED");
-        const entry=lifecycleEntry({status:"cancelled",actorType:"customer",actorUid:uid,actorName:order.userName||"Mijoz",reason,action:"cancelled"});
+        const entry=lifecycleEntry({status:"cancelled",actorType:"customer",actorUid:uid,actorName:publicCustomerName(order,"Mijoz"),reason,action:"cancelled"});
         const patch={
           status:"cancelled", statusNote:reason, statusActor:"customer", statusUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),
           cancellation:{by:"customer",reason,cancelledAt:admin.firestore.Timestamp.now()},
@@ -167,10 +181,11 @@ exports.handler=async(event)=>{
       const st=normalizeStatus(order.status);
       if(!["delivered","returned"].includes(st)) return json(409,{ok:false,error:"review_not_allowed"});
       const now=admin.firestore.FieldValue.serverTimestamp();
-      const authorName=safeText(order.userName||decoded.name||"Mijoz",160);
-      const review={uid,orderId,authorName,stars,text,createdAt:now,updatedAt:now,verifiedPurchase:true};
+      const identity=await loadCustomerIdentity(db,uid,order);
+      const authorName=safeText(identity.authorName||"Mijoz",160);
+      const review={uid,orderId,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,createdAt:now,updatedAt:now,verifiedPurchase:true};
       const batch=db.batch();
-      batch.set(orderRef,{orderReview:{uid,authorName,stars,text,verifiedPurchase:true,updatedAt:admin.firestore.Timestamp.now()},reviewedAt:now,updatedAt:now},{merge:true});
+      batch.set(orderRef,{userName:authorName,firstName:identity.firstName,lastName:identity.lastName,orderReview:{uid,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,verifiedPurchase:true,updatedAt:admin.firestore.Timestamp.now()},reviewedAt:now,updatedAt:now},{merge:true});
       const items=Array.isArray(order.items)?order.items:[];
       const used=new Set();
       for(const it of items){

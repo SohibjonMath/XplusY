@@ -1,5 +1,7 @@
 // Shared native push helper for OrzuMall admin Android app (v56 unified custom voice)
 const admin = require('firebase-admin');
+function cleanPublicName(v){const s=String(v==null?'':v).trim().replace(/\s+/g,' ');return !s||s.includes('@')?'':s;}
+function publicCustomerName(o={}){const full=[cleanPublicName(o.firstName),cleanPublicName(o.lastName)].filter(Boolean).join(' ').trim();return full||cleanPublicName(o.userName)||cleanPublicName(o.name)||'Mijoz';}
 const crypto = require('crypto');
 
 function safeText(v, max = 500) {
@@ -13,7 +15,7 @@ function orderTitle(order) {
   return id ? `Yangi buyurtma #${id}` : 'Yangi buyurtma';
 }
 function orderBody(order) {
-  const who = safeText(order?.userName || order?.firstName || 'Mijoz', 90);
+  const who = safeText(publicCustomerName(order), 90);
   const total = Number(order?.totalUZS || 0);
   const amount = Number.isFinite(total) && total > 0 ? `${Math.round(total).toLocaleString('uz-UZ')} so‘m` : '';
   return [who, amount, 'Yig‘ishga olish kerak'].filter(Boolean).join(' • ');

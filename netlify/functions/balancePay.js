@@ -93,6 +93,15 @@ async function allocateUniqueOrderId(db) {
   }
 }
 
+function cleanPublicName(v) {
+  const s = String(v == null ? "" : v).trim().replace(/\s+/g, " ");
+  return !s || s.includes("@") ? "" : s;
+}
+function publicCustomerName(user = {}, decoded = {}) {
+  const full = [cleanPublicName(user.firstName), cleanPublicName(user.lastName)].filter(Boolean).join(" ").trim();
+  return full || cleanPublicName(user.name) || cleanPublicName(user.fullName) || cleanPublicName(decoded.name) || "Mijoz";
+}
+
 function getBalance(u) {
   return firstPrice(u?.balanceUZS, u?.balance, u?.walletUZS, u?.wallet, 0);
 }
@@ -237,7 +246,7 @@ exports.handler = async (event) => {
       const newBalance = balance - totalUZS;
       const now = admin.firestore.FieldValue.serverTimestamp();
 
-      const userName = (u.name || [u.firstName, u.lastName].filter(Boolean).join(" ") || decoded.name || decoded.email || "User").toString();
+      const userName = publicCustomerName(u, decoded);
       const userPhone = (u.phone || u.phoneNumber || u.tel || "").toString();
       const numericId = (u.numericId != null ? String(u.numericId) : null);
       let shippingFinal = shipping;
@@ -298,7 +307,7 @@ exports.handler = async (event) => {
         },
       }, { merge: true });
 
-      return { ok: true, balance: newBalance };
+      return { ok: true, balance: newBalance, userName };
     });
 
     if (!result.ok && result.code === "INSUFFICIENT_BALANCE") {
@@ -306,7 +315,7 @@ exports.handler = async (event) => {
     }
 
     // Native Android admin push. Payment success must not depend on push delivery.
-    await pushNewOrder(db, { id: orderId, orderId, totalUZS, userName: decoded.name || decoded.email || 'Mijoz' }).catch(err => console.warn('admin push skipped:', err?.message || err));
+    await pushNewOrder(db, { id: orderId, orderId, totalUZS, userName: result.userName || 'Mijoz' }).catch(err => console.warn('admin push skipped:', err?.message || err));
     await pushOrderUpdate(db, decoded.uid, orderId, 'Buyurtmangiz qabul qilindi', `#${orderId} buyurtma balans orqali qabul qilindi. Holati: Yangi.`).catch(err => console.warn('customer push skipped:', err?.message || err));
     return json(200, { ok: true, orderId, totalUZS, balanceUZS: result.balance });
   } catch (e) {

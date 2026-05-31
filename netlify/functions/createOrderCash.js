@@ -37,6 +37,16 @@ function clampInt(n, min, max) {
   return x;
 }
 
+
+function cleanPublicName(v) {
+  const s = String(v == null ? "" : v).trim().replace(/\s+/g, " ");
+  return !s || s.includes("@") ? "" : s;
+}
+function publicCustomerName(user = {}, decoded = {}) {
+  const full = [cleanPublicName(user.firstName), cleanPublicName(user.lastName)].filter(Boolean).join(" ").trim();
+  return full || cleanPublicName(user.name) || cleanPublicName(user.fullName) || cleanPublicName(decoded.name) || "Mijoz";
+}
+
 function buildShortOrderId(len = 6) {
   const max = 10 ** len;
   const n = Math.floor(Math.random() * (max - 1)) + 1;
@@ -111,7 +121,7 @@ exports.handler = async (event) => {
     const productsTotalUZS = Math.max(0, Number(body.productsTotalUZS || shipping?.productsTotalUZS || (totalUZS - deliveryFeeUZS)) || 0);
 
     // --- Pull user fields for nice order record ---
-    let userName = decoded.name || decoded.email || "User";
+    let userName = publicCustomerName({}, decoded);
     let userPhone = "";
     let numericId = null;
     let userTgChatId = null;
@@ -121,7 +131,7 @@ exports.handler = async (event) => {
       const uSnap = await db.doc(`users/${uid}`).get();
       if (uSnap.exists) {
         const u = uSnap.data() || {};
-        userName = (u.name || userName).toString();
+        userName = publicCustomerName(u, decoded);
         userPhone = (u.phone || "").toString();
         numericId = (u.numericId != null ? String(u.numericId) : null);
         userTgChatId = (u.telegramChatId || u.tgChatId || "").toString().trim() || null;

@@ -15,6 +15,8 @@ function safeText(v,max=1000){return String(v==null?"":v).trim().slice(0,max)}
 function safeId(v){const s=String(v||"").trim();return s&&s.length<=180&&!s.includes("/")?s:""}
 function num(v){const n=Number(v);return Number.isFinite(n)?n:0}
 function normEmail(v){return String(v||"").trim().toLowerCase()}
+function cleanPublicName(v){const s=String(v==null?"":v).trim().replace(/\s+/g," ");return !s||s.includes("@")?"":s}
+function publicCustomerName(u={},fallback="Mijoz"){const full=[cleanPublicName(u.firstName),cleanPublicName(u.lastName)].filter(Boolean).join(" ").trim();return full||cleanPublicName(u.name)||cleanPublicName(u.fullName)||cleanPublicName(u.displayName)||cleanPublicName(u.userName)||cleanPublicName(u.authorName)||fallback}
 function readBalance(u){for(const k of ["balanceUZS","balance","walletUZS","wallet"]){const n=Number(u?.[k]);if(Number.isFinite(n))return n}return 0}
 async function isAdmin(decoded,db){
   const email=normEmail(decoded?.email);
@@ -49,6 +51,35 @@ exports.handler=async(event)=>{
     let body={};try{body=event.body?JSON.parse(event.body):{}}catch(_){return json(400,{ok:false,error:"invalid_json"})}
     const action=safeText(body.action,80);
     const adminEmail=normEmail(decoded.email)||"orzumall";
+
+    if(action==="repair_customer_names"){
+      const ordersSnap=await db.collection("orders").limit(600).get();
+      const reviewsSnap=await db.collectionGroup("reviews").limit(600).get();
+      const userCache=new Map();
+      const uids=[...new Set([
+        ...ordersSnap.docs.map(d=>String(d.data()?.uid||"").trim()),
+        ...reviewsSnap.docs.map(d=>String(d.data()?.uid||d.id||"").trim())
+      ].filter(Boolean))];
+      for(let i=0;i<uids.length;i+=180){
+        const ids=uids.slice(i,i+180),snaps=await db.getAll(...ids.map(id=>db.doc(`users/${id}`)));
+        snaps.forEach((snap,idx)=>userCache.set(ids[idx],snap.exists?(snap.data()||{}):{}));
+      }
+      const writes=[];let ordersUpdated=0,reviewsUpdated=0;
+      for(const d of ordersSnap.docs){
+        const o=d.data()||{},u=userCache.get(String(o.uid||""))||{},name=publicCustomerName(u,publicCustomerName(o,"Mijoz")),firstName=cleanPublicName(u.firstName||o.firstName)||null,lastName=cleanPublicName(u.lastName||o.lastName)||null;
+        if(name!==o.userName||firstName!==o.firstName||lastName!==o.lastName||cleanPublicName(o.orderReview?.authorName)!==cleanPublicName(name)){
+          const data={userName:name,firstName,lastName,nameRepairedAt:admin.firestore.FieldValue.serverTimestamp()};
+          if(o.orderReview&&typeof o.orderReview==="object")data.orderReview={...o.orderReview,authorName:name,firstName,lastName};
+          writes.push({ref:d.ref,data});ordersUpdated++;
+        }
+      }
+      for(const d of reviewsSnap.docs){
+        const r=d.data()||{},u=userCache.get(String(r.uid||d.id||""))||{},name=publicCustomerName(u,publicCustomerName(r,"Mijoz")),firstName=cleanPublicName(u.firstName||r.firstName)||null,lastName=cleanPublicName(u.lastName||r.lastName)||null;
+        if(name!==r.authorName||firstName!==r.firstName||lastName!==r.lastName){writes.push({ref:d.ref,data:{authorName:name,firstName,lastName,nameRepairedAt:admin.firestore.FieldValue.serverTimestamp()}});reviewsUpdated++}
+      }
+      for(let i=0;i<writes.length;i+=400){const batch=db.batch();for(const w of writes.slice(i,i+400))batch.set(w.ref,w.data,{merge:true});await batch.commit()}
+      return json(200,{ok:true,ordersUpdated,reviewsUpdated});
+    }
 
     if(action==="topup_approve"){
       const requestId=safeId(body.requestId);if(!requestId)return json(400,{ok:false,error:"request_id_required"});

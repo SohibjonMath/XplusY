@@ -47,6 +47,8 @@ function getBearer(event) {
 
 function tgEscape(s){ return String(s ?? "").replace(/[<>&]/g, c => ({ "<":"&lt;", ">":"&gt;", "&":"&amp;" }[c])); }
 
+function cleanPublicName(v){const s=String(v==null?"":v).trim().replace(/\s+/g," ");return !s||s.includes("@")?"":s;}
+function publicCustomerName(o={}){const full=[cleanPublicName(o.firstName),cleanPublicName(o.lastName)].filter(Boolean).join(" ").trim();return full||cleanPublicName(o.userName)||cleanPublicName(o.name)||cleanPublicName(o.fullName)||"";}
 function fmtUZS(n){
   const x = Number(n||0);
   if(!Number.isFinite(x)) return "0";
@@ -384,7 +386,7 @@ function buildOrderCreatedHTML(o){
     `Buyurtma ID: <code>${tgEscape(o.orderId || o.id || "")}</code>`,
     o.uid ? `UID: <code>${tgEscape(o.uid)}</code>` : "",
     o.numericId ? `User ID: <b>${tgEscape(o.numericId)}</b>` : "",
-    o.userName ? `Ism: <b>${tgEscape(o.userName)}</b>` : "",
+    publicCustomerName(o) ? `Ism: <b>${tgEscape(publicCustomerName(o))}</b>` : "",
     o.userPhone ? `Tel: <b>${tgEscape(o.userPhone)}</b>` : "",
     (o.region || o.shipping?.region) ? `Viloyat: <b>${tgEscape(o.region || o.shipping?.region)}</b>` : "",
     (o.district || o.shipping?.district) ? `Tuman: <b>${tgEscape(o.district || o.shipping?.district)}</b>` : "",

@@ -262,6 +262,9 @@
       return (n % 900000) + 100000;
     }
 
+    function cleanPublicName(v){ const s=String(v||"").trim().replace(/\s+/g," "); return !s || s.includes("@") ? "" : s; }
+    function publicName(u={},fallback="Foydalanuvchi"){ const full=[cleanPublicName(u.firstName),cleanPublicName(u.lastName)].filter(Boolean).join(" ").trim(); return full || cleanPublicName(u.name) || cleanPublicName(u.displayName) || cleanPublicName(fallback) || "Foydalanuvchi"; }
+
     async function ensureUserDoc(uid, phoneFromAuth, nameFromAuth){
       const userRef = doc(db, "users", uid);
       const snap = await getDoc(userRef).catch(()=>null);
@@ -269,7 +272,7 @@
 
       const numericId = (u.numericId != null && /^\d+$/.test(String(u.numericId))) ? Number(u.numericId) : uidToNumericId(uid);
       const phone = (u.phone || phoneFromAuth || "").toString();
-      const name = (u.name || nameFromAuth || "User").toString();
+      const name = publicName(u,nameFromAuth);
 
       const updates = {
         numericId,
@@ -288,9 +291,9 @@
         location.replace("login.html?next=" + encodeURIComponent("index.html#profile"));
         return;
       }
-      const ensured = await ensureUserDoc(user.uid, user.phoneNumber || "", user.displayName || user.email || "User");
+      const ensured = await ensureUserDoc(user.uid, user.phoneNumber || "", cleanPublicName(user.displayName) || "Foydalanuvchi");
 
-      $("#name").textContent = ensured.name || "User";
+      $("#name").textContent = ensured.name || "Foydalanuvchi";
       // Avatar: always show profile icon (no initials)
       const av = $("#avatar");
       if(av) av.innerHTML = '<i class="fa-solid fa-user"></i>';

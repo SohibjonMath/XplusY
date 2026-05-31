@@ -6399,6 +6399,23 @@ if(e.target===$("jsonModal")) closeModal("jsonModal");
 
     let __bound = false;
 
+    async function repairCustomerNamesOnce(){
+      const key="orzumall_customer_name_repair_v95";
+      const last=Number(localStorage.getItem(key)||0)||0;
+      if(Date.now()-last<24*60*60*1000) return;
+      try{
+        const token=await state.user?.getIdToken?.();
+        if(!token) return;
+        const resp=await fetch("/.netlify/functions/mobile-admin",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${token}`},body:JSON.stringify({action:"repair_customer_names"})});
+        const out=await resp.json().catch(()=>({}));
+        if(resp.ok&&out.ok){
+          localStorage.setItem(key,String(Date.now()));
+          const n=Number(out.ordersUpdated||0)+Number(out.reviewsUpdated||0);
+          if(n) toast(`Mijoz ismlari yangilandi: ${n}`);
+        }
+      }catch(_e){}
+    }
+
     document.getElementById("saveDeliverySettingsBtn")?.addEventListener("click", saveDeliverySettingsAdmin);
     document.getElementById("addCourierZoneBtn")?.addEventListener("click", addCourierZoneFromUI);
     document.getElementById("normalizeCourierZonesBtn")?.addEventListener("click", ()=>normalizeCourierZonesUI(true));
@@ -6434,6 +6451,7 @@ if(e.target===$("jsonModal")) closeModal("jsonModal");
   }
 
   renderUser(user);
+  if(state.role === "admin") repairCustomerNamesOnce();
 
   // Vendor bo‘lsa: admin-only bo‘limlarni yashiramiz
   applyRoleUI();
@@ -6647,9 +6665,15 @@ function formatLifecycleTimelineAdmin(o){
       if(!u) return "";
       return String(u.phone || u.phoneNumber || u.tel || u.telefon || u.mobile || "");
     }
+    function cleanPublicPersonName(v){ const s=String(v||"").trim().replace(/\s+/g," "); return !s || s.includes("@") ? "" : s; }
     function pickUserName(u){
       if(!u) return "";
-      return String(u.name || u.displayName || u.fullName || "");
+      const full=[cleanPublicPersonName(u.firstName),cleanPublicPersonName(u.lastName)].filter(Boolean).join(" ").trim();
+      return full || cleanPublicPersonName(u.name) || cleanPublicPersonName(u.displayName) || cleanPublicPersonName(u.fullName) || "";
+    }
+    function pickOrderCustomerName(o, info){
+      const full=[cleanPublicPersonName(o?.firstName),cleanPublicPersonName(o?.lastName)].filter(Boolean).join(" ").trim();
+      return full || cleanPublicPersonName(info?.name) || cleanPublicPersonName(o?.userName) || cleanPublicPersonName(o?.customerName) || cleanPublicPersonName(o?.fullName) || cleanPublicPersonName(o?.name) || "Mijoz";
     }
 
     async function getUserInfoByUid(uid){
@@ -6701,7 +6725,7 @@ function formatLifecycleTimelineAdmin(o){
           ...o,
           userPublicId: info?.publicId || (o.numericId || o.userId || uid || ""),
           userPhone: o.userPhone || o.phone || info?.phone || "",
-          userName: o.userName || info?.name || ""
+          userName: pickOrderCustomerName(o,info)
         };
       });
     }
@@ -6722,7 +6746,7 @@ function formatLifecycleTimelineAdmin(o){
           ...r,
           userPublicId: r.userPublicId || info?.publicId || (r.numericId || uid || ""),
           userPhone: r.userPhone || r.phone || info?.phone || "",
-          userName: r.userName || info?.name || ""
+          userName: cleanPublicPersonName(info?.name) || cleanPublicPersonName(r.userName) || "Mijoz"
         };
       });
     }
@@ -6740,7 +6764,7 @@ function formatLifecycleTimelineAdmin(o){
         const info = uid ? userInfoCache.get(uid) : null;
         const publicId = o.userPublicId || o.numericId || (info?.publicId || uid || "");
         const phone = o.userPhone || o.phone || (info?.phone || "");
-        const name = o.userName || (info?.name || "");
+        const name = pickOrderCustomerName(o,info);
         return { ...o, userPublicId: publicId, numericId: o.numericId || publicId, userPhone: phone, userName: name };
       });
     }
@@ -6869,7 +6893,7 @@ function formatLifecycleTimelineAdmin(o){
     }
 
     function orderCustomerName(o){
-      return String(o.userName || o.customerName || o.name || "Mijoz");
+      return pickOrderCustomerName(o,null);
     }
 
     function orderInitials(o){
