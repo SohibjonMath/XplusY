@@ -4741,7 +4741,7 @@ function renderCartPage(){
     const imgSrc = ci?.image || getCurrentImage(p, {color: ci?.color||null, size: ci?.size||null, imgIdx:0});
 
     const item = document.createElement("div");
-    item.className = "cartItem";
+    item.className = `cartItem premiumCartItem ${cartSelected.has(ci.key) ? "isSelected" : ""}`;
     item.innerHTML = `
       <img class="cartImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
       <div class="cartMeta">
