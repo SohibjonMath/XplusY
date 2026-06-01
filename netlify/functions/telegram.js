@@ -139,6 +139,9 @@ function buildDeliveryDetailsHTML(o){
   const productsTotal = Number(o.productsTotalUZS ?? o.pricing?.subtotalUZS ?? sh.productsTotalUZS ?? q.orderTotalUZS ?? 0) || 0;
   const total = Number(o.totalUZS ?? o.pricing?.totalUZS ?? q.totalWithDeliveryUZS ?? 0) || 0;
   const eta = sh.etaText || rec.etaText || "";
+  const pickupPoint = sh.pickupPoint && typeof sh.pickupPoint === "object" ? sh.pickupPoint : {};
+  const postalCode = sh.postalCode || pickupPoint.postalCode || "";
+  const workingHours = sh.workingHours || pickupPoint.workingHours || "";
 
   const feeText = isFree ? `Bepul${rawFee ? ` (asl narx: ${fmtMoneyLine(rawFee)})` : ""}` : fmtMoneyLine(deliveryFee);
   const lines = [
@@ -150,6 +153,8 @@ function buildDeliveryDetailsHTML(o){
     `Yetkazish narxi: <b>${tgEscape(feeText)}</b>`,
     freeFrom ? `Bepul yetkazish limiti: <b>${fmtMoneyLine(freeFrom)}</b>` : "",
     eta ? `Taxminiy muddat: <b>${tgEscape(eta)}</b>` : "",
+    postalCode ? `Pochta indeksi: <b>${tgEscape(postalCode)}</b>` : "",
+    workingHours ? `Punkt ishlash vaqti: <b>${tgEscape(workingHours)}</b>` : "",
     productsTotal ? `Mahsulotlar summasi: <b>${fmtMoneyLine(productsTotal)}</b>` : "",
     total ? `Yetkazish bilan jami: <b>${fmtMoneyLine(total)}</b>` : "",
   ].filter(Boolean);

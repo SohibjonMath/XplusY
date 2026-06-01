@@ -5073,7 +5073,7 @@ function renderCartPage(){
 
 
 
-/* ===== OrzuMall pickup-point delivery module v113 ===== */
+/* ===== OrzuMall pickup-point delivery module v114 ===== */
 const OM_PICKUP_POINTS_CACHE_KEY = "orzumall_pickup_points_v1";
 const OM_PICKUP_POINT_SELECTED_PREFIX = "orzumall_pickup_point_selected_v1";
 let omPickupPoints = [];
@@ -5094,9 +5094,11 @@ function omNormalizePickupPoint(p,index=0){
   const maxDays=Math.max(minDays,Math.round(omPickupNum(p.maxDays ?? p.deliveryMaxDays,minDays)));
   const name=String(p.name||p.title||`Topshirish punkti ${index+1}`).trim();
   const address=String(p.address||p.addressText||"").trim();
+  const postalCode=String(p.postalCode??p.postalIndex??p.postIndex??"").trim().slice(0,40);
+  const workingHours=String(p.workingHours??p.workHours??p.openingHours??"").trim().slice(0,160);
   const id=String(p.id||`point_${index+1}`).replace(/[^a-zA-Z0-9_-]/g,"_").slice(0,80) || `point_${index+1}`;
   return {
-    id,name,address,lat,lng,
+    id,name,address,postalCode,workingHours,lat,lng,
     firstKgFeeUZS:Math.max(0,Math.round(omPickupNum(p.firstKgFeeUZS ?? p.firstKgFee,15000))),
     extraKgFeeUZS:Math.max(0,Math.round(omPickupNum(p.extraKgFeeUZS ?? p.extraKgFee,3000))),
     minDays,maxDays,
@@ -5133,7 +5135,7 @@ function omPickupPointSnapshot(point,weightKg){
   const quote=omPickupPointQuote(point,weightKg);
   const distanceKm=omPickupPointDistance(point);
   return {
-    id:point.id,name:point.name,address:point.address,lat:point.lat,lng:point.lng,
+    id:point.id,name:point.name,address:point.address,postalCode:point.postalCode||"",workingHours:point.workingHours||"",lat:point.lat,lng:point.lng,
     firstKgFeeUZS:quote.firstKgFeeUZS,extraKgFeeUZS:quote.extraKgFeeUZS,
     billedKg:quote.billedKg,feeUZS:quote.feeUZS,
     minDays:point.minDays,maxDays:point.maxDays,etaText:point.etaText,
@@ -5163,7 +5165,7 @@ async function omLoadPickupPoints(){
 function omPickupPointSearchText(){ return String(document.getElementById("pickupPointSearchInput")?.value||"").trim().toLowerCase(); }
 function omPickupPointSortedList(){
   const q=omPickupPointSearchText();
-  const arr=omPickupPoints.filter(p=>!q||`${p.name} ${p.address}`.toLowerCase().includes(q));
+  const arr=omPickupPoints.filter(p=>!q||`${p.name} ${p.address} ${p.postalCode||""} ${p.workingHours||""}`.toLowerCase().includes(q));
   return arr.slice().sort((a,b)=>{
     const da=omPickupPointDistance(a),dbb=omPickupPointDistance(b);
     if(Number.isFinite(da)&&Number.isFinite(dbb)&&da!==dbb) return da-dbb;
@@ -5200,7 +5202,7 @@ function omRenderPickupPointsUI(){
           <div class="pickupPointCardTitle"><input class="pickupPointRadio" type="radio" name="pickupPointRadio" value="${omPickupEsc(p.id)}" ${checked?'checked':''}><div><b>${omPickupEsc(p.name)}</b><span>${omPickupEsc(p.address||'Manzil ko‘rsatilmagan')}</span></div></div>
           ${distText?`<span class="pickupPointDistance">${omPickupEsc(distText)}</span>`:''}
         </div>
-        <div class="pickupPointMeta"><span>1 kg: ${moneyUZS(p.firstKgFeeUZS)}</span><span>+1 kg: ${moneyUZS(p.extraKgFeeUZS)}</span><span>${omPickupEsc(p.etaText)}</span><span>Hozir: ${moneyUZS(quote.feeUZS)}</span></div>
+        <div class="pickupPointMeta">${p.postalCode?`<span><i class="fa-solid fa-envelopes-bulk" aria-hidden="true"></i> Indeks: ${omPickupEsc(p.postalCode)}</span>`:''}${p.workingHours?`<span><i class="fa-regular fa-clock" aria-hidden="true"></i> ${omPickupEsc(p.workingHours)}</span>`:''}<span>1 kg: ${moneyUZS(p.firstKgFeeUZS)}</span><span>+1 kg: ${moneyUZS(p.extraKgFeeUZS)}</span><span>${omPickupEsc(p.etaText)}</span><span>Hozir: ${moneyUZS(quote.feeUZS)}</span></div>
       </label>`;
     }).join("");
   }
@@ -5210,7 +5212,7 @@ function omRenderPickupPointsUI(){
     const quote=omPickupPointQuote(selected,built?.totalWeightKg||0);
     const dist=omPickupPointDistance(selected);
     selectedEl.hidden=false;
-    selectedEl.innerHTML=`<b><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Tanlandi: ${omPickupEsc(selected.name)}</b>${omPickupEsc(selected.address||'')}<br>${quote.billedKg} kg bo‘yicha yetkazish: ${moneyUZS(quote.feeUZS)} • ${omPickupEsc(selected.etaText)}${Number.isFinite(dist)?` • Sizdan ${dist.toFixed(dist>=10?0:1)} km`:''}<br><a href="${omPickupEsc(omPickupMapUrl(selected))}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada ochish</a>`;
+    selectedEl.innerHTML=`<b><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Tanlandi: ${omPickupEsc(selected.name)}</b>${omPickupEsc(selected.address||'')}${selected.postalCode?`<br><i class="fa-solid fa-envelopes-bulk" aria-hidden="true"></i> Pochta indeksi: ${omPickupEsc(selected.postalCode)}`:''}${selected.workingHours?`<br><i class="fa-regular fa-clock" aria-hidden="true"></i> Ishlash vaqti: ${omPickupEsc(selected.workingHours)}`:''}<br>${quote.billedKg} kg bo‘yicha yetkazish: ${moneyUZS(quote.feeUZS)} • ${omPickupEsc(selected.etaText)}${Number.isFinite(dist)?` • Sizdan ${dist.toFixed(dist>=10?0:1)} km`:''}<br><a href="${omPickupEsc(omPickupMapUrl(selected))}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada ochish</a>`;
   }else selectedEl.hidden=true;
 }
 function omSelectPickupPoint(id){
@@ -5852,8 +5854,8 @@ function getCheckoutDeliveryInfo(){
     return {ok:true,data:{
       method:'pickup_point',methodLabel:'Topshirish punktidan olib ketish',
       service:'pickup_point',serviceLabel:`Topshirish punkti — ${point.name}`,
-      addressText:`${point.name}${point.address?' — '+point.address:''}`,
-      address:point.address,note:'',lat:point.lat,lng:point.lng,mapUrl:omPickupMapUrl(point),
+      addressText:`${point.name}${point.address?' — '+point.address:''}${point.postalCode?' • Indeks: '+point.postalCode:''}${point.workingHours?' • Ish vaqti: '+point.workingHours:''}`,
+      address:point.address,postalCode:point.postalCode||'',workingHours:point.workingHours||'',note:'',lat:point.lat,lng:point.lng,mapUrl:omPickupMapUrl(point),
       pickupPointId:point.id,pickupPoint:snap,
       distanceKm:snap.distanceKm,totalWeightKg:Number(built.totalWeightKg||0),billedKg:quote.billedKg,
       deliveryFeeUZS:quote.feeUZS,deliveryRawFeeUZS:quote.rawFeeUZS,
