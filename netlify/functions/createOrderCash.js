@@ -2,6 +2,7 @@
 const admin = require("firebase-admin");
 const { pushNewOrder } = require('./_adminPush');
 const { pushOrderUpdate } = require('./_customerPush');
+const { calculateCatalogWeightKg, normalizePickupShipping } = require('./_pickupPointsCommon');
 
 function initAdmin() {
   if (admin.apps.length) return;
@@ -111,14 +112,20 @@ exports.handler = async (event) => {
       normItems.push({ ...it, productId, qty });
     }
 
-    const totalUZS = Number(body.totalUZS || 0);
+    let totalUZS = Number(body.totalUZS || 0);
     if (!Number.isFinite(totalUZS) || totalUZS <= 0) {
       return json(400, { ok: false, error: "totalUZS xato" });
     }
 
-    const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+    let shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+    const clientDeliveryFeeUZS = Math.max(0, Math.min(500000, Number(shipping?.deliveryFeeUZS || body.deliveryFeeUZS || 0) || 0));
+    const productsTotalUZS = Math.max(0, Number(body.productsTotalUZS || shipping?.productsTotalUZS || (totalUZS - clientDeliveryFeeUZS)) || 0);
+    if (String(shipping?.method || shipping?.service || "").toLowerCase() === "pickup_point") {
+      const totalWeightKg = await calculateCatalogWeightKg(db, normItems);
+      shipping = await normalizePickupShipping(db, shipping, totalWeightKg);
+      totalUZS = productsTotalUZS + Number(shipping?.deliveryFeeUZS || 0);
+    }
     const deliveryFeeUZS = Math.max(0, Math.min(500000, Number(shipping?.deliveryFeeUZS || body.deliveryFeeUZS || 0) || 0));
-    const productsTotalUZS = Math.max(0, Number(body.productsTotalUZS || shipping?.productsTotalUZS || (totalUZS - deliveryFeeUZS)) || 0);
 
     // --- Pull user fields for nice order record ---
     let userName = publicCustomerName({}, decoded);

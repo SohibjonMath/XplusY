@@ -3,6 +3,7 @@
 const admin = require("firebase-admin");
 const { pushNewOrder } = require('./_adminPush');
 const { pushOrderUpdate } = require('./_customerPush');
+const { normalizePickupShipping, sumWeightKg } = require('./_pickupPointsCommon');
 
 function initAdmin() {
   if (admin.apps.length) return;
@@ -215,7 +216,10 @@ exports.handler = async (event) => {
       });
     }
 
-    const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+    let shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+    if (String(shipping?.method || shipping?.service || "").toLowerCase() === "pickup_point") {
+      shipping = await normalizePickupShipping(db, shipping, sumWeightKg(lines));
+    }
     const deliveryFeeUZS = parseDeliveryFee(shipping);
     let totalUZS = subtotalUZS + deliveryFeeUZS;
     const clientTotal = parsePrice(body.totalUZS);

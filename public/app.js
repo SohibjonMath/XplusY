@@ -1301,7 +1301,10 @@ function omUserShopPayload(){
     favs: omNormalizeFavs(Array.from(favs||[])),
     cart: omNormalizeCart(cart||[]),
     savedAddresses: omCurrentSavedAddresses(),
-    deliveryPreference: { method: (typeof omReadStoredDeliveryMethod === "function" ? omReadStoredDeliveryMethod() : "") }
+    deliveryPreference: {
+      method: (typeof omReadStoredDeliveryMethod === "function" ? omReadStoredDeliveryMethod() : ""),
+      pickupPointId: (typeof omReadSelectedPickupPointId === "function" ? omReadSelectedPickupPointId() : "")
+    }
   };
 }
 function omReadUserShopLocal(uid=currentUser?.uid){
@@ -1318,7 +1321,10 @@ function omReadUserShopLocal(uid=currentUser?.uid){
           favs:loadLS(LS.favs,[]),
           cart:loadLS(LS.cart,[]),
           savedAddresses:omCurrentSavedAddresses(),
-          deliveryPreference:{method:(typeof omReadStoredDeliveryMethod==="function"?omReadStoredDeliveryMethod():"")}
+          deliveryPreference:{
+            method:(typeof omReadStoredDeliveryMethod==="function"?omReadStoredDeliveryMethod():""),
+            pickupPointId:(typeof omReadSelectedPickupPointId==="function"?omReadSelectedPickupPointId():"")
+          }
         };
         omWriteScopedCache(OM_USER_SHOP_CACHE_PREFIX,uid,raw);
       }
@@ -1361,7 +1367,9 @@ function omApplyUserShopState(data, opts={merge:false}){
     omSetSavedAddressesLocal(nextAddresses);
     try{
       const prefMethod = String(serverPreference?.method || "");
-      if(!omReadStoredDeliveryMethod() && (prefMethod === "pickup" || prefMethod === "delivery")) omStoreDeliveryMethod(prefMethod, false);
+      if(!omReadStoredDeliveryMethod() && (prefMethod === "pickup" || prefMethod === "pickup_point" || prefMethod === "delivery")) omStoreDeliveryMethod(prefMethod, false);
+      const prefPointId = String(serverPreference?.pickupPointId || "");
+      if(prefPointId && typeof omReadSelectedPickupPointId === "function" && typeof omWriteSelectedPickupPointId === "function" && !omReadSelectedPickupPointId()) omWriteSelectedPickupPointId(prefPointId, false);
       const methodSelect = document.getElementById("deliveryMethodSelect");
       if(methodSelect && !methodSelect.value){
         const storedMethod = omReadStoredDeliveryMethod();
@@ -1806,8 +1814,10 @@ function omRenderCartDeliverySummary(){
   const freeDetail = free ? (free.source === "courier" && free.distanceKm != null ? ` (${Number(free.distanceKm).toFixed(1)} km zona)` : (free.source === "uzpost" ? ` (${free.billedKg || 1} kg UzPost)` : "")) : "";
   const freeText = method === "pickup"
     ? "Do‘kondan olib ketish bepul"
-    : (free ? (free.reached ? `${free.service} bepul yetkazish limiti bajarildi${freeDetail}` : `${free.service} bepul yetkazishgacha ${moneyUZS(free.remaining)} qoldi${freeDetail}`) : "Yetkazib berish narxi hisoblandi");
-  const smallText = method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : `${data.serviceLabel || rec?.label || "Yetkazib berish"}${rec?.etaText ? ` • ${rec.etaText}` : ""}`;
+    : (method === "pickup_point"
+      ? "Tanlangan topshirish punkti tarifi hisoblandi"
+      : (free ? (free.reached ? `${free.service} bepul yetkazish limiti bajarildi${freeDetail}` : `${free.service} bepul yetkazishgacha ${moneyUZS(free.remaining)} qoldi${freeDetail}`) : "Yetkazib berish narxi hisoblandi"));
+  const smallText = method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : (method === "pickup_point" ? `${data.pickupPoint?.name || "Topshirish punkti"} • ${data.pickupPoint?.etaText || "muddat ko‘rsatilmagan"}` : `${data.serviceLabel || rec?.label || "Yetkazib berish"}${rec?.etaText ? ` • ${rec.etaText}` : ""}`);
 
   el.innerHTML = `
     <div class="cartDeliveryCompact isReady">
@@ -1821,7 +1831,7 @@ function omRenderCartDeliverySummary(){
           <div><span>Yetkazish</span><b>${fee ? moneyUZS(fee) : "Bepul"}</b></div>
           <div><span>Jami</span><b>${moneyUZS(totalWithDelivery)}</b></div>
         </div>
-        <div class="cartDeliveryFree compactFree ${method === "pickup" || free?.reached ? "ok" : ""}"><span>${freeText}</span><small>${smallText}</small></div>
+        <div class="cartDeliveryFree compactFree ${method === "pickup" || method === "pickup_point" || free?.reached ? "ok" : ""}"><span>${freeText}</span><small>${smallText}</small></div>
         <div class="cartDeliveryCompactActions"><button type="button" id="cartDeliveryChangeBtn">O‘zgartirish</button></div>
       </div>
     </div>
@@ -5062,6 +5072,185 @@ function renderCartPage(){
 
 
 
+
+/* ===== OrzuMall pickup-point delivery module v113 ===== */
+const OM_PICKUP_POINTS_CACHE_KEY = "orzumall_pickup_points_v1";
+const OM_PICKUP_POINT_SELECTED_PREFIX = "orzumall_pickup_point_selected_v1";
+let omPickupPoints = [];
+let omPickupPointsLoaded = false;
+let omPickupUserLocation = null;
+
+function omPickupStorageKey(uid=currentUser?.uid){
+  const safeUid=String(uid||"guest").replace(/[^a-zA-Z0-9_-]/g,"_");
+  return `${OM_PICKUP_POINT_SELECTED_PREFIX}_${safeUid}`;
+}
+function omPickupNum(v,fallback=0){ const n=Number(v); return Number.isFinite(n)?n:fallback; }
+function omPickupEsc(v){ return escapeHtml(String(v==null?"":v)); }
+function omNormalizePickupPoint(p,index=0){
+  if(!p || typeof p!=="object") return null;
+  const lat=Number(p.lat ?? p.latitude), lng=Number(p.lng ?? p.longitude);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const minDays=Math.max(1,Math.round(omPickupNum(p.minDays ?? p.deliveryMinDays,2)));
+  const maxDays=Math.max(minDays,Math.round(omPickupNum(p.maxDays ?? p.deliveryMaxDays,minDays)));
+  const name=String(p.name||p.title||`Topshirish punkti ${index+1}`).trim();
+  const address=String(p.address||p.addressText||"").trim();
+  const id=String(p.id||`point_${index+1}`).replace(/[^a-zA-Z0-9_-]/g,"_").slice(0,80) || `point_${index+1}`;
+  return {
+    id,name,address,lat,lng,
+    firstKgFeeUZS:Math.max(0,Math.round(omPickupNum(p.firstKgFeeUZS ?? p.firstKgFee,15000))),
+    extraKgFeeUZS:Math.max(0,Math.round(omPickupNum(p.extraKgFeeUZS ?? p.extraKgFee,3000))),
+    minDays,maxDays,
+    etaText:String(p.etaText||`${minDays}–${maxDays} kun`).trim(),
+    active:p.active!==false
+  };
+}
+function omNormalizePickupPoints(raw){
+  const arr=Array.isArray(raw)?raw:(Array.isArray(raw?.points)?raw.points:[]);
+  return arr.map(omNormalizePickupPoint).filter(Boolean).filter(p=>p.active!==false);
+}
+function omReadSelectedPickupPointId(){ try{return String(localStorage.getItem(omPickupStorageKey())||"");}catch(_e){return "";} }
+function omWriteSelectedPickupPointId(id,sync=true){
+  try{ if(id) localStorage.setItem(omPickupStorageKey(),String(id)); else localStorage.removeItem(omPickupStorageKey()); }catch(_e){}
+  if(sync){ try{ scheduleUserShopSync(); }catch(_e){} }
+}
+function omGetPickupPointById(id=omReadSelectedPickupPointId()){ return omPickupPoints.find(p=>String(p.id)===String(id))||null; }
+function omPickupPointQuote(point,weightKg){
+  if(!point) return null;
+  const billedKg=Math.max(1,Math.ceil(Math.max(0,omPickupNum(weightKg,0))));
+  const first=Math.max(0,Math.round(omPickupNum(point.firstKgFeeUZS,0)));
+  const extra=Math.max(0,Math.round(omPickupNum(point.extraKgFeeUZS,0)));
+  const feeUZS=first+Math.max(0,billedKg-1)*extra;
+  return {billedKg,feeUZS,rawFeeUZS:feeUZS,firstKgFeeUZS:first,extraKgFeeUZS:extra};
+}
+function omPickupPointDistance(point,loc=omPickupUserLocation){
+  if(!point||!loc) return null;
+  const lat=Number(loc.lat),lng=Number(loc.lng);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)) return null;
+  return omHaversineKm(lat,lng,Number(point.lat),Number(point.lng));
+}
+function omPickupMapUrl(p){ return p?`https://maps.google.com/?q=${encodeURIComponent(`${Number(p.lat)},${Number(p.lng)}`)}`:"#"; }
+function omPickupPointSnapshot(point,weightKg){
+  const quote=omPickupPointQuote(point,weightKg);
+  const distanceKm=omPickupPointDistance(point);
+  return {
+    id:point.id,name:point.name,address:point.address,lat:point.lat,lng:point.lng,
+    firstKgFeeUZS:quote.firstKgFeeUZS,extraKgFeeUZS:quote.extraKgFeeUZS,
+    billedKg:quote.billedKg,feeUZS:quote.feeUZS,
+    minDays:point.minDays,maxDays:point.maxDays,etaText:point.etaText,
+    distanceKm:Number.isFinite(Number(distanceKm))?Number(distanceKm):null,
+    mapUrl:omPickupMapUrl(point)
+  };
+}
+async function omLoadPickupPoints(){
+  try{
+    const cached=localStorage.getItem(OM_PICKUP_POINTS_CACHE_KEY);
+    if(cached) omPickupPoints=omNormalizePickupPoints(JSON.parse(cached));
+  }catch(_e){}
+  try{
+    const snap=await getDoc(doc(db,"configs","pickupPoints"));
+    if(snap.exists()){
+      omPickupPoints=omNormalizePickupPoints(snap.data());
+      try{localStorage.setItem(OM_PICKUP_POINTS_CACHE_KEY,JSON.stringify({points:omPickupPoints,updatedAt:Date.now()}));}catch(_e){}
+    }
+  }catch(_e){}
+  omPickupPointsLoaded=true;
+  const selected=omGetPickupPointById();
+  if(!selected && omReadSelectedPickupPointId()) omWriteSelectedPickupPointId("");
+  try{omRenderPickupPointsUI();}catch(_e){}
+  try{updateCheckoutCompactSummary(); updateCheckoutSubmitVisibility(); omRenderCartDeliverySummary(); updateCartPrimaryCTA();}catch(_e){}
+  return omPickupPoints;
+}
+function omPickupPointSearchText(){ return String(document.getElementById("pickupPointSearchInput")?.value||"").trim().toLowerCase(); }
+function omPickupPointSortedList(){
+  const q=omPickupPointSearchText();
+  const arr=omPickupPoints.filter(p=>!q||`${p.name} ${p.address}`.toLowerCase().includes(q));
+  return arr.slice().sort((a,b)=>{
+    const da=omPickupPointDistance(a),dbb=omPickupPointDistance(b);
+    if(Number.isFinite(da)&&Number.isFinite(dbb)&&da!==dbb) return da-dbb;
+    if(Number.isFinite(da)) return -1;
+    if(Number.isFinite(dbb)) return 1;
+    return a.name.localeCompare(b.name,"uz");
+  });
+}
+function omRenderPickupPointsUI(){
+  const listEl=document.getElementById("pickupPointList");
+  const status=document.getElementById("pickupPointStatus");
+  const selectedEl=document.getElementById("pickupPointSelected");
+  if(!listEl||!status||!selectedEl) return;
+  const selectedId=omReadSelectedPickupPointId();
+  const points=omPickupPointSortedList();
+  if(!omPickupPointsLoaded && !omPickupPoints.length){
+    status.textContent="Punktlar yuklanmoqda...";
+    listEl.innerHTML='<div class="pickupPointEmpty">Topshirish punktlari yuklanmoqda...</div>';
+    selectedEl.hidden=true; return;
+  }
+  status.textContent=omPickupUserLocation
+    ? `${points.length} ta punkt topildi. Eng yaqin punktlar birinchi ko‘rsatildi.`
+    : `${points.length} ta faol punkt. Eng yaqinini aniqlash uchun lokatsiya tugmasini bosing.`;
+  if(!points.length){
+    listEl.innerHTML='<div class="pickupPointEmpty">Mos topshirish punkti topilmadi. Qidiruvni tozalang yoki admin paneldan punkt qo‘shing.</div>';
+  }else{
+    listEl.innerHTML=points.map(p=>{
+      const quote=omPickupPointQuote(p,((typeof buildSelectedItems==="function"&&buildSelectedItems()?.totalWeightKg)||0));
+      const dist=omPickupPointDistance(p);
+      const distText=Number.isFinite(dist)?`${dist.toFixed(dist>=10?0:1)} km`:"";
+      const checked=String(p.id)===String(selectedId);
+      return `<label class="pickupPointCard ${checked?'isSelected':''}" data-pickup-point-card="${omPickupEsc(p.id)}">
+        <div class="pickupPointCardTop">
+          <div class="pickupPointCardTitle"><input class="pickupPointRadio" type="radio" name="pickupPointRadio" value="${omPickupEsc(p.id)}" ${checked?'checked':''}><div><b>${omPickupEsc(p.name)}</b><span>${omPickupEsc(p.address||'Manzil ko‘rsatilmagan')}</span></div></div>
+          ${distText?`<span class="pickupPointDistance">${omPickupEsc(distText)}</span>`:''}
+        </div>
+        <div class="pickupPointMeta"><span>1 kg: ${moneyUZS(p.firstKgFeeUZS)}</span><span>+1 kg: ${moneyUZS(p.extraKgFeeUZS)}</span><span>${omPickupEsc(p.etaText)}</span><span>Hozir: ${moneyUZS(quote.feeUZS)}</span></div>
+      </label>`;
+    }).join("");
+  }
+  const selected=omGetPickupPointById(selectedId);
+  if(selected){
+    const built=(typeof buildSelectedItems==="function")?buildSelectedItems():null;
+    const quote=omPickupPointQuote(selected,built?.totalWeightKg||0);
+    const dist=omPickupPointDistance(selected);
+    selectedEl.hidden=false;
+    selectedEl.innerHTML=`<b><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Tanlandi: ${omPickupEsc(selected.name)}</b>${omPickupEsc(selected.address||'')}<br>${quote.billedKg} kg bo‘yicha yetkazish: ${moneyUZS(quote.feeUZS)} • ${omPickupEsc(selected.etaText)}${Number.isFinite(dist)?` • Sizdan ${dist.toFixed(dist>=10?0:1)} km`:''}<br><a href="${omPickupEsc(omPickupMapUrl(selected))}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada ochish</a>`;
+  }else selectedEl.hidden=true;
+}
+function omSelectPickupPoint(id){
+  const point=omGetPickupPointById(id);
+  if(!point) return;
+  omWriteSelectedPickupPointId(point.id);
+  omRenderPickupPointsUI();
+  try{updateCheckoutCompactSummary();updateCheckoutSubmitVisibility();omRenderCartDeliverySummary();updateCartPrimaryCTA();}catch(_e){}
+}
+async function omDetectPickupNearest(){
+  const btn=document.getElementById("pickupPointLocateBtn");
+  const old=btn?.innerHTML||"";
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="omBtnSpinner" aria-hidden="true"></span> Aniqlanmoqda...';}
+  try{
+    const pos=await omGetGeoPosition();
+    omPickupUserLocation={lat:Number(pos.coords.latitude),lng:Number(pos.coords.longitude),accuracy:Number(pos.coords.accuracy||0)};
+    omRenderPickupPointsUI();
+    toast("Eng yaqin topshirish punktlari saralandi.");
+  }catch(_e){ toast("Lokatsiya olinmadi. GPS va ruxsatni tekshiring."); }
+  finally{if(btn){btn.disabled=false;btn.innerHTML=old;}}
+}
+function initPickupPointUI(){
+  document.getElementById("pickupPointList")?.addEventListener("change",e=>{
+    const radio=e.target.closest('input[name="pickupPointRadio"]');
+    if(radio) omSelectPickupPoint(radio.value);
+  });
+  document.getElementById("pickupPointList")?.addEventListener("click",e=>{
+    const card=e.target.closest('[data-pickup-point-card]');
+    if(card&&!e.target.closest('a')) omSelectPickupPoint(card.getAttribute('data-pickup-point-card'));
+  });
+  document.getElementById("pickupPointSearchInput")?.addEventListener("input",omRenderPickupPointsUI);
+  document.getElementById("pickupPointLocateBtn")?.addEventListener("click",omDetectPickupNearest);
+  try{
+    const saved=omLocationFromSavedAddress(omBestSavedAddress());
+    if(saved) omPickupUserLocation={lat:Number(saved.lat),lng:Number(saved.lng)};
+  }catch(_e){}
+  omRenderPickupPointsUI();
+}
+
+
 /* =========================
    Checkout (Cart -> Order)
 ========================= */
@@ -5074,13 +5263,13 @@ function omDeliveryMethodStorageKey(uid=currentUser?.uid){
 function omReadStoredDeliveryMethod(){
   try{
     const v = String(localStorage.getItem(omDeliveryMethodStorageKey()) || "");
-    return (v === "pickup" || v === "delivery") ? v : "";
+    return (v === "pickup" || v === "pickup_point" || v === "delivery") ? v : "";
   }catch(_e){ return ""; }
 }
 function omStoreDeliveryMethod(v, sync=true){
   try{
     const key = omDeliveryMethodStorageKey();
-    if(v === "pickup" || v === "delivery") localStorage.setItem(key, v);
+    if(v === "pickup" || v === "pickup_point" || v === "delivery") localStorage.setItem(key, v);
     else localStorage.removeItem(key);
     if(sync) scheduleUserShopSync();
   }catch(_e){}
@@ -5109,6 +5298,7 @@ function openCheckout(){
     if(saved && sel && !sel.value) sel.value = String(saved.id || "");
     if(getDeliveryMethod() === "delivery" && saved && !omDeliveryLocation) applySavedAddressToCheckout(saved.id);
   }catch(_e){}
+  try{ if(!omPickupPointsLoaded) omLoadPickupPoints(); }catch(_e){}
   try{ updateDeliveryMethodUI(); }catch(_e){}
   try{ applyPayTypeRules(); }catch(_e){}
 
@@ -5160,7 +5350,7 @@ function updatePaymentModalSummary(){
   const qty = built.items.reduce((s,x)=>s + Number(x.qty||0), 0);
   totalEl.textContent = moneyUZS(total);
   productsEl.textContent = `${qty} ta mahsulot: ${moneyUZS(built.totalUZS)} + yetkazish: ${deliveryFee ? moneyUZS(deliveryFee) : "Bepul"}.`;
-  const methodText = info.data?.method === "pickup" ? "Do‘kondan olib ketish" : (info.data?.serviceLabel || "Yetkazib berish");
+  const methodText = info.data?.method === "pickup" ? "Do‘kondan olib ketish" : (info.data?.method === "pickup_point" ? "Topshirish punktidan olib ketish" : (info.data?.serviceLabel || "Yetkazib berish"));
   const addrText = info.data?.method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : (info.data?.addressText || "Lokatsiya saqlandi.");
   deliveryEl.innerHTML = `
     <div class="paymentDeliveryIcon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></div>
@@ -5248,11 +5438,12 @@ function omResetDeliverySessionForUser(){
   try{ renderSavedAddressesUI(); }catch(_e){}
   try{ setDeliveryLocationStatus('Yetkazib berish uchun lokatsiyani avto aniqlang.'); }catch(_e){}
   try{ updateDeliveryMethodUI(); }catch(_e){}
+  try{ omRenderPickupPointsUI(); }catch(_e){}
 }
 
 function getDeliveryMethod(){
   const sel = document.getElementById("deliveryMethodSelect");
-  if(sel) return (sel.value === "pickup" || sel.value === "delivery") ? sel.value : "";
+  if(sel) return (sel.value === "pickup" || sel.value === "pickup_point" || sel.value === "delivery") ? sel.value : "";
   const r = document.querySelector('input[name="deliveryMethod"]:checked');
   return r ? r.value : "";
 }
@@ -5296,7 +5487,9 @@ function updateCheckoutFinalSummary(prebuilt=null, preinfo=null){
     valueEl.textContent = moneyUZS(total);
     const methodText = info.data?.method === 'pickup'
       ? `Do‘kondan olib ketish • ${qty} ta mahsulot`
-      : `${info.data?.serviceLabel || 'Yetkazib berish'} • ${qty} ta mahsulot`;
+      : (info.data?.method === 'pickup_point'
+        ? `Topshirish punkti • ${qty} ta mahsulot`
+        : `${info.data?.serviceLabel || 'Yetkazib berish'} • ${qty} ta mahsulot`);
     subEl.textContent = `${methodText}. Mahsulotlar ${moneyUZS(productsTotal)} + yetkazish ${deliveryFee ? moneyUZS(deliveryFee) : 'Bepul'}.`;
     return;
   }
@@ -5343,7 +5536,10 @@ function updateDeliveryMethodUI(){
   omStoreDeliveryMethod(method);
   const box = document.getElementById("deliveryAddressBox");
   if(box) box.hidden = method !== "delivery";
-  if(method === "pickup") omDeliveryQuote = null;
+  const pickupBox = document.getElementById("pickupPointCheckoutBox");
+  if(pickupBox) pickupBox.hidden = method !== "pickup_point";
+  if(method === "pickup" || method === "pickup_point") omDeliveryQuote = null;
+  if(method === "pickup_point") { try{ omRenderPickupPointsUI(); }catch(_e){} }
   try{ omRenderDeliveryEstimate(); }catch(_e){}
   try{ updateCheckoutCompactSummary(); }catch(_e){}
   try{ updateCheckoutSubmitVisibility(); }catch(_e){}
@@ -5629,7 +5825,7 @@ async function detectDeliveryLocation(){
 function getCheckoutDeliveryInfo(){
   const method = getDeliveryMethod();
   const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
-  if(method !== 'pickup' && method !== 'delivery'){
+  if(method !== 'pickup' && method !== 'pickup_point' && method !== 'delivery'){
     return { ok:false, reason:'Davom etish uchun yetkazish usulini tanlang.' };
   }
   if(method === 'pickup'){
@@ -5645,6 +5841,24 @@ function getCheckoutDeliveryInfo(){
         totalWithDeliveryUZS: built?.totalUZS || 0
       }
     };
+  }
+  if(method === 'pickup_point'){
+    if(!built || !built.ok) return {ok:false,reason:'Tanlangan mahsulotlar topilmadi.'};
+    if(!omPickupPointsLoaded && !omPickupPoints.length) return {ok:false,reason:'Topshirish punktlari yuklanmoqda. Bir ozdan so‘ng qayta tanlang.'};
+    const point=omGetPickupPointById();
+    if(!point) return {ok:false,reason:'Davom etish uchun topshirish punktini tanlang.'};
+    const quote=omPickupPointQuote(point,Number(built.totalWeightKg||0));
+    const snap=omPickupPointSnapshot(point,Number(built.totalWeightKg||0));
+    return {ok:true,data:{
+      method:'pickup_point',methodLabel:'Topshirish punktidan olib ketish',
+      service:'pickup_point',serviceLabel:`Topshirish punkti — ${point.name}`,
+      addressText:`${point.name}${point.address?' — '+point.address:''}`,
+      address:point.address,note:'',lat:point.lat,lng:point.lng,mapUrl:omPickupMapUrl(point),
+      pickupPointId:point.id,pickupPoint:snap,
+      distanceKm:snap.distanceKm,totalWeightKg:Number(built.totalWeightKg||0),billedKg:quote.billedKg,
+      deliveryFeeUZS:quote.feeUZS,deliveryRawFeeUZS:quote.rawFeeUZS,
+      productsTotalUZS:built.totalUZS,totalWithDeliveryUZS:Number(built.totalUZS||0)+quote.feeUZS
+    }};
   }
   if(!omDeliveryLocation){
     const saved = omBestSavedAddress();
@@ -5917,6 +6131,7 @@ function initCheckoutDeliveryUI(){
     if(stored) sel.value = stored;
   }
   updateDeliveryMethodUI();
+  try{ initPickupPointUI(); }catch(_e){}
   try{ renderSavedAddressesUI(); }catch(_){ }
   try{ updateDeliveryLocationMeta(); }catch(_e){}
   try{ updateCheckoutFinalSummary(); }catch(_e){}
@@ -5924,6 +6139,7 @@ function initCheckoutDeliveryUI(){
 initCheckoutDeliveryUI();
 initSavedAddressUI();
 omLoadDeliverySettings().catch(()=>{});
+omLoadPickupPoints().catch(()=>{});
 
 
 function applyPayTypeRules(){
