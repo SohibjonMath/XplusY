@@ -5078,6 +5078,9 @@ let omPickupPoints = [];
 let omPickupPointsLoaded = false;
 let omPickupUserLocation = null;
 let omPickupPointTypeFilter = "all";
+let omPickupSearchQuery = "";
+let omPickupPreviewMap = null, omPickupPreviewMarker = null, omPickupPreviewUserMarker = null;
+let omPickupExplorerMap = null, omPickupExplorerMarker = null, omPickupExplorerUserMarker = null;
 
 function omPickupStorageKey(uid=currentUser?.uid){
   const safeUid=String(uid||"guest").replace(/[^a-zA-Z0-9_-]/g,"_");
@@ -5169,7 +5172,15 @@ async function omLoadPickupPoints(){
   try{updateCheckoutCompactSummary();updateCheckoutSubmitVisibility();omRenderCartDeliverySummary();updateCartPrimaryCTA();}catch(_e){}
   return omPickupPoints;
 }
-function omPickupPointSearchText(){return String(document.getElementById("pickupPointSearchInput")?.value||"").trim().toLowerCase();}
+function omPickupPointSearchText(){return String(omPickupSearchQuery||"").trim().toLowerCase();}
+function omSetPickupSearchQuery(v){
+  omPickupSearchQuery=String(v||"");
+  ["pickupPointSearchInput","pickupExplorerSearchInput"].forEach(id=>{const el=document.getElementById(id);if(el&&el.value!==omPickupSearchQuery)el.value=omPickupSearchQuery;});
+}
+function omSetPickupPointFilter(v){
+  omPickupPointTypeFilter=(v==="bir_qadam"||v==="orzumall")?v:"all";
+  document.querySelectorAll("[data-pickup-filter]").forEach(btn=>btn.classList.toggle("isActive",String(btn.getAttribute("data-pickup-filter")||"all")===omPickupPointTypeFilter));
+}
 function omPickupPointSortedList(){
   const q=omPickupPointSearchText();
   const arr=omPickupPoints.filter(p=>(omPickupPointTypeFilter==="all"||p.pointType===omPickupPointTypeFilter)&&(!q||`${p.name} ${p.address} ${p.postalCode||""} ${p.workingHours||""} ${p.region||""} ${p.district||""}`.toLowerCase().includes(q)));
@@ -5182,41 +5193,164 @@ function omPickupPointSortedList(){
   });
 }
 function omPickupTypeLabel(p){return p.pointType==="bir_qadam"?"Bir Qadam":"OrzuMall punkti";}
+function omPickupRenderMap(elId,point,mode="preview"){
+  const el=document.getElementById(elId);
+  const mapObj=mode==="explorer"?omPickupExplorerMap:omPickupPreviewMap;
+  let markerObj=mode==="explorer"?omPickupExplorerMarker:omPickupPreviewMarker;
+  let userMarkerObj=mode==="explorer"?omPickupExplorerUserMarker:omPickupPreviewUserMarker;
+  if(!el)return;
+  const setRefs=(map,marker,userMarker)=>{ if(mode==="explorer"){ omPickupExplorerMap=map; omPickupExplorerMarker=marker; omPickupExplorerUserMarker=userMarker; } else { omPickupPreviewMap=map; omPickupPreviewMarker=marker; omPickupPreviewUserMarker=userMarker; } };
+  if(!point||!omPickupHasCoords(point)){
+    el.innerHTML='<div class="pickupMapEmpty"><i class="fa-solid fa-map-location-dot"></i><b>Xarita tayyor emas</b><span>Bu punkt uchun koordinata kiritilgach mini xarita ko‘rinadi.</span></div>';
+    try{ if(mapObj){ mapObj.remove(); } }catch(_e){}
+    setRefs(null,null,null);
+    return;
+  }
+  if(typeof window==="undefined"||!window.L){
+    el.innerHTML='<div class="pickupMapEmpty"><i class="fa-solid fa-satellite-dish"></i><b>Xarita yuklanmadi</b><span>Internet yoki xarita kutubxonasini tekshiring.</span></div>';
+    return;
+  }
+  const lat=Number(point.lat),lng=Number(point.lng);
+  const user=omPickupUserLocation&&Number.isFinite(Number(omPickupUserLocation.lat))&&Number.isFinite(Number(omPickupUserLocation.lng))?{lat:Number(omPickupUserLocation.lat),lng:Number(omPickupUserLocation.lng)}:null;
+  let map=mapObj, marker=markerObj, userMarker=userMarkerObj;
+  if(!map||map._container!==el){
+    try{ if(map) map.remove(); }catch(_e){}
+    el.innerHTML='';
+    map=window.L.map(el,{zoomControl:true,attributionControl:false}).setView([lat,lng],user?12:14);
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+    marker=window.L.marker([lat,lng]).addTo(map);
+    userMarker=null;
+  }else{
+    map.setView([lat,lng],user?12:14);
+    if(marker) marker.setLatLng([lat,lng]); else marker=window.L.marker([lat,lng]).addTo(map);
+  }
+  try{ marker?.bindPopup(`<b>${omPickupEsc(point.name||'Topshirish punkti')}</b><br>${omPickupEsc(point.address||'')}`); }catch(_e){}
+  if(user){
+    if(userMarker) userMarker.setLatLng([user.lat,user.lng]);
+    else userMarker=window.L.circleMarker([user.lat,user.lng],{radius:7,weight:3,color:'#2563eb',fillColor:'#60a5fa',fillOpacity:.95}).addTo(map);
+    try{ userMarker.bindPopup('Sizning lokatsiyangiz'); }catch(_e){}
+    try{ const bounds=window.L.latLngBounds([[lat,lng],[user.lat,user.lng]]); map.fitBounds(bounds.pad(.28)); }catch(_e){ map.setView([lat,lng],12); }
+  }else if(userMarker){ try{ map.removeLayer(userMarker); }catch(_e){} userMarker=null; }
+  setRefs(map,marker,userMarker);
+  setTimeout(()=>{ try{ map?.invalidateSize(); }catch(_e){} },50);
+}
+function omRenderPickupHeroPreview(points){
+  const hero=document.getElementById("pickupPointHeroPreview");
+  if(!hero)return;
+  const point=omGetPickupPointById(omReadSelectedPickupPointId())||points?.[0]||null;
+  if(!point){
+    hero.innerHTML='<div class="pickupHeroEmpty"><i class="fa-solid fa-box-open"></i><b>Punkt tanlang</b><span>Quyidagi ro‘yxatdan topshirish punktini tanlaganingizda premium preview shu yerda chiqadi.</span></div>';
+    return;
+  }
+  const isBq=point.pointType==="bir_qadam";
+  const quote=omPickupPointQuote(point,((typeof buildSelectedItems==="function"&&buildSelectedItems()?.totalWeightKg)||0));
+  const dist=omPickupPointDistance(point),distText=Number.isFinite(dist)?`${dist.toFixed(dist>=10?0:1)} km`:"GPS orqali aniqlanadi";
+  const mapUrl=omPickupMapUrl(point);
+  hero.innerHTML=`<div class="pickupHeroCard ${isBq?'isBirQadam':'isOrzuMall'}"><div class="pickupHeroInfo"><div class="pickupHeroIcon"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i></div><div class="pickupHeroText"><div class="pickupHeroBadges"><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(point))}</span>${isBq?'<span class="pickupPointOfficialBadge">UzPost</span>':'<span class="pickupPointOfficialBadge pickupPointOfficialBadgeOrzu">OrzuMall</span>'}</div><b>${omPickupEsc(point.name)}</b><span>${omPickupEsc(point.address||'Manzil ko‘rsatilmagan')}</span><div class="pickupHeroChipRow"><span><i class="fa-solid fa-route"></i> ${omPickupEsc(distText)}</span><span><i class="fa-solid fa-truck-fast"></i> ${omPickupEsc(point.etaText||'Muddat ko‘rsatilmagan')}</span><span><i class="fa-solid fa-wallet"></i> ${moneyUZS(quote.feeUZS)}</span></div></div></div><div class="pickupHeroMapWrap"><div class="pickupHeroMap" id="pickupPointPreviewMap"></div></div><div class="pickupHeroFooter"><div class="pickupHeroStats"><div><small>1 kg</small><strong>${moneyUZS(point.firstKgFeeUZS)}</strong></div><div><small>+1 kg</small><strong>${moneyUZS(point.extraKgFeeUZS)}</strong></div><div><small>Pochta indeksi</small><strong>${omPickupEsc(point.postalCode||'—')}</strong></div></div><div class="pickupHeroActions">${mapUrl?`<a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada</a>`:''}<button type="button" class="pickupHeroOpenBtn" id="pickupExplorerOpenBtnInline"><i class="fa-solid fa-expand"></i> To‘liq ekran</button></div></div></div>`;
+  omPickupRenderMap("pickupPointPreviewMap",point,"preview");
+  document.getElementById("pickupExplorerOpenBtnInline")?.addEventListener("click",openPickupExplorerModal,{once:true});
+}
+function omRenderPickupExplorerPreview(points){
+  const infoEl=document.getElementById("pickupExplorerFeatured");
+  const selectedEl=document.getElementById("pickupExplorerSelected");
+  if(!infoEl||!selectedEl)return;
+  const point=omGetPickupPointById(omReadSelectedPickupPointId())||points?.[0]||null;
+  if(!point){
+    infoEl.innerHTML='<div class="pickupExplorerEmpty"><i class="fa-solid fa-box-open"></i><b>Punkt tanlanmagan</b><span>Chap tomondagi ro‘yxatdan punkt tanlang.</span></div>';
+    selectedEl.innerHTML='';
+    return;
+  }
+  const isBq=point.pointType==="bir_qadam";
+  const quote=omPickupPointQuote(point,((typeof buildSelectedItems==="function"&&buildSelectedItems()?.totalWeightKg)||0));
+  const dist=omPickupPointDistance(point),distText=Number.isFinite(dist)?`${dist.toFixed(dist>=10?0:1)} km`:"GPS bilan aniqlanadi";
+  const mapUrl=omPickupMapUrl(point);
+  infoEl.innerHTML=`<div class="pickupExplorerFeatureCard ${isBq?'isBirQadam':'isOrzuMall'}"><div class="pickupExplorerFeatureTop"><div><div class="pickupHeroBadges"><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(point))}</span>${isBq?'<span class="pickupPointOfficialBadge">UzPost</span>':'<span class="pickupPointOfficialBadge pickupPointOfficialBadgeOrzu">OrzuMall</span>'}</div><b>${omPickupEsc(point.name)}</b><span>${omPickupEsc(point.address||'Manzil ko‘rsatilmagan')}</span></div><div class="pickupExplorerMiniPrice"><small>Hozir</small><strong>${moneyUZS(quote.feeUZS)}</strong></div></div><div class="pickupExplorerFeatureMeta"><span><i class="fa-solid fa-route"></i> ${omPickupEsc(distText)}</span><span><i class="fa-regular fa-clock"></i> ${omPickupEsc(point.workingHours||'Ish vaqti ko‘rsatilmagan')}</span><span><i class="fa-solid fa-truck-fast"></i> ${omPickupEsc(point.etaText||'Muddat ko‘rsatilmagan')}</span></div></div>`;
+  selectedEl.innerHTML=`<div class="pickupExplorerSelectedGrid"><div><small>1 kg</small><strong>${moneyUZS(point.firstKgFeeUZS)}</strong></div><div><small>+1 kg</small><strong>${moneyUZS(point.extraKgFeeUZS)}</strong></div><div><small>Indeks</small><strong>${omPickupEsc(point.postalCode||'—')}</strong></div><div><small>Hisoblangan vazn</small><strong>${quote.billedKg} kg</strong></div></div>${mapUrl?`<div class="pickupExplorerMapActions"><a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada ochish</a></div>`:''}`;
+  omPickupRenderMap("pickupExplorerMap",point,"explorer");
+}
 function omRenderPickupPointsUI(){
   const listEl=document.getElementById("pickupPointList"),status=document.getElementById("pickupPointStatus"),selectedEl=document.getElementById("pickupPointSelected");
+  const modalList=document.getElementById("pickupExplorerList"),modalStatus=document.getElementById("pickupExplorerStatus");
   if(!listEl||!status||!selectedEl)return;
   const selectedId=omReadSelectedPickupPointId(),points=omPickupPointSortedList();
-  if(!omPickupPointsLoaded&&!omPickupPoints.length){status.textContent="Punktlar yuklanmoqda...";listEl.innerHTML='<div class="pickupPointEmpty">Topshirish punktlari yuklanmoqda...</div>';selectedEl.hidden=true;return;}
+  if(!omPickupPointsLoaded&&!omPickupPoints.length){
+    const loadingStatus='<div class="pickupPointStatusTitle"><i class="fa-solid fa-spinner fa-spin"></i> Punktlar yuklanmoqda</div><div class="pickupPointStatusSub">Topshirish punktlari bazasi tayyorlanmoqda.</div>';
+    status.innerHTML=loadingStatus;
+    if(modalStatus)modalStatus.innerHTML=loadingStatus;
+    const loadingEmpty='<div class="pickupPointEmpty"><i class="fa-solid fa-box-open"></i><b>Topshirish punktlari yuklanmoqda</b><span>Iltimos, bir necha soniya kuting.</span></div>';
+    listEl.innerHTML=loadingEmpty;
+    if(modalList)modalList.innerHTML=loadingEmpty;
+    selectedEl.hidden=true;
+    omRenderPickupHeroPreview([]); omRenderPickupExplorerPreview([]);
+    return;
+  }
   const bq=omPickupPoints.filter(p=>p.pointType==="bir_qadam").length,om=omPickupPoints.filter(p=>p.pointType!=="bir_qadam").length;
-  status.textContent=omPickupUserLocation?`${points.length} ta punkt topildi. Eng yaqinlari birinchi ko‘rsatildi. Bir Qadam: ${bq} ta • OrzuMall: ${om} ta.`:`${points.length} ta mos faol punkt. Bir Qadam: ${bq} ta • OrzuMall: ${om} ta. Eng yaqinini topish uchun lokatsiya tugmasini bosing.`;
-  if(!points.length)listEl.innerHTML='<div class="pickupPointEmpty">Mos topshirish punkti topilmadi. Qidiruvni tozalang yoki boshqa filtrni tanlang.</div>';
-  else listEl.innerHTML=points.map(p=>{
+  const statusLead=omPickupUserLocation?"Eng yaqin punktlar birinchi o‘rinda ko‘rsatildi.":"Faol punktlardan birini tanlang yoki lokatsiya orqali eng yaqinini toping.";
+  const filterLabel=omPickupPointTypeFilter==="bir_qadam"?"Bir Qadam":(omPickupPointTypeFilter==="orzumall"?"OrzuMall punktlari":"Barcha punktlar");
+  const statusHtml=`<div class="pickupPointStatusTitle"><i class="fa-solid fa-compass"></i> ${points.length} ta mos punkt • ${omPickupEsc(filterLabel)}</div><div class="pickupPointStatusSub">${omPickupEsc(statusLead)}</div><div class="pickupPointStatusChips"><span><i class="fa-solid fa-bolt"></i> Bir Qadam: ${bq} ta</span><span><i class="fa-solid fa-store"></i> OrzuMall: ${om} ta</span>${omPickupUserLocation?'<span><i class="fa-solid fa-location-dot"></i> Lokatsiya aniqlandi</span>':''}</div>`;
+  status.innerHTML=statusHtml;
+  if(modalStatus)modalStatus.innerHTML=statusHtml;
+  let cardsHtml='';
+  if(!points.length) cardsHtml='<div class="pickupPointEmpty"><i class="fa-solid fa-magnifying-glass-location"></i><b>Mos topshirish punkti topilmadi</b><span>Qidiruvni tozalang yoki boshqa filtrni tanlang.</span></div>';
+  else cardsHtml=points.map(p=>{
     const quote=omPickupPointQuote(p,((typeof buildSelectedItems==="function"&&buildSelectedItems()?.totalWeightKg)||0));
     const dist=omPickupPointDistance(p),distText=Number.isFinite(dist)?`${dist.toFixed(dist>=10?0:1)} km`:"";
     const checked=String(p.id)===String(selectedId),isBq=p.pointType==="bir_qadam";
     const mapState=omPickupHasCoords(p)?"":'<span class="pickupPointMetaWarn"><i class="fa-solid fa-location-dot"></i> Koordinata kiritilmagan</span>';
-    return `<label class="pickupPointCard ${checked?'isSelected':''} ${isBq?'isBirQadam':'isOrzuMall'}" data-pickup-point-card="${omPickupEsc(p.id)}"><div class="pickupPointBadgeRow"><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(p))}</span>${isBq?'<span class="pickupPointOfficialBadge">UzPost</span>':''}</div><div class="pickupPointCardTop"><div class="pickupPointCardTitle"><input class="pickupPointRadio" type="radio" name="pickupPointRadio" value="${omPickupEsc(p.id)}" ${checked?'checked':''}><div><b>${omPickupEsc(p.name)}</b><span>${omPickupEsc(p.address||'Manzil ko‘rsatilmagan')}</span></div></div>${distText?`<span class="pickupPointDistance">${omPickupEsc(distText)}</span>`:''}</div><div class="pickupPointMeta">${p.postalCode?`<span><i class="fa-solid fa-envelopes-bulk"></i> Indeks: ${omPickupEsc(p.postalCode)}</span>`:''}${p.workingHours?`<span><i class="fa-regular fa-clock"></i> ${omPickupEsc(p.workingHours)}</span>`:''}${mapState}<span>1 kg: ${moneyUZS(p.firstKgFeeUZS)}</span><span>+1 kg: ${moneyUZS(p.extraKgFeeUZS)}</span><span>${omPickupEsc(p.etaText)}</span><span>Hozir: ${moneyUZS(quote.feeUZS)}</span></div></label>`;
+    const distanceBlock=distText?`<span class="pickupPointDistance"><i class="fa-solid fa-route"></i> ${omPickupEsc(distText)}</span>`:'<span class="pickupPointDistance pickupPointDistanceMuted"><i class="fa-solid fa-location-dot"></i> Masofa GPS bilan</span>';
+    return `<label class="pickupPointCard ${checked?'isSelected':''} ${isBq?'isBirQadam':'isOrzuMall'}" data-pickup-point-card="${omPickupEsc(p.id)}"><div class="pickupPointBadgeRow"><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(p))}</span>${isBq?'<span class="pickupPointOfficialBadge">UzPost</span>':'<span class="pickupPointOfficialBadge pickupPointOfficialBadgeOrzu">OrzuMall</span>'}</div><div class="pickupPointCardTop"><div class="pickupPointCardTitle"><input class="pickupPointRadio" type="radio" name="pickupPointRadio" value="${omPickupEsc(p.id)}" ${checked?'checked':''}><div><b>${omPickupEsc(p.name)}</b><span>${omPickupEsc(p.address||'Manzil ko‘rsatilmagan')}</span></div></div><div class="pickupPointCardAside">${distanceBlock}<span class="pickupPointSelectHint">${checked?'Tanlandi':'Tanlash'}</span></div></div><div class="pickupPointPriceRow"><div class="pickupPointPriceItem isCurrent"><small>Hozirgi narx</small><b>${moneyUZS(quote.feeUZS)}</b></div><div class="pickupPointPriceItem"><small>1 kg</small><b>${moneyUZS(p.firstKgFeeUZS)}</b></div><div class="pickupPointPriceItem"><small>+1 kg</small><b>${moneyUZS(p.extraKgFeeUZS)}</b></div></div><div class="pickupPointMeta">${p.postalCode?`<span><i class="fa-solid fa-envelopes-bulk"></i> Indeks: ${omPickupEsc(p.postalCode)}</span>`:''}${p.workingHours?`<span><i class="fa-regular fa-clock"></i> ${omPickupEsc(p.workingHours)}</span>`:''}${mapState}<span><i class="fa-solid fa-truck-fast"></i> ${omPickupEsc(p.etaText)}</span></div></label>`;
   }).join("");
+  listEl.innerHTML=cardsHtml;
+  if(modalList)modalList.innerHTML=cardsHtml;
   const selected=omGetPickupPointById(selectedId);
   if(selected){
     const built=(typeof buildSelectedItems==="function")?buildSelectedItems():null,quote=omPickupPointQuote(selected,built?.totalWeightKg||0),dist=omPickupPointDistance(selected),mapUrl=omPickupMapUrl(selected);
+    const distanceText=Number.isFinite(dist)?`${dist.toFixed(dist>=10?0:1)} km`:"GPS bilan aniqlanadi";
     selectedEl.hidden=false;
-    selectedEl.innerHTML=`<b><i class="fa-solid fa-circle-check"></i> Tanlandi: ${omPickupEsc(selected.name)}</b><span class="pickupSelectedType">${omPickupEsc(omPickupTypeLabel(selected))}</span>${omPickupEsc(selected.address||'')}${selected.postalCode?`<br><i class="fa-solid fa-envelopes-bulk"></i> Pochta indeksi: ${omPickupEsc(selected.postalCode)}`:''}${selected.workingHours?`<br><i class="fa-regular fa-clock"></i> Ishlash vaqti: ${omPickupEsc(selected.workingHours)}`:''}<br>${quote.billedKg} kg bo‘yicha yetkazish: ${moneyUZS(quote.feeUZS)} • ${omPickupEsc(selected.etaText)}${Number.isFinite(dist)?` • Sizdan ${dist.toFixed(dist>=10?0:1)} km`:''}${mapUrl?`<br><a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada ochish</a>`:''}`;
+    selectedEl.innerHTML=`<div class="pickupSelectedHead"><b><i class="fa-solid fa-circle-check"></i> Punkt tanlandi</b><span class="pickupSelectedType ${selected.pointType==='bir_qadam'?'isBirQadam':'isOrzuMall'}">${omPickupEsc(omPickupTypeLabel(selected))}</span></div><div class="pickupSelectedName">${omPickupEsc(selected.name)}</div><div class="pickupSelectedAddress">${omPickupEsc(selected.address||'Manzil ko‘rsatilmagan')}</div><div class="pickupSelectedGrid"><div><small>Pochta indeksi</small><strong>${omPickupEsc(selected.postalCode||'—')}</strong></div><div><small>Ishlash vaqti</small><strong>${omPickupEsc(selected.workingHours||'Ko‘rsatilmagan')}</strong></div><div><small>Yetkazish narxi</small><strong>${moneyUZS(quote.feeUZS)}</strong></div><div><small>Taxminiy muddat</small><strong>${omPickupEsc(selected.etaText||'Ko‘rsatilmagan')}</strong></div><div><small>Hisoblangan vazn</small><strong>${quote.billedKg} kg</strong></div><div><small>Sizdan masofa</small><strong>${omPickupEsc(distanceText)}</strong></div></div>${mapUrl?`<div class="pickupSelectedActions"><a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada ochish</a></div>`:''}`;
   }else selectedEl.hidden=true;
+  omRenderPickupHeroPreview(points);
+  omRenderPickupExplorerPreview(points);
 }
 function omSelectPickupPoint(id){const point=omGetPickupPointById(id);if(!point)return;omWriteSelectedPickupPointId(point.id);omRenderPickupPointsUI();try{updateCheckoutCompactSummary();updateCheckoutSubmitVisibility();omRenderCartDeliverySummary();updateCartPrimaryCTA();}catch(_e){}}
 async function omDetectPickupNearest(){
-  const btn=document.getElementById("pickupPointLocateBtn"),old=btn?.innerHTML||"";
-  if(btn){btn.disabled=true;btn.innerHTML='<span class="omBtnSpinner"></span> Aniqlanmoqda...';}
-  try{const pos=await omGetGeoPosition();omPickupUserLocation={lat:Number(pos.coords.latitude),lng:Number(pos.coords.longitude),accuracy:Number(pos.coords.accuracy||0)};omRenderPickupPointsUI();toast("Eng yaqin topshirish punktlari saralandi.");}catch(_e){toast("Lokatsiya olinmadi. GPS va ruxsatni tekshiring.");}finally{if(btn){btn.disabled=false;btn.innerHTML=old;}}
+  const buttons=[...document.querySelectorAll('[data-pickup-locate-btn]')];
+  const olds=buttons.map(btn=>btn.innerHTML);
+  buttons.forEach(btn=>{btn.disabled=true;btn.innerHTML='<span class="omBtnSpinner"></span> Aniqlanmoqda...';});
+  try{const pos=await omGetGeoPosition();omPickupUserLocation={lat:Number(pos.coords.latitude),lng:Number(pos.coords.longitude),accuracy:Number(pos.coords.accuracy||0)};omRenderPickupPointsUI();toast("Eng yaqin topshirish punktlari saralandi.");}catch(_e){toast("Lokatsiya olinmadi. GPS va ruxsatni tekshiring.");}finally{buttons.forEach((btn,idx)=>{btn.disabled=false;btn.innerHTML=olds[idx];});}
+}
+function openPickupExplorerModal(){
+  const overlay=document.getElementById('pickupExplorerOverlay');
+  if(!overlay)return;
+  overlay.hidden=false;
+  requestAnimationFrame(()=>overlay.classList.add('isOpen'));
+  try{omSyncModalOpenState();}catch(_e){}
+  omRenderPickupPointsUI();
+  setTimeout(()=>{try{omPickupExplorerMap?.invalidateSize();}catch(_e){}},60);
+}
+function closePickupExplorerModal(){
+  const overlay=document.getElementById('pickupExplorerOverlay');
+  if(!overlay)return;
+  overlay.classList.remove('isOpen');
+  setTimeout(()=>{overlay.hidden=true;try{omSyncModalOpenState();}catch(_e){}},190);
 }
 function initPickupPointUI(){
-  document.getElementById("pickupPointList")?.addEventListener("change",e=>{const radio=e.target.closest('input[name="pickupPointRadio"]');if(radio)omSelectPickupPoint(radio.value);});
-  document.getElementById("pickupPointList")?.addEventListener("click",e=>{const card=e.target.closest('[data-pickup-point-card]');if(card&&!e.target.closest('a'))omSelectPickupPoint(card.getAttribute('data-pickup-point-card'));});
-  document.getElementById("pickupPointSearchInput")?.addEventListener("input",omRenderPickupPointsUI);
-  document.getElementById("pickupPointLocateBtn")?.addEventListener("click",omDetectPickupNearest);
-  document.querySelectorAll('[data-pickup-filter]').forEach(btn=>btn.addEventListener('click',()=>{omPickupPointTypeFilter=String(btn.getAttribute('data-pickup-filter')||'all');document.querySelectorAll('[data-pickup-filter]').forEach(x=>x.classList.toggle('isActive',x===btn));omRenderPickupPointsUI();}));
+  const bindList=(el)=>{
+    el?.addEventListener("change",e=>{const radio=e.target.closest('input[name="pickupPointRadio"]');if(radio)omSelectPickupPoint(radio.value);});
+    el?.addEventListener("click",e=>{const card=e.target.closest('[data-pickup-point-card]');if(card&&!e.target.closest('a')&&!e.target.closest('button'))omSelectPickupPoint(card.getAttribute('data-pickup-point-card'));});
+  };
+  bindList(document.getElementById("pickupPointList"));
+  bindList(document.getElementById("pickupExplorerList"));
+  ["pickupPointSearchInput","pickupExplorerSearchInput"].forEach(id=>document.getElementById(id)?.addEventListener("input",e=>{omSetPickupSearchQuery(e.target.value);omRenderPickupPointsUI();}));
+  document.querySelectorAll('[data-pickup-locate-btn]').forEach(btn=>btn.addEventListener('click',omDetectPickupNearest));
+  document.querySelectorAll('[data-pickup-filter]').forEach(btn=>btn.addEventListener('click',()=>{omSetPickupPointFilter(String(btn.getAttribute('data-pickup-filter')||'all'));omRenderPickupPointsUI();}));
+  document.getElementById('pickupExplorerOpenBtn')?.addEventListener('click',openPickupExplorerModal);
+  document.getElementById('pickupExplorerCloseBtn')?.addEventListener('click',closePickupExplorerModal);
+  document.getElementById('pickupExplorerOverlay')?.addEventListener('click',e=>{if(e.target?.id==='pickupExplorerOverlay')closePickupExplorerModal();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('pickupExplorerOverlay')?.hidden)closePickupExplorerModal();});
   try{const saved=omLocationFromSavedAddress(omBestSavedAddress());if(saved)omPickupUserLocation={lat:Number(saved.lat),lng:Number(saved.lng)};}catch(_e){}
+  omSetPickupSearchQuery(omPickupSearchQuery);
+  omSetPickupPointFilter(omPickupPointTypeFilter);
   omRenderPickupPointsUI();
 }
 
@@ -5286,7 +5420,8 @@ function openCheckout(){
 function omSyncModalOpenState(){
   const checkoutOpen = !!(els.checkoutOverlay && !els.checkoutOverlay.hidden);
   const paymentOpen = !!(els.paymentOverlay && !els.paymentOverlay.hidden);
-  const hasOpenModal = checkoutOpen || paymentOpen;
+  const pickupExplorerOpen = !!(!document.getElementById('pickupExplorerOverlay')?.hidden);
+  const hasOpenModal = checkoutOpen || paymentOpen || pickupExplorerOpen;
   try{ document.documentElement.classList.toggle("modalOpen", hasOpenModal); }catch(_e){}
   try{ document.body.classList.toggle("modalOpen", hasOpenModal); }catch(_e){}
 }
