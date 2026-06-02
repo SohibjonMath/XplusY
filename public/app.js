@@ -1771,7 +1771,7 @@ function omRenderCartDeliverySummary(){
     el.innerHTML = `
       <div class="cartDeliveryPending compactPending">
         <div class="cartDeliveryPendingIcon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></div>
-        <div><b>Yetkazib berishni sozlang</b><span>Yakuniy summa yetkazish turi tanlangandan keyin ko‘rinadi.</span></div>
+        <div><b>Yetkazib berishni sozlang</b><span>Usul tanlangandan keyin hisoblanadi.</span></div>
       </div>
     `;
     try{ updateCartPrimaryCTA(); }catch(_e){}
@@ -1792,7 +1792,7 @@ function omRenderCartDeliverySummary(){
             <div><span>Yetkazish</span><b>—</b></div>
             <div><span>Jami</span><b>—</b></div>
           </div>
-          <div class="cartDeliveryFree compactFree"><span>Lokatsiyani avto aniqlang</span><small>Yakuniy summa lokatsiya olingandan keyin hisoblanadi.</small></div>
+          <div class="cartDeliveryFree compactFree"><span>Lokatsiyani aniqlang</span><small>Lokatsiyadan keyin hisoblanadi.</small></div>
           <div class="cartDeliveryCompactActions"><button type="button" id="cartDeliveryChangeBtn">Sozlash</button></div>
         </div>
       </div>
@@ -5630,7 +5630,7 @@ function updateCheckoutSubmitVisibility(){
   btn.hidden = !info.ok;
   if(hint){
     hint.hidden = !!info.ok;
-    hint.textContent = info.reason || "Davom etish uchun yetkazish usulini tanlang.";
+    hint.textContent = info.reason || "Yetkazish usulini tanlang.";
   }
   return !!info.ok;
 }
@@ -5714,7 +5714,7 @@ function omRenderInlineDeliveryMap({open=false, centerCurrent=true}={}){
   if(panel.hidden){
     if(toggleBtn){
       const hasLoc = !!(omDeliveryLocation && Number.isFinite(Number(omDeliveryLocation.lat)) && Number.isFinite(Number(omDeliveryLocation.lng)));
-      toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${hasLoc ? 'Kichik xaritani ko‘rsatish' : 'Xaritadan belgilash'}</span>`;
+      toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${hasLoc ? 'Xaritani ochish' : 'Xaritada tanlash'}</span>`;
     }
     return false;
   }
@@ -5837,7 +5837,7 @@ function updateDeliveryLocationMeta(){
   if(wrap) wrap.hidden = !hasLoc;
   if(toggleBtn){
     const isOpen = !!panel && !panel.hidden;
-    toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${isOpen ? 'Xaritani yopish' : (hasLoc ? 'Kichik xaritani ko‘rsatish' : 'Xaritadan belgilash')}</span>`;
+    toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${isOpen ? 'Xaritani yopish' : (hasLoc ? 'Xaritani ochish' : 'Xaritada tanlash')}</span>`;
   }
   if(panel && !panel.hidden){
     try{ omRenderInlineDeliveryMap({centerCurrent:true}); }catch(_e){}
@@ -5949,7 +5949,7 @@ function getCheckoutDeliveryInfo(){
   const method = getDeliveryMethod();
   const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
   if(method !== 'pickup' && method !== 'pickup_point' && method !== 'delivery'){
-    return { ok:false, reason:'Davom etish uchun yetkazish usulini tanlang.' };
+    return { ok:false, reason:'Yetkazish usulini tanlang.' };
   }
   if(method === 'pickup'){
     omDeliveryQuote = null;
