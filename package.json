@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.9.0",
-  "description": "OrzuMall customer site v74 with Android website-connected native push token registration and FCM delivery",
+  "version": "1.10.0",
+  "description": "OrzuMall customer site v115: minimal signup and Bir Qadam / OrzuMall pickup-point delivery system",
   "engines": {
     "node": "18.x"
   },

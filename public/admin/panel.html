@@ -1218,7 +1218,7 @@ textarea.form-control{min-height:116px;resize:vertical}
 .pickupAdminTable{min-width:1360px}
 .pickupAdminTable td,.pickupAdminTable th{vertical-align:top}
 .pickupAdminName{font-weight:950;color:#111827}.pickupAdminAddress{max-width:260px;color:#64748b;font-size:12px;line-height:1.4;margin-top:4px}
-.pickupCoord{font-size:11px;font-weight:850;color:#475569;white-space:nowrap}.pickupActive{color:#15803d;font-weight:950}.pickupInactive{color:#b91c1c;font-weight:950}
+.pickupCoord{font-size:11px;font-weight:850;color:#475569;white-space:nowrap}.pickupActive{color:#15803d;font-weight:950}.pickupInactive{color:#b91c1c;font-weight:950}.pickupDraft{color:#c2410c;font-weight:950}.pickupTypePill{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:950}.pickupTypePill.bq{background:#ffedd5;color:#c2410c}.pickupTypePill.om{background:#dcfce7;color:#15803d}
 .pickupAdminFormActions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
 @media(max-width:900px){.pickupAdminGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.pickupAdminGrid{grid-template-columns:1fr}.pickupAdminGrid .wide{grid-column:auto}}
@@ -3396,6 +3396,7 @@ aloqa, telefon => Operator shu chat orqali javob beradi."></textarea></label>
               <h4><i class="fas fa-box-open"></i> Topshirish punktlari</h4>
               <p class="form-text">Mijoz checkoutda shu ro‘yxatdan punkt tanlaydi. Lokatsiyaga ruxsat bersa eng yaqin punktlar avtomatik birinchi chiqadi. Har bir punktning pochta indeksi, ishlash vaqti, tarifi va yetkazish muddati alohida boshqariladi.</p>
               <div class="pickupAdminGrid">
+                <div class="form-group"><label>Punkt turi</label><select id="pickupPointType" class="form-control"><option value="orzumall">OrzuMall topshirish punkti</option><option value="bir_qadam">Bir Qadam tarifidagi UzPost</option></select></div>
                 <div class="form-group"><label>Punkt nomi</label><input id="pickupPointName" class="form-control" placeholder="Masalan: Namangan 1-son pochta"></div>
                 <div class="form-group wide"><label>To‘liq manzil</label><input id="pickupPointAddress" class="form-control" placeholder="Viloyat, tuman, ko‘cha va mo‘ljal"></div>
                 <div class="form-group"><label>Pochta indeksi</label><input id="pickupPointPostalCode" class="form-control" inputmode="numeric" placeholder="Masalan: 160100"></div>
@@ -3416,7 +3417,7 @@ aloqa, telefon => Operator shu chat orqali javob beradi."></textarea></label>
               </div>
               <div class="tariffTableWrap" style="margin-top:14px">
                 <table class="tariffTable pickupAdminTable">
-                  <thead><tr><th>#</th><th>Punkt</th><th>Pochta indeksi</th><th>Ishlash vaqti</th><th>Koordinata</th><th>1 kg</th><th>+ har 1 kg</th><th>Muddat</th><th>Holati</th><th></th></tr></thead>
+                  <thead><tr><th>#</th><th>Turi</th><th>Punkt</th><th>Pochta indeksi</th><th>Ishlash vaqti</th><th>Koordinata</th><th>1 kg</th><th>+ har 1 kg</th><th>Muddat</th><th>Holati</th><th></th></tr></thead>
                   <tbody id="pickupPointsAdminBody"></tbody>
                 </table>
               </div>
@@ -4224,71 +4225,31 @@ aloqa, telefon => Operator shu chat orqali javob beradi."></textarea></label>
 
 
 
-    /* ===== Topshirish punktlari admin boshqaruvi v114 ===== */
-    let pickupPointsAdmin=[];
-    let pickupPointEditingId='';
-    let pickupPointsLoaded=false;
-    function pickupNum(v,fallback=0){ const n=Number(v); return Number.isFinite(n)?n:fallback; }
-    function pickupSafeId(v){ return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,80); }
+    /* ===== Topshirish punktlari admin boshqaruvi v115 ===== */
+    let pickupPointsAdmin=[];let pickupPointEditingId='';let pickupPointsLoaded=false;
+    function pickupNum(v,fallback=0){const n=Number(v);return Number.isFinite(n)?n:fallback;}
+    function pickupSafeId(v){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,80);}
+    function pickupHasCoords(p){const lat=Number(p?.lat),lng=Number(p?.lng);return Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180;}
     function normalizePickupAdminPoint(p,index=0){
-      if(!p||typeof p!=='object') return null;
-      const lat=Number(p.lat??p.latitude),lng=Number(p.lng??p.longitude);
-      if(!Number.isFinite(lat)||!Number.isFinite(lng)) return null;
-      const minDays=Math.max(1,Math.round(pickupNum(p.minDays??p.deliveryMinDays,2)));
-      const maxDays=Math.max(minDays,Math.round(pickupNum(p.maxDays??p.deliveryMaxDays,minDays)));
-      return {id:pickupSafeId(p.id)||`point_${index+1}`,name:String(p.name||p.title||`Topshirish punkti ${index+1}`).trim(),address:String(p.address||p.addressText||'').trim(),postalCode:String(p.postalCode??p.postalIndex??p.postIndex??'').trim().slice(0,40),workingHours:String(p.workingHours??p.workHours??p.openingHours??'').trim().slice(0,160),lat,lng,firstKgFeeUZS:Math.max(0,Math.round(pickupNum(p.firstKgFeeUZS??p.firstKgFee,15000))),extraKgFeeUZS:Math.max(0,Math.round(pickupNum(p.extraKgFeeUZS??p.extraKgFee,3000))),minDays,maxDays,etaText:String(p.etaText||`${minDays}–${maxDays} kun`).trim(),active:p.active!==false};
+      if(!p||typeof p!=='object')return null;const rawLat=p.lat??p.latitude,rawLng=p.lng??p.longitude;const lat=rawLat==null||rawLat===''?null:Number(rawLat),lng=rawLng==null||rawLng===''?null:Number(rawLng);const has=Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180;const minDays=Math.max(1,Math.round(pickupNum(p.minDays??p.deliveryMinDays,2)));const maxDays=Math.max(minDays,Math.round(pickupNum(p.maxDays??p.deliveryMaxDays,minDays)));const pointType=String(p.pointType||p.type||'').toLowerCase()==='bir_qadam'?'bir_qadam':'orzumall';
+      return {id:pickupSafeId(p.id)||`point_${index+1}`,name:String(p.name||p.title||`Topshirish punkti ${index+1}`).trim(),address:String(p.address||p.addressText||'').trim(),postalCode:String(p.postalCode??p.postalIndex??p.postIndex??'').trim().slice(0,40),workingHours:String(p.workingHours??p.workHours??p.openingHours??'').trim().slice(0,180),lat:has?lat:null,lng:has?lng:null,pointType,sourceType:String(p.sourceType||p.source||'manual').trim(),regionGroup:String(p.regionGroup||'').trim(),region:String(p.region||'').trim(),district:String(p.district||'').trim(),firstKgFeeUZS:Math.max(0,Math.round(pickupNum(p.firstKgFeeUZS??p.firstKgFee,pointType==='bir_qadam'?15000:0))),extraKgFeeUZS:Math.max(0,Math.round(pickupNum(p.extraKgFeeUZS??p.extraKgFee,pointType==='bir_qadam'?3000:0))),minDays,maxDays,etaText:String(p.etaText||`${minDays}–${maxDays} kun`).trim(),active:p.active!==false,setupRequired:p.setupRequired===true,tariffConfigured:p.tariffConfigured!==false,isBuiltIn:p.isBuiltIn===true};
     }
+    function mergePickupAdminPoints(baseRaw,overrideRaw){const map=new Map();const add=(raw)=>{const arr=Array.isArray(raw)?raw:(Array.isArray(raw?.points)?raw.points:[]);arr.forEach((p,i)=>{const n=normalizePickupAdminPoint(p,i);if(n)map.set(String(n.id),{...(map.get(String(n.id))||{}),...n});});};add(baseRaw);add(overrideRaw);return [...map.values()];}
+    async function loadPickupDefaultsAdmin(){try{const r=await fetch('../pickup-points-default.json?v=20260602_v115',{cache:'no-store'});if(!r.ok)throw new Error('starter_fetch_failed');return await r.json();}catch(_){return {points:[]};}}
     function readPickupPointForm(){
-      const name=String($('pickupPointName')?.value||'').trim();
-      const address=String($('pickupPointAddress')?.value||'').trim();
-      const postalCode=String($('pickupPointPostalCode')?.value||'').trim().slice(0,40);
-      const workingHours=String($('pickupPointWorkingHours')?.value||'').trim().slice(0,160);
-      const lat=Number($('pickupPointLat')?.value),lng=Number($('pickupPointLng')?.value);
-      const firstKgFeeUZS=Math.max(0,Math.round(Number($('pickupPointFirstKg')?.value||0)));
-      const extraKgFeeUZS=Math.max(0,Math.round(Number($('pickupPointExtraKg')?.value||0)));
-      const minDays=Math.max(1,Math.round(Number($('pickupPointMinDays')?.value||1)));
-      const maxDays=Math.max(minDays,Math.round(Number($('pickupPointMaxDays')?.value||minDays)));
-      if(!name) throw new Error('Punkt nomini kiriting');
-      if(!address) throw new Error('Punkt manzilini kiriting');
-      if(!Number.isFinite(lat)||!Number.isFinite(lng)) throw new Error('Latitude va longitude koordinatalarini to‘g‘ri kiriting');
-      return {id:pickupPointEditingId||`point_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,name,address,postalCode,workingHours,lat,lng,firstKgFeeUZS,extraKgFeeUZS,minDays,maxDays,etaText:`${minDays}–${maxDays} kun`,active:String($('pickupPointActive')?.value||'true')!=='false'};
+      const pointType=String($('pickupPointType')?.value||'orzumall')==='bir_qadam'?'bir_qadam':'orzumall';const name=String($('pickupPointName')?.value||'').trim();const address=String($('pickupPointAddress')?.value||'').trim();const postalCode=String($('pickupPointPostalCode')?.value||'').trim().slice(0,40);const workingHours=String($('pickupPointWorkingHours')?.value||'').trim().slice(0,180);const rawLat=String($('pickupPointLat')?.value||'').trim(),rawLng=String($('pickupPointLng')?.value||'').trim();const lat=rawLat===''?null:Number(rawLat),lng=rawLng===''?null:Number(rawLng);const has=Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180;const firstKgFeeUZS=Math.max(0,Math.round(Number($('pickupPointFirstKg')?.value||0)));const extraKgFeeUZS=Math.max(0,Math.round(Number($('pickupPointExtraKg')?.value||0)));const minDays=Math.max(1,Math.round(Number($('pickupPointMinDays')?.value||1)));const maxDays=Math.max(minDays,Math.round(Number($('pickupPointMaxDays')?.value||minDays)));const active=String($('pickupPointActive')?.value||'true')!=='false';
+      if(!name)throw new Error('Punkt nomini kiriting');if(!address)throw new Error('Punkt manzilini kiriting');if(active&&pointType==='bir_qadam'&&!has)throw new Error('Faol Bir Qadam punkti uchun koordinatalarni kiriting');
+      return {id:pickupPointEditingId||`point_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,name,address,postalCode,workingHours,lat:has?lat:null,lng:has?lng:null,pointType,sourceType:'manual',firstKgFeeUZS,extraKgFeeUZS,minDays,maxDays,etaText:`${minDays}–${maxDays} kun`,active,setupRequired:false,tariffConfigured:true,isBuiltIn:false};
     }
-    function clearPickupPointForm(){
-      pickupPointEditingId='';
-      ['pickupPointName','pickupPointAddress','pickupPointPostalCode','pickupPointWorkingHours','pickupPointLat','pickupPointLng','pickupPointFirstKg','pickupPointExtraKg','pickupPointMinDays','pickupPointMaxDays'].forEach(id=>{if($(id)) $(id).value='';});
-      if($('pickupPointActive')) $('pickupPointActive').value='true';
-      if($('addPickupPointBtn')) $('addPickupPointBtn').innerHTML='<i class="fas fa-plus"></i> Punkt qo‘shish';
-      if($('cancelPickupPointEditBtn')) $('cancelPickupPointEditBtn').hidden=true;
-      if($('pickupPointFormStatus')) $('pickupPointFormStatus').textContent='Yangi punkt ma’lumotlarini kiriting.';
-    }
+    function clearPickupPointForm(){pickupPointEditingId='';['pickupPointName','pickupPointAddress','pickupPointPostalCode','pickupPointWorkingHours','pickupPointLat','pickupPointLng','pickupPointFirstKg','pickupPointExtraKg','pickupPointMinDays','pickupPointMaxDays'].forEach(id=>{if($(id))$(id).value='';});if($('pickupPointType'))$('pickupPointType').value='orzumall';if($('pickupPointActive'))$('pickupPointActive').value='true';if($('addPickupPointBtn'))$('addPickupPointBtn').innerHTML='<i class="fas fa-plus"></i> Punkt qo‘shish';if($('cancelPickupPointEditBtn'))$('cancelPickupPointEditBtn').hidden=true;if($('pickupPointFormStatus'))$('pickupPointFormStatus').textContent='Yangi punkt ma’lumotlarini kiriting.';}
     function renderPickupPointsAdmin(){
-      const body=$('pickupPointsAdminBody'); if(!body) return;
-      if(!pickupPointsAdmin.length){body.innerHTML='<tr><td colspan="10"><div class="muted" style="padding:8px">Hali topshirish punkti qo‘shilmagan.</div></td></tr>';return;}
-      body.innerHTML=pickupPointsAdmin.map((p,i)=>`<tr data-pickup-id="${esc(p.id)}"><td>${i+1}</td><td><div class="pickupAdminName">${esc(p.name)}</div><div class="pickupAdminAddress">${esc(p.address)}</div></td><td>${esc(p.postalCode||'—')}</td><td>${esc(p.workingHours||'—')}</td><td><div class="pickupCoord">${Number(p.lat).toFixed(6)}, ${Number(p.lng).toFixed(6)}</div><a href="https://maps.google.com/?q=${encodeURIComponent(`${p.lat},${p.lng}`)}" target="_blank" rel="noopener" class="muted">Xaritada ochish</a></td><td>${formatPrice(p.firstKgFeeUZS)}</td><td>${formatPrice(p.extraKgFeeUZS)}</td><td>${esc(p.etaText||`${p.minDays}–${p.maxDays} kun`)}</td><td><span class="${p.active!==false?'pickupActive':'pickupInactive'}">${p.active!==false?'Faol':'O‘chirilgan'}</span></td><td><div class="right-actions"><button class="btn btn-light btn-sm pickupPointEditBtn" type="button" title="Tahrirlash"><i class="fas fa-pen"></i></button><button class="btn btn-light btn-sm pickupPointDeleteBtn" type="button" title="O‘chirish"><i class="fas fa-trash"></i></button></div></td></tr>`).join('');
+      const body=$('pickupPointsAdminBody');if(!body)return;if(!pickupPointsAdmin.length){body.innerHTML='<tr><td colspan="11"><div class="muted" style="padding:8px">Hali topshirish punkti qo‘shilmagan.</div></td></tr>';return;}
+      body.innerHTML=pickupPointsAdmin.map((p,i)=>{const has=pickupHasCoords(p);const type=p.pointType==='bir_qadam'?'<span class="pickupTypePill bq">Bir Qadam</span>':'<span class="pickupTypePill om">OrzuMall</span>';const coord=has?`<div class="pickupCoord">${Number(p.lat).toFixed(6)}, ${Number(p.lng).toFixed(6)}</div><a href="https://maps.google.com/?q=${encodeURIComponent(`${p.lat},${p.lng}`)}" target="_blank" rel="noopener" class="muted">Xaritada ochish</a>`:'<span class="pickupDraft">Koordinata kiritilmagan</span>';const status=p.setupRequired?'<span class="pickupDraft">To‘ldirish kerak</span>':`<span class="${p.active!==false?'pickupActive':'pickupInactive'}">${p.active!==false?'Faol':'O‘chirilgan'}</span>`;return `<tr data-pickup-id="${esc(p.id)}"><td>${i+1}</td><td>${type}</td><td><div class="pickupAdminName">${esc(p.name)}</div><div class="pickupAdminAddress">${esc(p.address)}</div></td><td>${esc(p.postalCode||'—')}</td><td>${esc(p.workingHours||'—')}</td><td>${coord}</td><td>${formatPrice(p.firstKgFeeUZS)}</td><td>${formatPrice(p.extraKgFeeUZS)}</td><td>${esc(p.etaText||`${p.minDays}–${p.maxDays} kun`)}</td><td>${status}</td><td><div class="right-actions"><button class="btn btn-light btn-sm pickupPointEditBtn" type="button" title="Tahrirlash"><i class="fas fa-pen"></i></button><button class="btn btn-light btn-sm pickupPointDeleteBtn" type="button" title="O‘chirish"><i class="fas fa-trash"></i></button></div></td></tr>`;}).join('');
     }
-    function addOrUpdatePickupPoint(){
-      try{
-        const p=readPickupPointForm(); const idx=pickupPointsAdmin.findIndex(x=>String(x.id)===String(p.id));
-        if(idx>=0) pickupPointsAdmin[idx]=p; else pickupPointsAdmin.push(p);
-        pickupPointsAdmin.sort((a,b)=>a.name.localeCompare(b.name,'uz'));
-        renderPickupPointsAdmin(); clearPickupPointForm(); toast(idx>=0?'Punkt yangilandi. Saqlash tugmasini bosing.':'Punkt qo‘shildi. Ro‘yxatni saqlashni unutmang.');
-      }catch(e){toast(e.message||String(e),'error');}
-    }
-    function editPickupPoint(id){
-      const p=pickupPointsAdmin.find(x=>String(x.id)===String(id)); if(!p) return;
-      pickupPointEditingId=p.id;
-      $('pickupPointName').value=p.name;$('pickupPointAddress').value=p.address;$('pickupPointPostalCode').value=p.postalCode||'';$('pickupPointWorkingHours').value=p.workingHours||'';$('pickupPointLat').value=p.lat;$('pickupPointLng').value=p.lng;$('pickupPointFirstKg').value=p.firstKgFeeUZS;$('pickupPointExtraKg').value=p.extraKgFeeUZS;$('pickupPointMinDays').value=p.minDays;$('pickupPointMaxDays').value=p.maxDays;$('pickupPointActive').value=p.active!==false?'true':'false';
-      $('addPickupPointBtn').innerHTML='<i class="fas fa-save"></i> Tahrirni qo‘llash';$('cancelPickupPointEditBtn').hidden=false;$('pickupPointFormStatus').textContent=`Tahrirlanmoqda: ${p.name}`;
-      $('pickupPointName').scrollIntoView({behavior:'smooth',block:'center'});
-    }
-    async function loadPickupPointsAdmin(){
-      if(pickupPointsLoaded) return; pickupPointsLoaded=true;
-      try{const snap=await getDoc(doc(db,'configs','pickupPoints'));const raw=snap.exists()?(snap.data()?.points||[]):[];pickupPointsAdmin=raw.map(normalizePickupAdminPoint).filter(Boolean);renderPickupPointsAdmin();$('pickupPointsStatus').innerHTML=snap.exists()?`Yuklandi: <code>configs/pickupPoints</code> · ${pickupPointsAdmin.length} ta punkt`:'Hali punktlar saqlanmagan. Yangi punkt qo‘shing.';}catch(e){renderPickupPointsAdmin();$('pickupPointsStatus').textContent='Punktlarni yuklashda xatolik: '+(e.message||e);}
-    }
-    async function savePickupPointsAdmin(){
-      if(!isAdmin(auth.currentUser)) return toast('Faqat admin punktlarni saqlay oladi','error');
-      try{await setDoc(doc(db,'configs','pickupPoints'),{version:2,points:pickupPointsAdmin,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||auth.currentUser?.uid||''},{merge:true});$('pickupPointsStatus').innerHTML=`Saqlandi: <code>configs/pickupPoints</code> · ${pickupPointsAdmin.length} ta punkt`;toast('Topshirish punktlari saqlandi');}catch(e){toast('Punktlarni saqlashda xatolik: '+(e.message||e),'error');}
-    }
+    function addOrUpdatePickupPoint(){try{const p=readPickupPointForm();const idx=pickupPointsAdmin.findIndex(x=>String(x.id)===String(p.id));if(idx>=0)pickupPointsAdmin[idx]={...pickupPointsAdmin[idx],...p};else pickupPointsAdmin.push(p);pickupPointsAdmin.sort((a,b)=>a.name.localeCompare(b.name,'uz'));renderPickupPointsAdmin();clearPickupPointForm();toast(idx>=0?'Punkt yangilandi. Saqlash tugmasini bosing.':'Punkt qo‘shildi. Ro‘yxatni saqlashni unutmang.');}catch(e){toast(e.message||String(e),'error');}}
+    function editPickupPoint(id){const p=pickupPointsAdmin.find(x=>String(x.id)===String(id));if(!p)return;pickupPointEditingId=p.id;$('pickupPointType').value=p.pointType==='bir_qadam'?'bir_qadam':'orzumall';$('pickupPointName').value=p.name;$('pickupPointAddress').value=p.address;$('pickupPointPostalCode').value=p.postalCode||'';$('pickupPointWorkingHours').value=p.workingHours||'';$('pickupPointLat').value=p.lat??'';$('pickupPointLng').value=p.lng??'';$('pickupPointFirstKg').value=p.firstKgFeeUZS;$('pickupPointExtraKg').value=p.extraKgFeeUZS;$('pickupPointMinDays').value=p.minDays;$('pickupPointMaxDays').value=p.maxDays;$('pickupPointActive').value=p.active!==false?'true':'false';$('addPickupPointBtn').innerHTML='<i class="fas fa-save"></i> Tahrirni qo‘llash';$('cancelPickupPointEditBtn').hidden=false;$('pickupPointFormStatus').textContent=`Tahrirlanmoqda: ${p.name}`;$('pickupPointName').scrollIntoView({behavior:'smooth',block:'center'});}
+    async function loadPickupPointsAdmin(){if(pickupPointsLoaded)return;pickupPointsLoaded=true;try{const defaults=await loadPickupDefaultsAdmin();const snap=await getDoc(doc(db,'configs','pickupPoints')).catch(()=>null);const remote=snap&&snap.exists()?(snap.data()||{}):{points:[]};pickupPointsAdmin=mergePickupAdminPoints(defaults,remote);renderPickupPointsAdmin();const active=pickupPointsAdmin.filter(x=>x.active!==false&&!x.setupRequired).length,drafts=pickupPointsAdmin.filter(x=>x.setupRequired).length;$('pickupPointsStatus').innerHTML=`Yuklandi: ${pickupPointsAdmin.length} ta punkt · faol: ${active} ta · to‘ldirish kerak: ${drafts} ta`; }catch(e){renderPickupPointsAdmin();$('pickupPointsStatus').textContent='Punktlarni yuklashda xatolik: '+(e.message||e);}}
+    async function savePickupPointsAdmin(){if(!isAdmin(auth.currentUser))return toast('Faqat admin punktlarni saqlay oladi','error');try{await setDoc(doc(db,'configs','pickupPoints'),{version:3,points:pickupPointsAdmin,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||auth.currentUser?.uid||''},{merge:true});$('pickupPointsStatus').innerHTML=`Saqlandi: <code>configs/pickupPoints</code> · ${pickupPointsAdmin.length} ta punkt`;toast('Topshirish punktlari saqlandi');}catch(e){toast('Punktlarni saqlashda xatolik: '+(e.message||e),'error');}}
 
 function nowISO(){ return new Date().toISOString().split("T")[0]; }
     function formatPrice(n){
@@ -6554,7 +6515,7 @@ if(e.target===$("jsonModal")) closeModal("jsonModal");
     document.getElementById("cancelPickupPointEditBtn")?.addEventListener("click", clearPickupPointForm);
     document.getElementById("savePickupPointsBtn")?.addEventListener("click", savePickupPointsAdmin);
     document.getElementById("openPickupPointCoordsBtn")?.addEventListener("click", ()=>{ const lat=Number(document.getElementById('pickupPointLat')?.value),lng=Number(document.getElementById('pickupPointLng')?.value); if(!Number.isFinite(lat)||!Number.isFinite(lng)) return toast('Avval koordinatalarni kiriting','error'); window.open(`https://maps.google.com/?q=${encodeURIComponent(`${lat},${lng}`)}`,'_blank','noopener'); });
-    document.getElementById("pickupPointsAdminBody")?.addEventListener("click", e=>{ const row=e.target.closest('[data-pickup-id]'); if(!row) return; const id=row.getAttribute('data-pickup-id'); if(e.target.closest('.pickupPointEditBtn')) editPickupPoint(id); if(e.target.closest('.pickupPointDeleteBtn')){ pickupPointsAdmin=pickupPointsAdmin.filter(x=>String(x.id)!==String(id)); renderPickupPointsAdmin(); toast('Punkt ro‘yxatdan o‘chirildi. Saqlash tugmasini bosing.'); } });
+    document.getElementById("pickupPointsAdminBody")?.addEventListener("click", e=>{ const row=e.target.closest('[data-pickup-id]'); if(!row) return; const id=row.getAttribute('data-pickup-id'); if(e.target.closest('.pickupPointEditBtn')) editPickupPoint(id); if(e.target.closest('.pickupPointDeleteBtn')){ const p=pickupPointsAdmin.find(x=>String(x.id)===String(id)); if(p?.isBuiltIn){ p.active=false; p.setupRequired=false; toast('Tayyor punkt o‘chirildi. Saqlash tugmasini bosing.'); } else { pickupPointsAdmin=pickupPointsAdmin.filter(x=>String(x.id)!==String(id)); toast('Punkt ro‘yxatdan o‘chirildi. Saqlash tugmasini bosing.'); } renderPickupPointsAdmin(); } });
 
     onAuthStateChanged(auth, async (user)=>{
   // GUARD (admin yoki sotuvchi)

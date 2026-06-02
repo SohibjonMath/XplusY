@@ -132,7 +132,7 @@ exports.handler = async (event) => {
     let userPhone = "";
     let numericId = null;
     let userTgChatId = null;
-    let firstName = null, lastName = null, region = null, district = null, post = null;
+    let firstName = null, lastName = null;
 
     try {
       const uSnap = await db.doc(`users/${uid}`).get();
@@ -144,25 +144,14 @@ exports.handler = async (event) => {
         userTgChatId = (u.telegramChatId || u.tgChatId || "").toString().trim() || null;
         firstName = (u.firstName || "").toString() || null;
         lastName = (u.lastName || "").toString() || null;
-        region = (u.region || "").toString() || null;
-        district = (u.district || "").toString() || null;
-        post = (u.post || "").toString() || null;
       }
     } catch (_) {}
 
     const orderId = await allocateUniqueOrderId(db);
     const orderRef = db.doc(`orders/${orderId}`);
 
-    let shippingFinal = shipping;
-    if (!shippingFinal) {
-      const addrText = [region, district, post].filter(Boolean).join(" / ");
-      shippingFinal = { region, district, post, addressText: addrText };
-    } else if (!shippingFinal.addressText) {
-      const r = shippingFinal.region || region;
-      const d = shippingFinal.district || district;
-      const p = shippingFinal.post || post;
-      shippingFinal.addressText = [r, d, p].filter(Boolean).join(" / ");
-    }
+    // Profil manzili ishlatilmaydi: mijoz punkt yoki kuryer lokatsiyasini buyurtma paytida tanlaydi.
+    const shippingFinal = shipping || { method:"pickup", methodLabel:"Do‘kondan olib ketish", addressText:"Do‘kondan olib ketish", deliveryFeeUZS:0 };
 
     const now = admin.firestore.FieldValue.serverTimestamp();
 
@@ -175,9 +164,6 @@ exports.handler = async (event) => {
       userTgChatId,
       firstName,
       lastName,
-      region,
-      district,
-      post,
       status: "new",
       paymentStatus: "cash_on_delivery",
       statusActor: "system",

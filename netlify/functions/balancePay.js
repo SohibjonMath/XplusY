@@ -253,13 +253,8 @@ exports.handler = async (event) => {
       const userName = publicCustomerName(u, decoded);
       const userPhone = (u.phone || u.phoneNumber || u.tel || "").toString();
       const numericId = (u.numericId != null ? String(u.numericId) : null);
-      let shippingFinal = shipping;
-      if (!shippingFinal) {
-        const region = (u.region || "").toString();
-        const district = (u.district || "").toString();
-        const post = (u.post || "").toString();
-        shippingFinal = { region, district, post, addressText: [region, district, post].filter(Boolean).join(" / ") };
-      }
+      // Profil manzili ishlatilmaydi: mijoz punkt yoki kuryer lokatsiyasini buyurtma paytida tanlaydi.
+      const shippingFinal = shipping || { method:"pickup", methodLabel:"Do‘kondan olib ketish", addressText:"Do‘kondan olib ketish", deliveryFeeUZS:0 };
 
       tx.set(userRef, {
         balanceUZS: newBalance,
@@ -278,9 +273,6 @@ exports.handler = async (event) => {
         userTgChatId: (u.telegramChatId || u.tgChatId || "").toString().trim() || null,
         firstName: (u.firstName || "").toString() || null,
         lastName: (u.lastName || "").toString() || null,
-        region: (u.region || "").toString() || null,
-        district: (u.district || "").toString() || null,
-        post: (u.post || "").toString() || null,
         provider: "balance",
         status: "new",
         paymentStatus: "paid",
