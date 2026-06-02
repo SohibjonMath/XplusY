@@ -1,0 +1,176 @@
+
+.pickupPointCheckoutBox{position:relative;margin-top:14px;padding:16px;border:1px solid rgba(226,232,240,.9);border-radius:24px;background:radial-gradient(circle at top right,rgba(254,226,226,.9),transparent 32%),radial-gradient(circle at top left,rgba(219,234,254,.85),transparent 30%),linear-gradient(180deg,#ffffff 0%,#fbfcff 100%);box-shadow:0 18px 50px rgba(15,23,42,.08),inset 0 1px 0 rgba(255,255,255,.9);overflow:hidden}
+.pickupPointCheckoutBox::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(248,113,113,.35),rgba(59,130,246,.18),rgba(34,197,94,.22));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.pickupPointCheckoutBox[hidden]{display:none!important}
+.pickupPointCheckoutHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.pickupPointCheckoutHead>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pickupPointCheckoutHead b{display:flex;align-items:center;gap:10px;color:#0f172a;font-size:15px;font-weight:1000;letter-spacing:-.02em}
+.pickupPointCheckoutHead b i{display:grid;place-items:center;width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;box-shadow:0 12px 22px rgba(239,68,68,.22)}
+.pickupPointCheckoutHead span{color:#475569;font-size:12px;line-height:1.6;font-weight:700;max-width:500px}
+.pickupNearestBtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 14px;border:1px solid rgba(248,113,113,.22);border-radius:14px;background:linear-gradient(135deg,#111827,#1f2937);color:#fff;font-size:11.5px;font-weight:950;cursor:pointer;white-space:nowrap;box-shadow:0 12px 24px rgba(15,23,42,.18);transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease}
+.pickupNearestBtn:hover{transform:translateY(-1px);box-shadow:0 16px 28px rgba(15,23,42,.22)}
+.pickupNearestBtn:disabled{opacity:.65;cursor:wait}
+.pickupPointLegend{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.pickupPointLegend span,.pickupPointStatusChips span{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-size:10.5px;font-weight:950}
+.pickupLegendBirQadam{background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#c2410c;border:1px solid #fdba74}
+.pickupLegendOrzu{background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#15803d;border:1px solid #86efac}
+.pickupPointFilterRow{display:flex;gap:8px;overflow:auto;margin-bottom:11px;padding:4px;border:1px solid #e5e7eb;border-radius:18px;background:rgba(248,250,252,.92);scrollbar-width:none}
+.pickupPointFilterRow::-webkit-scrollbar{display:none}
+.pickupPointFilterBtn{flex:1 1 auto;min-height:40px;padding:0 12px;border:0;border-radius:14px;background:transparent;color:#475569;font-size:11.5px;font-weight:950;cursor:pointer;white-space:nowrap;transition:background .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}
+.pickupPointFilterBtn.isActive{background:linear-gradient(135deg,#111827,#334155);color:#fff;box-shadow:0 10px 22px rgba(15,23,42,.18);transform:translateY(-1px)}
+.pickupPointSearchWrap{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:0 14px;min-height:48px;border:1px solid #e2e8f0;border-radius:16px;background:linear-gradient(180deg,#fff,#f8fafc);color:#94a3b8;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+.pickupPointSearchWrap:focus-within{border-color:#f87171;box-shadow:0 0 0 4px rgba(248,113,113,.10),inset 0 1px 0 rgba(255,255,255,.92)}
+.pickupPointSearchWrap input{width:100%;border:0;outline:0;background:transparent;color:#0f172a;font-size:13px;font-weight:800}
+.pickupPointSearchWrap input::placeholder{color:#94a3b8}
+.pickupPointStatus{margin:0 0 12px;padding:14px;border:1px solid #e2e8f0;border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(248,250,252,.96));box-shadow:0 10px 24px rgba(15,23,42,.04)}
+.pickupPointStatusTitle{display:flex;align-items:center;gap:8px;color:#0f172a;font-size:13px;font-weight:950}
+.pickupPointStatusTitle i{color:#ef4444}
+.pickupPointStatusSub{margin-top:5px;color:#64748b;font-size:11.5px;line-height:1.55;font-weight:750}
+.pickupPointStatusChips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.pickupPointStatusChips span{background:#fff;color:#334155;border:1px solid #e2e8f0}
+.pickupPointList{display:flex;flex-direction:column;gap:10px;max-height:390px;overflow:auto;padding-right:4px}
+.pickupPointList::-webkit-scrollbar{width:8px}.pickupPointList::-webkit-scrollbar-track{background:transparent}.pickupPointList::-webkit-scrollbar-thumb{background:#dbe3ee;border-radius:999px}
+.pickupPointCard{position:relative;display:block;padding:14px;border:1px solid #e5e7eb;border-radius:20px;background:linear-gradient(180deg,#fff,#fcfdff);cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;overflow:hidden}
+.pickupPointCard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#e2e8f0,#cbd5e1);opacity:.85}
+.pickupPointCard:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(15,23,42,.08)}
+.pickupPointCard.isSelected{border-color:#0f172a;box-shadow:0 18px 38px rgba(15,23,42,.10)}
+.pickupPointCard.isSelected::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(15,23,42,.08);pointer-events:none}
+.pickupPointCard.isBirQadam{border-color:#fed7aa;background:linear-gradient(145deg,#fff7ed,#ffffff)}
+.pickupPointCard.isBirQadam::before{background:linear-gradient(180deg,#fb923c,#f97316)}
+.pickupPointCard.isBirQadam:hover,.pickupPointCard.isBirQadam.isSelected{border-color:#fb923c;box-shadow:0 18px 38px rgba(249,115,22,.14)}
+.pickupPointCard.isOrzuMall{border-color:#bbf7d0;background:linear-gradient(145deg,#f0fdf4,#ffffff)}
+.pickupPointCard.isOrzuMall::before{background:linear-gradient(180deg,#22c55e,#16a34a)}
+.pickupPointCard.isOrzuMall:hover,.pickupPointCard.isOrzuMall.isSelected{border-color:#22c55e;box-shadow:0 18px 38px rgba(34,197,94,.12)}
+.pickupPointBadgeRow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.pickupPointTypeBadge,.pickupPointOfficialBadge,.pickupSelectedType{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;font-size:10.5px;font-weight:950}
+.pickupPointTypeBadge.birQadam{background:#ffedd5;color:#c2410c}.pickupPointTypeBadge.orzuMall{background:#dcfce7;color:#15803d}.pickupPointOfficialBadge{background:#eff6ff;color:#1d4ed8}.pickupPointOfficialBadgeOrzu{background:#ecfccb;color:#3f6212}
+.pickupPointCardTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.pickupPointCardTitle{display:flex;gap:10px;min-width:0;flex:1}
+.pickupPointRadio{width:18px;height:18px;margin-top:3px;accent-color:#111827;flex:0 0 auto}
+.pickupPointCardTitle>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pickupPointCardTitle b{color:#0f172a;font-size:13px;font-weight:1000;letter-spacing:-.01em}
+.pickupPointCardTitle span{color:#64748b;font-size:11.5px;line-height:1.55;font-weight:750;overflow-wrap:anywhere}
+.pickupPointCardAside{display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex:0 0 auto}
+.pickupPointDistance,.pickupPointSelectHint{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;font-size:10px;font-weight:950;white-space:nowrap}
+.pickupPointDistance{background:#eff6ff;color:#1d4ed8}
+.pickupPointDistanceMuted{background:#f8fafc;color:#64748b}
+.pickupPointSelectHint{background:#111827;color:#fff}
+.pickupPointCard.isSelected .pickupPointSelectHint{background:#16a34a}
+.pickupPointPriceRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.pickupPointPriceItem{padding:10px;border:1px solid rgba(226,232,240,.9);border-radius:16px;background:rgba(255,255,255,.88)}
+.pickupPointPriceItem small{display:block;color:#64748b;font-size:10px;font-weight:800;line-height:1.3}
+.pickupPointPriceItem b{display:block;margin-top:4px;color:#0f172a;font-size:12px;font-weight:1000;line-height:1.35;overflow-wrap:anywhere}
+.pickupPointPriceItem.isCurrent{background:linear-gradient(135deg,#111827,#1e293b);border-color:#111827;box-shadow:0 12px 24px rgba(15,23,42,.14)}
+.pickupPointPriceItem.isCurrent small,.pickupPointPriceItem.isCurrent b{color:#fff}
+.pickupPointMeta{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+.pickupPointMeta span{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:#f8fafc;color:#475569;font-size:10.5px;font-weight:900;border:1px solid #eef2f7}
+.pickupPointMetaWarn{background:#fff7ed!important;color:#c2410c!important;border-color:#fed7aa!important}
+.pickupPointSelected{margin-top:12px;padding:16px;border:1px solid rgba(187,247,208,.9);border-radius:22px;background:radial-gradient(circle at top right,rgba(220,252,231,.8),transparent 35%),linear-gradient(145deg,#f0fdf4,#ffffff);color:#166534;box-shadow:0 16px 36px rgba(22,163,74,.10)}
+.pickupSelectedHead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pickupSelectedHead b{display:flex;align-items:center;gap:8px;color:#14532d;font-size:13px;font-weight:1000}.pickupSelectedHead b i{color:#16a34a}
+.pickupSelectedType{margin:0}.pickupSelectedType.isBirQadam{background:#ffedd5;color:#c2410c}.pickupSelectedType.isOrzuMall{background:#dcfce7;color:#15803d}
+.pickupSelectedName{margin-top:10px;color:#0f172a;font-size:15px;font-weight:1000;letter-spacing:-.02em}
+.pickupSelectedAddress{margin-top:4px;color:#475569;font-size:12px;line-height:1.6;font-weight:700}
+.pickupSelectedGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.pickupSelectedGrid>div{padding:11px 12px;border:1px solid rgba(187,247,208,.95);border-radius:16px;background:rgba(255,255,255,.86)}
+.pickupSelectedGrid small{display:block;color:#16a34a;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.pickupSelectedGrid strong{display:block;margin-top:5px;color:#14532d;font-size:12px;font-weight:1000;line-height:1.45;overflow-wrap:anywhere}
+.pickupSelectedActions{display:flex;justify-content:flex-end;margin-top:12px}.pickupSelectedActions a{display:inline-flex;align-items:center;gap:7px;padding:11px 14px;border-radius:14px;background:#14532d;color:#fff;font-size:11.5px;font-weight:950;text-decoration:none;box-shadow:0 14px 24px rgba(20,83,45,.18)}
+.pickupPointEmpty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:22px 16px;border:1px dashed #cbd5e1;border-radius:18px;background:linear-gradient(180deg,#f8fafc,#ffffff);color:#64748b;text-align:center}
+.pickupPointEmpty i{font-size:20px;color:#94a3b8}.pickupPointEmpty b{color:#0f172a;font-size:13px;font-weight:950}.pickupPointEmpty span{font-size:11.5px;line-height:1.55;font-weight:700;max-width:320px}
+@media (max-width:768px){
+  .pickupPointCheckoutBox{padding:14px;border-radius:22px}
+  .pickupPointCheckoutHead{flex-direction:column}
+  .pickupNearestBtn{width:100%;min-height:44px}
+  .pickupPointFilterBtn{flex:0 0 auto}
+  .pickupPointList{max-height:320px}
+}
+@media (max-width:560px){
+  .pickupPointCardTop{flex-direction:column}
+  .pickupPointCardAside{align-items:flex-start;width:100%}
+  .pickupPointPriceRow,.pickupSelectedGrid{grid-template-columns:1fr}
+  .pickupPointDistance,.pickupPointSelectHint{white-space:normal}
+}
+
+.pickupPointHeadActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pickupExplorerOpenBtn,.pickupHeroOpenBtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 14px;border:1px solid rgba(15,23,42,.08);border-radius:14px;background:linear-gradient(180deg,#fff,#f8fafc);color:#0f172a;font-size:11.5px;font-weight:950;cursor:pointer;box-shadow:0 10px 22px rgba(15,23,42,.08);transition:transform .18s ease,box-shadow .18s ease}
+.pickupExplorerOpenBtn:hover,.pickupHeroOpenBtn:hover{transform:translateY(-1px);box-shadow:0 14px 26px rgba(15,23,42,.12)}
+.pickupPointHeroPreview{margin:0 0 12px}
+.pickupHeroCard,.pickupHeroEmpty,.pickupExplorerFeatureCard,.pickupExplorerEmpty{border-radius:20px;border:1px solid #e5e7eb;background:linear-gradient(180deg,#fff,#fbfcff);box-shadow:0 14px 30px rgba(15,23,42,.06)}
+.pickupHeroEmpty,.pickupExplorerEmpty,.pickupMapEmpty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;text-align:center;color:#64748b}
+.pickupHeroEmpty b,.pickupExplorerEmpty b,.pickupMapEmpty b{color:#0f172a;font-size:13px;font-weight:950}
+.pickupHeroEmpty i,.pickupExplorerEmpty i,.pickupMapEmpty i{font-size:22px;color:#94a3b8}
+.pickupHeroEmpty span,.pickupExplorerEmpty span,.pickupMapEmpty span{font-size:11.5px;line-height:1.55;font-weight:700;max-width:320px}
+.pickupHeroCard{padding:14px;overflow:hidden}
+.pickupHeroCard.isBirQadam{border-color:#fed7aa;background:linear-gradient(145deg,#fff7ed,#fff)}
+.pickupHeroCard.isOrzuMall{border-color:#bbf7d0;background:linear-gradient(145deg,#f0fdf4,#fff)}
+.pickupHeroInfo{display:flex;gap:12px;align-items:flex-start}
+.pickupHeroIcon{width:52px;height:52px;border-radius:18px;display:grid;place-items:center;font-size:20px;color:#fff;box-shadow:0 16px 26px rgba(15,23,42,.12);flex:0 0 auto}
+.pickupHeroCard.isBirQadam .pickupHeroIcon{background:linear-gradient(135deg,#f97316,#fb923c)}
+.pickupHeroCard.isOrzuMall .pickupHeroIcon{background:linear-gradient(135deg,#16a34a,#22c55e)}
+.pickupHeroText{min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}
+.pickupHeroText b{color:#0f172a;font-size:15px;font-weight:1000;letter-spacing:-.02em}
+.pickupHeroText>span{color:#475569;font-size:12px;line-height:1.55;font-weight:700}
+.pickupHeroBadges{display:flex;gap:6px;flex-wrap:wrap}
+.pickupHeroChipRow{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.pickupHeroChipRow span{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.76);border:1px solid rgba(226,232,240,.85);color:#334155;font-size:10.5px;font-weight:900}
+.pickupHeroMapWrap{margin-top:12px}
+.pickupHeroMap,.pickupExplorerMap{height:210px;border-radius:18px;overflow:hidden;border:1px solid rgba(226,232,240,.9);background:#f8fafc}
+.pickupHeroFooter{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:12px;flex-wrap:wrap}
+.pickupHeroStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1;min-width:min(100%,350px)}
+.pickupHeroStats>div{padding:10px;border-radius:16px;background:rgba(255,255,255,.85);border:1px solid rgba(226,232,240,.85)}
+.pickupHeroStats small{display:block;color:#64748b;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.pickupHeroStats strong{display:block;margin-top:4px;color:#0f172a;font-size:12px;font-weight:1000;overflow-wrap:anywhere}
+.pickupHeroActions{display:flex;gap:8px;flex-wrap:wrap}
+.pickupHeroActions a{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:0 14px;border-radius:14px;background:#111827;color:#fff;font-size:11.5px;font-weight:950;text-decoration:none;box-shadow:0 12px 24px rgba(15,23,42,.14)}
+.pickupExplorerOverlay{z-index:140}
+.pickupExplorerCard{width:min(1180px,100%);max-height:min(92vh,920px);border-radius:30px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(251,252,255,.97));box-shadow:0 24px 70px rgba(15,23,42,.20)}
+.pickupExplorerTop{padding:16px 18px;background:radial-gradient(circle at top left,rgba(254,226,226,.88),transparent 32%),radial-gradient(circle at top right,rgba(219,234,254,.82),transparent 30%),linear-gradient(180deg,#fff,#fbfcff)}
+.pickupExplorerTitleWrap{display:flex;align-items:center;gap:12px;min-width:0}.pickupExplorerTitleIcon{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;box-shadow:0 16px 30px rgba(239,68,68,.18)}
+.pickupExplorerTitleText{display:flex;flex-direction:column;gap:4px;min-width:0}.pickupExplorerTitleText .modalTitle{font-size:17px;font-weight:1000;letter-spacing:-.02em}.pickupExplorerTitleText span{color:#64748b;font-size:12px;line-height:1.55;font-weight:750}
+.pickupExplorerTopActions{display:flex;gap:10px;align-items:center}
+.pickupExplorerLocateBtn{min-height:40px}
+.pickupExplorerBody{display:grid;grid-template-columns:minmax(360px,420px) minmax(0,1fr);gap:16px;padding:16px;min-height:0;overflow:hidden}
+.pickupExplorerLeft,.pickupExplorerRight{min-height:0;display:flex;flex-direction:column}
+.pickupExplorerLeft{padding:2px}
+.pickupExplorerFilterRow{margin-bottom:12px}
+.pickupExplorerSearchWrap{margin-bottom:12px}
+.pickupExplorerStatus{margin-bottom:12px}
+.pickupExplorerList{flex:1;max-height:none;min-height:220px}
+.pickupExplorerRight{gap:12px}
+.pickupExplorerFeatureCard{padding:14px}.pickupExplorerFeatureCard.isBirQadam{border-color:#fed7aa;background:linear-gradient(145deg,#fff7ed,#fff)}.pickupExplorerFeatureCard.isOrzuMall{border-color:#bbf7d0;background:linear-gradient(145deg,#f0fdf4,#fff)}
+.pickupExplorerFeatureTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.pickupExplorerFeatureTop b{display:block;margin-top:6px;color:#0f172a;font-size:15px;font-weight:1000}.pickupExplorerFeatureTop span{display:block;margin-top:4px;color:#475569;font-size:12px;line-height:1.55;font-weight:700}
+.pickupExplorerMiniPrice{padding:10px 12px;border-radius:16px;background:#111827;color:#fff;min-width:110px;text-align:right}.pickupExplorerMiniPrice small{display:block;font-size:10px;font-weight:900;opacity:.85;text-transform:uppercase;letter-spacing:.05em}.pickupExplorerMiniPrice strong{display:block;margin-top:4px;font-size:13px;font-weight:1000}
+.pickupExplorerFeatureMeta{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.pickupExplorerFeatureMeta span{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.85);border:1px solid rgba(226,232,240,.85);color:#334155;font-size:10.5px;font-weight:900}
+.pickupExplorerSelected{padding:14px;border-radius:20px;border:1px solid rgba(226,232,240,.85);background:linear-gradient(180deg,#fff,#fbfcff)}
+.pickupExplorerSelectedGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.pickupExplorerSelectedGrid>div{padding:11px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0}.pickupExplorerSelectedGrid small{display:block;color:#64748b;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.pickupExplorerSelectedGrid strong{display:block;margin-top:4px;color:#0f172a;font-size:12px;font-weight:1000;overflow-wrap:anywhere}
+.pickupExplorerMapActions{display:flex;justify-content:flex-end;margin-top:10px}.pickupExplorerMapActions a{display:inline-flex;align-items:center;gap:7px;padding:10px 13px;border-radius:14px;background:#111827;color:#fff;font-size:11.5px;font-weight:950;text-decoration:none}
+@media (max-width:960px){
+  .pickupExplorerCard{width:min(100%,100%);max-height:100vh;border-radius:0}
+  .pickupExplorerBody{grid-template-columns:1fr;padding:12px;overflow:auto}
+  .pickupExplorerLeft{order:2}.pickupExplorerRight{order:1}
+  .pickupExplorerList{max-height:320px}
+}
+@media (max-width:768px){
+  .pickupPointHeadActions{width:100%}.pickupExplorerOpenBtn,.pickupNearestBtn{flex:1}
+  .pickupHeroFooter,.pickupHeroInfo{flex-direction:column;align-items:stretch}
+  .pickupHeroStats{grid-template-columns:1fr}
+  .pickupExplorerTop{padding:14px}.pickupExplorerTopActions{width:100%;justify-content:space-between}.pickupExplorerTitleWrap{align-items:flex-start}.pickupExplorerLocateBtn{flex:1}
+}
+@media (max-width:560px){
+  .pickupExplorerSelectedGrid{grid-template-columns:1fr}
+  .pickupExplorerFeatureTop{flex-direction:column}
+  .pickupHeroActions{width:100%}.pickupHeroActions a,.pickupHeroOpenBtn{flex:1}
+  .pickupHeroMap,.pickupExplorerMap{height:190px}
+}
+
+.pickupRegionRow{display:flex;gap:8px;overflow:auto;margin:0 0 12px;padding:2px 1px 2px 0;scrollbar-width:none}.pickupRegionRow::-webkit-scrollbar{display:none}
+.pickupRegionChip{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:11px;font-weight:950;cursor:pointer;white-space:nowrap;box-shadow:0 8px 18px rgba(15,23,42,.04);transition:all .18s ease}.pickupRegionChip span{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#f8fafc;color:#64748b;font-size:10px;font-weight:1000}.pickupRegionChip.isActive{background:linear-gradient(135deg,#111827,#334155);color:#fff;border-color:#111827;box-shadow:0 12px 22px rgba(15,23,42,.16)}.pickupRegionChip.isActive span{background:rgba(255,255,255,.14);color:#fff}
+.pickupPointRegionBadge{background:#f8fafc;color:#475569}
+.pickupRegionGroup{display:flex;flex-direction:column;gap:10px}.pickupRegionGroup+.pickupRegionGroup{margin-top:2px}.pickupRegionGroupHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid #e2e8f0;border-radius:18px;background:linear-gradient(180deg,#fff,#f8fafc);position:sticky;top:0;z-index:1}.pickupRegionGroupHead span{display:inline-flex;align-items:center;gap:7px;color:#0f172a;font-size:12.5px;font-weight:950}.pickupRegionGroupHead b{color:#64748b;font-size:11px;font-weight:900}.pickupRegionGroupBody{display:flex;flex-direction:column;gap:10px}
+.pickupRecommendBlock{margin-top:14px;padding-top:14px;border-top:1px dashed rgba(226,232,240,.95)}.pickupRecommendHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.pickupRecommendHead b{display:flex;align-items:center;gap:8px;color:#0f172a;font-size:13px;font-weight:1000}.pickupRecommendHead span{color:#64748b;font-size:11.5px;line-height:1.5;font-weight:700}.pickupRecommendGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}.pickupRecommendCard{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border-radius:18px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(15,23,42,.05);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;text-align:left}.pickupRecommendCard:hover{transform:translateY(-2px);box-shadow:0 16px 28px rgba(15,23,42,.10)}.pickupRecommendCard.isBirQadam{border-color:#fed7aa;background:linear-gradient(145deg,#fff7ed,#fff)}.pickupRecommendCard.isOrzuMall{border-color:#bbf7d0;background:linear-gradient(145deg,#f0fdf4,#fff)}.pickupRecommendTop{display:flex;flex-direction:column;gap:4px}.pickupRecommendTop b{color:#0f172a;font-size:12px;font-weight:1000}.pickupRecommendTop span{color:#64748b;font-size:10.5px;font-weight:800}.pickupRecommendMeta{display:flex;flex-wrap:wrap;gap:6px}.pickupRecommendMeta span{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:#f8fafc;color:#475569;font-size:10px;font-weight:900}.pickupRecommendCard strong{color:#111827;font-size:12px;font-weight:1000}
+.pickupExplorerMarkerLegend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.pickupExplorerMarkerLegend span{display:inline-flex;align-items:center;gap:7px;color:#475569;font-size:11px;font-weight:850}.pickupExplorerMarkerLegend i{display:inline-block;width:11px;height:11px;border-radius:999px}.pickupExplorerMarkerLegend .isBirQadam i{background:#fb923c;border:2px solid #ea580c}.pickupExplorerMarkerLegend .isOrzu i{background:#22c55e;border:2px solid #15803d}.pickupExplorerMarkerLegend .isSelected i{background:#111827;border:2px solid #111827}
+.pickupExplorerRecommend{margin-top:12px}.pickupExplorerRecommendHead{color:#0f172a;font-size:12px;font-weight:1000;margin-bottom:8px}.pickupExplorerRecommendGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.pickupExplorerRecommendCard{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:10px;border-radius:16px;border:1px solid #e2e8f0;background:#fff;text-align:left;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}.pickupExplorerRecommendCard:hover{transform:translateY(-2px);box-shadow:0 12px 20px rgba(15,23,42,.08)}.pickupExplorerRecommendCard b{color:#0f172a;font-size:11.5px;font-weight:1000}.pickupExplorerRecommendCard span,.pickupExplorerRecommendCard small{color:#64748b;font-size:10.5px;font-weight:800}
+.pickupExplorerList .pickupPointCard{margin-bottom:0}
+@media (max-width:960px){.pickupRecommendGrid,.pickupExplorerRecommendGrid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.pickupRecommendGrid,.pickupExplorerRecommendGrid{grid-template-columns:1fr}}
