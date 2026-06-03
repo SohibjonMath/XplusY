@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.10.0",
-  "description": "OrzuMall customer site v115: minimal signup and Bir Qadam / OrzuMall pickup-point delivery system",
+  "version": "1.24.0",
+  "description": "OrzuMall customer site v124: compact premium delivery settings modal with clear mobile actions",
   "engines": {
     "node": "18.x"
   },

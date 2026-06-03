@@ -59,6 +59,7 @@
   <link rel="stylesheet" href="./ui-site-minimal-v109.css?v=20260531_v109_site_cleanup" />
   <link rel="stylesheet" href="./ui-seller-system-v111.css?v=20260531_v112_official_badge" />
   <link rel="stylesheet" href="./pickup-points-v123.css?v=20260602_v123_checkout_minimal" />
+  <link rel="stylesheet" href="./delivery-modal-v124.css?v=20260603_v124_compact_premium" />
 </head>
 <body class="om-view-home">
   <header class="topbar">
@@ -332,15 +333,17 @@
                     <button class="savedAddressChangeBtn" id="deliveryUseNewLocation" type="button">Boshqa joy</button>
                   </div>
                 </div>
-                <button class="locateBtn" id="deliveryLocateBtn" type="button">
-                  <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
-                  <span>Joylashuvni aniqlash</span>
-                </button>
-                <div class="deliveryLocationStatus" id="deliveryLocationStatus">Joylashuv aniqlanmagan.</div>
-                <button class="locMetaBtn deliveryMapMainBtn" id="deliveryMapToggleBtn" type="button">
-                  <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
-                  <span>Xaritada tanlash</span>
-                </button>
+                <div class="deliveryPrimaryActions">
+                  <button class="locateBtn" id="deliveryLocateBtn" type="button">
+                    <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
+                    <span>Lokatsiyani aniqlash</span>
+                  </button>
+                  <button class="locMetaBtn deliveryMapMainBtn" id="deliveryMapToggleBtn" type="button">
+                    <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+                    <span>Xaritadan tanlash</span>
+                  </button>
+                </div>
+                <div class="deliveryLocationStatus" id="deliveryLocationStatus">Lokatsiya aniqlanmagan.</div>
                 <div class="deliveryLocationActions" id="deliveryLocationActions" hidden>
                   <button class="locMetaBtn" id="copyDeliveryCoordsBtn" type="button"><i class="fa-regular fa-copy" aria-hidden="true"></i> Koordinatani nusxalash</button>
                   <a class="locMetaBtn" id="openDeliveryMapBtn" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-google" aria-hidden="true"></i> Google Maps</a>
@@ -404,7 +407,7 @@
                 <b class="checkoutFinalTotalValue">0 so‘m</b>
                 <small class="checkoutFinalTotalSub"></small>
               </div>
-              <button class="btn primary" id="checkoutSubmit" type="button" hidden><i class="fa-solid fa-arrow-right" aria-hidden="true"></i> Davom etish — to‘lov turini tanlash</button>
+              <button class="btn primary" id="checkoutSubmit" type="button" hidden><i class="fa-solid fa-arrow-right" aria-hidden="true"></i> Davom etish</button>
             </div>
           </div>
         </div>

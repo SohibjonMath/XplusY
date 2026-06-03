@@ -5559,7 +5559,7 @@ function omResetDeliverySessionForUser(){
     if(methodSelect) methodSelect.value = omReadStoredDeliveryMethod();
   }catch(_e){}
   try{ renderSavedAddressesUI(); }catch(_e){}
-  try{ setDeliveryLocationStatus('Yetkazib berish uchun lokatsiyani avto aniqlang.'); }catch(_e){}
+  try{ setDeliveryLocationStatus('Lokatsiya aniqlanmagan.'); }catch(_e){}
   try{ updateDeliveryMethodUI(); }catch(_e){}
   try{ omRenderPickupPointsUI(); }catch(_e){}
 }
@@ -5581,8 +5581,7 @@ function updateCheckoutCompactSummary(){
   }
   const info = getCheckoutDeliveryInfo();
   const total = info.ok ? Number(info.data?.totalWithDeliveryUZS || built.totalUZS) : Number(built.totalUZS || 0);
-  const suffix = info.ok ? " • yakuniy summa" : " • yetkazishni tanlang";
-  els.checkoutCompactSummary.innerHTML = `<span>${built.items.reduce((s,x)=>s + Number(x.qty||0),0)} ta tanlangan${suffix}</span><b>${moneyUZS(total)}</b>`;
+  els.checkoutCompactSummary.innerHTML = `<span>${built.items.reduce((s,x)=>s + Number(x.qty||0),0)} ta tanlangan</span><b>${moneyUZS(total)}</b>`;
   try{ updateCheckoutFinalSummary(built, info); }catch(_e){}
 }
 
@@ -5714,7 +5713,7 @@ function omRenderInlineDeliveryMap({open=false, centerCurrent=true}={}){
   if(panel.hidden){
     if(toggleBtn){
       const hasLoc = !!(omDeliveryLocation && Number.isFinite(Number(omDeliveryLocation.lat)) && Number.isFinite(Number(omDeliveryLocation.lng)));
-      toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${hasLoc ? 'Xaritani ochish' : 'Xaritada tanlash'}</span>`;
+      toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${hasLoc ? 'Xaritani ochish' : 'Xaritadan tanlash'}</span>`;
     }
     return false;
   }
@@ -5837,7 +5836,7 @@ function updateDeliveryLocationMeta(){
   if(wrap) wrap.hidden = !hasLoc;
   if(toggleBtn){
     const isOpen = !!panel && !panel.hidden;
-    toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${isOpen ? 'Xaritani yopish' : (hasLoc ? 'Xaritani ochish' : 'Xaritada tanlash')}</span>`;
+    toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>${isOpen ? 'Xaritani yopish' : (hasLoc ? 'Xaritani ochish' : 'Xaritadan tanlash')}</span>`;
   }
   if(panel && !panel.hidden){
     try{ omRenderInlineDeliveryMap({centerCurrent:true}); }catch(_e){}
@@ -5847,7 +5846,7 @@ function updateDeliveryLocationMeta(){
 function setDeliveryLocationStatus(text, ok=false){
   const el = document.getElementById('deliveryLocationStatus');
   if(!el) return;
-  const safeText = escapeHtml(String(text || '').trim() || 'Yetkazib berish uchun lokatsiyani avto aniqlang.');
+  const safeText = escapeHtml(String(text || '').trim() || 'Lokatsiya aniqlanmagan.');
   let html = safeText;
   if(omDeliveryLocation && Number.isFinite(Number(omDeliveryLocation.lat)) && Number.isFinite(Number(omDeliveryLocation.lng))){
     const coords = `${Number(omDeliveryLocation.lat).toFixed(6)}, ${Number(omDeliveryLocation.lng).toFixed(6)}`;
@@ -5989,7 +5988,7 @@ function getCheckoutDeliveryInfo(){
     if(loc){ omDeliveryLocation = loc; }
   }
   if(!omDeliveryLocation){
-    return { ok:false, reason:'Yetkazib berish uchun “Avto aniqlash” tugmasini bosing va lokatsiyaga ruxsat bering.' };
+    return { ok:false, reason:'Lokatsiyani aniqlang yoki xaritadan tanlang.' };
   }
   if(!built || !built.ok){
     return { ok:false, reason:'Tanlangan mahsulotlar topilmadi.' };
@@ -8580,9 +8579,9 @@ try{ window.openProductPage = openProductPage; }catch(_e){}
   const cfg = [
     ['#catApplyBtn','fa-solid fa-filter','Ko‘rish'],
     ['#catClearBtn','fa-solid fa-rotate-left','Tozalash'],
-    ['#deliveryUseNewLocation','fa-solid fa-location-dot','Yangi lokatsiya'],
-    ['#deliveryLocateBtn','fa-solid fa-crosshairs','Aniqlash'],
-    ['#deliveryMapToggleBtn','fa-solid fa-map-location-dot','Xarita'],
+    ['#deliveryUseNewLocation','fa-solid fa-location-dot','Boshqa manzil'],
+    ['#deliveryLocateBtn','fa-solid fa-location-crosshairs','Lokatsiyani aniqlash'],
+    ['#deliveryMapToggleBtn','fa-solid fa-map-location-dot','Xaritadan tanlash'],
     ['#copyDeliveryCoordsBtn','fa-regular fa-copy','Nusxalash'],
     ['#deliveryMapApplyBtn','fa-solid fa-circle-check','Qo‘llash'],
     ['#checkoutSubmit','fa-solid fa-arrow-right','Davom etish'],
@@ -8624,7 +8623,7 @@ try{ window.openProductPage = openProductPage; }catch(_e){}
         el.innerHTML = `<i class="${icon}" aria-hidden="true"></i><span class="btnLabel">${lbl}</span>`;
         el.setAttribute('title', lbl);
         if(!el.getAttribute('aria-label')) el.setAttribute('aria-label', lbl);
-        const iconOnlyMobile = !['#productPageCartBtn','#paymentSubmit','#checkoutSubmit','#paymeBtn','#ppReviewSend','#orderBtnPage','#paymentDeliveryChangeBtn','#savedAddressDetectSave','#topupBtn'].includes(sel);
+        const iconOnlyMobile = !['#productPageCartBtn','#paymentSubmit','#checkoutSubmit','#paymeBtn','#ppReviewSend','#orderBtnPage','#paymentDeliveryChangeBtn','#savedAddressDetectSave','#topupBtn','#deliveryLocateBtn','#deliveryMapToggleBtn','#deliveryUseNewLocation'].includes(sel);
         el.classList.toggle('omIconOnlyMobile', compact && iconOnlyMobile);
       });
     });
