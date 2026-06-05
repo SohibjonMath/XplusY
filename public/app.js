@@ -264,14 +264,14 @@ function toMillis(ts){
 }
 
 // Product popularity / interest tracking
-// Popular endi qo'lda beriladigan ball emas: ko'rish + savat + sevimli + sotib olishdan hisoblanadi.
-const OM_METRICS_LS = "om_product_metrics_v2";
+// v127: ekranda faqat serverdagi umumiy Firestore qiymati ko‘rsatiladi.
+// Brauzer localStorage qiymati endi popularlikka aralashtirilmaydi.
 const OM_ANON_LS = "om_anon_id_v1";
-const productMetricsCache = new Map(); // productId -> {views, cartAdds, favoriteAdds, purchases, score, ts}
+const productMetricsCache = new Map(); // productId -> authoritative shared metrics only
 
 function omMetricNum(v){
   const n = Number(v || 0);
-  return Number.isFinite(n) ? n : 0;
+  return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
 }
 function omAnonId(){
   try{
@@ -283,165 +283,74 @@ function omAnonId(){
     return id;
   }catch(e){ return "anon_local"; }
 }
-function omReadLocalMetrics(){
-  try{ return JSON.parse(localStorage.getItem(OM_METRICS_LS) || "{}"); }catch(e){ return {}; }
-}
-function omWriteLocalMetrics(obj){
-  try{ localStorage.setItem(OM_METRICS_LS, JSON.stringify(obj || {})); }catch(e){}
-}
 function omEngagementScore(m){
   const views = omMetricNum(m?.views);
   const fav = omMetricNum(m?.favoriteAdds || m?.favorites);
   const cart = omMetricNum(m?.cartAdds);
   const buy = omMetricNum(m?.purchases || m?.soldCount);
-  // E-commerce weight: view=1, favorite=4, cart=7, purchase=25
   return Math.round(views + fav*4 + cart*7 + buy*25);
 }
 function omMetricFromProduct(p){
   if(!p) return {views:0, cartAdds:0, favoriteAdds:0, purchases:0, score:0};
   const id = String(p.id || p._docId || "");
   const cached = productMetricsCache.get(id) || {};
-  const local = (omReadLocalMetrics()[id] || {});
-  const views = Math.max(
-    omMetricNum(p.views), omMetricNum(p.viewCount), omMetricNum(p.viewsCount), omMetricNum(p.productViews), omMetricNum(p.popularViews),
-    omMetricNum(cached.views), omMetricNum(local.views)
-  );
-  const cartAdds = Math.max(
-    omMetricNum(p.cartAdds), omMetricNum(p.cartAddCount), omMetricNum(p.addToCartCount),
-    omMetricNum(cached.cartAdds), omMetricNum(local.cartAdds)
-  );
-  const favoriteAdds = Math.max(
-    omMetricNum(p.favoriteAdds), omMetricNum(p.favorites), omMetricNum(p.favoriteCount), omMetricNum(p.wishlistAdds),
-    omMetricNum(cached.favoriteAdds), omMetricNum(local.favoriteAdds)
-  );
-  const purchases = Math.max(
-    omMetricNum(p.purchases), omMetricNum(p.purchaseCount), omMetricNum(p.soldCount), omMetricNum(p.salesCount),
-    omMetricNum(cached.purchases), omMetricNum(local.purchases)
-  );
+  const views = Math.max(omMetricNum(p.views), omMetricNum(p.viewCount), omMetricNum(p.viewsCount), omMetricNum(p.productViews), omMetricNum(p.popularViews), omMetricNum(cached.views));
+  const cartAdds = Math.max(omMetricNum(p.cartAdds), omMetricNum(p.cartAddCount), omMetricNum(p.addToCartCount), omMetricNum(cached.cartAdds));
+  const favoriteAdds = Math.max(omMetricNum(p.favoriteAdds), omMetricNum(p.favorites), omMetricNum(p.favoriteCount), omMetricNum(p.wishlistAdds), omMetricNum(cached.favoriteAdds));
+  const purchases = Math.max(omMetricNum(p.purchases), omMetricNum(p.purchaseCount), omMetricNum(p.soldCount), omMetricNum(p.salesCount), omMetricNum(cached.purchases));
   const calculated = omEngagementScore({views, cartAdds, favoriteAdds, purchases});
-  const score = Math.max(calculated, omMetricNum(p.metricScore), omMetricNum(p.engagementScore), omMetricNum(cached.score), omMetricNum(local.score));
+  const score = Math.max(calculated, omMetricNum(p.popularScore), omMetricNum(p.metricScore), omMetricNum(p.engagementScore), omMetricNum(cached.score));
   return {views, cartAdds, favoriteAdds, purchases, score};
 }
 function omGetProductMetrics(pOrId){
   const p = (typeof pOrId === "object" && pOrId) ? pOrId : (products || []).find(x=>String(x.id||x._docId)===String(pOrId));
   return omMetricFromProduct(p || {id:pOrId});
 }
-function omMetricFieldForType(type){
-  const t = String(type||"").toLowerCase();
-  if(t === "view" || t === "views" || t === "open") return {field:"views", weight:1, event:"view"};
-  if(t === "favorite" || t === "fav" || t === "wishlist") return {field:"favoriteAdds", weight:4, event:"favorite"};
-  if(t === "add_to_cart" || t === "cart" || t === "cart_add") return {field:"cartAdds", weight:7, event:"add_to_cart"};
-  if(t === "purchase" || t === "buy" || t === "order") return {field:"purchases", weight:25, event:"purchase"};
-  return {field:"views", weight:1, event:t || "view"};
+function omApplySharedMetrics(productId, raw={}){
+  const id=String(productId||"").trim(); if(!id)return null;
+  const m={views:omMetricNum(raw.views),cartAdds:omMetricNum(raw.cartAdds),favoriteAdds:omMetricNum(raw.favoriteAdds),purchases:omMetricNum(raw.purchases),score:omMetricNum(raw.score),ts:Date.now()};
+  m.score=Math.max(m.score,omEngagementScore(m)); productMetricsCache.set(id,m);
+  const prod=(products||[]).find(x=>String(x.id||x._docId)===id);
+  if(prod){prod.views=m.views;prod.viewsCount=m.views;prod.cartAdds=m.cartAdds;prod.favoriteAdds=m.favoriteAdds;prod.purchases=m.purchases;prod.soldCount=m.purchases;prod.metricScore=m.score;prod.engagementScore=m.score;prod.popularScore=m.score;}
+  return m;
 }
-function omUpdateLocalMetric(productId, field, qty=1){
-  const id = String(productId || "").trim();
-  if(!id) return;
-  const all = omReadLocalMetrics();
-  const cur = all[id] || {};
-  cur[field] = omMetricNum(cur[field]) + omMetricNum(qty || 1);
-  cur.score = omEngagementScore(cur);
-  cur.updatedAt = Date.now();
-  all[id] = cur;
-  omWriteLocalMetrics(all);
-  productMetricsCache.set(id, {...(productMetricsCache.get(id)||{}), ...cur, ts: Date.now()});
-  const prod = (products || []).find(x=>String(x.id||x._docId)===id);
-  if(prod){
-    prod[field] = Math.max(omMetricNum(prod[field]), omMetricNum(cur[field]));
-    prod.metricScore = Math.max(omMetricNum(prod.metricScore), omMetricNum(cur.score));
+async function preloadProductMetrics(productIds,{force=false,rerender=false}={}){
+  const ids=[...new Set((productIds||[]).map(String).filter(Boolean))].slice(0,80);if(!ids.length)return;
+  const needed=force?ids:ids.filter(id=>{const x=productMetricsCache.get(id);return !x||Date.now()-(x.ts||0)>=120000});
+  if(needed.length){
+    try{
+      const resp=await fetch("/.netlify/functions/product-metrics",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({ids:needed})});
+      const out=await resp.json().catch(()=>({}));
+      if(resp.ok&&out?.ok&&out.metrics){Object.entries(out.metrics).forEach(([id,m])=>omApplySharedMetrics(id,m||{}));}
+    }catch(_e){}
   }
+  if(rerender){try{applyFilterSort();}catch(_e){}try{if(activeTab==="product")renderProductPage();}catch(_e){}try{omRenderQuickViewPro();}catch(_e){}try{if(activeTab==="store"&&activeStoreId)renderStorePage();}catch(_e){}}
 }
-async function omLoadProductMetric(productId, force=false){
-  const id = String(productId || "").trim();
-  if(!id) return null;
-  const cached = productMetricsCache.get(id);
-  if(!force && cached && Date.now() - (cached.ts || 0) < 120000) return cached;
-  try{
-    const snap = await getDoc(doc(db, "productMetrics", id));
-    if(snap.exists()){
-      const d = snap.data() || {};
-      const out = {
-        views: omMetricNum(d.views),
-        cartAdds: omMetricNum(d.cartAdds),
-        favoriteAdds: omMetricNum(d.favoriteAdds),
-        purchases: omMetricNum(d.purchases),
-        score: omMetricNum(d.score) || omEngagementScore(d),
-        ts: Date.now()
-      };
-      productMetricsCache.set(id, out);
-      return out;
-    }
-  }catch(e){ /* rules may block reads; local metrics still work */ }
-  const local = (omReadLocalMetrics()[id] || {});
-  const out = {...local, score: omMetricNum(local.score) || omEngagementScore(local), ts: Date.now()};
-  productMetricsCache.set(id, out);
-  return out;
+async function omLoadProductMetric(productId,force=false){
+  const id=String(productId||"").trim();if(!id)return null;
+  await preloadProductMetrics([id],{force});
+  const cached=productMetricsCache.get(id);if(cached)return cached;
+  const p=(products||[]).find(x=>String(x.id||x._docId)===id);const out={...omMetricFromProduct(p||{id}),ts:Date.now()};productMetricsCache.set(id,out);return out;
 }
-async function preloadProductMetrics(productIds){
-  const ids = [...new Set((productIds||[]).map(String).filter(Boolean))].slice(0, 80);
-  if(!ids.length) return;
-  await Promise.all(ids.map(id=>omLoadProductMetric(id, false)));
+let omSharedMetricsPollTimer=null;
+function omStartSharedMetricsPolling(){
+  if(omSharedMetricsPollTimer)clearInterval(omSharedMetricsPollTimer);
+  omSharedMetricsPollTimer=setInterval(()=>{const ids=(products||[]).slice(0,80).map(p=>p.id||p._docId).filter(Boolean);preloadProductMetrics(ids,{force:true,rerender:true}).catch(()=>{});},45000);
 }
-async function omRecordProductInteraction(productId, type="view", qty=1){
-  const id = String(productId || "").trim();
-  if(!id) return;
-  const meta = omMetricFieldForType(type);
-  const n = Math.max(1, Math.round(omMetricNum(qty || 1)));
-
-  // Immediate UI/local update, so numbers change without waiting for Firestore.
-  omUpdateLocalMetric(id, meta.field, n);
-  try{ omRenderQuickViewPro(); }catch(e){}
+setTimeout(omStartSharedMetricsPolling,2500);
+async function omRecordProductInteraction(productId,type="view",qty=1){
+  const id=String(productId||"").trim();if(!id)return;
   try{
-    if(els?.sort?.value === "popular") applyFilterSort();
-  }catch(e){}
-
-  // Event log. Works for logged users, tries anon too; silently ignores if rules block.
-  try{
-    await addDoc(collection(db, "events"), {
-      uid: currentUser?.uid || null,
-      anonId: currentUser?.uid ? null : omAnonId(),
-      type: meta.event,
-      productId: id,
-      qty: n,
-      weight: meta.weight,
-      createdAt: serverTimestamp(),
-      ua: navigator.userAgent || "",
-    });
-  }catch(e){}
-
-  // Aggregated public metrics. If rules allow, this becomes site-wide real popularity.
-  try{
-    await setDoc(doc(db, "productMetrics", id), {
-      [meta.field]: increment(n),
-      score: increment(meta.weight * n),
-      updatedAt: serverTimestamp()
-    }, { merge:true });
-  }catch(e){}
-
-  // Optional mirror fields on product document for sorting/indexing; ignored if rules deny.
-  try{
-    await setDoc(doc(db, "products", id), {
-      [meta.field]: increment(n),
-      metricScore: increment(meta.weight * n),
-      popularScore: increment(meta.weight * n),
-      updatedAt: serverTimestamp()
-    }, { merge:true });
-  }catch(e){}
+    const headers={"content-type":"application/json"};
+    if(currentUser){try{headers.authorization=`Bearer ${await currentUser.getIdToken()}`;}catch(_e){}}
+    const resp=await fetch("/.netlify/functions/product-interaction",{method:"POST",headers,body:JSON.stringify({productId:id,type,qty:Math.max(1,Math.round(omMetricNum(qty||1))),anonId:omAnonId()})});
+    const out=await resp.json().catch(()=>({}));
+    if(resp.ok&&out?.ok&&out.metrics){omApplySharedMetrics(id,out.metrics);try{omRenderQuickViewPro();}catch(_e){}try{if(els?.sort?.value==="popular")applyFilterSort();}catch(_e){}}
+  }catch(_e){}
 }
-function omRecordPurchaseMetrics(items){
-  try{
-    (items || []).forEach(it=>{
-      const id = it.productId || it.id;
-      const qty = Number(it.qty || it.quantity || 1) || 1;
-      omRecordProductInteraction(id, "purchase", qty);
-    });
-  }catch(e){}
-}
-
-// Backward compatible event API used by older buttons.
-async function logEvent(type, productId){
-  return omRecordProductInteraction(productId, type, 1);
-}
+// Sotib olish popularligi checkout serverida markaziy hisoblanadi; brauzer qayta oshirmaydi.
+function omRecordPurchaseMetrics(_items){}
+async function logEvent(type,productId){return omRecordProductInteraction(productId,type,1);}
 
 
 const els = {
