@@ -56,6 +56,8 @@ function publicSeller(d={}){
     lat:Number(d.lat||0)||0,
     lng:Number(d.lng||0)||0,
     popularity:num(d.popularity,0,100),
+    popularityAuto:d.popularityAuto!==false,
+    popularityProductCount:Math.max(0,Math.round(Number(d.popularityProductCount||0)||0)),
     commissionPercent:num(d.commissionPercent??10,0,100),
     followersCount:Math.max(0,Math.round(Number(d.followersCount||0)||0)),
     verified:d.verified!==false,
@@ -64,13 +66,59 @@ function publicSeller(d={}){
     updatedAt:d.updatedAt||null
   }
 }
-async function sellerStats(db,sellerId){
-  const snap=await db.collection("products").where("sellerId","==",String(sellerId)).get();
-  const products=snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>String(p.status||"").toLowerCase()!=="deleted");
-  const avg=products.length?Math.round(products.reduce((s,p)=>s+num(p.popularScore,0,100),0)/products.length):0;
+function isVisibleSellerProduct(p={}){
+  return String(p.status||"").toLowerCase()==="approved"&&p.sellerActive!==false&&p.isActive!==false;
+}
+function averageProductPopularity(products=[]){
+  const rows=(Array.isArray(products)?products:[]).filter(isVisibleSellerProduct);
+  return rows.length?Math.round(rows.reduce((sum,p)=>sum+num(p.popularScore??p.metricScore,0,100),0)/rows.length):0;
+}
+function buildSellerStats(productDocs=[]){
+  const products=productDocs.map(d=>({id:d.id,...(typeof d.data==="function"?d.data():d)})).filter(p=>String(p.status||"").toLowerCase()!=="deleted");
+  const visibleProducts=products.filter(isVisibleSellerProduct);
+  const avgAll=products.length?Math.round(products.reduce((sum,p)=>sum+num(p.popularScore??p.metricScore,0,100),0)/products.length):0;
+  const popularity=visibleProducts.length?Math.round(visibleProducts.reduce((sum,p)=>sum+num(p.popularScore??p.metricScore,0,100),0)/visibleProducts.length):0;
   const pending=products.filter(p=>String(p.status||"pending").toLowerCase()==="pending").length;
   const approved=products.filter(p=>String(p.status||"pending").toLowerCase()==="approved").length;
-  return{products,productCount:products.length,avgProductPopularity:avg,pendingCount:pending,approvedCount:approved};
+  return{products,productCount:products.length,visibleProductCount:visibleProducts.length,avgProductPopularity:avgAll,popularity,pendingCount:pending,approvedCount:approved};
+}
+async function sellerStats(db,sellerId){
+  const snap=await db.collection("products").where("sellerId","==",String(sellerId)).get();
+  return buildSellerStats(snap.docs);
+}
+async function commitProductPopularitySnapshot(db,docs,popularity){
+  const changed=docs.filter(d=>{
+    const x=d.data()||{};
+    return String(x.status||"").toLowerCase()!=="deleted"&&Number(x.sellerPopularity||0)!==Number(popularity||0);
+  });
+  for(let i=0;i<changed.length;i+=430){
+    const batch=db.batch();
+    changed.slice(i,i+430).forEach(d=>batch.set(d.ref,{sellerPopularity:popularity,sellerPopularityUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true}));
+    await batch.commit();
+  }
+}
+async function syncSellerPopularity(db,sellerId,{syncProducts=true}={}){
+  const id=safeId(sellerId);
+  if(!id)return{products:[],productCount:0,visibleProductCount:0,avgProductPopularity:0,popularity:0,pendingCount:0,approvedCount:0};
+  const productSnap=await db.collection("products").where("sellerId","==",id).get();
+  const stats=buildSellerStats(productSnap.docs);
+  const sellerRef=db.doc(`sellers/${id}`),sellerSnap=await sellerRef.get();
+  if(sellerSnap.exists){
+    const current=sellerSnap.data()||{};
+    const needsSellerUpdate=Number(current.popularity||0)!==Number(stats.popularity||0)||current.popularityAuto!==true||String(current.popularityFormula||"")!=="approved_active_products_average"||Number(current.popularityProductCount||0)!==Number(stats.visibleProductCount||0);
+    if(needsSellerUpdate){
+      await sellerRef.set({
+        popularity:stats.popularity,
+        popularityAuto:true,
+        popularityFormula:"approved_active_products_average",
+        popularityProductCount:stats.visibleProductCount,
+        popularityUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt:admin.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+    }
+  }
+  if(syncProducts)await commitProductPopularitySnapshot(db,productSnap.docs,stats.popularity);
+  return stats;
 }
 async function getSellerByDecoded(db,decoded){
   const sellerId=safeId(decoded?.sellerId||"");
@@ -81,4 +129,4 @@ async function getSellerByDecoded(db,decoded){
   if(data.active===false)throw new Error("seller_disabled");
   return data;
 }
-module.exports={admin,initAdmin,json,bearer,safeText,safeId,normLogin,loginKey,randomId,sellerUid,num,hashPassword,verifyPassword,verifyToken,isAdmin,publicSeller,sellerStats,getSellerByDecoded};
+module.exports={admin,initAdmin,json,bearer,safeText,safeId,normLogin,loginKey,randomId,sellerUid,num,hashPassword,verifyPassword,verifyToken,isAdmin,publicSeller,isVisibleSellerProduct,averageProductPopularity,buildSellerStats,sellerStats,syncSellerPopularity,getSellerByDecoded};

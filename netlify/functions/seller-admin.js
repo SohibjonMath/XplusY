@@ -13,8 +13,8 @@ exports.handler=async(event)=>{
       const rows=[];
       for(const d of snap.docs){
         const seller={id:d.id,...d.data()};
-        const stats=await C.sellerStats(db,d.id);
-        rows.push({...C.publicSeller(seller),...stats,products:undefined});
+        const stats=await C.syncSellerPopularity(db,d.id,{syncProducts:false});
+        rows.push({...C.publicSeller({...seller,popularity:stats.popularity,popularityAuto:true,popularityProductCount:stats.visibleProductCount}),...stats,products:undefined});
       }
       const totals={
         sellerCount:rows.length,
@@ -44,6 +44,7 @@ exports.handler=async(event)=>{
         const hp=C.hashPassword(pass);
         passwordPatch={passwordSalt:hp.salt,passwordHash:hp.hash,passwordUpdatedAt:C.admin.firestore.FieldValue.serverTimestamp()};
       }
+      const autoStats=await C.sellerStats(db,id);
       const seller={
         id,uid:C.sellerUid(id),login,
         storeName:C.safeText(input.storeName||input.name||old.storeName,140),
@@ -54,7 +55,10 @@ exports.handler=async(event)=>{
         phone:C.safeText(input.phone||old.phone,80),
         lat:Number(input.lat??old.lat??0)||0,
         lng:Number(input.lng??old.lng??0)||0,
-        popularity:C.num(input.popularity??old.popularity,0,100),
+        popularity:autoStats.popularity,
+        popularityAuto:true,
+        popularityFormula:"approved_active_products_average",
+        popularityProductCount:autoStats.visibleProductCount,
         commissionPercent:C.num(input.commissionPercent??old.commissionPercent??10,0,100),
         followersCount:Math.max(0,Math.round(Number(old.followersCount||0)||0)),
         verified:input.verified===undefined?(old.verified!==false):input.verified!==false,
@@ -74,7 +78,8 @@ exports.handler=async(event)=>{
       const sync=db.batch();
       ps.docs.forEach(d=>sync.set(d.ref,{sellerName:seller.storeName,sellerLogo:seller.logoUrl,sellerBanner:seller.bannerUrl,sellerDescription:seller.description,sellerWorkingHours:seller.workingHours,sellerPhone:seller.phone,sellerPopularity:seller.popularity,sellerVerified:seller.verified,sellerCommissionPercent:seller.commissionPercent,sellerActive:seller.active,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true}));
       if(ps.size)await sync.commit();
-      return C.json(200,{ok:true,seller:C.publicSeller(seller)});
+      const refreshed=await C.syncSellerPopularity(db,id,{syncProducts:true});
+      return C.json(200,{ok:true,seller:C.publicSeller({...seller,popularity:refreshed.popularity,popularityAuto:true,popularityProductCount:refreshed.visibleProductCount})});
     }
     if(action==="toggle"){
       const id=C.safeId(body.id);if(!id)return C.json(400,{ok:false,error:"seller_id_required"});
