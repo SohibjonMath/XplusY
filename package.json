@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.28.0",
-  "description": "OrzuMall seller v123: automatic store popularity from approved active seller products",
+  "version": "1.29.0",
+  "description": "OrzuMall seller v124: exact arithmetic-mean store popularity using the same product popularity score shown on cards",
   "engines": {
     "node": "18.x"
   },

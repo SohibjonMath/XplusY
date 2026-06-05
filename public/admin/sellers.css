@@ -5,5 +5,5 @@
 /* v122 public storefront seller profile fields */
 .field textarea{width:100%;resize:vertical;min-height:82px;border:1px solid #e2e8f0;border-radius:14px;padding:11px 12px;font:inherit;background:#fff;color:#0f172a}.checkfield{display:flex!important;flex-direction:row!important;align-items:center;gap:9px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.checkfield input{width:17px;height:17px}.checkfield span{font-size:13px;font-weight:800;color:#334155}.metrics{grid-template-columns:repeat(auto-fit,minmax(108px,1fr))!important}
 
-/* v123 — do‘kon popularligi faqat avtomatik hisoblanadi */
+/* v124 — do‘kon popularligi mahsulot kartalaridagi ballarning aniq o‘rta arifmetigi */
 .field small{font-size:10px;line-height:1.45;color:#64748b;font-weight:700}.field input[readonly]{background:#f8fafc;color:#741a35;font-weight:1000;cursor:not-allowed}
