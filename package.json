@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.30.0",
-  "description": "OrzuMall v127: authoritative site-wide product popularity aggregated by Netlify server functions",
+  "version": "1.32.0",
+  "description": "OrzuMall v129: home search returns premium public seller store results alongside products",
   "engines": {
     "node": "18.x"
   },

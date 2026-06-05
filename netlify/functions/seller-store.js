@@ -19,10 +19,22 @@ async function loadStore(db,id){const snap=await db.doc(`sellers/${id}`).get();i
 async function loadProducts(db,sellerId){let snap;try{snap=await db.collection('products').where('sellerId','==',sellerId).limit(600).get()}catch(_){return []}const rows=await C.withProductMetrics(db,snap.docs);return rows.filter(x=>String(x.status||'').toLowerCase()==='approved'&&x.sellerActive!==false&&x.isActive!==false).map(x=>publicProduct(x.id,x)).sort((a,b)=>(b._created||0)-(a._created||0))}
 async function followerStatus(db,uid,sellerId){if(!uid)return false;const s=await db.doc(`storeFollowers/${sellerId}/users/${uid}`).get();return s.exists&&(s.data()?.active!==false)}
 async function notificationList(db,uid){let snap;try{snap=await db.collection(`users/${uid}/notifications`).orderBy('createdAt','desc').limit(80).get()}catch(_){snap=await db.collection(`users/${uid}/notifications`).limit(80).get()}const rows=snap.docs.map(d=>{const x=d.data()||{};return{id:d.id,type:txt(x.type,80),title:txt(x.title,180),body:txt(x.body,700),sellerId:txt(x.sellerId,100),storeName:txt(x.storeName,180),storeLogo:txt(x.storeLogo,900),productId:txt(x.productId,100),productName:txt(x.productName,240),productImage:txt(x.productImage,900),url:txt(x.url,1000),read:!!x.read,createdAt:safeTimestamp(x.createdAt)}}).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));return{notifications:rows,unreadCount:rows.filter(x=>!x.read).length}}
+function searchNorm(v){return txt(v,1200).toLowerCase().replace(/[’`ʻʼ]/g,"'").replace(/\s+/g,' ').trim()}
+function storeSearchRank(d={},q=''){
+  const name=searchNorm(d.storeName||d.name),description=searchNorm(d.description),id=searchNorm(d.id),needle=searchNorm(q);
+  let rank=0;if(name===needle)rank+=1000;if(name.startsWith(needle))rank+=500;if(name.includes(needle))rank+=250;if(description.includes(needle))rank+=45;if(id.includes(needle))rank+=10;
+  if(!rank)return 0;return rank+Math.min(100,Number(d.popularity||0)||0)+Math.min(100,Number(d.followersCount||0)||0)/10;
+}
+async function searchStores(db,rawQuery,max=12){
+  const q=searchNorm(rawQuery);if(!q)return[];let snap;
+  try{snap=await db.collection('sellers').where('active','==',true).limit(500).get()}catch(_){snap=await db.collection('sellers').limit(500).get()}
+  return snap.docs.map(doc=>({id:doc.id,...(doc.data()||{})})).filter(d=>d.active!==false).map(d=>({d,rank:storeSearchRank(d,q)})).filter(x=>x.rank>0).sort((a,b)=>b.rank-a.rank||Number(b.d.followersCount||0)-Number(a.d.followersCount||0)||String(a.d.storeName||'').localeCompare(String(b.d.storeName||''))).slice(0,Math.max(1,Math.min(30,Math.round(Number(max)||12)))).map(({d})=>publicStore(d.id,d,d.popularityProductCount||d.productCount||0,d.popularity));
+}
 exports.handler=async event=>{try{
   C.initAdmin();if(event.httpMethod!=='POST')return C.json(405,{ok:false,error:'method_not_allowed'});
   let body={};try{body=JSON.parse(event.body||'{}')}catch(_){return C.json(400,{ok:false,error:'invalid_json'})}
   const action=txt(body.action,80)||'public_store',db=C.admin.firestore();
+  if(action==='search_stores'){const stores=await searchStores(db,body.query,body.limit);return C.json(200,{ok:true,stores,count:stores.length})}
   if(action==='public_store'){
     const sellerId=C.safeId(body.sellerId);if(!sellerId)return C.json(400,{ok:false,error:'seller_id_required'});
     const seller=await loadStore(db,sellerId);if(!seller)return C.json(404,{ok:false,error:'store_not_found'});

@@ -410,6 +410,10 @@ const els = {
   notificationList: document.getElementById("notificationList"),
   notificationEmpty: document.getElementById("notificationEmpty"),
   storeUpdateStrip: document.getElementById("storeUpdateStrip"),
+  storeSearchResults: document.getElementById("storeSearchResults"),
+  storeSearchGrid: document.getElementById("storeSearchGrid"),
+  storeSearchCount: document.getElementById("storeSearchCount"),
+  storeSearchLoading: document.getElementById("storeSearchLoading"),
   viewCategories: document.getElementById("view-categories"),
   viewFav: document.getElementById("view-fav"),
   viewCart: document.getElementById("view-cart"),
@@ -2238,6 +2242,8 @@ function applyFilterSort(){
     });
   }
 
+  omScheduleStoreSearch(query);
+
   const sort = els.sort.value;
   if(sort === "price_asc") arr.sort((a,b)=>(a._price||0)-(b._price||0));
   if(sort === "price_desc") arr.sort((a,b)=>(b._price||0)-(a._price||0));
@@ -2461,7 +2467,8 @@ function render(arr){
     const n = Array.isArray(arr) ? arr.length : 0;
     els.productsCount.textContent = omCount(n);
   }
-  els.empty.hidden = arr.length !== 0;
+  omStoreSearchState.lastProductCount = Array.isArray(arr) ? arr.length : 0;
+  omSyncSearchEmptyState();
 
   let __i = 0;
   for(const p of arr){
@@ -3524,6 +3531,54 @@ async function omStoreApi(action,payload={},opts={}){
   return out;
 }
 function omStoreInitials(v){return String(v||"Do‘kon").trim().split(/\s+/).slice(0,2).map(x=>x[0]||"").join("").toUpperCase()||"D"}
+
+/* ===== v129 Home search: public seller stores ===== */
+const omStoreSearchState={query:"",items:[],loading:false,timer:null,seq:0,lastProductCount:0};
+function omStoreSearchCountText(n){return `${Math.max(0,Number(n)||0)} ta do‘kon`}
+function omStoreSearchCardHtml(store={}){
+  const id=String(store.id||"").trim(),name=String(store.storeName||"Do‘kon").trim()||"Do‘kon",logo=String(store.logoUrl||"").trim();
+  const count=Math.max(0,Math.round(Number(store.productCount||store.popularityProductCount||0)||0));
+  const followers=Math.max(0,Math.round(Number(store.followersCount||0)||0));
+  const popularity=Math.max(0,Math.round(Number(store.popularity||0)||0));
+  return `<button type="button" class="storeSearchCard" data-store-search-id="${escapeHtml(id)}" title="${escapeHtml(name)} do‘konini ochish"><span class="storeSearchLogo">${logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy">`:escapeHtml(omStoreInitials(name))}</span><span class="storeSearchBody"><span class="storeSearchName"><b>${escapeHtml(name)}</b>${store.verified!==false?`<i class="fa-solid fa-circle-check storeSearchVerified" title="OrzuMall tasdiqlagan do‘kon"></i>`:""}</span><span class="storeSearchDescription">${escapeHtml(store.description||"OrzuMall marketplace do‘koni")}</span><span class="storeSearchMeta"><span><i class="fa-solid fa-box"></i>${count} mahsulot</span><span><i class="fa-solid fa-user-group"></i>${followers}</span><span><i class="fa-solid fa-fire"></i>${popularity}</span></span></span><span class="storeSearchOpen"><i class="fa-solid fa-chevron-right"></i></span></button>`;
+}
+function omSyncSearchEmptyState(){
+  if(!els.empty)return;
+  const hasProducts=Number(omStoreSearchState.lastProductCount||0)>0;
+  const hasStores=Array.isArray(omStoreSearchState.items)&&omStoreSearchState.items.length>0;
+  els.empty.hidden=hasProducts||hasStores||omStoreSearchState.loading;
+}
+function omRenderStoreSearch(){
+  const root=els.storeSearchResults,grid=els.storeSearchGrid,count=els.storeSearchCount,loading=els.storeSearchLoading;if(!root||!grid)return;
+  const q=omStoreSearchState.query,items=Array.isArray(omStoreSearchState.items)?omStoreSearchState.items:[];
+  root.hidden=!q||(!omStoreSearchState.loading&&!items.length);
+  if(loading)loading.hidden=!omStoreSearchState.loading;
+  grid.hidden=omStoreSearchState.loading;
+  grid.innerHTML=omStoreSearchState.loading?"":items.map(omStoreSearchCardHtml).join("");
+  if(count)count.textContent=omStoreSearchCountText(items.length);
+  grid.querySelectorAll("[data-store-search-id]").forEach(btn=>btn.addEventListener("click",()=>openStorePage(btn.getAttribute("data-store-search-id"))));
+  omSyncSearchEmptyState();
+}
+async function omFetchStoreSearch(q,seq){
+  try{
+    const out=await omStoreApi("search_stores",{query:q,limit:12});
+    if(seq!==omStoreSearchState.seq||q!==omStoreSearchState.query)return;
+    omStoreSearchState.items=Array.isArray(out.stores)?out.stores:[];
+  }catch(_e){
+    if(seq!==omStoreSearchState.seq)return;
+    omStoreSearchState.items=[];
+  }finally{
+    if(seq===omStoreSearchState.seq){omStoreSearchState.loading=false;omRenderStoreSearch()}
+  }
+}
+function omScheduleStoreSearch(raw){
+  const q=norm(raw);if(q===omStoreSearchState.query)return;
+  omStoreSearchState.query=q;omStoreSearchState.items=[];omStoreSearchState.seq+=1;
+  clearTimeout(omStoreSearchState.timer);
+  if(!q){omStoreSearchState.loading=false;omRenderStoreSearch();return}
+  omStoreSearchState.loading=true;omRenderStoreSearch();const seq=omStoreSearchState.seq;
+  omStoreSearchState.timer=setTimeout(()=>omFetchStoreSearch(q,seq),180);
+}
 function omMergeStoreProducts(list){
   for(const raw of (Array.isArray(list)?list:[])){
     const p={...raw,_docId:String(raw._docId||raw.id||""),_price:parseUZS(raw._price??raw.price),_created:toMillis(raw._created??raw.createdAt??raw.updatedAt)};
