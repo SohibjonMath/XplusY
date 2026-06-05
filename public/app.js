@@ -6601,8 +6601,9 @@ async function loadProductsPage(){
 
     const arr = snap.docs.map(d=> {
       const data = d.data() || {};
-      // Client-side active filter (avoid composite index): if isActive is explicitly false, skip.
+      // Client-side active filters (avoid composite indexes): hidden product or blocked seller must not appear.
       if(("isActive" in data) && data.isActive === false) return null;
+      if(("sellerActive" in data) && data.sellerActive === false) return null;
       const price = (data.price ?? data.priceUZS ?? data.uzs ?? data.amount);
       const created = (data.createdAt ?? data.created_at ?? data.created ?? data.updatedAt ?? data.updated_at ?? data.updated);
       return {

@@ -6209,8 +6209,13 @@ $("currency").value=p.currency||"UZS";
 
     async function updateProductStatus(id, status){
       if(state.role!=="admin") return toast("Faqat admin holatni o'zgartira oladi","error");
+      let moderationNote = "";
+      if(status==="rejected"){
+        moderationNote = String(prompt("Rad etish sababini yozing. Seller bu izohni kabinetida ko‘radi:", "Mahsulot ma’lumotlarini aniqlashtiring") || "").trim();
+        if(moderationNote.length<3) return toast("Rad etish sababini kiriting", "error");
+      }
       try{
-        await updateDoc(doc(db,"products",id), { status: status, updatedAt: serverTimestamp() });
+        await updateDoc(doc(db,"products",id), { status, moderationNote, moderationReason: status==="rejected" ? "admin_rejected" : "", updatedAt: serverTimestamp() });
         toast(status==="approved" ? "Tasdiqlandi" : "Rad etildi");
         await fetchProducts();
       }catch(e){

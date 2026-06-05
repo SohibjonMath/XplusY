@@ -53,6 +53,7 @@ function publicSeller(d={}){
     lat:Number(d.lat||0)||0,
     lng:Number(d.lng||0)||0,
     popularity:num(d.popularity,0,100),
+    commissionPercent:num(d.commissionPercent??10,0,100),
     active:d.active!==false,
     createdAt:d.createdAt||null,
     updatedAt:d.updatedAt||null
@@ -60,7 +61,7 @@ function publicSeller(d={}){
 }
 async function sellerStats(db,sellerId){
   const snap=await db.collection("products").where("sellerId","==",String(sellerId)).get();
-  const products=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const products=snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>String(p.status||"").toLowerCase()!=="deleted");
   const avg=products.length?Math.round(products.reduce((s,p)=>s+num(p.popularScore,0,100),0)/products.length):0;
   const pending=products.filter(p=>String(p.status||"pending").toLowerCase()==="pending").length;
   const approved=products.filter(p=>String(p.status||"pending").toLowerCase()==="approved").length;

@@ -52,6 +52,7 @@ exports.handler=async(event)=>{
         lat:Number(input.lat??old.lat??0)||0,
         lng:Number(input.lng??old.lng??0)||0,
         popularity:C.num(input.popularity??old.popularity,0,100),
+        commissionPercent:C.num(input.commissionPercent??old.commissionPercent??10,0,100),
         active:input.active===undefined?(old.active!==false):input.active!==false,
         updatedAt:C.admin.firestore.FieldValue.serverTimestamp(),
         createdAt:old.createdAt||C.admin.firestore.FieldValue.serverTimestamp(),
@@ -66,7 +67,7 @@ exports.handler=async(event)=>{
       // sync public seller snapshot into products
       const ps=await db.collection("products").where("sellerId","==",id).get();
       const sync=db.batch();
-      ps.docs.forEach(d=>sync.set(d.ref,{sellerName:seller.storeName,sellerLogo:seller.logoUrl,sellerPopularity:seller.popularity,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true}));
+      ps.docs.forEach(d=>sync.set(d.ref,{sellerName:seller.storeName,sellerLogo:seller.logoUrl,sellerPhone:seller.phone,sellerPopularity:seller.popularity,sellerCommissionPercent:seller.commissionPercent,sellerActive:seller.active,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true}));
       if(ps.size)await sync.commit();
       return C.json(200,{ok:true,seller:C.publicSeller(seller)});
     }
@@ -78,6 +79,8 @@ exports.handler=async(event)=>{
       batch.set(ref,{active,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true});
       if(seller.login)batch.set(db.doc(`sellerLogins/${C.loginKey(seller.login)}`),{sellerId:id,login:seller.login,active,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true});
       await batch.commit();
+      const ps=await db.collection("products").where("sellerId","==",id).get();
+      if(ps.size){const sync=db.batch();ps.docs.forEach(d=>sync.set(d.ref,{sellerActive:active,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true}));await sync.commit();}
       return C.json(200,{ok:true,active});
     }
     if(action==="delete"){
@@ -85,6 +88,8 @@ exports.handler=async(event)=>{
       const ref=db.doc(`sellers/${id}`),snap=await ref.get();if(!snap.exists)return C.json(404,{ok:false,error:"seller_not_found"});
       const seller=snap.data()||{};
       const batch=db.batch();batch.delete(ref);if(seller.login)batch.delete(db.doc(`sellerLogins/${C.loginKey(seller.login)}`));await batch.commit();
+      const ps=await db.collection("products").where("sellerId","==",id).get();
+      if(ps.size){const sync=db.batch();ps.docs.forEach(d=>sync.set(d.ref,{sellerActive:false,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true}));await sync.commit();}
       return C.json(200,{ok:true});
     }
     return C.json(400,{ok:false,error:"unknown_action"});

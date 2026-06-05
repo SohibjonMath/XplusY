@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.24.0",
-  "description": "OrzuMall customer site v124: compact premium delivery settings modal with clear mobile actions",
+  "version": "1.25.0",
+  "description": "OrzuMall seller v120: full seller product editor, seller orders, packing print, balance and analytics",
   "engines": {
     "node": "18.x"
   },
