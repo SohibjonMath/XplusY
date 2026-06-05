@@ -488,6 +488,19 @@ const els = {
   productPageContent: document.getElementById("productPageContent"),
   productBackBtn: document.getElementById("productBackBtn"),
   productShareBtn: document.getElementById("productShareBtn"),
+  viewStore: document.getElementById("view-store"),
+  storePageContent: document.getElementById("storePageContent"),
+  storeBackBtn: document.getElementById("storeBackBtn"),
+  storeShareBtn: document.getElementById("storeShareBtn"),
+  notificationsBtn: document.getElementById("notificationsBtn"),
+  notificationsCount: document.getElementById("notificationsCount"),
+  notificationOverlay: document.getElementById("notificationOverlay"),
+  notificationBackdrop: document.getElementById("notificationBackdrop"),
+  notificationClose: document.getElementById("notificationClose"),
+  notificationReadAll: document.getElementById("notificationReadAll"),
+  notificationList: document.getElementById("notificationList"),
+  notificationEmpty: document.getElementById("notificationEmpty"),
+  storeUpdateStrip: document.getElementById("storeUpdateStrip"),
   viewCategories: document.getElementById("view-categories"),
   viewFav: document.getElementById("view-fav"),
   viewCart: document.getElementById("view-cart"),
@@ -2422,12 +2435,13 @@ function renderOrzuMallVerifiedBadge(p,{full=false}={}){
 }
 function renderSellerMiniLine(p,{page=false}={}){
   if(omIsOrzuMallVerifiedProduct(p)) return page ? renderOrzuMallVerifiedBadge(p,{full:true}) : "";
+  const sellerId=String(p?.sellerId||"").trim();
   const name=String(p?.sellerName||"").trim();
-  if(!name) return "";
+  if(!name || !sellerId) return "";
   const logo=String(p?.sellerLogo||"").trim();
   const score=Math.max(0,Math.min(100,Number(p?.sellerPopularity||0)||0));
   const logoHtml=logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy">`:`<i class="fa-solid fa-store"></i>`;
-  return `<span class="${page?"ppSellerLine":"pcardSellerLine"}">${logoHtml}<b>${escapeHtml(name)}</b>${score?`<em><i class="fa-solid fa-fire"></i>${score}</em>`:""}</span>`;
+  return `<button type="button" class="${page?"ppSellerLine":"pcardSellerLine"}" data-store-id="${escapeHtml(sellerId)}" title="${escapeHtml(name)} do‘konini ochish">${logoHtml}<b>${escapeHtml(name)}</b>${p?.sellerVerified!==false?`<i class="fa-solid fa-circle-check" title="OrzuMall tasdiqlagan do‘kon"></i>`:""}${score?`<em><i class="fa-solid fa-fire"></i>${score}</em>`:""}</button>`;
 }
 
 function discountPct(price, oldPrice){
@@ -2623,6 +2637,10 @@ const sellerMiniHTML = renderSellerMiniLine(p);
       if(viewMode === "fav") applyFilterSort();
     });
 
+
+    card.querySelectorAll("[data-store-id]").forEach(btn=>btn.addEventListener("click",(e)=>{
+      e.preventDefault();e.stopPropagation();openStorePage(btn.getAttribute("data-store-id"));
+    }));
 
     const imgEl = card.querySelector(".pimg");
 
@@ -3578,6 +3596,81 @@ function toggleCollapsed(cardEl, bodyEl){
 
 
 
+/* ===== v122 Public stores, subscriptions and store notifications ===== */
+let activeStoreId = "";
+const omStoreCache = new Map();
+let omNotifications = [];
+let omNotificationsLoading = false;
+let omNotificationTimer = null;
+
+async function omStoreApi(action,payload={},opts={}){
+  const headers={"content-type":"application/json"};
+  if(currentUser?.getIdToken){
+    try{ headers.authorization="Bearer "+await currentUser.getIdToken(); }catch(_e){}
+  }
+  if(opts.authRequired && !headers.authorization) throw new Error("login_required");
+  const r=await fetch("/.netlify/functions/seller-store",{method:"POST",headers,body:JSON.stringify({action,...payload})});
+  const out=await r.json().catch(()=>({}));
+  if(!r.ok||!out.ok) throw new Error(out.error||"server_error");
+  return out;
+}
+function omStoreInitials(v){return String(v||"Do‘kon").trim().split(/\s+/).slice(0,2).map(x=>x[0]||"").join("").toUpperCase()||"D"}
+function omMergeStoreProducts(list){
+  for(const raw of (Array.isArray(list)?list:[])){
+    const p={...raw,_docId:String(raw._docId||raw.id||""),_price:parseUZS(raw._price??raw.price),_created:toMillis(raw._created??raw.createdAt??raw.updatedAt)};
+    const ix=products.findIndex(x=>String(x.id)===String(p.id));
+    if(ix>=0) products[ix]={...products[ix],...p}; else products.push(p);
+  }
+  try{buildTagCounts();buildCategoryTree()}catch(_e){}
+}
+function openStorePage(sellerId){
+  const id=String(sellerId||"").trim();
+  if(!id){toast("Do‘kon topilmadi");return}
+  activeStoreId=id;
+  const target="#store/"+encodeURIComponent(id);
+  if(location.hash===target) showView("store"); else location.hash=target;
+}
+function omStoreProductCardHtml(p){
+  const sel=getSel(p),img=getCurrentImage(p,sel)||p.image||p.sellerLogo||"./logo.webp",pricing=getVariantPricing(p,sel),isFav=favs.has(p.id),m=omGetProductMetrics(p),dp=discountPct(pricing.price,pricing.oldPrice);
+  return `<article class="storeProductCard" data-store-product="${escapeHtml(p.id)}">
+    <div class="storeProductMedia"><img src="${escapeHtml(img)}" alt="${escapeHtml(omProductText(p,"name",p.name||"Mahsulot"))}" loading="lazy">${dp?`<span class="storeProductBadge">-${dp}%</span>`:""}<button class="storeFavBtn ${isFav?"active":""}" type="button" data-store-fav="${escapeHtml(p.id)}"><i class="fa-${isFav?"solid":"regular"} fa-heart"></i></button></div>
+    <div class="storeProductBody"><div class="storeProductName">${escapeHtml(omProductText(p,"name",p.name||"Nomsiz mahsulot"))}</div><div class="storeProductStats"><span><i class="fa-regular fa-eye"></i> ${omCount(m.views||0)}</span><span><i class="fa-solid fa-fire"></i> ${omCount(m.score||0)}</span></div><div class="storeProductBottom"><strong class="storeProductPrice">${moneyUZS(pricing.price||0)}</strong><button class="storeProductCart" type="button" data-store-cart="${escapeHtml(p.id)}" title="Savatchaga"><i class="fa-solid fa-cart-shopping"></i></button></div></div>
+  </article>`;
+}
+function omDrawStorePage(data){
+  const root=els.storePageContent;if(!root)return;
+  const store=data?.store||{},list=Array.isArray(data?.products)?data.products:[],logo=String(store.logoUrl||""),banner=String(store.bannerUrl||""),following=!!data?.following;
+  root.innerHTML=`<section class="storeHero"><div class="storeHeroBanner">${banner?`<img src="${escapeHtml(banner)}" alt="">`:""}</div><div class="storeHeroBody"><div class="storeLogoBig">${logo?`<img src="${escapeHtml(logo)}" alt="">`:escapeHtml(omStoreInitials(store.storeName))}</div><div class="storeIdentity"><h1>${escapeHtml(store.storeName||"Do‘kon")}${store.verified!==false?`<i class="fa-solid fa-circle-check storeVerified" title="OrzuMall tasdiqlagan do‘kon"></i>`:""}</h1><p>${escapeHtml(store.description||"OrzuMall marketplace do‘koni")}</p></div><button type="button" class="storeFollowBtn ${following?"isFollowing":""}" id="storeFollowBtn"><i class="fa-solid ${following?"fa-check":"fa-plus"}"></i>${following?" Obuna bo‘lingan":" Obuna bo‘lish"}</button></div><div class="storeMeta"><span><i class="fa-solid fa-box"></i>${Number(store.productCount||list.length)} ta mahsulot</span><span><i class="fa-solid fa-user-group"></i>${Number(store.followersCount||0)} obunachi</span><span><i class="fa-solid fa-fire"></i>${Number(store.popularity||0)} popularlik</span>${store.workingHours?`<span><i class="fa-regular fa-clock"></i>${escapeHtml(store.workingHours)}</span>`:""}</div></section><div class="storeCatalogHead"><h2>Do‘kon mahsulotlari</h2><span>${list.length} ta tasdiqlangan mahsulot</span></div>${list.length?`<div class="storeProductGrid">${list.map(omStoreProductCardHtml).join("")}</div>`:`<div class="storePageEmpty"><i class="fa-solid fa-box-open"></i> Hozircha mahsulot yo‘q.</div>`}`;
+  root.querySelector("#storeFollowBtn")?.addEventListener("click",()=>omToggleStoreFollow(store.id,!following));
+  root.querySelectorAll("[data-store-product]").forEach(card=>card.addEventListener("click",e=>{if(e.target.closest("button"))return;openProductPage(card.dataset.storeProduct)}));
+  root.querySelectorAll("[data-store-cart]").forEach(btn=>btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const p=findProductById(btn.dataset.storeCart);if(p)handleAddToCart(p,{openCartAfter:false})}));
+  root.querySelectorAll("[data-store-fav]").forEach(btn=>btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const id=btn.dataset.storeFav;if(favs.has(id))favs.delete(id);else{favs.add(id);logEvent("favorite",id)}saveLS(LS.favs,Array.from(favs));updateBadges();btn.classList.toggle("active",favs.has(id));btn.innerHTML=`<i class="fa-${favs.has(id)?"solid":"regular"} fa-heart"></i>`}));
+}
+async function renderStorePage(){
+  const root=els.storePageContent;if(!root)return;const id=String(activeStoreId||"").trim();if(!id){root.innerHTML='<div class="storePageEmpty">Do‘kon tanlanmagan.</div>';return}
+  const cached=omStoreCache.get(id);if(cached)omDrawStorePage(cached);else root.innerHTML='<div class="storePageLoading"><i class="fa-solid fa-spinner fa-spin"></i> Do‘kon yuklanmoqda...</div>';
+  try{const out=await omStoreApi("public_store",{sellerId:id});omMergeStoreProducts(out.products);omStoreCache.set(id,out);if(activeTab==="store"&&activeStoreId===id)omDrawStorePage(out)}catch(e){if(!cached)root.innerHTML=`<div class="storePageEmpty"><i class="fa-solid fa-store-slash"></i> Do‘konni yuklab bo‘lmadi.</div>`;console.warn("store load",e)}
+}
+async function omToggleStoreFollow(sellerId,following){
+  if(!currentUser){toast("Obuna bo‘lish uchun akkauntga kiring");goTab("profile");return}
+  try{const out=await omStoreApi("toggle_follow",{sellerId,following},{authRequired:true}),data=omStoreCache.get(sellerId);if(data){data.following=!!out.following;data.store.followersCount=Number(out.followersCount||0);omStoreCache.set(sellerId,data);omDrawStorePage(data)}toast(out.following?"Do‘konga obuna bo‘ldingiz":"Do‘kon obunasi bekor qilindi")}catch(e){toast("Obunani o‘zgartirib bo‘lmadi: "+e.message,"error")}
+}
+function omNotificationTime(v){const n=Number(v||0);if(!n)return "";try{return new Intl.DateTimeFormat("uz-UZ",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(new Date(n))}catch(_){return new Date(n).toLocaleString()}}
+function omRenderNotificationBadge(){const unread=omNotifications.filter(x=>!x.read).length;if(els.notificationsCount){els.notificationsCount.textContent=String(Math.min(99,unread));els.notificationsCount.hidden=!unread}omRenderStoreUpdateStrip()}
+function omRenderStoreUpdateStrip(){const box=els.storeUpdateStrip;if(!box)return;const n=omNotifications.find(x=>!x.read&&x.type==="store_new_product");if(!n){box.hidden=true;box.innerHTML="";return}box.hidden=false;box.innerHTML=`<button type="button"><span class="storeUpdateIcon"><i class="fa-solid fa-bell"></i></span><span class="storeUpdateCopy"><b>${escapeHtml(n.storeName||"Obuna bo‘lgan do‘kon")}</b><span>${escapeHtml(n.productName||n.body||"Yangi mahsulot qo‘shildi")}</span></span><i class="fa-solid fa-chevron-right"></i></button>`;box.querySelector("button")?.addEventListener("click",()=>omOpenNotifications())}
+function omRenderNotifications(){const list=els.notificationList,empty=els.notificationEmpty;if(!list||!empty)return;empty.hidden=omNotifications.length>0;list.innerHTML=omNotifications.map(n=>`<button type="button" class="notifyCard ${n.read?"":"isUnread"}" data-notification-id="${escapeHtml(n.id)}"><span>${n.productImage?`<img class="notifyImg" src="${escapeHtml(n.productImage)}" alt="">`:`<span class="notifyImgFallback"><i class="fa-solid fa-store"></i></span>`}</span><span class="notifyCopy"><b>${escapeHtml(n.title||"Yangi bildirishnoma")}</b><p>${escapeHtml(n.body||"")}</p><time>${escapeHtml(omNotificationTime(n.createdAt))}</time></span><i class="notifyDot"></i></button>`).join("");list.querySelectorAll("[data-notification-id]").forEach(btn=>btn.addEventListener("click",()=>omOpenNotification(btn.dataset.notificationId)))}
+async function omLoadNotifications({silent=false}={}){if(!currentUser){omNotifications=[];omRenderNotificationBadge();omRenderNotifications();return}if(omNotificationsLoading)return;omNotificationsLoading=true;try{const out=await omStoreApi("notifications_list",{}, {authRequired:true});omNotifications=Array.isArray(out.notifications)?out.notifications:[];omRenderNotificationBadge();omRenderNotifications()}catch(e){if(!silent)console.warn("notifications",e)}finally{omNotificationsLoading=false}}
+function omOpenNotifications(){if(!currentUser){toast("Bildirishnomalarni ko‘rish uchun akkauntga kiring");goTab("profile");return}if(els.notificationOverlay)els.notificationOverlay.hidden=false;omRenderNotifications();omLoadNotifications({silent:true})}
+function omCloseNotifications(){if(els.notificationOverlay)els.notificationOverlay.hidden=true}
+async function omOpenNotification(id){const n=omNotifications.find(x=>String(x.id)===String(id));if(!n)return;try{if(!n.read){n.read=true;omRenderNotificationBadge();omRenderNotifications();await omStoreApi("notification_read",{id:n.id},{authRequired:true})}}catch(_e){}omCloseNotifications();if(n.url){const h=String(n.url).includes("#")?String(n.url).slice(String(n.url).indexOf("#")):String(n.url);location.hash=h.startsWith("#")?h:"#"+h}}
+async function omReadAllNotifications(){try{await omStoreApi("notifications_read_all",{}, {authRequired:true});omNotifications=omNotifications.map(x=>({...x,read:true}));omRenderNotificationBadge();omRenderNotifications();toast("Bildirishnomalar o‘qilgan deb belgilandi")}catch(e){toast("Bildirishnomalarni yangilab bo‘lmadi","error")}}
+function omStartNotificationPolling(){if(omNotificationTimer)clearInterval(omNotificationTimer);omNotificationTimer=null;if(!currentUser)return;omLoadNotifications({silent:true});omNotificationTimer=setInterval(()=>omLoadNotifications({silent:true}),45000)}
+els.notificationsBtn?.addEventListener("click",omOpenNotifications);els.notificationClose?.addEventListener("click",omCloseNotifications);els.notificationBackdrop?.addEventListener("click",omCloseNotifications);els.notificationReadAll?.addEventListener("click",omReadAllNotifications);
+els.storeBackBtn?.addEventListener("click",()=>{try{history.length>1?history.back():goTab("home")}catch(_){goTab("home")}});
+els.storeShareBtn?.addEventListener("click",async()=>{const data=omStoreCache.get(activeStoreId),url=location.origin+location.pathname+"#store/"+encodeURIComponent(activeStoreId||"");try{if(navigator.share)await navigator.share({title:data?.store?.storeName||"OrzuMall do‘koni",url});else{await navigator.clipboard.writeText(url);toast("Do‘kon havolasi nusxalandi")}}catch(_){}});
+window.addEventListener("focus",()=>{if(currentUser)omLoadNotifications({silent:true})});
+
+
 /* ===== Mobile SPA Router (Android-like pages) ===== */
 let activeTab = "home";
 let activeProductId = "";
@@ -3596,6 +3689,7 @@ function showView(tab){
   const map = {
     home: els.viewHome,
     product: els.viewProduct,
+    store: els.viewStore,
     categories: els.viewCategories,
     fav: els.viewFav,
     cart: els.viewCart,
@@ -3609,7 +3703,7 @@ function showView(tab){
   activeTab = tab;
   setActiveNav(tab);
   try{
-    const cls = ["om-view-home","om-view-product","om-view-categories","om-view-fav","om-view-cart","om-view-profile"];
+    const cls = ["om-view-home","om-view-product","om-view-store","om-view-categories","om-view-fav","om-view-cart","om-view-profile"];
     document.documentElement.classList.remove(...cls);
     document.body && document.body.classList.remove(...cls);
     const nowCls = "om-view-" + tab;
@@ -3619,6 +3713,7 @@ function showView(tab){
 
   // render pages on enter
   if(tab === "product") renderProductPage();
+  if(tab === "store") renderStorePage();
   if(tab === "categories") renderCategoriesPage();
   if(tab === "fav") renderFavPage();
   if(tab === "cart") renderCartPage();
@@ -3649,6 +3744,11 @@ function handleHash(){
   if(h.startsWith("product/")){
     activeProductId = decodeURIComponent(h.slice("product/".length) || "");
     showView("product");
+    return;
+  }
+  if(h.startsWith("store/")){
+    activeStoreId = decodeURIComponent(h.slice("store/".length) || "");
+    showView("store");
     return;
   }
   const tab = h || "home";
@@ -4112,6 +4212,9 @@ function bindProductPage(p){
       omOpenTagFromQuickView(btn.getAttribute("data-pp-tag") || btn.textContent || "");
     });
   });
+  root.querySelectorAll("[data-store-id]").forEach(btn=>btn.addEventListener("click",(e)=>{
+    e.preventDefault();e.stopPropagation();openStorePage(btn.getAttribute("data-store-id"));
+  }));
   const galleryThumbs = Array.from(root.querySelectorAll(".ppThumb"));
   const galleryImages = galleryThumbs.map(btn=>btn.getAttribute("data-pp-img") || "").filter(Boolean);
   const galleryMainImg = root.querySelector("#productPageImg");
@@ -7853,7 +7956,8 @@ if(document.getElementById("balHeaderBtn")){
   }
 document.addEventListener("keydown", (e)=>{
     if(e.key==="Escape"){
-      if(els.vOverlay && !els.vOverlay.hidden) closeVariantModal();
+      if(els.notificationOverlay && !els.notificationOverlay.hidden) omCloseNotifications();
+      else if(els.vOverlay && !els.vOverlay.hidden) closeVariantModal();
       else if(null && !null.hidden) closeProfile();
       else if(els.imgViewer && !els.imgViewer.hidden) closeImgViewer();
     }
@@ -7876,6 +7980,10 @@ onAuthStateChanged(auth, async (user)=>{
     try{ if(omUserShopUnsub) omUserShopUnsub(); }catch(_){}
     omUserShopUnsub = null;
     omUserShopReady = false;
+    if(omNotificationTimer) clearInterval(omNotificationTimer);
+    omNotificationTimer = null;
+    omNotifications = [];
+    omRenderNotificationBadge();
     return; // setUserUI redirects to /login.html
   }
 
@@ -7887,6 +7995,8 @@ onAuthStateChanged(auth, async (user)=>{
   // Keep order and wallet history warm across refreshes, not only after Profile is opened.
   try{ subscribeOrders(user.uid); }catch(_e){}
   try{ subscribeMoneyHistory(user.uid); }catch(_e){}
+  try{ omStartNotificationPolling(); }catch(_e){}
+  try{ if(activeTab==="store" && activeStoreId) renderStorePage(); }catch(_e){}
 
   if(__appStarted) { updateBadges(); return; }
   __appStarted = true;

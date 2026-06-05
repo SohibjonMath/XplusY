@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.26.0",
-  "description": "OrzuMall seller v121: premium seller center redesign, full product editor, orders, packing print, balance and analytics",
+  "version": "1.27.0",
+  "description": "OrzuMall seller v122: seller-aware moderation, public store pages, subscriptions and follower notifications",
   "engines": {
     "node": "18.x"
   },

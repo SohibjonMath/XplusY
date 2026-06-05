@@ -48,11 +48,16 @@ exports.handler=async(event)=>{
         id,uid:C.sellerUid(id),login,
         storeName:C.safeText(input.storeName||input.name||old.storeName,140),
         logoUrl:C.safeText(input.logoUrl||old.logoUrl,900),
+        bannerUrl:C.safeText(input.bannerUrl||old.bannerUrl,900),
+        description:C.safeText(input.description||old.description,1400),
+        workingHours:C.safeText(input.workingHours||old.workingHours,160),
         phone:C.safeText(input.phone||old.phone,80),
         lat:Number(input.lat??old.lat??0)||0,
         lng:Number(input.lng??old.lng??0)||0,
         popularity:C.num(input.popularity??old.popularity,0,100),
         commissionPercent:C.num(input.commissionPercent??old.commissionPercent??10,0,100),
+        followersCount:Math.max(0,Math.round(Number(old.followersCount||0)||0)),
+        verified:input.verified===undefined?(old.verified!==false):input.verified!==false,
         active:input.active===undefined?(old.active!==false):input.active!==false,
         updatedAt:C.admin.firestore.FieldValue.serverTimestamp(),
         createdAt:old.createdAt||C.admin.firestore.FieldValue.serverTimestamp(),
@@ -67,7 +72,7 @@ exports.handler=async(event)=>{
       // sync public seller snapshot into products
       const ps=await db.collection("products").where("sellerId","==",id).get();
       const sync=db.batch();
-      ps.docs.forEach(d=>sync.set(d.ref,{sellerName:seller.storeName,sellerLogo:seller.logoUrl,sellerPhone:seller.phone,sellerPopularity:seller.popularity,sellerCommissionPercent:seller.commissionPercent,sellerActive:seller.active,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true}));
+      ps.docs.forEach(d=>sync.set(d.ref,{sellerName:seller.storeName,sellerLogo:seller.logoUrl,sellerBanner:seller.bannerUrl,sellerDescription:seller.description,sellerWorkingHours:seller.workingHours,sellerPhone:seller.phone,sellerPopularity:seller.popularity,sellerVerified:seller.verified,sellerCommissionPercent:seller.commissionPercent,sellerActive:seller.active,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true}));
       if(ps.size)await sync.commit();
       return C.json(200,{ok:true,seller:C.publicSeller(seller)});
     }

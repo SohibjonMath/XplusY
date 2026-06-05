@@ -49,8 +49,21 @@ async function sendDocs(db, docs, payload = {}) {
   return { sent, failed };
 }
 async function pushToCustomer(db, uid, payload={}) { return sendDocs(db, await tokenDocsForUid(db, uid), payload); }
+async function tokenDocsForUids(db, uids=[]) {
+  const unique=[...new Set((uids||[]).map(normUid).filter(Boolean))];
+  if(!unique.length)return [];
+  const docs=[];
+  for(let i=0;i<unique.length;i+=30){
+    const chunk=unique.slice(i,i+30);
+    const snap=await db.collection('customerPushTokens').where('uid','in',chunk).get();
+    snap.docs.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.token&&x.active!==false)docs.push(x)});
+  }
+  const seen=new Set();
+  return docs.filter(x=>{const k=String(x.id||tokenHash(x.token));if(seen.has(k))return false;seen.add(k);return true});
+}
+async function pushToCustomers(db, uids=[], payload={}) { return sendDocs(db, await tokenDocsForUids(db,uids), payload); }
 async function pushToAllCustomers(db, payload={}) { return sendDocs(db, await allActiveTokens(db), payload); }
 async function pushOrderUpdate(db, uid, orderId, title, body, extra={}) {
   return pushToCustomer(db, uid, { title, body, channelId:'orzumall_orders_voice_v3', data:{ type:'order', orderId:safeText(orderId,100), url:'https://orzumall.uz/#profile', ...extra } });
 }
-module.exports={ safeText, tokenHash, pushToCustomer, pushToAllCustomers, pushOrderUpdate };
+module.exports={ safeText, tokenHash, pushToCustomer, pushToCustomers, pushToAllCustomers, pushOrderUpdate };

@@ -58,6 +58,7 @@
   <link rel="stylesheet" href="./ui-product-type-badge-v99.css?v=20260531_v99_product_type_badge" />
   <link rel="stylesheet" href="./ui-site-minimal-v109.css?v=20260531_v109_site_cleanup" />
   <link rel="stylesheet" href="./ui-seller-system-v111.css?v=20260531_v112_official_badge" />
+  <link rel="stylesheet" href="./ui-storefront-v122.css?v=20260605_v122_store_follow_notifications" />
   <link rel="stylesheet" href="./pickup-points-v123.css?v=20260602_v123_checkout_minimal" />
   <link rel="stylesheet" href="./delivery-modal-v124.css?v=20260603_v124_compact_premium" />
 </head>
@@ -94,6 +95,10 @@
     </div>
 
     <div class="actions actionsRight">
+      <button class="iconBtn badgeBtn notifyHeaderBtn" id="notificationsBtn" title="Bildirishnomalar" aria-label="Bildirishnomalar">
+        <i class="fa-solid fa-bell" aria-hidden="true"></i>
+        <span class="chipCount" id="notificationsCount" hidden>0</span>
+      </button>
       <button class="iconBtn badgeBtn" id="favViewBtn" title="Sevimlilar">
         <i class="fa-solid fa-heart" aria-hidden="true"></i>
         <span class="chipCount" id="favCount">0</span>
@@ -160,6 +165,7 @@
   </div>
 </section>
 
+<section class="storeUpdateStrip" id="storeUpdateStrip" hidden aria-label="Obuna bo‘lgan do‘konlar yangiliklari"></section>
 
         <div class="productsHead">
           <div class="productsTitleWrap">
@@ -211,6 +217,17 @@
     <div class="productPageContent" id="productPageContent">
       <div class="productPageLoading">Mahsulot yuklanmoqda...</div>
     </div>
+  </div>
+</section>
+
+<section class="view store-detail-view" id="view-store" hidden>
+  <div class="storePage">
+    <div class="storePageTop">
+      <button class="storeBackBtn" id="storeBackBtn" type="button" aria-label="Orqaga"><i class="fa-solid fa-arrow-left"></i></button>
+      <div class="storePageTitle"><strong>Do‘kon sahifasi</strong><span>Seller mahsulotlari va obuna yangiliklari</span></div>
+      <button class="storeShareBtn" id="storeShareBtn" type="button" aria-label="Ulashish"><i class="fa-solid fa-share-nodes"></i></button>
+    </div>
+    <div class="storePageContent" id="storePageContent"><div class="storePageLoading"><i class="fa-solid fa-spinner fa-spin"></i> Do‘kon yuklanmoqda...</div></div>
   </div>
 </section>
 
@@ -781,7 +798,7 @@
   <script src="./telegram-config.js"></script>
 <script src="./i18n.js?v=20260530_v49_mobile_select"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" referrerpolicy="no-referrer"></script>
-<script type="module" src="./app.js?v=20260605_v125_seller_filter"></script>
+<script type="module" src="./app.js?v=20260605_v126_store_follow_notifications"></script>
 <script type="module" src="./customer-center.js?v=20260531_v109_site_cleanup"></script>
 
   
@@ -847,7 +864,20 @@
       </div>
     </div>
   </div>
-<!-- Mini modal: Info / YouTube / Reviews (opened from card action icons) -->
+<!-- Store notifications center -->
+  <div class="notifyOverlay" id="notificationOverlay" hidden>
+    <div class="notifyBackdrop" id="notificationBackdrop"></div>
+    <aside class="notifyPanel" role="dialog" aria-modal="true" aria-label="Bildirishnomalar">
+      <div class="notifyHead">
+        <div class="notifyHeadTitle"><span class="notifyHeadIcon"><i class="fa-solid fa-bell"></i></span><div><b>Bildirishnomalar</b><span>Obuna bo‘lgan do‘konlaringiz yangiliklari</span></div></div>
+        <div class="notifyHeadActions"><button class="notifyMiniBtn" id="notificationReadAll" type="button" title="Hammasini o‘qilgan qilish"><i class="fa-solid fa-check-double"></i></button><button class="notifyMiniBtn" id="notificationClose" type="button" title="Yopish"><i class="fa-solid fa-xmark"></i></button></div>
+      </div>
+      <div class="notifyList" id="notificationList"></div>
+      <div class="notifyEmpty" id="notificationEmpty" hidden>Hozircha bildirishnoma yo‘q.</div>
+    </aside>
+  </div>
+
+  <!-- Mini modal: Info / YouTube / Reviews (opened from card action icons) -->
   <div class="miniModal" id="miniModal" hidden>
     <div class="miniBackdrop" id="miniBackdrop"></div>
     <div class="miniShell" role="dialog" aria-modal="true" aria-label="Ma'lumot">
