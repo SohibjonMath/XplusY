@@ -2790,6 +2790,112 @@ button[data-x] i{
 <style id="orzumall-v122-seller-moderation-identity">
 .admin-seller-source{display:flex;align-items:center;gap:9px;margin:10px 0 12px;padding:9px 10px;border:1px solid #e9d5ff;border-radius:15px;background:linear-gradient(135deg,#faf5ff,#fff);min-width:0}.admin-seller-source.is-official{border-color:#bfdbfe;background:linear-gradient(135deg,#eff6ff,#fff)}.admin-seller-source-logo{width:34px;height:34px;flex:0 0 34px;border-radius:11px;display:grid;place-items:center;overflow:hidden;background:#fff;border:1px solid #ede9fe;color:#7c3aed;font-size:14px;font-weight:1000}.admin-seller-source-logo img{width:100%;height:100%;object-fit:cover}.admin-seller-source-main{min-width:0;display:flex;flex-direction:column;gap:2px}.admin-seller-source-kicker{font-size:9px;line-height:1;text-transform:uppercase;letter-spacing:.08em;font-weight:1000;color:#9333ea}.admin-seller-source.is-official .admin-seller-source-kicker{color:#2563eb}.admin-seller-source-name{font-size:12px;font-weight:1000;color:#172033;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-seller-source-meta{font-size:10px;font-weight:800;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-seller-source-open{margin-left:auto;flex:0 0 auto;width:29px;height:29px;display:grid;place-items:center;border-radius:10px;background:#fff;border:1px solid #e9d5ff;color:#7c3aed;text-decoration:none}.seller-source-inline{display:inline-flex;align-items:center;gap:6px;max-width:300px;padding:5px 8px;border-radius:999px;background:#faf5ff;border:1px solid #e9d5ff;color:#7e22ce;font-size:11px;font-weight:950;vertical-align:middle}.seller-source-inline img{width:18px;height:18px;border-radius:6px;object-fit:cover}.seller-source-inline .seller-id{color:#64748b;font-size:10px}.product-card-premium.is-seller-pending{box-shadow:0 0 0 2px rgba(147,51,234,.12),0 18px 44px rgba(15,23,42,.07)}
 </style>
+
+<style id="orzumall-v128-admin-product-cards-premium">
+/* v128: premium admin product cards */
+.products-cards-grid{
+  grid-template-columns:repeat(auto-fill,minmax(455px,1fr))!important;
+  gap:15px!important;
+  padding:16px!important;
+  background:linear-gradient(180deg,#f8faff 0%,#f4f7fb 100%)!important;
+}
+.admin-product-card-v128{
+  position:relative;
+  display:grid;
+  grid-template-columns:142px minmax(0,1fr);
+  min-height:226px;
+  overflow:hidden;
+  border:1px solid #e4eaf4;
+  border-radius:24px;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(15,23,42,.065);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.admin-product-card-v128:hover{
+  transform:translateY(-3px);
+  border-color:#d5deed;
+  box-shadow:0 22px 48px rgba(15,23,42,.10);
+}
+.admin-product-card-v128.is-seller-pending{border-color:#e8d6ff;box-shadow:0 16px 40px rgba(124,58,237,.10)}
+.apc-media{
+  position:relative;
+  min-height:226px;
+  overflow:hidden;
+  background:linear-gradient(150deg,#f9fbff,#f1f4fa);
+}
+.apc-media::after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0;
+  height:54px;
+  background:linear-gradient(180deg,transparent,rgba(15,23,42,.13));
+  pointer-events:none;
+}
+.apc-media-image,.apc-media .om-thumb-fallback{
+  width:100%;height:100%;display:block;object-fit:cover;
+}
+.apc-media .om-thumb-fallback{display:grid;place-items:center;font-size:42px;font-weight:1000;color:#b8c2d1;background:linear-gradient(145deg,#f8fafc,#eef2f7)}
+.apc-status{position:absolute;z-index:2;top:11px;left:11px;max-width:calc(100% - 22px)}
+.apc-status .pill{max-width:100%;padding:6px 9px!important;font-size:10px!important;box-shadow:0 7px 18px rgba(15,23,42,.12)}
+.apc-score-float{position:absolute;z-index:2;left:11px;bottom:10px;display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:999px;background:rgba(15,23,42,.72);backdrop-filter:blur(7px);color:#fff;font-size:11px;font-weight:1000;box-shadow:0 8px 16px rgba(15,23,42,.18)}
+.apc-score-float i{color:#ffb020}
+.apc-content{display:flex;min-width:0;flex-direction:column;padding:14px 14px 12px}
+.apc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.apc-title-wrap{min-width:0}
+.apc-title{display:-webkit-box;overflow:hidden;-webkit-line-clamp:2;-webkit-box-orient:vertical;color:#111827;font-size:15px;font-weight:1000;line-height:1.22;letter-spacing:-.025em}
+.apc-id{display:flex;align-items:center;gap:6px;margin-top:5px;min-width:0;color:#94a3b8;font-size:10px;font-weight:900}
+.apc-id span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.apc-price{flex:0 0 auto;color:#dc1f32;font-size:15px;font-weight:1000;letter-spacing:-.035em;white-space:nowrap}
+.apc-old-price{display:block;margin-top:3px;color:#94a3b8;font-size:10px;text-align:right;text-decoration:line-through}
+.apc-source{margin-top:9px;min-width:0}
+.admin-product-card-v128 .seller-source-inline{max-width:100%;padding:5px 8px!important;border-radius:11px!important;font-size:10.5px!important;box-shadow:none!important}
+.admin-product-card-v128 .seller-source-inline .seller-id{display:none}
+.apc-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px}
+.apc-metric{display:flex;align-items:center;gap:7px;min-width:0;padding:8px;border:1px solid #edf1f6;border-radius:13px;background:#f9fbfd}
+.apc-metric i{flex:0 0 auto;color:#64748b;font-size:11px}
+.apc-metric-copy{min-width:0}
+.apc-metric small{display:block;color:#94a3b8;font-size:9px;font-weight:950;line-height:1;text-transform:uppercase;letter-spacing:.045em}
+.apc-metric b{display:block;overflow:hidden;margin-top:4px;color:#273449;font-size:11.5px;font-weight:1000;text-overflow:ellipsis;white-space:nowrap}
+.apc-tags{display:flex;align-items:center;gap:5px;overflow:hidden;margin-top:9px;white-space:nowrap}
+.admin-product-card-v128 .pill,.admin-product-card-v128 .tag,.admin-product-card-v128 .category-pill{flex:0 0 auto;max-width:175px;overflow:hidden;padding:5px 7px!important;border-radius:999px!important;font-size:9.5px!important;text-overflow:ellipsis;white-space:nowrap}
+.apc-category-row{display:flex;align-items:center;gap:7px;min-width:0;margin-top:7px}
+.apc-category-row .category-pill{min-width:0;max-width:260px!important}
+.apc-colors{display:flex;align-items:center;margin-left:auto;padding-right:4px}
+.apc-colors .color-preview{width:17px!important;height:17px!important;margin-right:-5px!important;border-radius:999px!important}
+.apc-muted{color:#94a3b8;font-size:10px;font-weight:850}
+.apc-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:10px;border-top:1px dashed #e7ecf4}
+.apc-progress{display:flex;min-width:0;flex:1;align-items:center;gap:7px}
+.apc-progress .om-score{width:min(120px,100%)!important;height:5px!important;background:#edf1f6!important}
+.apc-progress .om-score span{border-radius:999px!important}
+.apc-progress b{color:#475569;font-size:11px}
+.admin-product-card-v128 .actions{flex:0 0 auto;gap:6px!important}
+.admin-product-card-v128 .actions .action-btn{width:36px!important;min-width:36px!important;max-width:36px!important;height:36px!important;min-height:36px!important;flex:0 0 36px!important;border-radius:12px!important;padding:0!important}
+.admin-product-card-v128 .actions .action-btn span{display:none!important}
+.admin-product-card-v128 .actions .action-btn i{font-size:13px!important}
+@media(max-width:1180px){.products-cards-grid{grid-template-columns:repeat(auto-fill,minmax(420px,1fr))!important}}
+@media(max-width:760px){
+  .products-cards-grid{grid-template-columns:1fr!important;padding:10px!important;gap:11px!important}
+  .admin-product-card-v128{grid-template-columns:104px minmax(0,1fr);min-height:198px;border-radius:19px}
+  .apc-media{min-height:198px}
+  .apc-content{padding:11px 10px 10px}
+  .apc-title{font-size:13px}
+  .apc-price{font-size:13px}
+  .apc-source{margin-top:7px}
+  .apc-metrics{gap:5px;margin-top:8px}
+  .apc-metric{gap:5px;padding:6px;border-radius:10px}
+  .apc-metric small{font-size:7.5px}.apc-metric b{font-size:9.5px}
+  .apc-tags{margin-top:7px}.apc-category-row{margin-top:5px}
+  .admin-product-card-v128 .pill,.admin-product-card-v128 .tag,.admin-product-card-v128 .category-pill{max-width:118px;padding:4px 6px!important;font-size:8px!important}
+  .apc-category-row .category-pill{max-width:150px!important}
+  .apc-footer{padding-top:8px}
+  .admin-product-card-v128 .actions .action-btn{width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;min-height:32px!important;flex-basis:32px!important;border-radius:10px!important}
+}
+@media(max-width:390px){
+  .admin-product-card-v128{grid-template-columns:92px minmax(0,1fr)}
+  .apc-metric{padding:5px}.apc-metric i{display:none}.apc-colors{display:none}
+}
+</style>
+
 </head>
 <body style="display:none;">
   <div class="container">
@@ -5474,31 +5580,43 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
         const popular = Math.max(0, Math.min(100, Number(p.popularScore||0)));
         const weight = Number(p.weightKg ?? p.weight ?? 0);
         const weightText = weight ? `${weight.toFixed(2).replace(/\.00$/,'')} kg` : '— kg';
+        const hasStock = p.stockQty !== undefined && p.stockQty !== null && p.stockQty !== '';
+        const variantStock = (Array.isArray(p.variants)?p.variants:[]).reduce((s,v)=>s+Math.max(0,Math.round(Number(v?.stockQty)||0)),0);
+        const stockQty = hasStock ? Math.max(0,Math.round(Number(p.stockQty)||0)) : (variantStock || null);
+        const stockText = stockQty===null ? '—' : `${stockQty} dona`;
+        const oldPrice = Number(p.oldPrice||0);
         const colors = (p.colors||[]).slice(0,5).map(c=>{
           const hex = (typeof c==="string") ? c : (c.hex || c.value || c.color || c.code || c.bg || "");
           const bg = /^#|rgb|hsl/i.test(String(hex)) ? hex : "#eef1f7";
           return `<span class="color-preview" style="background:${esc(bg)}"></span>`;
         }).join("");
         const sellerPending=String(p.status||"approved").toLowerCase()!=="approved" && !!p.sellerId && String(p.sellerId).toLowerCase()!=="orzumall";
-        return `<article class="product-card-premium ${sellerPending?"is-seller-pending":""}" data-pid="${esc(p.id||"")}">
-          <div class="product-card-cover">
-            ${getProductImageHtml(p, "")}
-            <div class="product-card-status">${productStatusPill(p)}</div>
+        return `<article class="admin-product-card-v128 ${sellerPending?"is-seller-pending":""}" data-pid="${esc(p.id||"")}">
+          <div class="apc-media">
+            ${getProductImageHtml(p, "apc-media-image")}
+            <div class="apc-status">${productStatusPill(p)}</div>
+            <div class="apc-score-float" title="Mahsulot popularligi"><i class="fas fa-fire"></i><span>${popular}</span></div>
           </div>
-          <div class="product-card-body">
-            <div class="product-card-title" title="${esc(p.name||"")}">${esc(p.name||"Nomsiz mahsulot")}</div>
-            ${adminSellerIdentityHtml(p)}
-            <div class="product-card-meta">
-              <div><span>ID</span><b>${esc(p.id||"—")}</b></div>
-              <div><span>Narx</span><b>${formatPrice(p.price)}</b></div>
-              <div><span>Vazn</span><b>${weightText}</b></div>
-              <div><span>Sotilgan</span><b>${Number(p.soldCount||0)} ta</b></div>
+          <div class="apc-content">
+            <div class="apc-head">
+              <div class="apc-title-wrap">
+                <div class="apc-title" title="${esc(p.name||"")}">${esc(p.name||"Nomsiz mahsulot")}</div>
+                <div class="apc-id"><i class="fas fa-barcode"></i><span>${esc(p.id||"—")}</span></div>
+              </div>
+              <div class="apc-price">${formatPrice(p.price)}${oldPrice>Number(p.price||0)?`<span class="apc-old-price">${formatPrice(oldPrice)}</span>`:""}</div>
             </div>
-            <div class="om-subline" style="margin-bottom:12px">${renderFulfillmentPill(p)} ${renderProductTypePill(p)} <span class="category-pill"><i class="fas fa-sitemap"></i> ${esc(adminProductCategoryLabel(p))}</span> ${colors || `<span class="muted">Rang yo‘q</span>`}</div>
-            <div class="product-card-bottom">
-              <div style="display:flex;align-items:center;gap:9px;min-width:120px"><div class="om-score"><span style="width:${popular}%"></span></div><b>${popular}</b></div>
+            <div class="apc-source">${adminSellerIdentityHtml(p,{inline:true})}</div>
+            <div class="apc-metrics">
+              <div class="apc-metric"><i class="fas fa-cubes-stacked"></i><div class="apc-metric-copy"><small>Qoldiq</small><b>${stockText}</b></div></div>
+              <div class="apc-metric"><i class="fas fa-bag-shopping"></i><div class="apc-metric-copy"><small>Sotilgan</small><b>${Number(p.soldCount||0)} ta</b></div></div>
+              <div class="apc-metric"><i class="fas fa-weight-hanging"></i><div class="apc-metric-copy"><small>Vazn</small><b>${weightText}</b></div></div>
+            </div>
+            <div class="apc-tags">${renderFulfillmentPill(p)} ${renderProductTypePill(p)}</div>
+            <div class="apc-category-row"><span class="category-pill" title="${esc(adminProductCategoryLabel(p))}"><i class="fas fa-sitemap"></i> ${esc(adminProductCategoryLabel(p))}</span><div class="apc-colors">${colors || `<span class="apc-muted">Rang yo‘q</span>`}</div></div>
+            <div class="apc-footer">
+              <div class="apc-progress" title="Popularlik: ${popular}"><div class="om-score"><span style="width:${popular}%"></span></div><b>${popular}/100</b></div>
               <div class="actions">
-                ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn action-btn approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash"><i class="fas fa-check"></i><span>OK</span></button><button class="btn action-btn reject-btn" data-id="${esc(p.id)}" title="Rad etish"><i class="fas fa-xmark"></i><span>Rad</span></button>`:""}
+                ${(state.role==="admin" && String(p.status||"approved").toLowerCase()!=="approved")?`<button class="btn action-btn approve-btn" data-id="${esc(p.id)}" title="Tasdiqlash" aria-label="Tasdiqlash"><i class="fas fa-check"></i></button><button class="btn action-btn reject-btn" data-id="${esc(p.id)}" title="Rad etish" aria-label="Rad etish"><i class="fas fa-xmark"></i></button>`:""}
                 <button class="btn action-btn edit-btn" data-id="${esc(p.id)}" title="Tahrirlash" aria-label="Tahrirlash"><i class="fas fa-pen-to-square"></i></button>
                 ${(state.role==="admin" || state.role==="vendor")?`<button class="btn action-btn del-btn" data-id="${esc(p.id)}" title="O‘chirish" aria-label="O‘chirish"><i class="fas fa-trash-can"></i></button>`:""}
               </div>
