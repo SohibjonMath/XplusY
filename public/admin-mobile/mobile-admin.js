@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/fireba
 import { getAuth, GoogleAuthProvider, getRedirectResult, onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithPopup, signInWithRedirect, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, collection, collectionGroup, doc, getDoc, onSnapshot, orderBy, query, limit } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const cfg={apiKey:"AIzaSyDYwHJou_9GqHZcf8XxtTByC51Z8un8rrM",authDomain:"xplusy-760fa.firebaseapp.com",projectId:"xplusy-760fa",storageBucket:"xplusy-760fa.appspot.com",appId:"1:992512966017:web:5e919dbc9b8d8abcb43c80"};
+const cfg={apiKey:"AIzaSyDYwHJou_9GqHZcf8XxtTByC51Z8un8rrM",authDomain:"xplusy-760fa.firebaseapp.com",projectId:"xplusy-760fa",storageBucket:"xplusy-760fa.firebasestorage.app",appId:"1:992512966017:web:5e919dbc9b8d8abcb43c80"};
 const app=initializeApp(cfg), auth=getAuth(app), db=getFirestore(app);
 setPersistence(auth,browserLocalPersistence).catch(()=>{});
 

@@ -12,7 +12,7 @@ export const firebaseConfig = {
   apiKey: "AIzaSyDYwHJou_9GqHZcf8XxtTByC51Z8un8rrM",
   authDomain: "xplusy-760fa.firebaseapp.com",
   projectId: "xplusy-760fa",
-  storageBucket: "xplusy-760fa.appspot.com",
+  storageBucket: "xplusy-760fa.firebasestorage.app",
   appId: "1:992512966017:web:5e919dbc9b8d8abcb43c80",
 };
 

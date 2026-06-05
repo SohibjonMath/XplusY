@@ -5,7 +5,7 @@ import {
   onSnapshot, query, orderBy, limit, serverTimestamp, increment
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
-const FALLBACK_CONFIG={apiKey:'AIzaSyDYwHJou_9GqHZcf8XxtTByC51Z8un8rrM',authDomain:'xplusy-760fa.firebaseapp.com',projectId:'xplusy-760fa',storageBucket:'xplusy-760fa.appspot.com',appId:'1:992512966017:web:5e919dbc9b8d8abcb43c80'};
+const FALLBACK_CONFIG={apiKey:'AIzaSyDYwHJou_9GqHZcf8XxtTByC51Z8un8rrM',authDomain:'xplusy-760fa.firebaseapp.com',projectId:'xplusy-760fa',storageBucket:'xplusy-760fa.firebasestorage.app',appId:'1:992512966017:web:5e919dbc9b8d8abcb43c80'};
 const app=getApps().length?getApp():initializeApp(window.FIREBASE_CONFIG||FALLBACK_CONFIG);
 const auth=getAuth(app), db=getFirestore(app), $=(id)=>document.getElementById(id);
 const S={user:null,allowed:false,threads:[],activeUid:'',messages:[],notifications:[],unsubThreads:null,unsubMessages:null,unsubNotes:null};
