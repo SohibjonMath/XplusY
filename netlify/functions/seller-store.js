@@ -25,7 +25,7 @@ function searchNorm(v){return txt(v,1200).toLowerCase().replace(/[’`ʻʼ]/g,"'
 function storeSearchRank(d={},q=''){
   const name=searchNorm(d.storeName||d.name),description=searchNorm(d.description),id=searchNorm(d.id),needle=searchNorm(q);
   let rank=0;if(name===needle)rank+=1000;if(name.startsWith(needle))rank+=500;if(name.includes(needle))rank+=250;if(description.includes(needle))rank+=45;if(id.includes(needle))rank+=10;
-  if(!rank)return 0;return rank+Math.min(100,Number(d.popularity||0)||0)+Math.min(100,Number(d.followersCount||0)||0)/10;
+  if(!rank)return 0;return rank+Math.log10(1+Math.max(0,Number(d.popularity||0)||0))*24+Math.log10(1+Math.max(0,Number(d.followersCount||0)||0))*6;
 }
 async function searchStores(db,rawQuery,max=12){
   const q=searchNorm(rawQuery);if(!q)return[];let snap;
