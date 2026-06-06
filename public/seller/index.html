@@ -7,11 +7,24 @@
   <link rel="icon" href="/favicon.webp">
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./seller.css?v=20260605_v121">
+  <link rel="stylesheet" href="./seller.css?v=20260606_v130">
 </head>
 <body>
   <div class="login" id="login">
     <div class="login-shell">
+      <section class="mobile-login-hero" aria-hidden="true">
+        <span class="mobile-login-orb orb-one"></span>
+        <span class="mobile-login-orb orb-two"></span>
+        <span class="mobile-login-orb orb-three"></span>
+        <div class="mobile-login-logo-wrap">
+          <span class="logo-pulse pulse-one"></span>
+          <span class="logo-pulse pulse-two"></span>
+          <div class="mobile-login-logo"><img src="/logo.webp" alt=""></div>
+        </div>
+        <span class="mobile-login-kicker"><i class="fa-solid fa-shield-halved"></i> Xavfsiz seller kirishi</span>
+        <h1>Seller Center</h1>
+        <p>Do‘koningiz har doim nazoratda.</p>
+      </section>
       <section class="login-brand">
         <div class="brand-lockup"><img src="/logo.webp" alt="OrzuMall"><span>SELLER CENTER</span></div>
         <div class="login-copy">
@@ -31,9 +44,10 @@
         <h2>Xush kelibsiz</h2>
         <p>Admin bergan login va parol orqali kiring.</p>
         <label class="field"><span>Login</span><div class="input-wrap"><i class="fa-regular fa-user"></i><input id="loginInput" autocomplete="username" placeholder="Seller login" required></div></label>
-        <label class="field"><span>Parol</span><div class="input-wrap"><i class="fa-solid fa-lock"></i><input id="passwordInput" type="password" autocomplete="current-password" placeholder="Parol" required></div></label>
-        <button class="btn btn-primary btn-block login-submit"><i class="fa-solid fa-right-to-bracket"></i> Kabinetga kirish</button>
+        <label class="field"><span>Parol</span><div class="input-wrap password-wrap"><i class="fa-solid fa-lock"></i><input id="passwordInput" type="password" autocomplete="current-password" placeholder="Parol" required><button class="password-toggle" id="togglePassword" type="button" aria-label="Parolni ko‘rsatish"><i class="fa-regular fa-eye"></i></button></div></label>
+        <button class="btn btn-primary btn-block login-submit" id="loginSubmit"><i class="fa-solid fa-right-to-bracket"></i><span>Kabinetga kirish</span><b class="login-spinner" aria-hidden="true"></b></button>
         <div class="err" id="loginError"></div>
+        <div class="login-security"><i class="fa-solid fa-lock"></i><span>Ma’lumotlaringiz himoyalangan ulanish orqali yuboriladi.</span></div>
         <div class="login-help"><i class="fa-solid fa-circle-info"></i> Kirish muammosi bo‘lsa, OrzuMall administratori bilan bog‘laning.</div>
       </form>
     </div>
@@ -75,6 +89,6 @@
   </div>
   <div id="modal"></div>
   <script src="/order-print-v53.js?v=20260605_seller"></script>
-  <script type="module" src="./seller.js?v=20260605_v121"></script>
+  <script type="module" src="./seller.js?v=20260606_v130"></script>
 </body>
 </html>
