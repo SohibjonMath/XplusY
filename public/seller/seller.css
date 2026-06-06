@@ -104,3 +104,67 @@
   .product-premium .product-actions .btn{min-height:38px;padding:0 10px;font-size:10px}
   .product-premium .product-actions .icon-btn{padding:0 11px}
 }
+
+/* =========================================================
+   v134 — product cards width and overflow repair
+   Desktop: balanced premium cards. Mobile: full-width list.
+   ========================================================= */
+#productGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(460px,540px));
+  justify-content:start;
+  align-items:start;
+  gap:14px;
+}
+#productGrid .product-premium{
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+#productGrid .product-shell{
+  width:100%;
+  min-width:0;
+  grid-template-columns:148px minmax(0,1fr);
+}
+#productGrid .product-shell>*{min-width:0}
+#productGrid .product-body{min-width:0;overflow:hidden}
+#productGrid .product-name{
+  overflow:hidden;
+  word-break:break-word;
+}
+#productGrid .product-meta-chips{min-width:0}
+#productGrid .meta-chip{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#productGrid .product-actions{min-width:0}
+#productGrid .product-actions .btn{white-space:nowrap}
+
+@media(max-width:1180px){
+  #productGrid{grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
+}
+@media(max-width:920px){
+  #productGrid{grid-template-columns:1fr;gap:11px}
+  #productGrid .product-shell{grid-template-columns:122px minmax(0,1fr)}
+}
+@media(max-width:520px){
+  #productGrid{grid-template-columns:minmax(0,1fr);gap:10px}
+  #productGrid .product-shell{grid-template-columns:104px minmax(0,1fr)}
+  #productGrid .product-premium .product-body{padding:10px;gap:7px}
+  #productGrid .product-premium .product-name{font-size:13px;line-height:1.28}
+  #productGrid .product-price-row{display:block}
+  #productGrid .sale-state{margin-top:7px}
+  #productGrid .product-meta-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  #productGrid .meta-chip{justify-content:flex-start;min-height:23px;padding:0 7px;font-size:8.5px}
+  #productGrid .product-actions{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px}
+  #productGrid .product-actions .btn{min-height:36px;padding:0 9px;font-size:9px}
+  #productGrid .product-actions .icon-btn span{display:none}
+}
+@media(max-width:360px){
+  #productGrid .product-shell{grid-template-columns:94px minmax(0,1fr)}
+  #productGrid .product-premium .product-body{padding:9px 8px;gap:6px}
+  #productGrid .mini-source,#productGrid .pop-chip{font-size:8px;padding:0 6px}
+  #productGrid .product-premium .product-price{font-size:17px}
+}
