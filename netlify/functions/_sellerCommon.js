@@ -95,6 +95,11 @@ function publicSeller(d={}){
     completedOrdersCount:Math.max(0,Math.round(Number(d.completedOrdersCount||0)||0)),
     totalSellerOrdersCount:Math.max(0,Math.round(Number(d.totalSellerOrdersCount||0)||0)),
     partnerSinceMs:Math.max(0,Math.round(Number(d.partnerSinceMs||0)||0)),
+    sellerRating:Number(d.sellerRating||0)||0,
+    sellerRatingScore:Math.max(0,Math.round(Number(d.sellerRatingScore||0)||0)),
+    sellerRatingBadge:String(d.sellerRatingBadge||''),
+    slaOverdueOpen:Math.max(0,Math.round(Number(d.slaOverdueOpen||0)||0)),
+    slaOnTimeRate:Math.max(0,Math.round(Number(d.slaOnTimeRate||0)||0)),
     verified:d.verified!==false,
     active:d.active!==false,
     createdAt:d.createdAt||null,
@@ -132,14 +137,28 @@ async function commitProductPopularitySnapshot(db,docs,popularity){
     await batch.commit();
   }
 }
-async function syncSellerPopularity(db,sellerId,{syncProducts=true}={}){
+function timestampMs(v){
+  try{
+    if(!v)return 0;
+    if(typeof v.toMillis==="function")return v.toMillis();
+    if(Number.isFinite(Number(v)))return Number(v);
+    return Math.max(0,Number(v.seconds||v._seconds||0)*1000);
+  }catch(_){return 0}
+}
+async function syncSellerPopularity(db,sellerId,{syncProducts=true,productSnapshotMinIntervalMs=0}={}){
   const id=safeId(sellerId);
   if(!id)return{products:[],productCount:0,visibleProductCount:0,avgProductPopularity:0,popularity:0,pendingCount:0,approvedCount:0};
   const productSnap=await db.collection("products").where("sellerId","==",id).get();
   const stats=buildSellerStats(await withProductMetrics(db,productSnap.docs));
   const sellerRef=db.doc(`sellers/${id}`),sellerSnap=await sellerRef.get();
+  const current=sellerSnap.exists?(sellerSnap.data()||{}):{};
+  let shouldSyncProducts=syncProducts===true;
+  const minInterval=Math.max(0,Number(productSnapshotMinIntervalMs)||0);
+  if(shouldSyncProducts&&minInterval>0){
+    const last=timestampMs(current.sellerPopularityProductsSyncedAt);
+    if(last&&Date.now()-last<minInterval)shouldSyncProducts=false;
+  }
   if(sellerSnap.exists){
-    const current=sellerSnap.data()||{};
     const needsSellerUpdate=Number(current.popularity||0)!==Number(stats.popularity||0)||current.popularityAuto!==true||String(current.popularityFormula||"")!=="approved_active_products_average"||Number(current.popularityProductCount||0)!==Number(stats.visibleProductCount||0);
     if(needsSellerUpdate){
       await sellerRef.set({
@@ -152,7 +171,10 @@ async function syncSellerPopularity(db,sellerId,{syncProducts=true}={}){
       },{merge:true});
     }
   }
-  if(syncProducts)await commitProductPopularitySnapshot(db,productSnap.docs,stats.popularity);
+  if(shouldSyncProducts){
+    await commitProductPopularitySnapshot(db,productSnap.docs,stats.popularity);
+    if(sellerSnap.exists)await sellerRef.set({sellerPopularityProductsSyncedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }
   return stats;
 }
 async function getSellerByDecoded(db,decoded){

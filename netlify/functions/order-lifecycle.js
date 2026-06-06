@@ -3,6 +3,8 @@ const admin = require("firebase-admin");
 const { pushOrderStateChanged } = require('./_adminPush');
 const { pushToCustomer } = require('./_customerPush');
 const { refreshSellerTrustStats, sellerIdsFromOrder } = require('./_sellerTrustCommon');
+const INV = require('./_inventoryCommon');
+const PROF = require('./_sellerProfessionalCommon');
 
 function initAdmin(){
   if(admin.apps.length) return;
@@ -109,22 +111,33 @@ async function txUpdateWithOptionalRefund(db, orderId, updater){
     return {order, patch:update.patch||{}, result:update.result||{}};
   });
 }
-async function maybeRefundBalance({tx, db, order, orderRef, patch, actorType, reason}){
-  if(!isBalanceOrder(order)) return {refunded:false, amountUZS:0};
+async function prepareBalanceRefund({tx, db, order, actorType, reason}){
+  if(!isBalanceOrder(order)) return {result:{refunded:false,amountUZS:0},apply:()=>{}};
   const existing=order.refund || {};
-  if(existing.status==="refunded" || existing.processed===true) return {refunded:false, already:true, amountUZS:num(existing.amountUZS)};
+  if(existing.status==="refunded" || existing.processed===true) return {result:{refunded:false,already:true,amountUZS:num(existing.amountUZS)},apply:()=>{}};
   const uid=String(order.uid||"");
-  if(!uid) return {refunded:false, amountUZS:0};
+  if(!uid) return {result:{refunded:false,amountUZS:0},apply:()=>{}};
   const amountUZS=Math.max(0, num(order.totalUZS));
-  if(!amountUZS) return {refunded:false, amountUZS:0};
+  if(!amountUZS) return {result:{refunded:false,amountUZS:0},apply:()=>{}};
   const userRef=db.doc(`users/${uid}`);
   const userSnap=await tx.get(userRef);
-  if(!userSnap.exists) return {refunded:false, amountUZS:0};
-  const balance=readBalance(userSnap.data()||{});
-  const next=balance+amountUZS;
-  tx.set(userRef,{balanceUZS:next,balance:next,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
-  patch.refund={status:"refunded",processed:true,amountUZS,actorType:safeText(actorType,30),reason:safeText(reason,800),refundedAt:admin.firestore.Timestamp.now()};
-  return {refunded:true, amountUZS, balanceUZS:next};
+  if(!userSnap.exists) return {result:{refunded:false,amountUZS:0},apply:()=>{}};
+  const before=readBalance(userSnap.data()||{}), next=before+amountUZS;
+  return {
+    result:{refunded:true,amountUZS,balanceUZS:next},
+    apply:(patch={})=>{
+      tx.set(userRef,{balanceUZS:next,balance:next,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+      patch.refund={status:"refunded",processed:true,amountUZS,actorType:safeText(actorType,30),reason:safeText(reason,800),refundedAt:admin.firestore.Timestamp.now()};
+    }
+  };
+}
+async function prepareCancellationEffects({tx,db,order,actorType,reason,restoreStock=true,refundBalance=true}){
+  const refund=refundBalance?await prepareBalanceRefund({tx,db,order,actorType,reason}):{result:{refunded:false},apply:()=>{}};
+  const inventory=restoreStock?await INV.prepareRestoreInventory(tx,db,order):{result:{restored:false},apply:()=>{}};
+  return{
+    result:{refund:refund.result,inventory:inventory.result},
+    apply:(patch={})=>{inventory.apply(patch,reason);refund.apply(patch)}
+  };
 }
 
 exports.handler=async(event)=>{
@@ -158,8 +171,9 @@ exports.handler=async(event)=>{
           cancellation:{by:"customer",reason,cancelledAt:admin.firestore.Timestamp.now()},
           statusHistory:admin.firestore.FieldValue.arrayUnion(entry), updatedAt:admin.firestore.FieldValue.serverTimestamp()
         };
-        const refund=await maybeRefundBalance({tx,db,order,orderRef,patch,actorType:"customer",reason});
-        return {patch,result:{refund}};
+        const effects=await prepareCancellationEffects({tx,db,order,actorType:"customer",reason,restoreStock:true,refundBalance:true});
+        effects.apply(patch);
+        return {patch,result:effects.result};
       });
       await notify(db,uid,"Buyurtma bekor qilindi",`#${orderId} buyurtma siz tomonidan bekor qilindi. Sabab: ${reason}`);
       return json(200,{ok:true,status:"cancelled",...(out.result||{})});
@@ -225,13 +239,14 @@ exports.handler=async(event)=>{
         if(next==="return_requested") patch.returnRequest={...(order.returnRequest||{}),status:"requested",reason:reason||order.returnRequest?.reason||"",updatedAt:admin.firestore.Timestamp.now()};
         if(next==="returned") patch.returnRequest={...(order.returnRequest||{}),status:"approved",resolutionReason:reason,resolvedBy:"orzumall",resolvedAt:admin.firestore.Timestamp.now()};
         if(next==="return_rejected") patch.returnRequest={...(order.returnRequest||{}),status:"rejected",resolutionReason:reason,resolvedBy:"orzumall",resolvedAt:admin.firestore.Timestamp.now()};
-        let refund={refunded:false};
-        if(isRefundStatus(next)) refund=await maybeRefundBalance({tx,db,order,orderRef,patch,actorType:"orzumall",reason});
-        return {patch,result:{refund,ownerUid:String(order.uid||"")}};
+        let effects={result:{refund:{refunded:false},inventory:{restored:false}},apply:()=>{}};
+        if(isRefundStatus(next)) effects=await prepareCancellationEffects({tx,db,order,actorType:"orzumall",reason,restoreStock:true,refundBalance:true});
+        effects.apply(patch);
+        return {patch,result:{...effects.result,ownerUid:String(order.uid||"")}};
       });
       const ownerUid=out.result?.ownerUid||"";
       if(["delivered","returned","cancelled"].includes(next)){
-        await Promise.all(sellerIdsFromOrder(out.order).map(id=>refreshSellerTrustStats(db,id,{force:true}).catch(err=>console.warn("seller trust refresh skipped:",id,err?.message||err))));
+        await Promise.all(sellerIdsFromOrder(out.order).flatMap(id=>[refreshSellerTrustStats(db,id,{force:true}).catch(err=>console.warn("seller trust refresh skipped:",id,err?.message||err)),PROF.refreshSellerSla(db,id).catch(err=>console.warn("seller SLA refresh skipped:",id,err?.message||err))]));
       }
       const label={new:"Yangi",packing:"Yig‘ilyapti",shipping:"Yetkazib berishda",delivered:"Yetkazib berildi",cancelled:"Bekor qilindi",return_requested:"Qaytarish so‘rovi",returned:"Qaytarildi",return_rejected:"Qaytarish rad etildi"}[next]||next;
       await notify(db,ownerUid,"Buyurtma holati yangilandi",`#${orderId}: ${label}${reason?`. Izoh: ${reason}`:""}`);

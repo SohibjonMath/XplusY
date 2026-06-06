@@ -1,0 +1,53 @@
+/*.html
+  Cache-Control: no-cache, must-revalidate
+
+/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/*.png
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/*.webp
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/*.jpg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/*.jpeg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/*.svg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/*.ico
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/*.json
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/admin/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/admin/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/admin-mobile/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/admin-mobile/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/seller/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/seller/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/assets/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/ads/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000

@@ -1,5 +1,5 @@
 function cleanSupportName(v){const s=String(v||'').trim().replace(/\s+/g,' ');return !s||s.includes('@')?'':s}
-import { auth, db } from './firebase-config.js';
+import { auth, db } from './firebase-config.js?v=20260606_v139';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
 import {
   collection, doc, getDoc, setDoc, addDoc, onSnapshot, query, orderBy, limit, where,

@@ -1,0 +1,112 @@
+/* v89 — remove delete button, center item action area, redesign item pick */
+@media (max-width: 768px){
+  /* Remove delete button completely; minus to zero already removes item */
+  #view-cart .removeBtn{
+    display:none !important;
+  }
+
+  /* Keep per-item floating pick hidden */
+  #view-cart .premiumCartItem > .cartPick,
+  #view-cart .premiumCartItem .cartMeta > .cartPick:not(.cartPickInline),
+  #view-cart .cartItem > .cartPick,
+  #view-cart .cartItem .cartMeta > .cartPick:not(.cartPickInline){
+    display:none !important;
+  }
+
+  /* Make bottom row more centered and cleaner */
+  #view-cart .cartBottomLine{
+    align-items:center !important;
+    gap:10px !important;
+  }
+  #view-cart .cartActionsMini{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:6px !important;
+    flex-wrap:nowrap !important;
+    margin-left:auto !important;
+  }
+
+  /* Only one compact select button */
+  #view-cart .cartTinyActions,
+  #view-cart .cartTinyActionsSolo{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    background:transparent !important;
+    border:none !important;
+    box-shadow:none !important;
+    overflow:visible !important;
+    min-height:auto !important;
+    height:auto !important;
+  }
+  #view-cart .cartTinyActions .cartPickInline,
+  #view-cart .cartTinyActionsSolo .cartPickInline{
+    position:static !important;
+    margin:0 !important;
+    width:auto !important;
+    min-width:auto !important;
+    height:auto !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border:none !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+  #view-cart .cartTinyActions .cartPickInline input,
+  #view-cart .cartTinyActionsSolo .cartPickInline input{
+    position:absolute !important;
+    opacity:0 !important;
+    pointer-events:none !important;
+  }
+  #view-cart .cartTinyActions .cartPickInline span,
+  #view-cart .cartTinyActionsSolo .cartPickInline span{
+    width:30px !important;
+    height:30px !important;
+    display:grid !important;
+    place-items:center !important;
+    border-radius:11px !important;
+    border:1.5px solid #f3b5bf !important;
+    background:linear-gradient(180deg,#fff,#fff6f7) !important;
+    box-shadow:0 6px 14px rgba(239,68,68,.08) !important;
+    transition:all .18s ease !important;
+  }
+  #view-cart .cartTinyActions .cartPickInline span i,
+  #view-cart .cartTinyActionsSolo .cartPickInline span i{
+    font-size:12px !important;
+    color:#fff !important;
+    opacity:0 !important;
+    transform:scale(.72) !important;
+    transition:all .18s ease !important;
+  }
+  #view-cart .cartTinyActions .cartPickInline input:checked + span,
+  #view-cart .cartTinyActionsSolo .cartPickInline input:checked + span{
+    border-color:#ef4444 !important;
+    background:linear-gradient(135deg,#ef4444,#fb7185) !important;
+    box-shadow:0 10px 18px rgba(239,68,68,.18) !important;
+  }
+  #view-cart .cartTinyActions .cartPickInline input:checked + span i,
+  #view-cart .cartTinyActionsSolo .cartPickInline input:checked + span i{
+    opacity:1 !important;
+    transform:scale(1) !important;
+  }
+
+  /* Slightly balance badge / qty sizes */
+  #view-cart .cartActionsMini .badge{
+    min-width:72px !important;
+    height:30px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border-radius:10px !important;
+  }
+  #view-cart .qty{
+    min-height:30px !important;
+    height:30px !important;
+  }
+  #view-cart .qty button{
+    width:26px !important;
+    height:26px !important;
+  }
+}

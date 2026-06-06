@@ -3,49 +3,132 @@
   functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "22"
 
 [functions]
   node_bundler = "zisi"
 
-# If someone opens /public/... (old links), send to root path
+# Old /public URLs are normalized to root URLs.
 [[redirects]]
   from = "/public/*"
   to = "/:splat"
   status = 301
   force = true
 
-# Optional clean API prefix (you can use /api/payme if you want)
+# Optional clean API prefix.
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
   force = true
 
-# Admin panel routes (static)
+# Static admin route fallback.
 [[redirects]]
   from = "/admin/*"
   to = "/admin/index.html"
   status = 200
   force = false
 
-
-# No SPA fallback: project uses real .html pages and hash routing
-
-
+# HTML is revalidated so a new deploy is picked up quickly.
 [[headers]]
   for = "/*.html"
   [headers.values]
-    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Cache-Control = "no-cache, must-revalidate"
 
-
-
+# Static JS/CSS can be reused on repeat visits. Version query strings in HTML
+# trigger a fresh download after a release while avoiding stale-cache traps.
 [[headers]]
   for = "/*.js"
   [headers.values]
-    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
 
 [[headers]]
   for = "/*.css"
   [headers.values]
-    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+# Images change less often and are safe to cache longer.
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=2592000"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=2592000"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=2592000"
+
+[[headers]]
+  for = "/*.jpeg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=2592000"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=2592000"
+
+[[headers]]
+  for = "/*.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=2592000"
+
+# Region/pickup JSON can be reused briefly but still refreshes automatically.
+[[headers]]
+  for = "/*.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
+
+# Explicit nested paths for drag-and-drop deploys and subdirectory assets.
+[[headers]]
+  for = "/admin/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/admin/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/admin-mobile/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/admin-mobile/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/seller/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/seller/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=2592000"
+
+[[headers]]
+  for = "/ads/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=2592000"
+
+# v140: product watch alerts are also checked in the background.
+[functions."product-alert-scan"]
+  schedule = "*/15 * * * *"
+
+# v141: seller SLA overdue scan and rating refresh.
+[functions."seller-sla-scan"]
+  schedule = "*/15 * * * *"

@@ -1,0 +1,229 @@
+/* v77 — fullscreen image viewer redesign */
+.imgViewer.imageOnly{
+  position:fixed !important;
+  inset:0 !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:stretch !important;
+  justify-content:center !important;
+  z-index:2000 !important;
+}
+.imgViewer.imageOnly[hidden]{display:none !important;}
+.imgViewer.imageOnly .imgViewerBackdrop{
+  position:absolute !important;
+  inset:0 !important;
+  background:rgba(2,6,23,.86) !important;
+  backdrop-filter:blur(10px) saturate(1.02) !important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.02) !important;
+}
+.imgViewer.imageOnly .imgViewerShell,
+.imgViewer.imageOnly .imgViewerShell.qvShellSolo{
+  position:relative !important;
+  width:100vw !important;
+  max-width:none !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  border-radius:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  overflow:hidden !important;
+}
+.imgViewer.imageOnly .qvClose{
+  position:absolute !important;
+  top:max(16px, env(safe-area-inset-top)) !important;
+  right:max(16px, env(safe-area-inset-right)) !important;
+  width:48px !important;
+  min-width:48px !important;
+  height:48px !important;
+  border-radius:18px !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  background:rgba(255,255,255,.10) !important;
+  color:#fff !important;
+  box-shadow:0 16px 34px rgba(0,0,0,.24) !important;
+  backdrop-filter:blur(12px) !important;
+  -webkit-backdrop-filter:blur(12px) !important;
+  z-index:30 !important;
+}
+.imgViewer.imageOnly .qvClose:hover{
+  background:rgba(255,255,255,.16) !important;
+  transform:translateY(-1px);
+}
+.imgViewer.imageOnly .qvProLayout,
+.imgViewer.imageOnly .qvMedia,
+.imgViewer.imageOnly .qvMediaSolo{
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+}
+.imgViewer.imageOnly .qvProductPane,
+.imgViewer.imageOnly .qvProHead,
+.imgViewer.imageOnly .qvProMetrics,
+.imgViewer.imageOnly .qvCategoryCard,
+.imgViewer.imageOnly .qvVariantBox,
+.imgViewer.imageOnly .qvDesc,
+.imgViewer.imageOnly .qvTrustGrid,
+.imgViewer.imageOnly .qvMovedActions,
+.imgViewer.imageOnly .qvInfoBottom{
+  display:none !important;
+}
+.imgViewer.imageOnly .qvGalleryPane{
+  position:relative !important;
+  width:100% !important;
+  height:100% !important;
+  padding:22px 22px calc(108px + env(safe-area-inset-bottom)) !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  gap:18px !important;
+  border:0 !important;
+  background:transparent !important;
+}
+.imgViewer.imageOnly .qvStage{
+  position:relative !important;
+  flex:1 1 auto !important;
+  width:100% !important;
+  min-height:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  border-radius:30px !important;
+  background:radial-gradient(circle at center, rgba(255,255,255,.06) 0%, rgba(255,255,255,.03) 38%, rgba(255,255,255,.02) 100%) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important;
+  padding:24px !important;
+}
+.imgViewer.imageOnly .qvImg,
+.imgViewer.imageOnly .imgViewerImg{
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  filter:drop-shadow(0 18px 42px rgba(0,0,0,.34)) !important;
+}
+.imgViewer.imageOnly .navBtn{
+  position:absolute !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  width:52px !important;
+  min-width:52px !important;
+  height:52px !important;
+  border-radius:18px !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  background:rgba(15,23,42,.42) !important;
+  color:#fff !important;
+  box-shadow:0 14px 30px rgba(0,0,0,.22) !important;
+  backdrop-filter:blur(12px) !important;
+  -webkit-backdrop-filter:blur(12px) !important;
+  z-index:5 !important;
+}
+.imgViewer.imageOnly .navPrev{left:18px !important;}
+.imgViewer.imageOnly .navNext{right:18px !important;}
+.imgViewer.imageOnly .navBtn:hover{background:rgba(255,255,255,.14) !important;}
+.imgViewer.imageOnly .qvThumbs{
+  position:absolute !important;
+  left:50% !important;
+  bottom:calc(18px + env(safe-area-inset-bottom)) !important;
+  transform:translateX(-50%) !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  max-width:min(92vw,900px) !important;
+  width:auto !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  padding:10px 12px !important;
+  margin:0 !important;
+  border-radius:28px !important;
+  background:rgba(15,23,42,.36) !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  box-shadow:0 18px 40px rgba(0,0,0,.25) !important;
+  backdrop-filter:blur(14px) !important;
+  -webkit-backdrop-filter:blur(14px) !important;
+  scrollbar-width:none !important;
+}
+.imgViewer.imageOnly .qvThumbs::-webkit-scrollbar{display:none !important;}
+.imgViewer.imageOnly .thumb{
+  position:relative !important;
+  width:72px !important;
+  min-width:72px !important;
+  height:72px !important;
+  min-height:72px !important;
+  padding:6px !important;
+  border-radius:22px !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06)) !important;
+  box-shadow:none !important;
+  overflow:hidden !important;
+}
+.imgViewer.imageOnly .thumb::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:7px;
+  width:22px;
+  height:4px;
+  transform:translateX(-50%);
+  border-radius:999px;
+  background:transparent;
+}
+.imgViewer.imageOnly .thumb img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  border-radius:16px !important;
+}
+.imgViewer.imageOnly .thumb.active{
+  border-color:rgba(255,255,255,.26) !important;
+  background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10)) !important;
+  box-shadow:0 0 0 2px rgba(239,68,68,.52), 0 14px 30px rgba(0,0,0,.18) !important;
+  outline:0 !important;
+  transform:translateY(-1px);
+}
+.imgViewer.imageOnly .thumb.active::after{
+  background:linear-gradient(90deg,#ef4444,#fb7185);
+}
+
+@media (max-width: 768px){
+  .imgViewer.imageOnly .qvGalleryPane{
+    padding:16px 12px calc(96px + env(safe-area-inset-bottom)) !important;
+    gap:12px !important;
+  }
+  .imgViewer.imageOnly .qvStage{
+    border-radius:24px !important;
+    padding:14px !important;
+  }
+  .imgViewer.imageOnly .qvClose{
+    width:44px !important;min-width:44px !important;height:44px !important;border-radius:16px !important;
+    top:max(10px, env(safe-area-inset-top)) !important;
+    right:max(10px, env(safe-area-inset-right)) !important;
+  }
+  .imgViewer.imageOnly .navBtn{
+    width:44px !important;min-width:44px !important;height:44px !important;border-radius:16px !important;
+  }
+  .imgViewer.imageOnly .navPrev{left:10px !important;}
+  .imgViewer.imageOnly .navNext{right:10px !important;}
+  .imgViewer.imageOnly .qvThumbs{
+    bottom:calc(12px + env(safe-area-inset-bottom)) !important;
+    max-width:calc(100vw - 24px) !important;
+    padding:8px 10px !important;
+    border-radius:24px !important;
+    gap:8px !important;
+  }
+  .imgViewer.imageOnly .thumb{
+    width:62px !important;min-width:62px !important;height:62px !important;min-height:62px !important;border-radius:19px !important;
+  }
+  .imgViewer.imageOnly .thumb img{border-radius:14px !important;}
+}
+
+@media (max-width: 420px){
+  .imgViewer.imageOnly .qvGalleryPane{padding:12px 8px calc(88px + env(safe-area-inset-bottom)) !important;}
+  .imgViewer.imageOnly .qvStage{border-radius:20px !important;padding:10px !important;}
+  .imgViewer.imageOnly .navBtn{width:40px !important;min-width:40px !important;height:40px !important;border-radius:14px !important;}
+  .imgViewer.imageOnly .thumb{
+    width:56px !important;min-width:56px !important;height:56px !important;min-height:56px !important;border-radius:17px !important;
+  }
+}

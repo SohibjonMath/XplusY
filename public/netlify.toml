@@ -2,3 +2,6 @@
 from = "/tg-install"
 to = "/tg-install.html"
 status = 200
+
+[functions."seller-sla-scan"]
+  schedule = "*/15 * * * *"

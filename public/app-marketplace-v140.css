@@ -1,0 +1,974 @@
+/* ===== ui-product-type-badge-v99.css ===== */
+/* v99 — customer-friendly product type badges, moved neatly to the corner */
+.authOnImg{
+  left:auto !important;
+  right:8px !important;
+  bottom:8px !important;
+  z-index:4 !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  max-width:calc(100% - 20px) !important;
+}
+
+.authOnImg .authBadge,
+.authBadge{
+  min-height:25px !important;
+  padding:0 9px !important;
+  gap:5px !important;
+  font-size:10px !important;
+  font-weight:900 !important;
+  border-radius:999px !important;
+  box-shadow:0 6px 14px rgba(17,24,39,.10) !important;
+}
+
+.authOnImg .authBadgeImg,
+.authBadgeImg{
+  width:14px !important;
+  height:14px !important;
+  flex:0 0 14px !important;
+}
+
+.authOnImg .authBadge span:last-child,
+.authBadge span:last-child{
+  white-space:nowrap !important;
+}
+
+.authBadge.original{
+  background:linear-gradient(135deg,#ecfdf5,#f0fdf4) !important;
+  color:#166534 !important;
+  border-color:#86efac !important;
+}
+.authBadge.oem{
+  background:linear-gradient(135deg,#eff6ff,#f8fbff) !important;
+  color:#1d4ed8 !important;
+  border-color:#93c5fd !important;
+}
+.authBadge.replica{
+  background:linear-gradient(135deg,#fff7ed,#fffbeb) !important;
+  color:#c2410c !important;
+  border-color:#fdba74 !important;
+}
+
+@media (max-width: 520px){
+  .authOnImg{
+    right:6px !important;
+    bottom:6px !important;
+    max-width:calc(100% - 14px) !important;
+  }
+  .authOnImg .authBadge,
+  .authBadge{
+    min-height:23px !important;
+    padding:0 8px !important;
+    font-size:9px !important;
+    gap:4px !important;
+  }
+  .authOnImg .authBadgeImg,
+  .authBadgeImg{
+    width:13px !important;
+    height:13px !important;
+    flex-basis:13px !important;
+  }
+}
+
+/* ===== ui-site-minimal-v109.css ===== */
+/* v109 — customer site cleanup: remove extra explanatory texts, keep core actions only */
+
+/* checkout / payment */
+.checkoutFinalTotalSub,
+#paymentProductsInfo,
+.paymentSub,
+.checkoutSubmitHint,
+.deliveryAutoOnlyNote,
+.deliveryInlineMapHead span,
+#deliveryMapDraftText,
+#deliveryEstimateContent small,
+.omDeliveryRecommend small,
+.cartDeliveryFree.compactFree small,
+.payType .muted.tiny,
+.paymentDeliveryPreview .muted,
+.checkoutMetaHint,
+.deliveryHelpText,
+.deliveryInfoHint{
+  display:none !important;
+}
+
+/* profile / saved addresses / balance topup */
+#profileHint,
+.profileCardSub,
+.savedAddressGuide,
+#savedAddressStatus,
+.topupNotice.small,
+#topupHint2,
+.balanceCard .muted,
+.moneyHistoryHead small,
+.profileQuickHelp,
+.profileSectionHint,
+.savedAddressHead .profileCardSub{
+  display:none !important;
+}
+
+/* product page / reviews */
+.ppReviewsHead p,
+.ppReviewComposerTop span,
+#orderReviewStarsHint,
+.ppReviewsEyebrow,
+.productReviewIntro,
+.productReviewNote,
+.reviewPromptHint{
+  display:none !important;
+}
+
+/* social / support / customer center */
+.socialCard .hint,
+.socialCard .mutedTip,
+.card.softCard.socialCard .hint,
+.card.softCard.socialCard .mutedTip,
+.omcc-chat-intro,
+#omccNativePushText,
+.omcc-native-card small,
+.omcc-tab small,
+.omcc-panel small,
+.omcc-card small,
+.omcc-helper,
+.omcc-sub,
+.omcc-muted,
+.customerSupportHint,
+.customerSupportIntro{
+  display:none !important;
+}
+
+/* generic secondary helper text cleanup */
+.view .eyebrow,
+.compact-helper,
+.sectionHelper,
+.sectionSub,
+.tinyHelper,
+.mutedTip,
+.helperText,
+.captionHelp,
+.explainText,
+.infoNote.inline-note{
+  display:none !important;
+}
+
+/* keep layout tidy after helper texts are hidden */
+.paymentHead,
+.profileHead,
+.savedAddressHead,
+.ppReviewsHead,
+.ppReviewComposerTop,
+.socialTop,
+.checkoutActionBar,
+.paymentFinalCard,
+.savedAddressCard,
+.ppReviewsCard,
+.topupCard,
+.balanceCard,
+.omcc-card,
+.omcc-native-card{
+  gap:8px !important;
+}
+
+.paymentFinalCard,
+.savedAddressCard,
+.ppReviewsCard,
+.topupCard,
+.socialCard,
+.omcc-card,
+.omcc-native-card{
+  padding-bottom:12px !important;
+}
+
+.savedAddressHead{margin-bottom:8px !important}
+.ppReviewComposerTop > div > b{margin-bottom:0 !important}
+.socialTop{margin-bottom:8px !important}
+.checkoutFinalTotalCard{min-height:auto !important}
+
+@media (max-width: 768px){
+  .paymentHead{padding-bottom:6px !important}
+  .savedAddressCard,
+  .ppReviewsCard,
+  .socialCard{padding:12px !important}
+}
+
+/* ===== ui-seller-system-v111.css ===== */
+/* v111 — seller system badges on customer site */
+.omVerifiedIcon{width:27px;height:27px;display:grid;place-items:center;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:2px solid rgba(255,255,255,.95);box-shadow:0 8px 16px rgba(37,99,235,.22)}
+.omVerifiedIcon i{font-size:13px}
+.pcardSellerLine{display:flex;align-items:center;gap:5px;min-width:0;margin-top:5px;color:#64748b;font-size:10px;font-weight:850}
+.pcardSellerLine img,.pcardSellerLine>i{width:17px;height:17px;min-width:17px;border-radius:6px;object-fit:cover;display:grid;place-items:center;background:#f3f4f6;color:#741a35}
+.pcardSellerLine b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcardSellerLine em{margin-left:auto;display:inline-flex;align-items:center;gap:3px;color:#f97316;font-size:9px;font-style:normal;font-weight:1000}
+.ppSellerRow{display:flex;align-items:center;gap:7px;margin-top:8px}
+.omVerifiedFull,.ppSellerLine{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 10px;border-radius:999px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:11px;font-weight:950}
+.omVerifiedFull i{color:#2563eb}
+.ppSellerLine img,.ppSellerLine>i{width:20px;height:20px;min-width:20px;border-radius:7px;object-fit:cover;display:grid;place-items:center;background:#fff;color:#741a35}
+.ppSellerLine em{display:inline-flex;align-items:center;gap:3px;margin-left:3px;color:#f97316;font-style:normal;font-weight:1000}
+@media(max-width:520px){
+  .omVerifiedIcon{width:24px;height:24px}
+  .omVerifiedIcon i{font-size:12px}
+}
+
+/* ===== ui-storefront-v122.css ===== */
+/* v122 — public store pages, follows and store notifications */
+.notifyHeaderBtn{position:relative}.notifyHeaderBtn .chipCount{min-width:17px}
+.pcardSellerLine,.ppSellerLine{border:0;cursor:pointer;font:inherit;text-align:left}.pcardSellerLine:hover,.ppSellerLine:hover{color:#7f1d1d}.ppSellerLine{transition:transform .15s ease,box-shadow .15s ease}.ppSellerLine:hover{transform:translateY(-1px);box-shadow:0 8px 17px rgba(127,29,29,.12)}
+.storeUpdateStrip{margin:12px 0 15px;border:1px solid #fee2e2;border-radius:18px;background:linear-gradient(135deg,#fff7f7,#fff);padding:12px 14px;box-shadow:0 8px 22px rgba(127,29,29,.05)}.storeUpdateStrip button{width:100%;border:0;background:transparent;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer;padding:0}.storeUpdateIcon{width:38px;height:38px;flex:0 0 38px;border-radius:13px;display:grid;place-items:center;background:#7f1d1d;color:#fff}.storeUpdateCopy{min-width:0;display:flex;flex-direction:column;gap:2px}.storeUpdateCopy b{font-size:12px;color:#7f1d1d}.storeUpdateCopy span{font-size:12px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.storeUpdateStrip i.fa-chevron-right{margin-left:auto;color:#b91c1c}
+.storePage{max-width:1220px;margin:0 auto}.storePageTop{display:flex;align-items:center;gap:12px;margin:4px 0 13px}.storeBackBtn,.storeShareBtn{width:42px;height:42px;display:grid;place-items:center;border:1px solid #e5e7eb;border-radius:14px;background:#fff;color:#7f1d1d;cursor:pointer}.storePageTitle{min-width:0;display:flex;flex-direction:column;gap:2px;flex:1}.storePageTitle strong{font-size:15px;color:#111827}.storePageTitle span{font-size:11px;color:#64748b}.storePageLoading,.storePageEmpty{display:grid;place-items:center;min-height:260px;color:#64748b;font-size:13px;gap:8px}.storeHero{position:relative;overflow:hidden;border:1px solid #f1f5f9;border-radius:25px;background:#fff;box-shadow:0 18px 42px rgba(15,23,42,.075)}.storeHeroBanner{height:155px;background:linear-gradient(135deg,#7f1d1d,#dc2626 56%,#fb7185);position:relative;overflow:hidden}.storeHeroBanner:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 82% 24%,rgba(255,255,255,.35),transparent 28%),radial-gradient(circle at 15% 120%,rgba(255,255,255,.18),transparent 35%)}.storeHeroBanner img{width:100%;height:100%;object-fit:cover}.storeHeroBody{position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:15px;padding:0 20px 18px;margin-top:-34px}.storeLogoBig{position:relative;z-index:2;width:84px;height:84px;border:5px solid #fff;border-radius:23px;background:#fff;display:grid;place-items:center;overflow:hidden;color:#7f1d1d;font-size:27px;box-shadow:0 10px 23px rgba(15,23,42,.16)}.storeLogoBig img{width:100%;height:100%;object-fit:cover}.storeIdentity{padding-top:42px;min-width:0}.storeIdentity h1{display:flex;align-items:center;gap:7px;margin:0;color:#111827;font-size:22px;letter-spacing:-.45px}.storeVerified{color:#2563eb;font-size:17px}.storeIdentity p{margin:5px 0 0;color:#64748b;font-size:12px;line-height:1.5;max-width:720px}.storeFollowBtn{align-self:end;min-height:43px;padding:0 15px;border:1px solid #7f1d1d;border-radius:14px;background:#7f1d1d;color:#fff;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}.storeFollowBtn.isFollowing{background:#fff;color:#7f1d1d}.storeMeta{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 18px}.storeMeta span{display:inline-flex;align-items:center;gap:6px;min-height:29px;padding:0 9px;border-radius:999px;border:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:11px;font-weight:800}.storeMeta i{color:#b91c1c}.storeCatalogHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:19px 2px 10px}.storeCatalogHead h2{margin:0;font-size:17px;color:#111827}.storeCatalogHead span{font-size:12px;color:#64748b}.storeProductGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:12px}.storeProductCard{overflow:hidden;border:1px solid #eef2f7;border-radius:18px;background:#fff;box-shadow:0 7px 18px rgba(15,23,42,.045);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}.storeProductCard:hover{transform:translateY(-2px);box-shadow:0 14px 25px rgba(15,23,42,.08)}.storeProductMedia{position:relative;aspect-ratio:1/1;background:#f8fafc;overflow:hidden}.storeProductMedia img{width:100%;height:100%;object-fit:cover}.storeProductBadge{position:absolute;left:8px;top:8px;display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 7px;background:rgba(255,255,255,.94);color:#b91c1c;font-size:10px;font-weight:950}.storeFavBtn{position:absolute;right:8px;top:8px;width:31px;height:31px;display:grid;place-items:center;border:0;border-radius:999px;background:rgba(255,255,255,.94);color:#94a3b8;cursor:pointer}.storeFavBtn.active{color:#dc2626}.storeProductBody{padding:10px}.storeProductName{min-height:33px;color:#1f2937;font-size:12px;font-weight:800;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.storeProductBottom{margin-top:9px;display:flex;align-items:center;justify-content:space-between;gap:7px}.storeProductPrice{font-size:13px;color:#b91c1c;font-weight:1000}.storeProductCart{width:33px;height:33px;display:grid;place-items:center;border:0;border-radius:11px;background:#b91c1c;color:#fff;cursor:pointer}.storeProductStats{display:flex;gap:8px;margin-top:6px;color:#94a3b8;font-size:10px;font-weight:800}
+.notifyOverlay{position:fixed;inset:0;z-index:9998;display:grid;grid-template-columns:1fr min(430px,94vw);background:rgba(15,23,42,.36);backdrop-filter:blur(3px)}.notifyOverlay[hidden]{display:none!important}.notifyBackdrop{grid-column:1}.notifyPanel{grid-column:2;background:#f8fafc;min-height:100vh;box-shadow:-18px 0 45px rgba(15,23,42,.18);display:flex;flex-direction:column}.notifyHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:17px;border-bottom:1px solid #e5e7eb;background:#fff}.notifyHeadTitle{display:flex;align-items:center;gap:10px;color:#111827}.notifyHeadIcon{width:37px;height:37px;display:grid;place-items:center;border-radius:13px;background:#7f1d1d;color:#fff}.notifyHeadTitle b{display:block;font-size:15px}.notifyHeadTitle span{display:block;margin-top:2px;color:#64748b;font-size:11px}.notifyHeadActions{display:flex;gap:6px}.notifyMiniBtn{width:35px;height:35px;display:grid;place-items:center;border:1px solid #e5e7eb;border-radius:11px;background:#fff;color:#7f1d1d;cursor:pointer}.notifyList{padding:12px;overflow:auto;display:flex;flex-direction:column;gap:9px}.notifyEmpty{padding:55px 25px;text-align:center;color:#64748b;font-size:13px}.notifyCard{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:start;border:1px solid #e5e7eb;border-radius:16px;background:#fff;padding:10px;text-align:left;cursor:pointer}.notifyCard.isUnread{border-color:#fecaca;background:linear-gradient(135deg,#fff7f7,#fff)}.notifyImg{width:48px;height:48px;border-radius:12px;object-fit:cover;background:#f1f5f9}.notifyImgFallback{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;background:#fee2e2;color:#b91c1c}.notifyCopy{min-width:0}.notifyCopy b{display:block;color:#111827;font-size:12px;line-height:1.35}.notifyCopy p{margin:3px 0;color:#64748b;font-size:11px;line-height:1.4}.notifyCopy time{font-size:10px;color:#94a3b8}.notifyDot{width:8px;height:8px;border-radius:999px;background:#dc2626;margin-top:4px}.notifyCard:not(.isUnread) .notifyDot{background:#cbd5e1}
+@media(max-width:640px){.storeHeroBanner{height:112px}.storeHeroBody{grid-template-columns:auto 1fr;gap:11px;padding:0 13px 13px;margin-top:-29px}.storeLogoBig{width:69px;height:69px;border-radius:19px;border-width:4px}.storeIdentity{padding-top:33px}.storeIdentity h1{font-size:17px}.storeIdentity p{font-size:11px}.storeFollowBtn{grid-column:1/-1;width:100%;justify-content:center;min-height:40px}.storeMeta{padding:0 13px 13px;gap:6px}.storeMeta span{font-size:10px;min-height:26px}.storeProductGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.storeProductBody{padding:8px}.storeProductName{font-size:11px}.storeProductPrice{font-size:12px}.notifyOverlay{grid-template-columns:1fr}.notifyBackdrop{display:none}.notifyPanel{grid-column:1}.storePageTop{margin-top:0}.storeUpdateStrip{margin:9px 0 11px;padding:10px 11px}}
+.pcardSellerLine .fa-circle-check,.ppSellerLine .fa-circle-check{width:auto;height:auto;min-width:auto;background:transparent;color:#2563eb;font-size:11px}.ppSellerLine .fa-circle-check{font-size:12px}
+.pcardSellerLine{background:transparent;padding:0;width:100%}
+
+/* v137 — public store trust statistics */
+.storeTrustGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:0 20px 20px}.storeTrustCard{display:flex;align-items:center;gap:10px;min-width:0;padding:11px 12px;border:1px solid #eef2f7;border-radius:15px;background:linear-gradient(145deg,#fff,#fbfcfe)}.storeTrustIcon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:12px;background:#fff1f2;color:#b91c1c}.storeTrustIcon.success{background:#ecfdf5;color:#047857}.storeTrustIcon.verified{background:#eff6ff;color:#2563eb}.storeTrustIcon.rating{background:#fff7ed;color:#d97706}.storeTrustCopy{display:block;min-width:0}.storeTrustCopy small,.storeTrustCopy b,.storeTrustCopy em{display:block}.storeTrustCopy small{color:#64748b;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.35px}.storeTrustCopy b{margin-top:3px;color:#1f2937;font-size:13px;line-height:1.2}.storeTrustCopy em{margin-top:3px;color:#94a3b8;font-size:9px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:760px){.storeTrustGrid{grid-template-columns:1fr;padding:0 13px 13px;gap:7px}.storeTrustCard{padding:9px 10px;border-radius:13px}.storeTrustIcon{width:34px;height:34px;flex-basis:34px;border-radius:10px}.storeTrustCopy b{font-size:12px}}
+
+/* ===== ui-store-search-v129.css ===== */
+/* v129 — home search also returns public seller stores */
+.storeSearchResults{margin:11px 0 14px;padding:14px;border:1px solid #fee2e2;border-radius:20px;background:linear-gradient(135deg,#fffafa,#fff);box-shadow:0 12px 30px rgba(127,29,29,.06)}
+.storeSearchResults[hidden]{display:none!important}.storeSearchHead{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:10px}.storeSearchKicker{display:inline-flex;align-items:center;gap:6px;color:#b91c1c;font-size:10px;font-weight:950;letter-spacing:.7px;text-transform:uppercase}.storeSearchKicker i{font-size:11px}.storeSearchHead h2{margin:3px 0 0;color:#111827;font-size:17px;letter-spacing:-.28px}.storeSearchCount{flex:none;color:#64748b;font-size:11px;font-weight:800}.storeSearchGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:9px}.storeSearchCard{position:relative;display:grid;grid-template-columns:54px minmax(0,1fr) 31px;gap:10px;align-items:center;min-width:0;padding:10px;border:1px solid #eef2f7;border-radius:16px;background:#fff;text-align:left;cursor:pointer;box-shadow:0 5px 15px rgba(15,23,42,.04);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.storeSearchCard:hover{transform:translateY(-2px);border-color:#fecaca;box-shadow:0 13px 24px rgba(127,29,29,.1)}.storeSearchLogo{width:54px;height:54px;display:grid;place-items:center;overflow:hidden;border:1px solid #fee2e2;border-radius:15px;background:linear-gradient(135deg,#fff1f2,#fff);color:#b91c1c;font-size:18px;font-weight:1000}.storeSearchLogo img{width:100%;height:100%;object-fit:cover}.storeSearchBody{min-width:0}.storeSearchName{display:flex;align-items:center;gap:5px;min-width:0;color:#111827;font-size:13px;font-weight:950}.storeSearchName b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.storeSearchVerified{flex:none;color:#2563eb;font-size:12px}.storeSearchDescription{display:block;overflow:hidden;margin-top:3px;color:#64748b;font-size:10px;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}.storeSearchMeta{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.storeSearchMeta span{display:inline-flex;align-items:center;gap:4px;color:#64748b;font-size:10px;font-weight:850}.storeSearchMeta i{color:#b91c1c;font-size:9px}.storeSearchOpen{width:31px;height:31px;display:grid;place-items:center;border-radius:11px;background:#fff1f2;color:#b91c1c;font-size:11px}.storeSearchLoading{display:flex;align-items:center;justify-content:center;gap:8px;min-height:58px;color:#64748b;font-size:12px;font-weight:750}
+@media(max-width:640px){.storeSearchResults{margin:8px 0 11px;padding:10px;border-radius:16px}.storeSearchHead{margin-bottom:8px}.storeSearchHead h2{font-size:15px}.storeSearchGrid{display:flex;gap:8px;overflow-x:auto;padding:1px 1px 4px;scrollbar-width:none}.storeSearchGrid::-webkit-scrollbar{display:none}.storeSearchCard{grid-template-columns:47px minmax(0,1fr) 28px;flex:0 0 min(88vw,300px);padding:8px;border-radius:14px}.storeSearchLogo{width:47px;height:47px;border-radius:13px}.storeSearchOpen{width:28px;height:28px;border-radius:10px}.storeSearchDescription{max-width:180px}}
+
+/* ===== pickup-points-v123.css ===== */
+.pickupPointCheckoutBox{margin-top:12px;padding:14px;border:1px solid #e5e7eb;border-radius:18px;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.06)}
+.pickupPointCheckoutBox[hidden]{display:none!important}
+.pickupPointCheckoutHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.pickupPointCheckoutHead>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.pickupPointCheckoutHead b{display:flex;align-items:center;gap:8px;color:#111827;font-size:14px;font-weight:1000;letter-spacing:-.02em}
+.pickupPointCheckoutHead b i{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:#fff1f2;color:#dc2626;font-size:13px}
+.pickupPointCheckoutHead span{color:#6b7280;font-size:11.5px;line-height:1.45;font-weight:700}
+.pickupNearestBtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 11px;border:1px solid #e5e7eb;border-radius:11px;background:#111827;color:#fff;font-size:11px;font-weight:950;white-space:nowrap;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease}
+.pickupNearestBtn:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(15,23,42,.16)}
+.pickupNearestBtn:disabled{opacity:.6;cursor:wait}
+.pickupPointFilterRow{display:flex;gap:7px;overflow:auto;margin-bottom:10px;padding-bottom:1px;scrollbar-width:none}
+.pickupPointFilterRow::-webkit-scrollbar{display:none}
+.pickupPointFilterBtn{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:0 10px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;color:#6b7280;font-size:10.5px;font-weight:950;white-space:nowrap;cursor:pointer;transition:all .16s ease}
+.pickupPointFilterBtn.isActive{border-color:#111827;background:#111827;color:#fff;box-shadow:0 7px 14px rgba(15,23,42,.12)}
+.pickupPointSearchWrap{display:flex;align-items:center;gap:8px;min-height:42px;margin-bottom:9px;padding:0 11px;border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb;color:#9ca3af;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+.pickupPointSearchWrap:focus-within{border-color:#fca5a5;background:#fff;box-shadow:0 0 0 3px rgba(239,68,68,.08)}
+.pickupPointSearchWrap input{width:100%;border:0;outline:0;background:transparent;color:#111827;font-size:12px;font-weight:800}
+.pickupPointSearchWrap input::placeholder{color:#9ca3af}
+.pickupPointStatus{display:flex;align-items:center;gap:6px;margin:0 0 8px;color:#6b7280;font-size:10.5px;line-height:1.4;font-weight:800}
+.pickupPointStatus i{color:#dc2626}
+.pickupPointList{display:flex;flex-direction:column;gap:7px;max-height:286px;overflow:auto;padding-right:2px}
+.pickupPointList::-webkit-scrollbar{width:6px}.pickupPointList::-webkit-scrollbar-track{background:transparent}.pickupPointList::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:999px}
+.pickupPointCard{position:relative;display:flex;align-items:flex-start;gap:9px;padding:10px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.pickupPointCard:hover{border-color:#d1d5db;box-shadow:0 8px 18px rgba(15,23,42,.06);transform:translateY(-1px)}
+.pickupPointCard.isBirQadam{border-left:3px solid #f97316}
+.pickupPointCard.isOrzuMall{border-left:3px solid #16a34a}
+.pickupPointCard.isSelected{border-color:#111827;background:#f9fafb;box-shadow:0 8px 18px rgba(15,23,42,.08)}
+.pickupPointRadio{width:16px;height:16px;margin:3px 0 0;accent-color:#111827;flex:0 0 auto}
+.pickupPointCardMain{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.pickupPointCardTitleRow{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+.pickupPointCardTitleRow b{color:#111827;font-size:12px;font-weight:1000;line-height:1.35}
+.pickupPointTypeBadge{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:999px;font-size:9px;font-weight:1000;white-space:nowrap}
+.pickupPointTypeBadge.birQadam{background:#fff7ed;color:#c2410c}.pickupPointTypeBadge.orzuMall{background:#f0fdf4;color:#15803d}
+.pickupPointAddress{color:#6b7280;font-size:10.5px;line-height:1.45;font-weight:700;overflow-wrap:anywhere}
+.pickupPointMeta{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.pickupPointMeta span{display:inline-flex;align-items:center;gap:4px;color:#6b7280;font-size:9.5px;font-weight:850}
+.pickupPointMeta i{color:#9ca3af}
+.pickupPointCardPrice{display:flex;align-items:flex-end;flex:0 0 auto;flex-direction:column;gap:3px;text-align:right}
+.pickupPointCardPrice small{color:#9ca3af;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+.pickupPointCardPrice b{color:#111827;font-size:11.5px;font-weight:1000;white-space:nowrap}
+.pickupPointCardPrice span{padding:3px 6px;border-radius:999px;background:#f3f4f6;color:#6b7280;font-size:9px;font-weight:950}
+.pickupPointCard.isSelected .pickupPointCardPrice span{background:#dcfce7;color:#15803d}
+.pickupPointSelected{display:flex;align-items:flex-start;gap:10px;margin-top:10px;padding:11px;border:1px solid #bbf7d0;border-radius:14px;background:#f0fdf4}
+.pickupPointSelected[hidden]{display:none!important}
+.pickupSelectedIcon{display:grid;place-items:center;width:28px;height:28px;border-radius:999px;background:#dcfce7;color:#16a34a;flex:0 0 auto}
+.pickupSelectedContent{min-width:0;flex:1}
+.pickupSelectedTop{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pickupSelectedTop b{color:#14532d;font-size:12px;font-weight:1000}
+.pickupSelectedTop span{padding:3px 6px;border-radius:999px;background:#dcfce7;color:#15803d;font-size:9px;font-weight:950}
+.pickupSelectedContent p{margin:4px 0 0;color:#4b5563;font-size:10.5px;line-height:1.45;font-weight:700}
+.pickupSelectedMeta{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
+.pickupSelectedMeta span,.pickupSelectedMeta a{display:inline-flex;align-items:center;gap:4px;color:#166534;font-size:9.5px;font-weight:900;text-decoration:none}
+.pickupPointEmpty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px;border:1px dashed #d1d5db;border-radius:13px;background:#f9fafb;color:#6b7280;text-align:center}
+.pickupPointEmpty i{color:#9ca3af;font-size:18px}.pickupPointEmpty b{color:#374151;font-size:12px;font-weight:950}.pickupPointEmpty span{font-size:10.5px;font-weight:700;line-height:1.45}
+@media(max-width:640px){
+ .pickupPointCheckoutBox{padding:12px;border-radius:16px}
+ .pickupPointCheckoutHead{flex-direction:column;gap:9px}
+ .pickupNearestBtn{width:100%}
+ .pickupPointList{max-height:250px}
+ .pickupPointCard{padding:9px}
+ .pickupPointCardPrice b{font-size:10.5px}
+}
+
+
+/* v120 — refined compact premium pickup UI */
+.pickupPointCheckoutBox{
+  margin-top:12px;
+  padding:14px;
+  border:1px solid #e7ebf0;
+  border-radius:18px;
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);
+  box-shadow:0 14px 34px rgba(15,23,42,.055),0 1px 2px rgba(15,23,42,.035);
+}
+.pickupPointCheckoutHead{margin-bottom:11px}
+.pickupPointCheckoutHead b{color:#0f172a;font-size:14px;letter-spacing:-.025em}
+.pickupPointCheckoutHead b i{
+  width:31px;height:31px;border-radius:11px;
+  background:linear-gradient(135deg,#fff1f2,#ffffff);
+  border:1px solid #ffe4e6;color:#e11d48;
+  box-shadow:0 5px 12px rgba(225,29,72,.08);
+}
+.pickupPointCheckoutHead span{color:#64748b;font-size:11.5px}
+.pickupNearestBtn{
+  min-height:38px;padding:0 12px;border:1px solid #111827;border-radius:11px;
+  background:linear-gradient(180deg,#1f2937,#111827);
+  box-shadow:0 7px 16px rgba(15,23,42,.16);
+}
+.pickupNearestBtn:hover{box-shadow:0 10px 20px rgba(15,23,42,.20)}
+.pickupPointFilterRow{
+  gap:5px;margin-bottom:10px;padding:4px;
+  border:1px solid #edf0f4;border-radius:13px;background:#f8fafc;
+}
+.pickupPointFilterBtn{
+  min-height:31px;padding:0 10px;border:0;border-radius:9px;background:transparent;
+  color:#64748b;font-size:10.5px;
+}
+.pickupPointFilterBtn:hover{background:#fff;color:#334155}
+.pickupPointFilterBtn.isActive{
+  border:0;background:#fff;color:#0f172a;
+  box-shadow:0 3px 9px rgba(15,23,42,.08),0 0 0 1px rgba(226,232,240,.95);
+}
+.pickupPointSearchWrap{
+  min-height:41px;margin-bottom:8px;padding:0 11px;
+  border-color:#e6eaf0;border-radius:11px;background:#fff;
+  box-shadow:0 1px 2px rgba(15,23,42,.025);
+}
+.pickupPointSearchWrap:focus-within{
+  border-color:#cbd5e1;background:#fff;
+  box-shadow:0 0 0 3px rgba(148,163,184,.13);
+}
+.pickupPointStatus{margin-bottom:8px;color:#64748b;font-size:10.5px}
+.pickupPointStatus i{color:#e11d48}
+.pickupPointList{gap:7px;max-height:278px;padding-right:3px}
+.pickupPointList::-webkit-scrollbar{width:5px}
+.pickupPointList::-webkit-scrollbar-thumb{background:#cbd5e1}
+.pickupPointCard{
+  gap:9px;padding:10px 10px 10px 11px;
+  border-color:#e7ebf0;border-radius:13px;background:#fff;
+  box-shadow:0 2px 6px rgba(15,23,42,.018);
+}
+.pickupPointCard:hover{
+  border-color:#d8dee7;transform:translateY(-1px);
+  box-shadow:0 8px 18px rgba(15,23,42,.055);
+}
+.pickupPointCard.isBirQadam{border-left:2px solid #fb923c}
+.pickupPointCard.isOrzuMall{border-left:2px solid #22c55e}
+.pickupPointCard.isSelected{
+  border-color:#cbd5e1;background:linear-gradient(180deg,#ffffff,#f8fafc);
+  box-shadow:0 8px 18px rgba(15,23,42,.065),inset 0 0 0 1px rgba(15,23,42,.025);
+}
+.pickupPointRadio{width:15px;height:15px;margin-top:3px;accent-color:#111827}
+.pickupPointCardMain{gap:3px}
+.pickupPointCardTitleRow{gap:5px}
+.pickupPointCardTitleRow b{color:#0f172a;font-size:11.8px;letter-spacing:-.01em}
+.pickupPointTypeBadge{padding:3px 6px;font-size:8.8px}
+.pickupPointTypeBadge.birQadam{background:#fff7ed;color:#c2410c}
+.pickupPointTypeBadge.orzuMall{background:#f0fdf4;color:#15803d}
+.pickupPointAddress{color:#64748b;font-size:10.3px}
+.pickupPointMeta{gap:7px;margin-top:2px}
+.pickupPointMeta span{color:#64748b;font-size:9.2px}
+.pickupPointMeta i{color:#94a3b8}
+.pickupPointCardPrice{gap:3px}
+.pickupPointCardPrice small{color:#94a3b8;font-size:8.6px}
+.pickupPointCardPrice b{color:#0f172a;font-size:11.2px}
+.pickupPointCardPrice span{
+  padding:3px 7px;background:#f1f5f9;color:#64748b;font-size:8.8px;
+}
+.pickupPointCard.isSelected .pickupPointCardPrice span{
+  background:#ecfdf5;color:#047857;
+}
+.pickupPointSelected{
+  gap:9px;margin-top:10px;padding:11px 12px;
+  border-color:#bbf7d0;border-radius:13px;
+  background:linear-gradient(180deg,#f0fdf4,#ecfdf5);
+  box-shadow:0 8px 16px rgba(22,163,74,.055);
+}
+.pickupSelectedIcon{
+  width:27px;height:27px;background:#dcfce7;color:#16a34a;
+  box-shadow:0 0 0 1px rgba(34,197,94,.08);
+}
+.pickupSelectedTop b{color:#166534;font-size:11.8px}
+.pickupSelectedTop span{background:#dcfce7;color:#15803d;font-size:8.8px}
+.pickupSelectedContent p{color:#4b5563;font-size:10.3px}
+.pickupSelectedMeta{gap:8px;margin-top:6px}
+.pickupSelectedMeta span,.pickupSelectedMeta a{color:#166534;font-size:9.2px}
+.checkoutModal .checkoutBody::-webkit-scrollbar{width:7px}
+.checkoutModal .checkoutBody::-webkit-scrollbar-track{background:transparent}
+.checkoutModal .checkoutBody::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+@media(max-width:640px){
+  .pickupPointCheckoutBox{padding:12px;border-radius:16px}
+  .pickupPointCheckoutHead{gap:8px}
+  .pickupNearestBtn{min-height:37px}
+  .pickupPointList{max-height:246px}
+  .pickupPointCard{padding:9px 9px 9px 10px}
+}
+
+
+/* v121 — premium search input */
+.pickupPointSearchWrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:46px;
+  margin-bottom:10px;
+  padding:0 13px;
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 8px 18px rgba(15,23,42,.045);
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease,background .18s ease;
+}
+.pickupPointSearchWrap:hover{
+  border-color:#d7dee7;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 10px 20px rgba(15,23,42,.055);
+}
+.pickupPointSearchWrap:focus-within{
+  border-color:#fda4af;
+  background:linear-gradient(180deg,#ffffff 0%,#fffdfd 100%);
+  box-shadow:0 0 0 4px rgba(244,63,94,.08),0 14px 26px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.98);
+}
+.pickupPointSearchWrap i{
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  flex:0 0 28px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#fff1f2 0%,#fff7ed 100%);
+  border:1px solid #ffe4e6;
+  color:#ef4444;
+  box-shadow:0 5px 12px rgba(239,68,68,.08);
+  font-size:12px;
+}
+.pickupPointSearchWrap input{
+  width:100%;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#0f172a;
+  font-size:12.5px;
+  font-weight:900;
+  letter-spacing:-.01em;
+}
+.pickupPointSearchWrap input::placeholder{
+  color:#94a3b8;
+  font-weight:700;
+}
+
+
+/* v122 — clean premium search field, overriding global theme input focus */
+.pickupPointSearchWrap{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:9px !important;
+  min-height:44px !important;
+  margin-bottom:10px !important;
+  padding:0 12px !important;
+  border:1px solid #e2e8f0 !important;
+  border-radius:12px !important;
+  background:#ffffff !important;
+  box-shadow:0 4px 12px rgba(15,23,42,.035) !important;
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease !important;
+}
+.pickupPointSearchWrap:hover{
+  border-color:#cbd5e1 !important;
+  box-shadow:0 6px 15px rgba(15,23,42,.045) !important;
+}
+.pickupPointSearchWrap:focus-within{
+  border-color:#94a3b8 !important;
+  background:#ffffff !important;
+  box-shadow:0 0 0 3px rgba(148,163,184,.14),0 7px 17px rgba(15,23,42,.05) !important;
+}
+.pickupPointSearchWrap>i{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:18px !important;
+  height:18px !important;
+  flex:0 0 18px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#64748b !important;
+  box-shadow:none !important;
+  font-size:13px !important;
+}
+.pickupPointSearchWrap input,
+.pickupPointSearchWrap input[type="search"],
+.pickupPointSearchWrap input[type="search"]:hover,
+.pickupPointSearchWrap input[type="search"]:focus,
+.pickupPointSearchWrap input[type="search"]:focus-visible{
+  width:100% !important;
+  min-width:0 !important;
+  height:auto !important;
+  padding:0 !important;
+  border:0 !important;
+  outline:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#0f172a !important;
+  font-size:12.5px !important;
+  font-weight:800 !important;
+  letter-spacing:-.01em !important;
+  appearance:none !important;
+  -webkit-appearance:none !important;
+}
+.pickupPointSearchWrap input[type="search"]::placeholder{
+  color:#94a3b8 !important;
+  font-weight:700 !important;
+  opacity:1 !important;
+}
+.pickupPointSearchWrap input[type="search"]::-webkit-search-decoration,
+.pickupPointSearchWrap input[type="search"]::-webkit-search-cancel-button,
+.pickupPointSearchWrap input[type="search"]::-webkit-search-results-button,
+.pickupPointSearchWrap input[type="search"]::-webkit-search-results-decoration{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  display:none !important;
+}
+
+
+/* v123 — simpler, clearer checkout modal */
+.checkoutSub{font-size:12px;color:#64748b;margin-top:2px}
+.simpleSelectLabel>span{font-size:12px;font-weight:900;color:#1e293b}
+.deliveryAutoOnlyNote,.checkoutFinalTotalSub{display:none!important}
+.deliveryLocationStatus{font-size:11px;color:#64748b;margin-top:8px;margin-bottom:8px}
+.savedAddressCheckoutTop span,.deliveryInlineMapHead span{font-size:11px;color:#64748b}
+.deliveryInlineMapHead b{font-size:12px}
+.omDeliveryCalcHead span{font-size:11px;font-weight:900}
+.omDeliveryCalcContent{font-size:11px;color:#475569}
+.pickupPointCheckoutHead{align-items:center}
+.pickupPointCheckoutHead span{font-size:11px;color:#64748b}
+.checkoutSubmitHint{font-size:11.5px;color:#64748b;padding-top:6px}
+.checkoutCompactSummary{padding:12px 14px;border-radius:14px}
+.checkoutCompactSummary span{font-size:11px}
+.checkoutCompactSummary b{font-size:15px}
+.checkoutFinalTotalCard{padding:12px 14px;border-radius:14px}
+.checkoutFinalTotalLabel{font-size:11px}
+.checkoutFinalTotalValue{font-size:16px}
+.pickupPointSearchWrap input::placeholder{color:#94a3b8}
+.pickupPointStatus{font-size:10px;margin-bottom:6px}
+.pickupNearestBtn span,.locateBtn span,.locMetaBtn span{font-weight:900}
+.iconBtn.checkoutCloseBtn{width:38px;height:38px}
+@media(max-width:640px){
+  .checkoutSub{font-size:11.5px}
+  .checkoutCompactSummary,.checkoutFinalTotalCard{padding:11px 12px}
+}
+
+/* ===== delivery-modal-v124.css ===== */
+/* =========================================================
+   OrzuMall v124 — compact premium delivery settings modal
+   Loaded after the older checkout layers to provide a single,
+   predictable mobile-first presentation without changing logic.
+========================================================= */
+
+/* Modal shell */
+.checkoutOverlay{
+  padding:14px !important;
+  background:rgba(15,23,42,.52) !important;
+  backdrop-filter:blur(11px) saturate(1.05) !important;
+  -webkit-backdrop-filter:blur(11px) saturate(1.05) !important;
+}
+.checkoutModal{
+  width:min(560px,100%) !important;
+  height:auto !important;
+  max-height:min(780px,calc(100dvh - 28px)) !important;
+  border:1px solid rgba(255,255,255,.86) !important;
+  border-radius:24px !important;
+  background:#fff !important;
+  box-shadow:0 28px 80px rgba(2,6,23,.28) !important;
+}
+.checkoutModal .checkoutHead{
+  min-height:64px !important;
+  padding:13px 14px !important;
+  align-items:center !important;
+  border-bottom:1px solid #eef2f7 !important;
+  background:rgba(255,255,255,.97) !important;
+}
+.checkoutModal .checkoutTitle{
+  gap:9px !important;
+  color:#0f172a !important;
+  font-size:16px !important;
+  line-height:1.15 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.035em !important;
+}
+.checkoutModal .checkoutTitle i{
+  width:34px !important;
+  height:34px !important;
+  display:grid !important;
+  place-items:center !important;
+  flex:0 0 34px !important;
+  border-radius:11px !important;
+  background:linear-gradient(135deg,#fff1f2,#fff7ed) !important;
+  color:#ef4444 !important;
+  box-shadow:inset 0 0 0 1px #ffe4e6 !important;
+  font-size:14px !important;
+}
+.checkoutModal .checkoutSub{display:none !important}
+.iconBtn.checkoutCloseBtn{
+  width:36px !important;
+  height:36px !important;
+  min-width:36px !important;
+  border-radius:12px !important;
+  border-color:#e5e7eb !important;
+  color:#475569 !important;
+  background:#fff !important;
+}
+
+/* Scrollable middle section */
+.checkoutModal .checkoutBody{
+  gap:9px !important;
+  padding:10px 12px 11px !important;
+  background:#fbfcfe !important;
+}
+.checkoutCompactSummary{
+  min-height:46px !important;
+  padding:8px 11px !important;
+  border:1px solid #fee2e2 !important;
+  border-radius:13px !important;
+  background:linear-gradient(135deg,#fff7f7,#fff) !important;
+  box-shadow:none !important;
+}
+.checkoutCompactSummary span{
+  display:flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  color:#64748b !important;
+  font-size:11px !important;
+  line-height:1.25 !important;
+  font-weight:850 !important;
+}
+.checkoutCompactSummary span::before{
+  content:'\f290';
+  font-family:'Font Awesome 6 Free';
+  font-weight:900;
+  color:#ef4444;
+  font-size:12px;
+}
+.checkoutCompactSummary b{
+  color:#ef4444 !important;
+  font-size:17px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.035em !important;
+  white-space:nowrap !important;
+}
+
+/* Delivery method card */
+.checkoutModal .deliveryTypeBox.simpleCheckoutSection{
+  padding:10px !important;
+  border:1px solid #e7ebf1 !important;
+  border-radius:15px !important;
+  background:#fff !important;
+  box-shadow:0 6px 16px rgba(15,23,42,.035) !important;
+}
+.simpleSelectLabel{gap:6px !important}
+.simpleSelectLabel>span{
+  gap:6px !important;
+  color:#334155 !important;
+  font-size:11px !important;
+  line-height:1.2 !important;
+  font-weight:950 !important;
+}
+.simpleSelectLabel>span i{color:#ef4444 !important}
+.checkoutSelect{
+  min-height:43px !important;
+  height:43px !important;
+  padding:0 34px 0 11px !important;
+  border:1px solid #e2e8f0 !important;
+  border-radius:12px !important;
+  background:#f8fafc !important;
+  color:#0f172a !important;
+  font-size:12px !important;
+  font-weight:850 !important;
+}
+
+/* Address area */
+.checkoutModal .deliveryAddressBox{
+  gap:8px !important;
+  margin-top:8px !important;
+  padding:8px !important;
+  border:1px solid #eef2f7 !important;
+  border-radius:13px !important;
+  background:#fbfcfe !important;
+}
+.savedAddressCheckout{
+  padding:8px !important;
+  border:1px solid #e7ebf1 !important;
+  border-radius:12px !important;
+  background:#fff !important;
+  box-shadow:none !important;
+}
+.savedAddressCheckoutTop{
+  gap:6px !important;
+  margin-bottom:6px !important;
+  color:#64748b !important;
+  font-size:10.5px !important;
+  font-weight:900 !important;
+}
+.savedAddressCheckoutTop i{color:#ef4444 !important}
+.savedAddressCheckoutRow{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  gap:6px !important;
+  align-items:center !important;
+}
+.savedAddressCheckout select{
+  height:39px !important;
+  min-height:39px !important;
+  padding:0 30px 0 10px !important;
+  border:1px solid #e2e8f0 !important;
+  border-radius:11px !important;
+  background:#f8fafc !important;
+  color:#0f172a !important;
+  font-size:11.5px !important;
+  font-weight:800 !important;
+}
+.savedAddressChangeBtn{
+  min-height:39px !important;
+  height:39px !important;
+  padding:0 10px !important;
+  border:1px solid #fecdd3 !important;
+  border-radius:11px !important;
+  background:#fff !important;
+  color:#be123c !important;
+  font-size:10.5px !important;
+  white-space:nowrap !important;
+}
+
+/* Explicitly named location actions */
+.deliveryPrimaryActions{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:7px !important;
+}
+.deliveryPrimaryActions .locateBtn,
+.deliveryPrimaryActions .deliveryMapMainBtn{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:42px !important;
+  height:42px !important;
+  margin:0 !important;
+  padding:0 8px !important;
+  border-radius:12px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:6px !important;
+  font-size:10.8px !important;
+  line-height:1.1 !important;
+  font-weight:950 !important;
+  white-space:nowrap !important;
+}
+.deliveryPrimaryActions .locateBtn{
+  border:1px solid #ef4444 !important;
+  background:linear-gradient(135deg,#ef4444,#f43f5e) !important;
+  color:#fff !important;
+  box-shadow:0 9px 18px rgba(225,29,72,.14) !important;
+}
+.deliveryPrimaryActions .deliveryMapMainBtn{
+  border:1px solid #fecdd3 !important;
+  background:#fff !important;
+  color:#e11d48 !important;
+  box-shadow:none !important;
+}
+.deliveryPrimaryActions .locateBtn i,
+.deliveryPrimaryActions .deliveryMapMainBtn i{font-size:13px !important}
+.deliveryPrimaryActions .locateBtn span,
+.deliveryPrimaryActions .deliveryMapMainBtn span,
+.deliveryPrimaryActions .locateBtn .btnLabel,
+.deliveryPrimaryActions .deliveryMapMainBtn .btnLabel{
+  display:inline-block !important;
+  font-weight:950 !important;
+}
+
+.deliveryLocationStatus{
+  min-height:30px !important;
+  margin:0 !important;
+  padding:6px 8px !important;
+  gap:5px !important;
+  border:1px solid #e5e7eb !important;
+  border-radius:10px !important;
+  background:#fff !important;
+  color:#64748b !important;
+  font-size:10px !important;
+  line-height:1.3 !important;
+  font-weight:750 !important;
+}
+.deliveryLocationStatus.ok{
+  border-color:#bbf7d0 !important;
+  background:#f0fdf4 !important;
+  color:#15803d !important;
+}
+.deliveryLocationStatus .deliveryCoordInline{
+  padding:2px 6px !important;
+  border-radius:999px !important;
+  font-size:9px !important;
+}
+.deliveryLocationActions{
+  gap:6px !important;
+  margin-top:0 !important;
+}
+.deliveryLocationActions .locMetaBtn{
+  min-height:34px !important;
+  padding:0 8px !important;
+  border-radius:10px !important;
+  font-size:10px !important;
+}
+.omDeliveryCalcBox{
+  margin-top:0 !important;
+  padding:8px !important;
+  border-radius:11px !important;
+  box-shadow:none !important;
+}
+
+/* Map and pickup point sections remain fully functional but compact */
+.deliveryInlineMapPanel{
+  margin-top:0 !important;
+  border-radius:12px !important;
+  box-shadow:none !important;
+}
+.deliveryInlineMapHead{padding:8px !important}
+.deliveryInlineMap{height:156px !important}
+.deliveryInlineMapFoot{padding:7px 8px 8px !important}
+.deliveryMapApplyBtn{min-height:36px !important;border-radius:10px !important}
+.pickupPointCheckoutBox{
+  margin-top:8px !important;
+  padding:10px !important;
+  border-radius:13px !important;
+  box-shadow:none !important;
+}
+.pickupPointCheckoutHead{margin-bottom:9px !important}
+.pickupPointCheckoutHead b{font-size:12px !important}
+.pickupPointCheckoutHead b i{width:26px !important;height:26px !important;border-radius:9px !important;font-size:11px !important}
+.pickupNearestBtn{min-height:34px !important;padding:0 9px !important;border-radius:10px !important;font-size:10px !important}
+.pickupPointFilterRow{gap:6px !important;margin-bottom:8px !important}
+.pickupPointFilterBtn{min-height:31px !important;padding:0 9px !important;font-size:10px !important}
+.pickupPointSearchWrap{min-height:40px !important;margin-bottom:8px !important;border-radius:11px !important}
+.pickupPointList{max-height:225px !important}
+
+/* Footer: total and CTA stay on one line to save vertical space */
+.checkoutFooter{
+  padding:9px 12px calc(9px + env(safe-area-inset-bottom)) !important;
+  border-top:1px solid #eef2f7 !important;
+  background:rgba(255,255,255,.98) !important;
+  box-shadow:0 -9px 22px rgba(15,23,42,.055) !important;
+}
+.checkoutFooter .checkoutActionBar{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  gap:9px !important;
+  align-items:center !important;
+}
+.checkoutFooter .checkoutFinalTotalCard{
+  min-width:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  gap:3px !important;
+}
+.checkoutFinalTotalLabel{
+  color:#94a3b8 !important;
+  font-size:9px !important;
+  line-height:1.1 !important;
+  font-weight:1000 !important;
+  letter-spacing:.05em !important;
+}
+.checkoutFooter .checkoutFinalTotalValue{
+  color:#ef4444 !important;
+  font-size:20px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.045em !important;
+  white-space:nowrap !important;
+}
+.checkoutFooter #checkoutSubmit{
+  width:auto !important;
+  min-width:132px !important;
+  min-height:44px !important;
+  height:44px !important;
+  margin:0 !important;
+  padding:0 14px !important;
+  border-radius:12px !important;
+  justify-content:center !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+  white-space:nowrap !important;
+  box-shadow:0 10px 18px rgba(225,29,72,.16) !important;
+}
+.checkoutSubmitHint{display:none !important}
+
+/* v57's global compact-button helper must not remove labels for these actions. */
+#deliveryLocateBtn.omIconOnlyMobile>.btnLabel,
+#deliveryMapToggleBtn.omIconOnlyMobile>.btnLabel,
+#deliveryUseNewLocation.omIconOnlyMobile>.btnLabel{display:inline-block !important}
+
+@media(max-width:640px){
+  .checkoutOverlay{align-items:flex-end !important;padding:0 !important}
+  .checkoutModal{
+    width:100% !important;
+    max-height:92dvh !important;
+    border-radius:22px 22px 0 0 !important;
+    border-bottom:0 !important;
+  }
+  .checkoutModal::before{
+    content:'';
+    display:block;
+    position:absolute;
+    top:7px;
+    left:50%;
+    z-index:8;
+    width:34px;
+    height:4px;
+    margin-left:-17px;
+    border-radius:999px;
+    background:#d7dee8;
+  }
+  .checkoutModal .checkoutHead{padding:15px 12px 10px !important}
+  .checkoutModal .checkoutTitle{font-size:15px !important}
+  .checkoutModal .checkoutBody{padding:9px 10px 10px !important}
+  .checkoutFooter{padding:8px 10px calc(8px + env(safe-area-inset-bottom)) !important}
+  .checkoutFooter #checkoutSubmit{min-width:124px !important;padding:0 12px !important}
+  .checkoutFooter .checkoutFinalTotalValue{font-size:19px !important}
+}
+
+@media(max-width:360px){
+  .deliveryPrimaryActions{grid-template-columns:1fr !important}
+  .deliveryPrimaryActions .locateBtn,
+  .deliveryPrimaryActions .deliveryMapMainBtn{font-size:11px !important}
+  .savedAddressCheckoutRow{grid-template-columns:1fr !important}
+  .savedAddressChangeBtn{width:100% !important}
+}
+
+/* ===== om-loader.css: legacy loading suppression only ===== */
+/* =========================================================
+   OrzuMall v136 — loading UI disabled
+   User requested no fullscreen loader, no spinner overlay and no top red strip.
+   Keep only invisible suppression for legacy progress strips.
+   ========================================================= */
+#nprogress,.nprogress,.nprogress-bar,
+.pace,.pace-progress,.pace-active,
+.top-loader,.top-progress,.loading-bar,.progress-line,.app-progress,
+.page-progress,.page-loading-line,.router-progress,.loading-progress,
+[data-top-progress],[data-page-progress],
+#omProfessionalLoader,.om-pro-loader{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+/* SPA placeholders disappear silently; content appears when ready. */
+.productPageLoading,.storePageLoading,.storeSearchLoading{
+  display:none!important;
+}

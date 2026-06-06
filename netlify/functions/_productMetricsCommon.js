@@ -113,12 +113,33 @@ async function recordInteraction(db, { productId, type, qty = 1, actorKey = '', 
     return { ok: true, accepted: true, productId: id, metrics: publicMetrics(next), sellerId: safeId(product.sellerId) };
   });
 }
-async function syncSellerStores(db, sellerIds = []) {
+async function claimSellerStoreSync(db, sellerId, minIntervalMs = 5 * 60 * 1000) {
+  const id = safeId(sellerId);
+  if (!id) return false;
+  const ref = db.doc(`sellerPopularitySyncLocks/${id}`);
+  const nowMs = Date.now();
+  let claimed = false;
+  await db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    const last = snap.exists ? Number(snap.data()?.claimedAtMs || 0) : 0;
+    if (last && nowMs - last < Math.max(0, Number(minIntervalMs) || 0)) return;
+    claimed = true;
+    tx.set(ref, {
+      sellerId: id,
+      claimedAtMs: nowMs,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
+  return claimed;
+}
+async function syncSellerStores(db, sellerIds = [], { minIntervalMs = 5 * 60 * 1000 } = {}) {
   const ids = [...new Set((sellerIds || []).map(safeId).filter(Boolean))];
   if (!ids.length) return;
   const C = require('./_sellerCommon');
   for (const id of ids) {
-    await C.syncSellerPopularity(db, id, { syncProducts: true }).catch(() => {});
+    const claimed = await claimSellerStoreSync(db, id, minIntervalMs).catch(() => false);
+    if (!claimed) continue;
+    await C.syncSellerPopularity(db, id, { syncProducts: true, productSnapshotMinIntervalMs: 15 * 60 * 1000 }).catch(() => {});
   }
 }
 async function recordPurchaseMetrics(db, lines = [], orderId = '') {
@@ -143,4 +164,4 @@ async function recordPurchaseMetrics(db, lines = [], orderId = '') {
   await syncSellerStores(db, [...sellers]);
 }
 
-module.exports = { text, safeId, metricNum, maxMetric, calculatedScore, metricsFrom, metaFor, publicMetrics, recordInteraction, recordPurchaseMetrics, syncSellerStores };
+module.exports = { text, safeId, metricNum, maxMetric, calculatedScore, metricsFrom, metaFor, publicMetrics, recordInteraction, recordPurchaseMetrics, claimSellerStoreSync, syncSellerStores };

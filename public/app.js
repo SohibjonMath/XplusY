@@ -12,8 +12,7 @@
   }catch(e){}
 })();
 
-/* OrzuMall: silence noisy console in production */
-try{ if(typeof console!=="undefined"){ console.warn=()=>{}; console.error=()=>{}; } }catch(e){}
+/* OrzuMall v138: console is preserved for diagnostics; critical errors are reported by /om-error-report.js. */
 
 function omI18nRefresh(delay = 0){
   try{
@@ -140,9 +139,9 @@ function tgOrderStatusHTML(o){
 }
 
 
-import { auth, db, storage } from "./firebase-config.js";
-import { CARDPAY } from "./cardpay-config.js";
-import { CLICK_CONFIG } from "./click-config.js";
+import { auth, db, storage } from "./firebase-config.js?v=20260606_v139";
+import { CARDPAY } from "./cardpay-config.js?v=20260606_v139";
+import { CLICK_CONFIG } from "./click-config.js?v=20260606_v139";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -161,7 +160,6 @@ import {
   limit,
   startAfter,
   onSnapshot,
-  runTransaction,
   serverTimestamp,
   getAggregateFromServer,
   average,
@@ -169,7 +167,6 @@ import {
   addDoc,
   increment
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { generateShortOrderId } from "./utils/shortOrderId.js";
 
 import {
   ref as sRef,
@@ -335,7 +332,11 @@ async function omLoadProductMetric(productId,force=false){
 let omSharedMetricsPollTimer=null;
 function omStartSharedMetricsPolling(){
   if(omSharedMetricsPollTimer)clearInterval(omSharedMetricsPollTimer);
-  omSharedMetricsPollTimer=setInterval(()=>{const ids=(products||[]).slice(0,80).map(p=>p.id||p._docId).filter(Boolean);preloadProductMetrics(ids,{force:true,rerender:true}).catch(()=>{});},45000);
+  omSharedMetricsPollTimer=setInterval(()=>{
+    if(document.hidden)return;
+    const ids=(products||[]).slice(0,60).map(p=>p.id||p._docId).filter(Boolean);
+    preloadProductMetrics(ids,{force:true,rerender:true}).catch(()=>{});
+  },90000);
 }
 setTimeout(omStartSharedMetricsPolling,2500);
 async function omRecordProductInteraction(productId,type="view",qty=1){
@@ -836,6 +837,20 @@ async function refreshStats(productId, force=false){
   }
 }
 
+async function omSubmitReviewSecure(productId, stars, text){
+  const user=auth.currentUser;
+  if(!user) throw new Error("login_required");
+  const token=await user.getIdToken();
+  const resp=await fetch("/.netlify/functions/review-submit",{
+    method:"POST",
+    headers:{"content-type":"application/json","authorization":"Bearer "+token},
+    body:JSON.stringify({action:"submit_review",productId:String(productId||""),stars:Number(stars)||5,text:String(text||"")})
+  });
+  const out=await resp.json().catch(()=>({}));
+  if(!resp.ok||!out.ok) throw new Error(out.error||"review_submit_failed");
+  return out;
+}
+
 async function preloadStats(productIds){
   await Promise.all((productIds||[]).map(id => refreshStats(id, false)));
 }
@@ -912,7 +927,7 @@ function renderReviewsList(list){
     const imgs = (r.images||[]).length ? `
       <div class="revItemImgs">
         ${(r.images||[]).map(u=>`
-          <div class="revItemImg" data-img="${escapeHtml(u)}"><img src="${escapeHtml(u)}" alt="review image" loading="lazy"/></div>
+          <div class="revItemImg" data-img="${escapeHtml(u)}"><img src="${escapeHtml(u)}" alt="review image" loading="lazy" decoding="async"/></div>
         `).join("")}
       </div>
     ` : "";
@@ -2172,7 +2187,7 @@ function productMatchesCategory(p, path){
 /* ===== v14 frontend category overrides: 4-level tree + PNG/SVG icon support ===== */
 function omCategoryIconHtml(def){
   const img=String(def?.iconImage || def?.iconUrl || def?.image || def?.svg || "").trim();
-  if(img) return `<img class="catIconImg" src="${escapeHtml(img)}" alt="" loading="lazy">`;
+  if(img) return `<img class="catIconImg" src="${escapeHtml(img)}" alt="" loading="lazy" decoding="async">`;
   return `<i class="fa-solid ${escapeHtml(def?.icon||"fa-layer-group")}" aria-hidden="true"></i>`;
 }
 function omInferCategoryPath(p){
@@ -2237,12 +2252,13 @@ function applyFilterSort(){
 
   if(query){
     arr = arr.filter(p=>{
-      const hay = `${p.name} ${omProductText(p, "name", p.name||"")} ${omProductCategoryLabel(p)} ${(p.tags||[]).join(" ")} ${omProductTags(p).join(" ")}`.toLowerCase();
+      const hay = `${p.name||""} ${p.name_ru||""} ${omProductText(p, "name", p.name||"")} ${p.sku||p.article||""} ${p.sellerName||""} ${omProductCategoryLabel(p)} ${(p.tags||[]).join(" ")} ${omProductTags(p).join(" ")} ${p.description||""} ${p.description_ru||""}`.toLowerCase();
       return hay.includes(query);
     });
   }
 
   omScheduleStoreSearch(query);
+  omScheduleProductSearch(query);
 
   const sort = els.sort.value;
   if(sort === "price_asc") arr.sort((a,b)=>(a._price||0)-(b._price||0));
@@ -2290,14 +2306,20 @@ function getDeliveryInfo(p){
   const max = (p?.deliveryMaxDays ?? p?.deliveryMax ?? (type==="cargo" ? 14 : 7));
   return { type, min, max };
 }
+function omDeliveryDateRange(p){
+  const d=getDeliveryInfo(p),today=new Date(),min=Math.max(0,Number(d.min)||0),max=Math.max(min,Number(d.max)||min);
+  const add=n=>{const x=new Date(today);x.setDate(x.getDate()+n);return x};
+  const fmt=x=>{try{return new Intl.DateTimeFormat(omLang()==="ru"?"ru-RU":"uz-UZ",{day:"numeric",month:"short"}).format(x)}catch(_){return `${x.getDate()}.${x.getMonth()+1}`}};
+  const a=fmt(add(min)),b=fmt(add(max));
+  return min===max?a:`${a} – ${b}`;
+}
 function renderDeliveryBadge(p){
   const d = getDeliveryInfo(p);
   const cls = d.type === "cargo" ? "shipBadge cargo" : "shipBadge stock";
-  const flagSrc = d.type === "cargo" ? "assets/flags/cn.png" : "assets/flags/uz.png";
+  const flagSrc = d.type === "cargo" ? "assets/flags/cn-48.webp" : "assets/flags/uz-48.webp";
   const flagAlt = d.type === "cargo" ? "CN" : "UZ";
   const dayWord = omLang()==="ru" ? "дн." : (omLang()==="en" ? "days" : "kun");
-  // Use local PNG flags to avoid emoji font issues (UZ/CN text fallback).
-  return `<span class="${cls}"><img class="omFlag" src="${flagSrc}" alt="${flagAlt}" loading="lazy"> <span class="omTruck">🚚</span> (${d.min}–${d.max} ${dayWord})</span>`;
+  return `<span class="${cls}"><img class="omFlag" src="${flagSrc}" alt="${flagAlt}" loading="lazy" decoding="async"><span class="omTruck">🚚</span><span class="cxDeliveryDate">${escapeHtml(omDeliveryDateRange(p))}</span><small>${d.min}–${d.max} ${dayWord}</small></span>`;
 }
 
 function getProductType(p){
@@ -2310,9 +2332,9 @@ function getProductType(p){
 }
 function omProductTypeIconSrc(type){
   const t = String(type || "").toLowerCase().trim();
-  if(t === "original") return "./assets/auth-original.png";
-  if(t === "oem") return "./assets/auth-oem.png";
-  if(t === "replica") return "./assets/auth-copy.png";
+  if(t === "original") return "./assets/auth-original-96.webp";
+  if(t === "oem") return "./assets/auth-oem-96.webp";
+  if(t === "replica") return "./assets/auth-copy-96.webp";
   return "";
 }
 function omProductTypeLabel(type){
@@ -2328,7 +2350,7 @@ function renderProductTypeBadge(p){
   if(!t) return "";
   const label = escapeHtml(omProductTypeLabel(t));
   const iconSrc = omProductTypeIconSrc(t);
-  const icon = iconSrc ? `<img class="authBadgeImg" src="${iconSrc}" alt="${label}" loading="lazy">` : `<i class="fa-solid fa-tag" aria-hidden="true"></i>`;
+  const icon = iconSrc ? `<img class="authBadgeImg" src="${iconSrc}" alt="${label}" loading="lazy" decoding="async">` : `<i class="fa-solid fa-tag" aria-hidden="true"></i>`;
   return `<span class="authBadge ${escapeHtml(t)}" title="${label}">${icon}<span>${label}</span></span>`;
 }
 
@@ -2355,7 +2377,7 @@ function renderSellerMiniLine(p,{page=false}={}){
   if(!name || !sellerId) return "";
   const logo=String(p?.sellerLogo||"").trim();
   const score=Math.max(0,Math.min(100,Number(p?.sellerPopularity||0)||0));
-  const logoHtml=logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy">`:`<i class="fa-solid fa-store"></i>`;
+  const logoHtml=logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async">`:`<i class="fa-solid fa-store"></i>`;
   return `<button type="button" class="${page?"ppSellerLine":"pcardSellerLine"}" data-store-id="${escapeHtml(sellerId)}" title="${escapeHtml(name)} do‘konini ochish">${logoHtml}<b>${escapeHtml(name)}</b>${p?.sellerVerified!==false?`<i class="fa-solid fa-circle-check" title="OrzuMall tasdiqlagan do‘kon"></i>`:""}${score?`<em><i class="fa-solid fa-fire"></i>${score}</em>`:""}</button>`;
 }
 
@@ -2393,10 +2415,10 @@ const NATIVE_ADS = {
 };
 
 const ADS_LIST = [
-  "ads/ad1.webp",
-  "ads/ad2.webp",
-  "ads/ad3.webp",
-  "ads/ad4.webp"
+  "ads/ad1-512.webp",
+  "ads/ad2-512.webp",
+  "ads/ad3-512.webp",
+  "ads/ad4-512.webp"
 ];
 
 let __lastAd = null;
@@ -2443,7 +2465,7 @@ function createNativeAdCard(){
   card.className = "pcard adCard";
   card.setAttribute("data-kind", "native-ad");
   card.innerHTML = `
-    <img class="adImg" src="${src}" alt="Reklama" loading="lazy" />
+    <img class="adImg" src="${src}" alt="Reklama" loading="lazy" decoding="async" />
   `;
 
   card.addEventListener("click", ()=>{
@@ -2506,7 +2528,7 @@ const sellerMiniHTML = renderSellerMiniLine(p);
 
     card.innerHTML = `
       <div class="pmedia">
-        <img class="pimg" src="${currentImg || ""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy"/>
+        <img class="pimg" src="${currentImg || ""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy" decoding="async"/>
         ${badgeHTML}
         ${authHTML?`<div class="authOnImg">${authHTML}</div>`:""}
         <button class="favBtn ${isFav ? "active" : ""}" title="Sevimli" aria-label="Sevimli" aria-pressed="${isFav ? "true" : "false"}"><i class="fa-${isFav ? "solid" : "regular"} fa-heart" aria-hidden="true"></i></button>
@@ -3062,6 +3084,7 @@ function orderCustomerActionButtonsHTML(order){
   const st = omOrderStatusKey(order?.status || "new");
   const reviewed = !!order?.orderReview;
   const buttons = [`<button class="orderActionBtn" type="button" data-order-receipt="${oid}">🧾 Chek</button>`];
+  if(Array.isArray(order?.items) && order.items.length){ buttons.push(`<button class="orderActionBtn cxRepeatBtn" type="button" data-order-repeat="${oid}"><i class="fa-solid fa-rotate-right"></i> Qayta buyurtma</button>`); }
   if(["new","paid","packing","shipping"].includes(st)){
     buttons.push(`<button class="orderActionBtn isDanger" type="button" data-order-action="cancel" data-order-id="${oid}"><i class="fa-solid fa-ban"></i> Bekor qilish</button>`);
   }
@@ -3541,7 +3564,7 @@ function omStoreSearchCardHtml(store={}){
   const followers=Math.max(0,Math.round(Number(store.followersCount||0)||0));
   const popularity=Math.max(0,Math.round(Number(store.popularity||0)||0));
   const completed=Math.max(0,Math.round(Number(store.completedOrdersCount||0)||0));
-  return `<button type="button" class="storeSearchCard" data-store-search-id="${escapeHtml(id)}" title="${escapeHtml(name)} do‘konini ochish"><span class="storeSearchLogo">${logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy">`:escapeHtml(omStoreInitials(name))}</span><span class="storeSearchBody"><span class="storeSearchName"><b>${escapeHtml(name)}</b>${store.verified!==false?`<i class="fa-solid fa-circle-check storeSearchVerified" title="OrzuMall tasdiqlagan do‘kon"></i>`:""}</span><span class="storeSearchDescription">${escapeHtml(store.description||"OrzuMall marketplace do‘koni")}</span><span class="storeSearchMeta"><span><i class="fa-solid fa-box"></i>${count} mahsulot</span><span><i class="fa-solid fa-circle-check"></i>${completed} buyurtma</span><span><i class="fa-solid fa-user-group"></i>${followers}</span><span><i class="fa-solid fa-fire"></i>${popularity}</span></span></span><span class="storeSearchOpen"><i class="fa-solid fa-chevron-right"></i></span></button>`;
+  return `<button type="button" class="storeSearchCard" data-store-search-id="${escapeHtml(id)}" title="${escapeHtml(name)} do‘konini ochish"><span class="storeSearchLogo">${logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async">`:escapeHtml(omStoreInitials(name))}</span><span class="storeSearchBody"><span class="storeSearchName"><b>${escapeHtml(name)}</b>${store.verified!==false?`<i class="fa-solid fa-circle-check storeSearchVerified" title="OrzuMall tasdiqlagan do‘kon"></i>`:""}</span><span class="storeSearchDescription">${escapeHtml(store.description||"OrzuMall marketplace do‘koni")}</span><span class="storeSearchMeta"><span><i class="fa-solid fa-box"></i>${count} mahsulot</span><span><i class="fa-solid fa-circle-check"></i>${completed} buyurtma</span><span><i class="fa-solid fa-user-group"></i>${followers}</span><span><i class="fa-solid fa-fire"></i>${popularity}</span></span></span><span class="storeSearchOpen"><i class="fa-solid fa-chevron-right"></i></span></button>`;
 }
 function omSyncSearchEmptyState(){
   if(!els.empty)return;
@@ -3596,9 +3619,9 @@ function openStorePage(sellerId){
   if(location.hash===target) showView("store"); else location.hash=target;
 }
 function omStoreProductCardHtml(p){
-  const sel=getSel(p),img=getCurrentImage(p,sel)||p.image||p.sellerLogo||"./logo.webp",pricing=getVariantPricing(p,sel),isFav=favs.has(p.id),m=omGetProductMetrics(p),dp=discountPct(pricing.price,pricing.oldPrice);
+  const sel=getSel(p),img=getCurrentImage(p,sel)||p.image||p.sellerLogo||"./logo-256.webp",pricing=getVariantPricing(p,sel),isFav=favs.has(p.id),m=omGetProductMetrics(p),dp=discountPct(pricing.price,pricing.oldPrice);
   return `<article class="storeProductCard" data-store-product="${escapeHtml(p.id)}">
-    <div class="storeProductMedia"><img src="${escapeHtml(img)}" alt="${escapeHtml(omProductText(p,"name",p.name||"Mahsulot"))}" loading="lazy">${dp?`<span class="storeProductBadge">-${dp}%</span>`:""}<button class="storeFavBtn ${isFav?"active":""}" type="button" data-store-fav="${escapeHtml(p.id)}"><i class="fa-${isFav?"solid":"regular"} fa-heart"></i></button></div>
+    <div class="storeProductMedia"><img src="${escapeHtml(img)}" alt="${escapeHtml(omProductText(p,"name",p.name||"Mahsulot"))}" loading="lazy" decoding="async">${dp?`<span class="storeProductBadge">-${dp}%</span>`:""}<button class="storeFavBtn ${isFav?"active":""}" type="button" data-store-fav="${escapeHtml(p.id)}"><i class="fa-${isFav?"solid":"regular"} fa-heart"></i></button></div>
     <div class="storeProductBody"><div class="storeProductName">${escapeHtml(omProductText(p,"name",p.name||"Nomsiz mahsulot"))}</div><div class="storeProductStats"><span><i class="fa-regular fa-eye"></i> ${omCount(m.views||0)}</span><span><i class="fa-solid fa-fire"></i> ${omCount(m.score||0)}</span></div><div class="storeProductBottom"><strong class="storeProductPrice">${moneyUZS(pricing.price||0)}</strong><button class="storeProductCart" type="button" data-store-cart="${escapeHtml(p.id)}" title="Savatchaga"><i class="fa-solid fa-cart-shopping"></i></button></div></div>
   </article>`;
 }
@@ -3616,8 +3639,8 @@ function omStorePartnerDuration(ms){
 function omStorePartnerDate(ms){const n=Number(ms||0);if(!n)return "Hamkorlik sanasi saqlanmagan";try{return new Intl.DateTimeFormat("uz-UZ",{day:"2-digit",month:"long",year:"numeric"}).format(new Date(n))}catch(_){return ""}}
 function omDrawStorePage(data){
   const root=els.storePageContent;if(!root)return;
-  const store=data?.store||{},list=Array.isArray(data?.products)?data.products:[],logo=String(store.logoUrl||""),banner=String(store.bannerUrl||""),following=!!data?.following,displayedPopularity=omAverageStorePopularity(list),completed=Math.max(0,Math.round(Number(store.completedOrdersCount||0)||0)),partnerDuration=omStorePartnerDuration(store.partnerSinceMs),partnerDate=omStorePartnerDate(store.partnerSinceMs);
-  root.innerHTML=`<section class="storeHero"><div class="storeHeroBanner">${banner?`<img src="${escapeHtml(banner)}" alt="">`:""}</div><div class="storeHeroBody"><div class="storeLogoBig">${logo?`<img src="${escapeHtml(logo)}" alt="">`:escapeHtml(omStoreInitials(store.storeName))}</div><div class="storeIdentity"><h1>${escapeHtml(store.storeName||"Do‘kon")}${store.verified!==false?`<i class="fa-solid fa-circle-check storeVerified" title="OrzuMall tasdiqlagan do‘kon"></i>`:""}</h1><p>${escapeHtml(store.description||"OrzuMall marketplace do‘koni")}</p></div><button type="button" class="storeFollowBtn ${following?"isFollowing":""}" id="storeFollowBtn"><i class="fa-solid ${following?"fa-check":"fa-plus"}"></i>${following?" Obuna bo‘lingan":" Obuna bo‘lish"}</button></div><div class="storeMeta"><span><i class="fa-solid fa-box"></i>${Number(store.productCount||list.length)} ta mahsulot</span><span><i class="fa-solid fa-user-group"></i>${Number(store.followersCount||0)} obunachi</span><span title="Faol va tasdiqlangan mahsulotlarning o‘rtacha popularligi"><i class="fa-solid fa-fire"></i>${displayedPopularity} o‘rtacha popularlik</span>${store.workingHours?`<span><i class="fa-regular fa-clock"></i>${escapeHtml(store.workingHours)}</span>`:""}</div><div class="storeTrustGrid"><div class="storeTrustCard"><span class="storeTrustIcon"><i class="fa-solid fa-handshake"></i></span><span class="storeTrustCopy"><small>OrzuMall hamkori</small><b>${escapeHtml(partnerDuration)}</b><em>${escapeHtml(partnerDate)}</em></span></div><div class="storeTrustCard"><span class="storeTrustIcon success"><i class="fa-solid fa-circle-check"></i></span><span class="storeTrustCopy"><small>Bajarilgan buyurtmalar</small><b>${completed} ta</b><em>Muvaffaqiyatli yetkazilgan</em></span></div><div class="storeTrustCard"><span class="storeTrustIcon verified"><i class="fa-solid fa-shield-halved"></i></span><span class="storeTrustCopy"><small>Do‘kon holati</small><b>${store.verified!==false?"Tasdiqlangan":"Tekshirilmoqda"}</b><em>${store.verified!==false?"OrzuMall tomonidan tekshirilgan":"Tasdiqlash jarayonida"}</em></span></div></div></section><div class="storeCatalogHead"><h2>Do‘kon mahsulotlari</h2><span>${list.length} ta tasdiqlangan mahsulot</span></div>${list.length?`<div class="storeProductGrid">${list.map(omStoreProductCardHtml).join("")}</div>`:`<div class="storePageEmpty"><i class="fa-solid fa-box-open"></i> Hozircha mahsulot yo‘q.</div>`}`;
+  const store=data?.store||{},list=Array.isArray(data?.products)?data.products:[],logo=String(store.logoUrl||""),banner=String(store.bannerUrl||""),following=!!data?.following,displayedPopularity=omAverageStorePopularity(list),completed=Math.max(0,Math.round(Number(store.completedOrdersCount||0)||0)),partnerDuration=omStorePartnerDuration(store.partnerSinceMs),partnerDate=omStorePartnerDate(store.partnerSinceMs),sellerRating=Number(store.sellerRating||0)||0,slaRate=Math.max(0,Math.round(Number(store.slaOnTimeRate||0)||0));
+  root.innerHTML=`<section class="storeHero"><div class="storeHeroBanner">${banner?`<img src="${escapeHtml(banner)}" alt="" decoding="async">`:""}</div><div class="storeHeroBody"><div class="storeLogoBig">${logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async">`:escapeHtml(omStoreInitials(store.storeName))}</div><div class="storeIdentity"><h1>${escapeHtml(store.storeName||"Do‘kon")}${store.verified!==false?`<i class="fa-solid fa-circle-check storeVerified" title="OrzuMall tasdiqlagan do‘kon"></i>`:""}</h1><p>${escapeHtml(store.description||"OrzuMall marketplace do‘koni")}</p></div><button type="button" class="storeFollowBtn ${following?"isFollowing":""}" id="storeFollowBtn"><i class="fa-solid ${following?"fa-check":"fa-plus"}"></i>${following?" Obuna bo‘lingan":" Obuna bo‘lish"}</button></div><div class="storeMeta"><span><i class="fa-solid fa-box"></i>${Number(store.productCount||list.length)} ta mahsulot</span><span><i class="fa-solid fa-user-group"></i>${Number(store.followersCount||0)} obunachi</span><span title="Faol va tasdiqlangan mahsulotlarning o‘rtacha popularligi"><i class="fa-solid fa-fire"></i>${displayedPopularity} o‘rtacha popularlik</span>${store.workingHours?`<span><i class="fa-regular fa-clock"></i>${escapeHtml(store.workingHours)}</span>`:""}</div><div class="storeTrustGrid"><div class="storeTrustCard"><span class="storeTrustIcon"><i class="fa-solid fa-handshake"></i></span><span class="storeTrustCopy"><small>OrzuMall hamkori</small><b>${escapeHtml(partnerDuration)}</b><em>${escapeHtml(partnerDate)}</em></span></div><div class="storeTrustCard"><span class="storeTrustIcon success"><i class="fa-solid fa-circle-check"></i></span><span class="storeTrustCopy"><small>Bajarilgan buyurtmalar</small><b>${completed} ta</b><em>Muvaffaqiyatli yetkazilgan</em></span></div><div class="storeTrustCard"><span class="storeTrustIcon verified"><i class="fa-solid fa-shield-halved"></i></span><span class="storeTrustCopy"><small>Do‘kon holati</small><b>${store.verified!==false?"Tasdiqlangan":"Tekshirilmoqda"}</b><em>${store.verified!==false?"OrzuMall tomonidan tekshirilgan":"Tasdiqlash jarayonida"}</em></span></div><div class="storeTrustCard"><span class="storeTrustIcon rating"><i class="fa-solid fa-star"></i></span><span class="storeTrustCopy"><small>Seller reytingi</small><b>${sellerRating?sellerRating.toFixed(1)+" / 5":"Yangi seller"}</b><em>${slaRate?slaRate+"% vaqtida topshirish":"SLA tarixi yig‘ilmoqda"}</em></span></div></div></section><div class="storeCatalogHead"><h2>Do‘kon mahsulotlari</h2><span>${list.length} ta tasdiqlangan mahsulot</span></div>${list.length?`<div class="storeProductGrid">${list.map(omStoreProductCardHtml).join("")}</div>`:`<div class="storePageEmpty"><i class="fa-solid fa-box-open"></i> Hozircha mahsulot yo‘q.</div>`}`;
   root.querySelector("#storeFollowBtn")?.addEventListener("click",()=>omToggleStoreFollow(store.id,!following));
   root.querySelectorAll("[data-store-product]").forEach(card=>card.addEventListener("click",e=>{if(e.target.closest("button"))return;openProductPage(card.dataset.storeProduct)}));
   root.querySelectorAll("[data-store-cart]").forEach(btn=>btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const p=findProductById(btn.dataset.storeCart);if(p)handleAddToCart(p,{openCartAfter:false})}));
@@ -3636,13 +3659,13 @@ async function omToggleStoreFollow(sellerId,following){
 function omNotificationTime(v){const n=Number(v||0);if(!n)return "";try{return new Intl.DateTimeFormat("uz-UZ",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(new Date(n))}catch(_){return new Date(n).toLocaleString()}}
 function omRenderNotificationBadge(){const unread=omNotifications.filter(x=>!x.read).length;if(els.notificationsCount){els.notificationsCount.textContent=String(Math.min(99,unread));els.notificationsCount.hidden=!unread}omRenderStoreUpdateStrip()}
 function omRenderStoreUpdateStrip(){const box=els.storeUpdateStrip;if(!box)return;const n=omNotifications.find(x=>!x.read&&x.type==="store_new_product");if(!n){box.hidden=true;box.innerHTML="";return}box.hidden=false;box.innerHTML=`<button type="button"><span class="storeUpdateIcon"><i class="fa-solid fa-bell"></i></span><span class="storeUpdateCopy"><b>${escapeHtml(n.storeName||"Obuna bo‘lgan do‘kon")}</b><span>${escapeHtml(n.productName||n.body||"Yangi mahsulot qo‘shildi")}</span></span><i class="fa-solid fa-chevron-right"></i></button>`;box.querySelector("button")?.addEventListener("click",()=>omOpenNotifications())}
-function omRenderNotifications(){const list=els.notificationList,empty=els.notificationEmpty;if(!list||!empty)return;empty.hidden=omNotifications.length>0;list.innerHTML=omNotifications.map(n=>`<button type="button" class="notifyCard ${n.read?"":"isUnread"}" data-notification-id="${escapeHtml(n.id)}"><span>${n.productImage?`<img class="notifyImg" src="${escapeHtml(n.productImage)}" alt="">`:`<span class="notifyImgFallback"><i class="fa-solid fa-store"></i></span>`}</span><span class="notifyCopy"><b>${escapeHtml(n.title||"Yangi bildirishnoma")}</b><p>${escapeHtml(n.body||"")}</p><time>${escapeHtml(omNotificationTime(n.createdAt))}</time></span><i class="notifyDot"></i></button>`).join("");list.querySelectorAll("[data-notification-id]").forEach(btn=>btn.addEventListener("click",()=>omOpenNotification(btn.dataset.notificationId)))}
+function omRenderNotifications(){const list=els.notificationList,empty=els.notificationEmpty;if(!list||!empty)return;empty.hidden=omNotifications.length>0;list.innerHTML=omNotifications.map(n=>`<button type="button" class="notifyCard ${n.read?"":"isUnread"}" data-notification-id="${escapeHtml(n.id)}"><span>${n.productImage?`<img class="notifyImg" src="${escapeHtml(n.productImage)}" alt="" loading="lazy" decoding="async">`:`<span class="notifyImgFallback"><i class="fa-solid fa-store"></i></span>`}</span><span class="notifyCopy"><b>${escapeHtml(n.title||"Yangi bildirishnoma")}</b><p>${escapeHtml(n.body||"")}</p><time>${escapeHtml(omNotificationTime(n.createdAt))}</time></span><i class="notifyDot"></i></button>`).join("");list.querySelectorAll("[data-notification-id]").forEach(btn=>btn.addEventListener("click",()=>omOpenNotification(btn.dataset.notificationId)))}
 async function omLoadNotifications({silent=false}={}){if(!currentUser){omNotifications=[];omRenderNotificationBadge();omRenderNotifications();return}if(omNotificationsLoading)return;omNotificationsLoading=true;try{const out=await omStoreApi("notifications_list",{}, {authRequired:true});omNotifications=Array.isArray(out.notifications)?out.notifications:[];omRenderNotificationBadge();omRenderNotifications()}catch(e){if(!silent)console.warn("notifications",e)}finally{omNotificationsLoading=false}}
 function omOpenNotifications(){if(!currentUser){toast("Bildirishnomalarni ko‘rish uchun akkauntga kiring");goTab("profile");return}if(els.notificationOverlay)els.notificationOverlay.hidden=false;omRenderNotifications();omLoadNotifications({silent:true})}
 function omCloseNotifications(){if(els.notificationOverlay)els.notificationOverlay.hidden=true}
 async function omOpenNotification(id){const n=omNotifications.find(x=>String(x.id)===String(id));if(!n)return;try{if(!n.read){n.read=true;omRenderNotificationBadge();omRenderNotifications();await omStoreApi("notification_read",{id:n.id},{authRequired:true})}}catch(_e){}omCloseNotifications();if(n.url){const h=String(n.url).includes("#")?String(n.url).slice(String(n.url).indexOf("#")):String(n.url);location.hash=h.startsWith("#")?h:"#"+h}}
 async function omReadAllNotifications(){try{await omStoreApi("notifications_read_all",{}, {authRequired:true});omNotifications=omNotifications.map(x=>({...x,read:true}));omRenderNotificationBadge();omRenderNotifications();toast("Bildirishnomalar o‘qilgan deb belgilandi")}catch(e){toast("Bildirishnomalarni yangilab bo‘lmadi","error")}}
-function omStartNotificationPolling(){if(omNotificationTimer)clearInterval(omNotificationTimer);omNotificationTimer=null;if(!currentUser)return;omLoadNotifications({silent:true});omNotificationTimer=setInterval(()=>omLoadNotifications({silent:true}),45000)}
+function omStartNotificationPolling(){if(omNotificationTimer)clearInterval(omNotificationTimer);omNotificationTimer=null;if(!currentUser)return;omLoadNotifications({silent:true});omNotificationTimer=setInterval(()=>{if(!document.hidden)omLoadNotifications({silent:true})},90000)}
 els.notificationsBtn?.addEventListener("click",omOpenNotifications);els.notificationClose?.addEventListener("click",omCloseNotifications);els.notificationBackdrop?.addEventListener("click",omCloseNotifications);els.notificationReadAll?.addEventListener("click",omReadAllNotifications);
 els.storeBackBtn?.addEventListener("click",()=>{try{history.length>1?history.back():goTab("home")}catch(_){goTab("home")}});
 els.storeShareBtn?.addEventListener("click",async()=>{const data=omStoreCache.get(activeStoreId),url=location.origin+location.pathname+"#store/"+encodeURIComponent(activeStoreId||"");try{if(navigator.share)await navigator.share({title:data?.store?.storeName||"OrzuMall do‘koni",url});else{await navigator.clipboard.writeText(url);toast("Do‘kon havolasi nusxalandi")}}catch(_){}});
@@ -3928,7 +3951,7 @@ function omProductPageGalleryHtml(p, imgs){
     <div class="ppGalleryShell">
       <div class="ppThumbRail">
         <div class="ppThumbs" id="productPageThumbs">
-          ${imgs.map((src,i)=>`<button type="button" class="ppThumb ${i===0?"active":""}" data-pp-index="${i}" data-pp-img="${escapeHtml(src)}" aria-label="Rasm ${i+1}"><img src="${escapeHtml(src)}" alt="thumb" loading="lazy"></button>`).join("")}
+          ${imgs.map((src,i)=>`<button type="button" class="ppThumb ${i===0?"active":""}" data-pp-index="${i}" data-pp-img="${escapeHtml(src)}" aria-label="Rasm ${i+1}"><img src="${escapeHtml(src)}" alt="thumb" loading="lazy" decoding="async"></button>`).join("")}
         </div>
       </div>
       <div class="ppMainStage">
@@ -3937,7 +3960,7 @@ function omProductPageGalleryHtml(p, imgs){
           ${total > 1 ? `<div class="ppGalleryNav"><button type="button" class="ppGalleryArrow" id="productPagePrev" aria-label="Oldingi rasm"><i class="fa-solid fa-chevron-left"></i></button><button type="button" class="ppGalleryArrow" id="productPageNext" aria-label="Keyingi rasm"><i class="fa-solid fa-chevron-right"></i></button></div>` : ``}
         </div>
         <button type="button" class="ppMainImage ppMainImageBtn" id="productPageMainBtn" aria-label="Rasmni katta ko‘rish">
-          <img id="productPageImg" src="${escapeHtml(main)}" alt="${escapeHtml(omProductText(p,"name",p.name||"Mahsulot"))}" loading="eager">
+          <img id="productPageImg" src="${escapeHtml(main)}" alt="${escapeHtml(omProductText(p,"name",p.name||"Mahsulot"))}" loading="eager" decoding="async" fetchpriority="high">
         </button>
       </div>
     </div>
@@ -4130,6 +4153,7 @@ function renderProductPage(){
     omFetchProductForPage(id);
     return;
   }
+  omRememberViewedProduct(p);
   if(!omProductPageViewed.has(String(p.id))){
     omProductPageViewed.add(String(p.id));
     try{ omRecordProductInteraction(p.id, "view", 1); }catch(_e){}
@@ -4163,6 +4187,13 @@ function renderProductPage(){
             <button type="button" class="ppAction" data-pp-info><i class="fa-solid fa-circle-info"></i><span>Tavsif</span></button>
             <button type="button" class="ppAction" data-pp-video><i class="fa-brands fa-youtube"></i><span>Video</span></button>
             <button type="button" class="ppAction ${favOn?"active":""}" data-pp-fav><i class="fa-${favOn?"solid":"regular"} fa-heart"></i><span>Sevimli</span></button>
+          </div>
+          <div class="cxAlertPanel" data-cx-alert-panel>
+            <div class="cxAlertHead"><div><b>Mahsulotni kuzatish</b><br><span>Muhim o‘zgarishlardan xabardor bo‘ling</span></div><i class="fa-regular fa-bell"></i></div>
+            <div class="cxAlertGrid">
+              <button type="button" class="cxAlertBtn" data-cx-alert="price_drop"><i class="fa-solid fa-tags"></i><span>Narx tushganda xabar</span></button>
+              <button type="button" class="cxAlertBtn" data-cx-alert="back_in_stock"><i class="fa-solid fa-box-open"></i><span>Omborga qaytganda xabar</span></button>
+            </div>
           </div>
           ${desc?`<details class="ppDesc"><summary>Tavsifni ko‘rish</summary><p>${escapeHtml(desc)}</p></details>`:""}
         </article>
@@ -4248,6 +4279,8 @@ function bindProductPage(p){
     updateBadges();
     renderProductPage();
   });
+  root.querySelectorAll("[data-cx-alert]").forEach(btn=>btn.addEventListener("click",()=>omToggleProductAlert(p.id,btn.getAttribute("data-cx-alert"))));
+  omRefreshProductAlertButtons(p.id);
 }
 
 // ---------- Premium product quick view helpers ----------
@@ -4343,7 +4376,7 @@ function omQVTrustHtml(p){
   const weight = Number(p?.weightKg ?? p?.weight ?? p?.massKg ?? 0) || 0;
   const min = Number(p?.deliveryMinDays || p?.pMinDays || 0) || 0;
   const max = Number(p?.deliveryMaxDays || p?.pMaxDays || 0) || 0;
-  const eta = max ? `${min||1}–${max} kun` : (t.includes("cargo") ? "15–30 kun" : "Tez yetkazish");
+  const eta = max ? `${omDeliveryDateRange(p)} • ${min||1}–${max} kun` : (t.includes("cargo") ? omDeliveryDateRange({...p,deliveryMinDays:15,deliveryMaxDays:30}) : "Tez yetkazish");
   return `
     <div class="qvTrustItem"><i class="fa-solid fa-truck-fast"></i><span>Yetkazish</span><b>${eta}</b></div>
     <div class="qvTrustItem"><i class="fa-solid fa-box"></i><span>Holati</span><b>${t.includes("cargo") ? "Keltirib beramiz" : "O‘zimizda"}</b></div>
@@ -4434,7 +4467,7 @@ function renderViewer(){
   imgs.forEach((src, i)=>{
     const b = document.createElement("button");
     b.className = "thumb" + (i===idx ? " active" : "");
-    b.innerHTML = `<img src="${src}" alt="thumb" loading="lazy" />`;
+    b.innerHTML = `<img src="${src}" alt="thumb" loading="lazy" decoding="async" />`;
     b.addEventListener("click", ()=>{
       viewer.idx = i;
       renderViewer();
@@ -4523,7 +4556,7 @@ function renderMiniStarSelector(container){
     b.className = "starBtn" + (i<=shown ? " active" : "");
     b.title = `${i} / 5`;
     b.setAttribute("aria-label", `${i} yulduz`);
-    b.innerHTML = `<img src="${omStarIconSrc(i<=shown)}" alt="${i} yulduz" loading="lazy">`;
+    b.innerHTML = `<img src="${omStarIconSrc(i<=shown)}" alt="${i} yulduz" loading="lazy" decoding="async">`;
     b.addEventListener("mouseenter", ()=>{ miniHoverStars=i; renderMiniStarSelector(container); });
     b.addEventListener("focus", ()=>{ miniHoverStars=i; renderMiniStarSelector(container); });
     b.addEventListener("mouseleave", ()=>{ miniHoverStars=0; renderMiniStarSelector(container); });
@@ -4559,11 +4592,11 @@ function parseYouTubeEmbed(url){
 }
 
 function omStarIconSrc(active){
-  return active ? "./assets/review-star-filled.png" : "./assets/review-star-empty.png";
+  return active ? "./assets/review-star-filled-64.webp" : "./assets/review-star-empty-64.webp";
 }
 function omRenderStarIcons(score, extraClass=""){
   const s = Math.max(0, Math.min(5, Number(score)||0));
-  return `<span class="starIcons ${extraClass}">${Array.from({length:5}, (_,i)=>`<img src="${omStarIconSrc(i<s)}" alt="" loading="lazy">`).join("")}</span>`;
+  return `<span class="starIcons ${extraClass}">${Array.from({length:5}, (_,i)=>`<img src="${omStarIconSrc(i<s)}" alt="" loading="lazy" decoding="async">`).join("")}</span>`;
 }
 
 function renderMiniReviewsList(list){
@@ -4694,26 +4727,7 @@ async function openMini(kind, productId){
       miniSendEl.textContent = "Yuborilmoqda...";
 
       try{
-        const identity=await omCurrentPublicIdentity(user);
-        const authorName=identity.authorName;
-        const revRef = doc(db, "products", String(p.id), "reviews", user.uid);
-
-        await runTransaction(db, async (tx) => {
-          const revSnap = await tx.get(revRef);
-          const prev = revSnap.exists() ? (revSnap.data() || {}) : {};
-          const createdAt = prev.createdAt ? prev.createdAt : serverTimestamp();
-
-          tx.set(revRef, {
-            uid: user.uid,
-            authorName,
-            firstName:identity.firstName || null,
-            lastName:identity.lastName || null,
-            stars,
-            text,
-            updatedAt: serverTimestamp(),
-            createdAt
-          }, { merge: true });
-        });
+        await omSubmitReviewSecure(String(p.id), stars, text);
 
         miniTextEl.value = "";
         await refreshStats(String(p.id), true);
@@ -4733,6 +4747,7 @@ async function openMini(kind, productId){
 
     const q = query(
       collection(db, "products", String(p.id), "reviews"),
+      where("moderationStatus", "==", "approved"),
       orderBy("createdAt", "desc"),
       limit(30)
     );
@@ -4865,7 +4880,7 @@ function renderPanel(mode){
     const item = document.createElement("div");
     item.className = "cartItem cartPremiumItem";
     item.innerHTML = `
-      <img class="cartImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
+      <img class="cartImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy" decoding="async" />
       <div class="cartMeta">
         ${mode==="cart" ? `<label class="cartPick"><input type="checkbox" class="cartPickBox" data-pick="${escapeHtml(row.ci.key)}" ${cartSelected.has(row.ci.key) ? "checked" : ""} /><span></span></label>` : ""}
         <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
@@ -4979,7 +4994,7 @@ function renderFavPage(){
     item.className = "favPremiumCard";
     item.innerHTML = `
       <div class="favImgWrap">
-        <img class="favCardImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
+        <img class="favCardImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy" decoding="async" />
       </div>
       <div class="favContent">
         <div class="favTopRow">
@@ -5066,7 +5081,7 @@ function renderCartPage(){
     const item = document.createElement("div");
     item.className = `cartItem premiumCartItem ${cartSelected.has(ci.key) ? "isSelected" : ""}`;
     item.innerHTML = `
-      <img class="cartImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" />
+      <img class="cartImg" src="${imgSrc||""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy" decoding="async" />
       <div class="cartMeta">
         <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         <div class="cartWeightMini"><i class="fa-solid fa-weight-hanging" aria-hidden="true"></i> ${omFormatKg(omProductWeightKg(p))} × ${qty} = ${omFormatKg(omProductWeightKg(p) * qty)}</div>
@@ -5320,6 +5335,38 @@ function omRenderPickupRegionRows(){
   const html=`<button class="pickupRegionChip ${omPickupRegionFilter==='all'?'isActive':''}" type="button" data-pickup-region="all">Barcha hududlar</button>${options.map(o=>`<button class="pickupRegionChip ${omPickupRegionFilter===o.label?'isActive':''}" type="button" data-pickup-region="${omPickupEsc(o.label)}">${omPickupEsc(o.label)} <span>${o.count}</span></button>`).join('')}`;
   rows.forEach(row=>{if(row) row.innerHTML=html;});
 }
+// Leaflet is loaded only when the customer opens a map.
+// This removes the map library from the initial homepage critical path.
+const OM_LEAFLET_CSS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+const OM_LEAFLET_JS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+let omLeafletPromise = null;
+function omLoadStyleOnce(href,id){
+  const found=document.getElementById(id);
+  if(found)return Promise.resolve(true);
+  return new Promise((resolve,reject)=>{
+    const link=document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;
+    link.onload=()=>resolve(true);link.onerror=()=>{try{link.remove()}catch(_e){}reject(new Error("leaflet_css_failed"))};document.head.appendChild(link);
+  });
+}
+function omLoadScriptOnce(src,id){
+  if(window.L)return Promise.resolve(true);
+  const found=document.getElementById(id);
+  if(found)return new Promise(resolve=>{
+    if(window.L)return resolve(true);
+    found.addEventListener("load",()=>resolve(!!window.L),{once:true});
+    found.addEventListener("error",()=>resolve(false),{once:true});
+  });
+  return new Promise((resolve,reject)=>{
+    const script=document.createElement("script");script.id=id;script.src=src;script.defer=true;
+    script.onload=()=>resolve(!!window.L);script.onerror=()=>{try{script.remove()}catch(_e){}reject(new Error("leaflet_js_failed"))};document.head.appendChild(script);
+  });
+}
+function omEnsureLeaflet(){
+  if(window.L)return Promise.resolve(true);
+  if(!omLeafletPromise)omLeafletPromise=Promise.all([omLoadStyleOnce(OM_LEAFLET_CSS,"omLeafletCss"),omLoadScriptOnce(OM_LEAFLET_JS,"omLeafletJs")]).then(()=>!!window.L).then(ok=>{if(!ok)omLeafletPromise=null;return ok}).catch(()=>{omLeafletPromise=null;return false});
+  return omLeafletPromise;
+}
+
 function omPickupRenderMap(elId,point,mode="preview",points=[]){
   const el=document.getElementById(elId);
   if(!el)return;
@@ -5329,7 +5376,7 @@ function omPickupRenderMap(elId,point,mode="preview",points=[]){
   let userMarker=isExplorer?omPickupExplorerUserMarker:omPickupPreviewUserMarker;
   const user=omPickupUserLocation&&Number.isFinite(Number(omPickupUserLocation.lat))&&Number.isFinite(Number(omPickupUserLocation.lng))?{lat:Number(omPickupUserLocation.lat),lng:Number(omPickupUserLocation.lng)}:null;
   const setRefs=(m,mainMarker,uMarker)=>{ if(isExplorer){ omPickupExplorerMap=m; omPickupExplorerMarker=mainMarker; omPickupExplorerUserMarker=uMarker; } else { omPickupPreviewMap=m; omPickupPreviewMarker=mainMarker; omPickupPreviewUserMarker=uMarker; } };
-  if(typeof window==="undefined"||!window.L){ el.innerHTML='<div class="pickupMapEmpty"><i class="fa-solid fa-satellite-dish"></i><b>Xarita yuklanmadi</b><span>Internet yoki xarita kutubxonasini tekshiring.</span></div>'; return; }
+  if(typeof window==="undefined"||!window.L){ el.innerHTML='<div class="pickupMapEmpty"><i class="fa-solid fa-map-location-dot"></i><b>Xarita tayyorlanmoqda</b><span>Xarita faqat kerak bo‘lganda yuklanadi.</span></div>'; omEnsureLeaflet().then(ok=>{if(ok)omPickupRenderMap(elId,point,mode,points);else el.innerHTML='<div class="pickupMapEmpty"><i class="fa-solid fa-satellite-dish"></i><b>Xarita yuklanmadi</b><span>Internet aloqasini tekshiring.</span></div>';}); return; }
   if(!point||!omPickupHasCoords(point)){ el.innerHTML='<div class="pickupMapEmpty"><i class="fa-solid fa-map-location-dot"></i><b>Xarita tayyor emas</b><span>Bu punkt uchun koordinata kiritilgach mini xarita ko‘rinadi.</span></div>'; try{ if(map){ map.remove(); } }catch(_e){} if(isExplorer){omPickupExplorerPointsLayer=null;} setRefs(null,null,null); return; }
   const lat=Number(point.lat),lng=Number(point.lng);
   if(!map||map._container!==el){ try{ if(map) map.remove(); }catch(_e){} el.innerHTML=''; map=window.L.map(el,{zoomControl:true,attributionControl:false}).setView([lat,lng],user?12:14); window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map); marker=null; userMarker=null; if(isExplorer) omPickupExplorerPointsLayer=null; }
@@ -5538,6 +5585,21 @@ function closeCheckout(){
   try{ omSyncModalOpenState(); }catch(_e){}
 }
 
+const omPromoState={code:'',discountUZS:0,valid:false,subtotalUZS:0,busy:false};
+function omPromoInputCode(){return String(document.getElementById('promoCodeInput')?.value||'').trim().toUpperCase().replace(/[^A-Z0-9_-]+/g,'').slice(0,40)}
+function omPromoHint(text,state=''){const el=document.getElementById('promoHint');if(!el)return;el.textContent=String(text||'');el.classList.remove('isOk','isError','isBusy');if(state)el.classList.add(state)}
+function omPromoErrorText(code){const k=String(code||'').trim().toUpperCase();const map={PROMO_CODE_REQUIRED:'Promokodni kiriting.',PROMO_NOT_FOUND:'Bunday promokod topilmadi.',PROMO_INACTIVE:'Promokod hozir faol emas.',PROMO_NOT_STARTED:'Promokod hali faollashmagan.',PROMO_EXPIRED:'Promokod muddati tugagan.',PROMO_MIN_ORDER:'Buyurtma summasi promokod uchun yetarli emas.',PROMO_LIMIT_REACHED:'Promokoddan foydalanish limiti tugagan.',PROMO_USER_LIMIT:'Bu promokoddan avval foydalangansiz.',PROMO_INVALID:'Promokod chegirmasi noto‘g‘ri.'};return map[k]||'Promokodni qo‘llab bo‘lmadi.'}
+function omInvalidatePromo(silent=false){omPromoState.code='';omPromoState.discountUZS=0;omPromoState.valid=false;omPromoState.subtotalUZS=0;if(!silent)omPromoHint('Promokodingiz bo‘lsa kiriting.');}
+async function omApplyPromoCode(){
+  if(omPromoState.busy)return;
+  const input=document.getElementById('promoCodeInput'),btn=document.getElementById('promoApplyBtn');const code=omPromoInputCode();if(input)input.value=code;
+  if(!code){omInvalidatePromo();try{updatePaymentModalSummary()}catch(_e){}return}
+  if(!currentUser?.getIdToken){omPromoHint('Promokoddan foydalanish uchun akkauntga kiring.','isError');return}
+  const built=typeof buildSelectedItems==='function'?buildSelectedItems():null;if(!built?.ok){omPromoHint(built?.reason||'Mahsulot tanlang.','isError');return}
+  omPromoState.busy=true;if(btn){btn.disabled=true;btn.textContent='Tekshirilmoqda...'}omPromoHint('Promokod tekshirilmoqda...','isBusy');
+  try{const token=await currentUser.getIdToken();const resp=await fetch('/.netlify/functions/promo-validate',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({code,subtotalUZS:Number(built.totalUZS||0)})});const out=await resp.json().catch(()=>({}));if(!resp.ok||!out.ok)throw new Error(out?.error||'PROMO_INVALID');omPromoState.code=String(out.code||code);omPromoState.discountUZS=Math.max(0,Number(out.discountUZS||0));omPromoState.subtotalUZS=Number(built.totalUZS||0);omPromoState.valid=true;omPromoHint(`${omPromoState.code} qo‘llandi: ${moneyUZS(omPromoState.discountUZS)} chegirma.`,'isOk');updatePaymentModalSummary()}catch(e){omInvalidatePromo(true);omPromoHint(omPromoErrorText(e?.message),'isError');try{updatePaymentModalSummary()}catch(_e){}}finally{omPromoState.busy=false;if(btn){btn.disabled=false;btn.textContent='Qo‘llash'}}
+}
+
 function updatePaymentModalSummary(){
   const totalEl = document.getElementById("paymentFinalTotal");
   const productsEl = document.getElementById("paymentProductsInfo");
@@ -5552,10 +5614,17 @@ function updatePaymentModalSummary(){
     return false;
   }
   const deliveryFee = Number(info.data?.deliveryFeeUZS || 0);
-  const total = Number(info.data?.totalWithDeliveryUZS || built.totalUZS + deliveryFee);
+  const promoCode = omPromoInputCode();
+  if(omPromoState.valid && (promoCode !== omPromoState.code || Number(omPromoState.subtotalUZS||0) !== Number(built.totalUZS||0))){
+    omInvalidatePromo(true);
+    omPromoHint('Savat o‘zgardi. Promokodni qayta qo‘llang.');
+  }
+  const discount = omPromoState.valid ? Math.min(Number(built.totalUZS||0), Math.max(0,Number(omPromoState.discountUZS||0))) : 0;
+  const beforeDiscount = Number(info.data?.totalWithDeliveryUZS || built.totalUZS + deliveryFee);
+  const total = Math.max(0, beforeDiscount - discount);
   const qty = built.items.reduce((s,x)=>s + Number(x.qty||0), 0);
   totalEl.textContent = moneyUZS(total);
-  productsEl.textContent = `${qty} ta mahsulot: ${moneyUZS(built.totalUZS)} + yetkazish: ${deliveryFee ? moneyUZS(deliveryFee) : "Bepul"}.`;
+  productsEl.textContent = `${qty} ta mahsulot: ${moneyUZS(built.totalUZS)} + yetkazish: ${deliveryFee ? moneyUZS(deliveryFee) : "Bepul"}${discount ? ` − promokod: ${moneyUZS(discount)}` : ''}.`;
   const methodText = info.data?.method === "pickup" ? "Do‘kondan olib ketish" : (info.data?.method === "pickup_point" ? "Topshirish punktidan olib ketish" : (info.data?.serviceLabel || "Yetkazib berish"));
   const addrText = info.data?.method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : (info.data?.addressText || "Lokatsiya saqlandi.");
   deliveryEl.innerHTML = `
@@ -5802,7 +5871,11 @@ function omRenderInlineDeliveryMap({open=false, centerCurrent=true}={}){
   }
   if(toggleBtn) toggleBtn.innerHTML = `<i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>Xaritani yopish</span>`;
   if(!window.L){
-    mapEl.innerHTML = `<div style="padding:16px;font-size:12px;font-weight:800;color:#475569">Xarita yuklanmadi. Internet aloqasini tekshirib, sahifani yangilang.</div>`;
+    mapEl.innerHTML = `<div style="padding:16px;font-size:12px;font-weight:800;color:#475569">Xarita tayyorlanmoqda...</div>`;
+    omEnsureLeaflet().then(ok=>{
+      if(ok)omRenderInlineDeliveryMap({open:true,centerCurrent});
+      else mapEl.innerHTML=`<div style="padding:16px;font-size:12px;font-weight:800;color:#475569">Xarita yuklanmadi. Internet aloqasini tekshiring.</div>`;
+    });
     return false;
   }
   const center = omDeliveryMapCoords(centerCurrent ? (omDeliveryLocation || omDeliveryMapDraft) : (omDeliveryMapDraft || omDeliveryLocation));
@@ -6381,67 +6454,20 @@ window.applyPayTypeRules = applyPayTypeRules;
 
 let __omOrderSubmitting = false;
 
-function ensureOrderWaitOverlay(){
-  let el = document.getElementById("omOrderWaitOverlay");
-  if(el) return el;
-
-  el = document.createElement("div");
-  el.id = "omOrderWaitOverlay";
-  el.className = "omOrderWaitOverlay";
-  el.hidden = true;
-  el.innerHTML = `
-    <div class="omOrderWaitCard" role="status" aria-live="polite">
-      <div class="omOrderWaitLogoWrap">
-        <img src="./logo.webp" alt="OrzuMall" class="omOrderWaitLogo">
-      </div>
-      <div class="omOrderWaitTitle">Buyurtma yuborilmoqda</div>
-      <div class="omOrderWaitText">Iltimos, kuting. Ma’lumotlar tekshirilmoqda...</div>
-      <div class="omOrderWaitProgress"><span></span></div>
-    </div>
-  `;
-  document.body.appendChild(el);
-  return el;
-}
-
 function showOrderWaitOverlay(){
-  const el = ensureOrderWaitOverlay();
-  el.hidden = false;
-  requestAnimationFrame(()=> el.classList.add("open"));
-  document.documentElement.classList.add("om-order-waiting");
-  document.body.classList.add("om-order-waiting");
-
+  // v140: do not block the screen. Only the pressed action buttons show a compact busy state.
+  try{ document.getElementById("omOrderWaitOverlay")?.remove(); }catch(_e){}
   const btns = [els?.checkoutSubmit, els?.paymentSubmit, els?.orderBtnPage].filter(Boolean);
-  btns.forEach(btn=>{
-    if(!btn.dataset.omOldHtml) btn.dataset.omOldHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.classList.add("isLoading");
-  });
-  if(els?.checkoutSubmit){
-    els.checkoutSubmit.innerHTML = `<span class="omBtnSpinner" aria-hidden="true"></span> Kuting...`;
-  }
-  if(els?.paymentSubmit){
-    els.paymentSubmit.innerHTML = `<span class="omBtnSpinner" aria-hidden="true"></span> Buyurtma yuborilmoqda...`;
-  }
+  btns.forEach(btn=>{if(!btn.dataset.omOldHtml)btn.dataset.omOldHtml=btn.innerHTML;btn.disabled=true;btn.classList.add("isLoading")});
+  if(els?.checkoutSubmit)els.checkoutSubmit.innerHTML=`<span class="omBtnSpinner" aria-hidden="true"></span> Kuting...`;
+  if(els?.paymentSubmit)els.paymentSubmit.innerHTML=`<span class="omBtnSpinner" aria-hidden="true"></span> Yuborilmoqda...`;
 }
 
 function hideOrderWaitOverlay(){
-  const el = document.getElementById("omOrderWaitOverlay");
-  if(el){
-    el.classList.remove("open");
-    setTimeout(()=>{ if(!el.classList.contains("open")) el.hidden = true; }, 180);
-  }
-  document.documentElement.classList.remove("om-order-waiting");
-  document.body.classList.remove("om-order-waiting");
-
-  const btns = [els?.checkoutSubmit, els?.paymentSubmit, els?.orderBtnPage].filter(Boolean);
-  btns.forEach(btn=>{
-    btn.disabled = false;
-    btn.classList.remove("isLoading");
-    if(btn.dataset.omOldHtml){
-      btn.innerHTML = btn.dataset.omOldHtml;
-      delete btn.dataset.omOldHtml;
-    }
-  });
+  try{ document.getElementById("omOrderWaitOverlay")?.remove(); }catch(_e){}
+  document.documentElement.classList.remove("om-order-waiting");document.body.classList.remove("om-order-waiting");
+  const btns=[els?.checkoutSubmit,els?.paymentSubmit,els?.orderBtnPage].filter(Boolean);
+  btns.forEach(btn=>{btn.disabled=false;btn.classList.remove("isLoading");if(btn.dataset.omOldHtml){btn.innerHTML=btn.dataset.omOldHtml;delete btn.dataset.omOldHtml}});
 }
 
 
@@ -6516,6 +6542,7 @@ async function createOrderFromCheckout(){
           orderId: payload.orderId,
           items: payload.items,
           totalUZS: payload.totalUZS,
+          promoCode: omPromoInputCode(),
           shipping: payload.shipping || null
         })
       });
@@ -6543,6 +6570,7 @@ async function createOrderFromCheckout(){
         body: JSON.stringify({
           items: payload.items,
           totalUZS: payload.totalUZS,
+          promoCode: omPromoInputCode(),
           shipping: payload.shipping || null
         })
       });
@@ -6566,7 +6594,15 @@ async function createOrderFromCheckout(){
   }catch(e){
     console.warn("checkout order create failed", e);
     const msg = (e && e.message) ? String(e.message) : "";
-    toast(msg ? ("Buyurtma yaratilmadi: " + msg) : "Buyurtma yaratilmadi. Qayta urinib ko‘ring.");
+    const upperMsg = msg.toUpperCase();
+    const friendly = msg === "out_of_stock" || msg.startsWith("OUT_OF_STOCK:")
+      ? "Mahsulot qoldig‘i yetarli emas. Savatni yangilang."
+      : (msg === "PRODUCT_INACTIVE" || msg.startsWith("PRODUCT_INACTIVE:"))
+        ? "Mahsulot sotuvi vaqtincha to‘xtatilgan."
+        : upperMsg.startsWith("PROMO_")
+          ? omPromoErrorText(upperMsg)
+          : (msg ? ("Buyurtma yaratilmadi: " + msg) : "Buyurtma yaratilmadi. Qayta urinib ko‘ring.");
+    toast(friendly);
     hideOrderWaitOverlay();
     __omOrderSubmitting = false;
     return; // IMPORTANT: don't show success message on failure
@@ -6574,6 +6610,7 @@ async function createOrderFromCheckout(){
 
   hideOrderWaitOverlay();
   __omOrderSubmitting = false;
+  try{ const promoInput=document.getElementById('promoCodeInput'); if(promoInput)promoInput.value=''; omInvalidatePromo(); }catch(_e){}
   toast("Buyurtmangiz qabul qilindi");
   goTab("profile");
 }
@@ -6717,6 +6754,7 @@ async function loadProductsPage(){
     buildTagCounts();
     buildCategoryTree();
     applyFilterSort();
+    omRefreshCustomerExperience();
     if(activeTab==="product") renderProductPage();
     // Warm only a few metrics while the browser is idle. Product docs already contain mirrored counters,
     // so a 24-request burst and a second full grid rebuild are unnecessary.
@@ -6978,26 +7016,7 @@ els.revSend?.addEventListener("click", async ()=>{
   els.revSend.textContent = "Yuborilmoqda...";
 
   try{
-    const identity=await omCurrentPublicIdentity(user);
-    const authorName=identity.authorName;
-    const revRef = doc(db, "products", productId, "reviews", user.uid);
-
-    await runTransaction(db, async (tx) => {
-      const revSnap = await tx.get(revRef);
-      const prev = revSnap.exists() ? (revSnap.data() || {}) : {};
-      const createdAt = prev.createdAt ? prev.createdAt : serverTimestamp();
-
-      tx.set(revRef, {
-        uid: user.uid,
-        authorName,
-        firstName:identity.firstName || null,
-        lastName:identity.lastName || null,
-        stars,
-        text,
-        updatedAt: serverTimestamp(),
-        createdAt
-      }, { merge: true });
-    });
+    await omSubmitReviewSecure(productId, stars, text);
 
     if(els.revText) els.revText.value = "";
 
@@ -7085,91 +7104,8 @@ function buildSelectedItems(){
   return { ok:true, reason:"", sel:_selCart, items, totalUZS, totalWeightKg };
 }
 
-async function createOrderDoc({orderId, provider, status, items, totalUZS, amountTiyin, shipping, orderType="checkout"}){
-  if(!currentUser) throw new Error("no_user");
-
-  // pull richer user fields for order + telegram
-  const userRef = doc(db, "users", currentUser.uid);
-  let userName = null, userPhone = null, numericId = null, userTgChatId = null;
-  let firstName = null, lastName = null;
-  try{
-    const uSnap = await getDoc(userRef);
-    const u = uSnap.exists() ? (uSnap.data() || {}) : {};
-    profileCache = u;
-    userName = omPublicNameFromRecord(u,omCleanPublicPersonName(currentUser.displayName)||"Mijoz");
-    userPhone = (u.phone || "").toString();
-    numericId = (u.numericId != null ? String(u.numericId) : null);
-    userTgChatId = (u.telegramChatId || u.tgChatId || "").toString().trim() || null;
-    firstName = (u.firstName || "").toString() || null;
-    lastName = (u.lastName || "").toString() || null;
-  }catch(_e){
-    userName = omCleanPublicPersonName(currentUser.displayName) || "Mijoz";
-    userPhone = "";
-    numericId = null;
-    userTgChatId = null;
-    firstName = null; lastName = null;
-  }
-
-  const orderRef = doc(db, "orders", orderId);
-
-  const baseOrder = {
-    orderId,
-    uid: currentUser.uid,
-    numericId,
-    userName,
-    userPhone,
-    userTgChatId,
-    firstName,
-    lastName,
-    status: status === "paid" ? "new" : status,
-    paymentStatus: provider === "balance" ? "paid" : (provider === "cash" ? "cash_on_delivery" : null),
-    statusActor: "system",
-    statusUpdatedAt: serverTimestamp(),
-    statusHistory: [{ status: status === "paid" ? "new" : status, action: "created", actorType: "system", actorName: "OrzuMall", reason: "Buyurtma qabul qilindi", at: new Date() }],
-    items,
-    totalUZS,
-    amountTiyin: amountTiyin ?? null,
-    provider,
-    shipping: shipping || null,
-    orderType,
-    createdAt: serverTimestamp(),
-    source: "web",
-  };
-
-  // Profil manzili ishlatilmaydi: manzil yoki punkt buyurtma paytida tanlanadi.
-  if(!baseOrder.shipping) baseOrder.shipping = { method:"pickup", methodLabel:"Do‘kondan olib ketish", addressText:"Do‘kondan olib ketish", deliveryFeeUZS:0 };
-
-  // BALANCE checkout: atomically deduct balance and mark as paid
-  if (provider === "balance" && orderType === "checkout") {
-    await runTransaction(db, async (tx) => {
-      const uSnap = await tx.get(userRef);
-      const u = uSnap.exists() ? (uSnap.data() || {}) : {};
-      const bal = Number(u.balanceUZS || 0);
-      const need = Number(totalUZS || 0);
-
-      if (!Number.isFinite(bal) || bal < need) {
-        throw new Error("insufficient_balance");
-      }
-
-      tx.set(userRef, { balanceUZS: bal - need, updatedAt: serverTimestamp() }, { merge: true });
-
-      const paidOrder = { ...baseOrder, status: "new", paymentStatus: "paid", provider: "balance", amountTiyin: null };
-      tx.set(orderRef, paidOrder, { merge: true });
-    });
-  } else {
-    // cash checkout or topup/payme orders
-    await setDoc(orderRef, baseOrder, { merge: true });
-  }
-  // notify (create) — client-side dedupe (no extra Firestore writes; avoids permission-denied)
-  try{
-    window.__tgSentOrders = window.__tgSentOrders || new Set();
-    if(!window.__tgSentOrders.has(orderId)){
-      window.__tgSentOrders.add(orderId);
-      // server-side Telegram notify (secure: no bot token in client)
-      tgNotifyOrderCreated(orderId);
-    }
-  }catch(_e){}
-}
+// Legacy client-side order creation removed in v138.
+// Checkout orders are created only through secure Netlify Functions.
 
 function removePurchasedFromCart(sel){
   const purchased = new Set((sel||[]).map(x=>x.key));
@@ -7480,52 +7416,8 @@ async function submitTopupRequest(){
 }
 
 
-async function payWithBalance(built, shipping){
-  if(!currentUser) throw new Error('no_user');
-  const total = Number(built.totalUZS||0);
-  const uid = currentUser.uid;
-  const orderId = await generateShortOrderId(db);
-  await runTransaction(db, async (t)=>{
-    const uref = doc(db,'users',uid);
-    const us = await t.get(uref);
-    const u = us.exists() ? (us.data()||{}) : {};
-    const bal = Number(u.balanceUZS||0) || 0;
-    if(bal < total) throw new Error('no_balance');
-
-    // deduct balance
-    t.set(uref, { balanceUZS: bal - total, updatedAt: serverTimestamp() }, {merge:true});
-
-    // order doc
-    const oref = doc(db,'orders',orderId);
-    const base = {
-      orderId,
-      uid,
-      numericId: (u.numericId != null ? String(u.numericId) : null),
-      userName: omPublicNameFromRecord(u,"Mijoz"),
-      firstName: omCleanPublicPersonName(u.firstName) || null,
-      lastName: omCleanPublicPersonName(u.lastName) || null,
-      userPhone: u.phone || null,
-      userTgChatId: (u.telegramChatId||u.tgChatId||null),
-      status: 'new',
-      paymentStatus: 'paid',
-      statusActor: 'system',
-      statusUpdatedAt: serverTimestamp(),
-      statusHistory: [{ status:'new', action:'created', actorType:'system', actorName:'OrzuMall', reason:'Buyurtma qabul qilindi va balansdan to‘landi', at:new Date() }],
-      provider: 'balance',
-      items: built.items,
-      totalUZS: total,
-      shipping: shipping || null,
-      createdAt: serverTimestamp(),
-      paidAt: serverTimestamp(),
-      source: 'web',
-      payFromBalance: true
-    };
-    // only one order document (global collection) — no per-user subcollection writes
-    t.set(oref, base, {merge:true});
-  });
-
-  return orderId;
-}
+// Legacy client-side balance checkout removed in v138.
+// Balance deduction and order creation are atomic server-side operations.
 // (Payme removed) Cart button now opens standard checkout modal
 
 async function shareOrderTelegram(){
@@ -7539,21 +7431,9 @@ async function shareOrderTelegram(){
     note.textContent = hasPrepay ? "⚠️ Keltirib berish mahsulotlari uchun oldindan to‘lov: BALANS." : "";
   }
 
-  const orderId = await generateShortOrderId(db);
-  try{
-    if(currentUser){
-      await createOrderDoc({
-        orderId,
-        provider: "telegram",
-        status: "shared_telegram",
-        items: built.items,
-        totalUZS: built.totalUZS,
-        amountTiyin: null,
-      });
-    }
-  }catch(e){
-    console.warn("telegram order create failed", e);
-  }
+  // Telegram ulashish real buyurtma emas: Firestore'ga yozilmaydi.
+  // Haqiqiy buyurtma faqat checkout server funksiyalari orqali yaratiladi.
+  const orderId = `TG-${Date.now().toString(36).slice(-5).toUpperCase()}${Math.random().toString(36).slice(2,5).toUpperCase()}`;
 
   const lines = built.items.map(it=>{
     const variant = [it.color, it.size].filter(Boolean).join(" / ");
@@ -8285,7 +8165,7 @@ function ensureProfileSocialLinks(){
           <i class="fa-solid fa-arrow-up-right-from-square ext"></i>
         </a>
 
-        <a class="sBtn web" href="https://xplusy.netlify.app/" target="_blank" rel="noopener">
+        <a class="sBtn web" href="https://orzumall.uz/" target="_blank" rel="noopener">
           <span class="ico"><i class="fa-solid fa-globe"></i></span>
           <span class="txt"><span class="name">Sayt</span><span class="sub">OrzuMall.uz</span></span>
           <i class="fa-solid fa-arrow-up-right-from-square ext"></i>
@@ -8361,7 +8241,7 @@ window.addEventListener('hashchange', ensureProfileSocialLinks);
             <span class="txt"><span class="name">YouTube</span><span class="sub">OrzuMall</span></span>
             <i class="fa-solid fa-arrow-up-right-from-square ext"></i>
           </a>
-          <a class="socialBtn web" href="https://xplusy.netlify.app/" target="_blank" rel="noopener">
+          <a class="socialBtn web" href="https://orzumall.uz/" target="_blank" rel="noopener">
             <span class="ico"><i class="fa-solid fa-globe"></i></span>
             <span class="txt"><span class="name">Sayt</span><span class="sub">OrzuMall.uz</span></span>
             <i class="fa-solid fa-arrow-up-right-from-square ext"></i>
@@ -8724,4 +8604,64 @@ try{ window.openProductPage = openProductPage; }catch(_e){}
   window.addEventListener('resize', apply);
   document.addEventListener('click', ()=> setTimeout(apply, 50), true);
   setTimeout(apply, 0);
+})();
+
+/* =========================================================
+   OrzuMall Customer Experience v140
+   Global catalog search, recently viewed, recommendations,
+   product alerts, store catalog tools and repeat order.
+   ========================================================= */
+const OM_CX_RECENT_KEY='om_recent_products_v140';
+const omCxSearchState={query:'',timer:null,seq:0,cache:new Map(),loading:false};
+const omCxAlertState=new Map();
+let omCxRecommendations=[];
+let omCxRecommendationBusy=false;
+function omCxSafeJSON(raw,fallback){try{return JSON.parse(raw)||fallback}catch(_){return fallback}}
+function omCxReadRecent(){try{return (omCxSafeJSON(localStorage.getItem(OM_CX_RECENT_KEY)||'[]',[])||[]).filter(x=>x&&x.id).slice(0,18)}catch(_){return[]}}
+function omCxWriteRecent(list){try{localStorage.setItem(OM_CX_RECENT_KEY,JSON.stringify((list||[]).slice(0,18)))}catch(_){}}
+async function omCxApi(action,payload={},opts={}){
+  const headers={'content-type':'application/json'};
+  if(currentUser?.getIdToken){try{headers.authorization='Bearer '+await currentUser.getIdToken()}catch(_){}}
+  if(opts.authRequired&&!headers.authorization)throw new Error('login_required');
+  const r=await fetch('/.netlify/functions/customer-experience',{method:'POST',headers,body:JSON.stringify({action,...payload})});
+  const out=await r.json().catch(()=>({}));if(!r.ok||!out.ok)throw new Error(out.error||'server_error');return out;
+}
+function omCxNormalizeProduct(raw={}){return{...raw,_docId:String(raw._docId||raw.id||''),_price:parseUZS(raw._price??raw.price),_created:toMillis(raw._created??raw.createdAt??raw.updatedAt)}}
+function omCxMergeProducts(list=[]){let changed=false;for(const raw of Array.isArray(list)?list:[]){const p=omCxNormalizeProduct(raw),ix=products.findIndex(x=>String(x.id||x._docId)===String(p.id||p._docId));if(ix>=0)products[ix]={...products[ix],...p};else{products.push(p);changed=true}}try{buildTagCounts();buildCategoryTree()}catch(_){}return changed}
+function omCxSearchStatus(message='',done=false){const el=document.getElementById('cxSearchStatus');if(!el)return;el.hidden=!message;el.classList.toggle('isDone',!!done);el.innerHTML=message?`<i class="fa-solid ${done?'fa-circle-check':'fa-magnifying-glass'}"></i><span>${escapeHtml(message)}</span>`:''}
+async function omCxRunProductSearch(q,seq){try{let rows=omCxSearchState.cache.get(q);if(!rows){const out=await omCxApi('search_products',{query:q,limit:28});rows=Array.isArray(out.products)?out.products:[];omCxSearchState.cache.set(q,rows)}if(seq!==omCxSearchState.seq||q!==omCxSearchState.query)return;omCxMergeProducts(rows);omCxSearchStatus(`${rows.length} ta mos mahsulot katalog bo‘yicha tekshirildi.`,true);applyFilterSort()}catch(_){if(seq===omCxSearchState.seq)omCxSearchStatus('Katalog qidiruvini yakunlab bo‘lmadi.',false)}finally{if(seq===omCxSearchState.seq){omCxSearchState.loading=false;setTimeout(()=>{if(omCxSearchState.query===q)omCxSearchStatus('',false)},2200)}}}
+function omScheduleProductSearch(raw){const q=norm(raw);if(q===omCxSearchState.query)return;omCxSearchState.query=q;omCxSearchState.seq+=1;clearTimeout(omCxSearchState.timer);if(q.length<2){omCxSearchState.loading=false;omCxSearchStatus('',false);return}omCxSearchState.loading=true;omCxSearchStatus('Butun katalog bo‘yicha qidirilmoqda...');const seq=omCxSearchState.seq;omCxSearchState.timer=setTimeout(()=>omCxRunProductSearch(q,seq),220)}
+function omRememberViewedProduct(p){if(!p?.id)return;const sel=getSel(p),pricing=getVariantPricing(p,sel);const snap={id:String(p.id),name:omProductText(p,'name',p.name||'Mahsulot'),image:getCurrentImage(p,sel)||p.images?.[0]||p.image||'',price:Number(pricing.price||p.price||0),deliveryMinDays:Number(p.deliveryMinDays||1),deliveryMaxDays:Number(p.deliveryMaxDays||7),fulfillmentType:String(p.fulfillmentType||'stock'),viewedAt:Date.now()};const next=[snap,...omCxReadRecent().filter(x=>String(x.id)!==snap.id)].slice(0,18);omCxWriteRecent(next);setTimeout(()=>omRenderRecentShelf(),0);omCxRecommendations=[];setTimeout(()=>omRefreshRecommendations(true),250)}
+function omCxDeliveryText(p={}){try{return omDeliveryDateRange(p)}catch(_){return `${Number(p.deliveryMinDays||1)}–${Number(p.deliveryMaxDays||7)} kun`}}
+function omCxMiniCardHtml(p={},badge=''){const id=String(p.id||''),name=omProductText(p,'name',p.name||'Mahsulot'),sel=getSel(p),price=Number(getVariantPricing(p,sel)?.price||p.price||0),img=getCurrentImage(p,sel)||p.images?.[0]||p.image||'./logo-256.webp';return `<article class="cxMiniCard" data-cx-product="${escapeHtml(id)}"><div class="cxMiniImg"><img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">${badge?`<span class="cxMiniBadge">${escapeHtml(badge)}</span>`:''}</div><div class="cxMiniBody"><div class="cxMiniName">${escapeHtml(name)}</div><div class="cxMiniPrice">${moneyUZS(price)}</div><div class="cxMiniDelivery"><i class="fa-solid fa-truck-fast"></i> ${escapeHtml(omCxDeliveryText(p))}</div></div></article>`}
+function omCxBindShelf(root){root?.querySelectorAll('[data-cx-product]').forEach(card=>card.addEventListener('click',()=>openProductPage(card.getAttribute('data-cx-product'))))}
+function omRenderRecentShelf(){const section=document.getElementById('cxRecentSection'),rail=document.getElementById('cxRecentRail');if(!section||!rail)return;const rows=omCxReadRecent();section.hidden=!rows.length;rail.innerHTML=rows.map(x=>omCxMiniCardHtml(x,'Ko‘rilgan')).join('');omCxBindShelf(rail)}
+function omCxContext(){const recent=omCxReadRecent(),ids=[...new Set([...recent.map(x=>x.id),...Array.from(favs||[]),...(cart||[]).map(x=>x.id)].map(String).filter(Boolean))];const selected=ids.map(findProductById).filter(Boolean);return{excludeIds:ids.slice(0,100),categoryIds:[...new Set(selected.flatMap(p=>[...(p.categoryPathIds||[]),p.categoryId,p.subcategoryId]).filter(Boolean))],tags:[...new Set(selected.flatMap(p=>Array.isArray(p.tags)?p.tags:[]).filter(Boolean))],sellerIds:[...new Set(selected.map(p=>p.sellerId).filter(Boolean))]}}
+async function omRefreshRecommendations(force=false){const section=document.getElementById('cxRecommendSection'),rail=document.getElementById('cxRecommendRail');if(!section||!rail||omCxRecommendationBusy)return;const ctx=omCxContext();if(!force&&omCxRecommendations.length){omRenderRecommendationShelf();return}omCxRecommendationBusy=true;try{const out=await omCxApi('recommendations',{...ctx,limit:12});omCxRecommendations=Array.isArray(out.products)?out.products:[];omCxMergeProducts(omCxRecommendations);omRenderRecommendationShelf()}catch(_){const fallback=[...products].filter(p=>!new Set(ctx.excludeIds).has(String(p.id))).sort((a,b)=>omGetProductMetrics(b).score-omGetProductMetrics(a).score).slice(0,12);omCxRecommendations=fallback;omRenderRecommendationShelf()}finally{omCxRecommendationBusy=false}}
+function omRenderRecommendationShelf(){const section=document.getElementById('cxRecommendSection'),rail=document.getElementById('cxRecommendRail');if(!section||!rail)return;section.hidden=!omCxRecommendations.length;rail.innerHTML=omCxRecommendations.map(x=>omCxMiniCardHtml(x,'Tavsiya')).join('');omCxBindShelf(rail)}
+function omRefreshCustomerExperience(){omRenderRecentShelf();omRefreshRecommendations().catch(()=>{})}
+async function omRefreshProductAlertButtons(productId){const id=String(productId||'');if(!id||activeTab!=='product')return;let state=omCxAlertState.get(id);if(!state&&currentUser){try{const out=await omCxApi('alert_status',{productId:id},{authRequired:true});state=out.alert||{};omCxAlertState.set(id,state)}catch(_){state={}}}document.querySelectorAll('[data-cx-alert]').forEach(btn=>{const type=btn.getAttribute('data-cx-alert'),on=type==='price_drop'?state?.priceDrop===true:state?.backInStock===true;btn.classList.toggle('active',!!on);btn.setAttribute('aria-pressed',on?'true':'false');const label=btn.querySelector('span');if(label){const base=type==='price_drop'?'Narx tushganda xabar':'Omborga qaytganda xabar';label.textContent=on?`${base} • yoqilgan`:base}})}
+async function omToggleProductAlert(productId,type){if(!currentUser){toast('Xabar olish uchun akkauntga kiring.');goTab('profile');return}const id=String(productId||''),old=omCxAlertState.get(id)||{},key=type==='price_drop'?'priceDrop':'backInStock',enabled=old[key]!==true;try{await omCxApi('toggle_alert',{productId:id,type,enabled},{authRequired:true});omCxAlertState.set(id,{...old,[key]:enabled});omRefreshProductAlertButtons(id);toast(enabled?'Xabarnoma yoqildi.':'Xabarnoma o‘chirildi.')}catch(_){toast('Xabarnomani o‘zgartirib bo‘lmadi.','error')}}
+async function omRepeatOrder(orderId){const order=getOrderFromCache(orderId);if(!order||!Array.isArray(order.items)||!order.items.length){toast('Buyurtma mahsulotlari topilmadi.','error');return}const ids=[...new Set(order.items.map(x=>String(x.productId||x.id||'')).filter(Boolean))];try{const out=await omCxApi('products_by_ids',{ids});omCxMergeProducts(out.products||[])}catch(_){}let added=0,missing=0;for(const it of order.items){const id=String(it.productId||it.id||''),p=findProductById(id);if(!p||p.isActive===false||p.sellerActive===false){missing++;continue}addToCart(id,Math.max(1,Number(it.qty||1)),{color:it.color||null,size:it.size||null});added+=Math.max(1,Number(it.qty||1))}updateBadges();if(added){toast(`${added} ta mahsulot savatga qayta qo‘shildi.${missing?` ${missing} ta mahsulot hozir mavjud emas.`:''}`);goTab('cart')}else toast('Mahsulotlar hozir sotuvda mavjud emas.','error')}
+document.addEventListener('click',e=>{const btn=e.target?.closest?.('[data-order-repeat]');if(btn){e.preventDefault();omRepeatOrder(btn.getAttribute('data-order-repeat')||'')}});
+document.getElementById('cxRecentClear')?.addEventListener('click',()=>{omCxWriteRecent([]);omRenderRecentShelf();toast('Ko‘rilganlar tarixi tozalandi.')});
+document.getElementById('cxRecommendRefresh')?.addEventListener('click',()=>{omCxRecommendations=[];omRefreshRecommendations(true)});
+setTimeout(()=>omRefreshCustomerExperience(),1200);
+
+/* v140: store catalog search and sorting */
+function omCxStoreBindProducts(root,list){root.querySelectorAll('[data-store-product]').forEach(card=>card.addEventListener('click',e=>{if(e.target.closest('button'))return;openProductPage(card.dataset.storeProduct)}));root.querySelectorAll('[data-store-cart]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const p=findProductById(btn.dataset.storeCart);if(p)handleAddToCart(p,{openCartAfter:false})}));root.querySelectorAll('[data-store-fav]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const id=btn.dataset.storeFav;if(favs.has(id))favs.delete(id);else{favs.add(id);logEvent('favorite',id)}saveLS(LS.favs,Array.from(favs));updateBadges();btn.classList.toggle('active',favs.has(id));btn.innerHTML=`<i class="fa-${favs.has(id)?'solid':'regular'} fa-heart"></i>`}))}
+function omDrawStorePage(data){
+  const root=els.storePageContent;if(!root)return;const store=data?.store||{},all=Array.isArray(data?.products)?data.products:[],logo=String(store.logoUrl||''),banner=String(store.bannerUrl||''),following=!!data?.following,displayedPopularity=omAverageStorePopularity(all),completed=Math.max(0,Math.round(Number(store.completedOrdersCount||0)||0)),partnerDuration=omStorePartnerDuration(store.partnerSinceMs),partnerDate=omStorePartnerDate(store.partnerSinceMs),sellerRating=Number(store.sellerRating||0)||0,slaRate=Math.max(0,Math.round(Number(store.slaOnTimeRate||0)||0));
+  root.innerHTML=`<section class="storeHero"><div class="storeHeroBanner">${banner?`<img src="${escapeHtml(banner)}" alt="" decoding="async">`:''}</div><div class="storeHeroBody"><div class="storeLogoBig">${logo?`<img src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async">`:escapeHtml(omStoreInitials(store.storeName))}</div><div class="storeIdentity"><h1>${escapeHtml(store.storeName||'Do‘kon')}${store.verified!==false?`<i class="fa-solid fa-circle-check storeVerified" title="OrzuMall tasdiqlagan do‘kon"></i>`:''}</h1><p>${escapeHtml(store.description||'OrzuMall marketplace do‘koni')}</p></div><button type="button" class="storeFollowBtn ${following?'isFollowing':''}" id="storeFollowBtn"><i class="fa-solid ${following?'fa-check':'fa-plus'}"></i>${following?' Obuna bo‘lingan':' Obuna bo‘lish'}</button></div><div class="storeMeta"><span><i class="fa-solid fa-box"></i>${Number(store.productCount||all.length)} ta mahsulot</span><span><i class="fa-solid fa-user-group"></i>${Number(store.followersCount||0)} obunachi</span><span><i class="fa-solid fa-fire"></i>${displayedPopularity} o‘rtacha popularlik</span>${store.workingHours?`<span><i class="fa-regular fa-clock"></i>${escapeHtml(store.workingHours)}</span>`:''}</div><div class="storeTrustGrid"><div class="storeTrustCard"><span class="storeTrustIcon"><i class="fa-solid fa-handshake"></i></span><span class="storeTrustCopy"><small>OrzuMall hamkori</small><b>${escapeHtml(partnerDuration)}</b><em>${escapeHtml(partnerDate)}</em></span></div><div class="storeTrustCard"><span class="storeTrustIcon success"><i class="fa-solid fa-circle-check"></i></span><span class="storeTrustCopy"><small>Bajarilgan buyurtmalar</small><b>${completed} ta</b><em>Muvaffaqiyatli yetkazilgan</em></span></div><div class="storeTrustCard"><span class="storeTrustIcon verified"><i class="fa-solid fa-shield-halved"></i></span><span class="storeTrustCopy"><small>Do‘kon holati</small><b>${store.verified!==false?'Tasdiqlangan':'Tekshirilmoqda'}</b><em>${store.verified!==false?'OrzuMall tomonidan tekshirilgan':'Tasdiqlash jarayonida'}</em></span></div><div class="storeTrustCard"><span class="storeTrustIcon rating"><i class="fa-solid fa-star"></i></span><span class="storeTrustCopy"><small>Seller reytingi</small><b>${sellerRating?sellerRating.toFixed(1)+' / 5':'Yangi seller'}</b><em>${slaRate?slaRate+'% vaqtida topshirish':'SLA tarixi yig‘ilmoqda'}</em></span></div></div></section><div class="storeCatalogHead"><h2>Do‘kon mahsulotlari</h2><span class="storeCatalogCount" id="storeCatalogCount">${all.length} ta tasdiqlangan mahsulot</span></div><div class="storeCatalogTools"><input id="storeCatalogSearch" type="search" placeholder="Do‘kon ichida qidirish"><select id="storeCatalogSort"><option value="popular">Ommabop</option><option value="new">Yangi</option><option value="price_asc">Narx ↑</option><option value="price_desc">Narx ↓</option></select></div><div id="storeCatalogGrid"></div>`;
+  const draw=()=>{const q=norm(root.querySelector('#storeCatalogSearch')?.value||''),sort=root.querySelector('#storeCatalogSort')?.value||'popular';let list=[...all].filter(p=>!q||norm(`${p.name||''} ${p.name_ru||''} ${p.sku||''} ${(p.tags||[]).join(' ')}`).includes(q));if(sort==='popular')list.sort((a,b)=>omGetProductMetrics(b).score-omGetProductMetrics(a).score);if(sort==='new')list.sort((a,b)=>(b._created||0)-(a._created||0));if(sort==='price_asc')list.sort((a,b)=>(a._price||a.price||0)-(b._price||b.price||0));if(sort==='price_desc')list.sort((a,b)=>(b._price||b.price||0)-(a._price||a.price||0));const box=root.querySelector('#storeCatalogGrid');if(box)box.innerHTML=list.length?`<div class="storeProductGrid">${list.map(omStoreProductCardHtml).join('')}</div>`:`<div class="storePageEmpty"><i class="fa-solid fa-box-open"></i> Mos mahsulot topilmadi.</div>`;const count=root.querySelector('#storeCatalogCount');if(count)count.textContent=`${list.length} ta mahsulot`;omCxStoreBindProducts(root,list)};
+  root.querySelector('#storeFollowBtn')?.addEventListener('click',()=>omToggleStoreFollow(store.id,!following));root.querySelector('#storeCatalogSearch')?.addEventListener('input',draw);root.querySelector('#storeCatalogSort')?.addEventListener('change',draw);draw();
+}
+
+
+/* v140: checkout promo controls */
+(function(){
+  const input=document.getElementById('promoCodeInput'),btn=document.getElementById('promoApplyBtn');
+  btn?.addEventListener('click',omApplyPromoCode);
+  input?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();omApplyPromoCode()}});
+  input?.addEventListener('input',()=>{const normalized=omPromoInputCode();if(omPromoState.valid&&normalized!==omPromoState.code){omInvalidatePromo(true);omPromoHint('Kod o‘zgardi. Qayta qo‘llang.')}try{updatePaymentModalSummary()}catch(_e){}});
 })();

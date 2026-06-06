@@ -1,0 +1,3 @@
+const C=require('./_sellerCommon');
+const P=require('./_promoCommon');
+exports.handler=async event=>{try{C.initAdmin();if(event.httpMethod!=='POST')return C.json(405,{ok:false,error:'method_not_allowed'});const d=await C.verifyToken(event);let body={};try{body=JSON.parse(event.body||'{}')}catch(_){return C.json(400,{ok:false,error:'invalid_json'})}const out=await P.previewPromo(C.admin.firestore(),{code:body.code,uid:d.uid,subtotalUZS:body.subtotalUZS});return C.json(200,{ok:true,...out})}catch(e){const m=String(e?.message||e).slice(0,120);return C.json(m==='unauthorized'?401:400,{ok:false,error:m||'promo_invalid'})}};

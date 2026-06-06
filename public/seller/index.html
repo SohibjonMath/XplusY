@@ -7,9 +7,10 @@
   <link rel="icon" href="/favicon.webp">
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./seller.css?v=20260606_v130">
-<link rel="stylesheet" href="/om-loader.css?v=20260606_v136">
-<script src="/om-loader.js?v=20260606_v136"></script>
+  
+<link rel="stylesheet" href="./seller-bundle-v139.css?v=20260606_v141" />
+
+<script src="/om-error-report.js?v=20260606_v139" defer></script>
 </head>
 <body>
   <div class="login" id="login">
@@ -21,14 +22,14 @@
         <div class="mobile-login-logo-wrap">
           <span class="logo-pulse pulse-one"></span>
           <span class="logo-pulse pulse-two"></span>
-          <div class="mobile-login-logo"><img src="/logo.webp" alt=""></div>
+          <div class="mobile-login-logo"><img src="/logo-256.webp" alt="" decoding="async"></div>
         </div>
         <span class="mobile-login-kicker"><i class="fa-solid fa-shield-halved"></i> Xavfsiz seller kirishi</span>
         <h1>Seller Center</h1>
         <p>Do‘koningiz har doim nazoratda.</p>
       </section>
       <section class="login-brand">
-        <div class="brand-lockup"><img src="/logo.webp" alt="OrzuMall"><span>SELLER CENTER</span></div>
+        <div class="brand-lockup"><img src="/logo-256.webp" alt="OrzuMall" decoding="async"><span>SELLER CENTER</span></div>
         <div class="login-copy">
           <span class="eyebrow">ORZUMALL MARKETPLACE</span>
           <h1>Do‘koningizni bitta joydan boshqaring.</h1>
@@ -41,7 +42,7 @@
         </div>
       </section>
       <form class="login-card" id="loginForm">
-        <div class="login-mark"><img src="/logo.webp" alt="OrzuMall"></div>
+        <div class="login-mark"><img src="/logo-256.webp" alt="OrzuMall" decoding="async"></div>
         <span class="eyebrow">SELLER KABINETI</span>
         <h2>Xush kelibsiz</h2>
         <p>Admin bergan login va parol orqali kiring.</p>
@@ -57,7 +58,7 @@
 
   <div class="app" id="app" hidden>
     <aside class="sidebar">
-      <div class="sidebar-brand"><img src="/logo.webp" alt="OrzuMall"><div><b>OrzuMall</b><span>Seller Center</span></div></div>
+      <div class="sidebar-brand"><img src="/logo-256.webp" alt="OrzuMall" decoding="async"><div><b>OrzuMall</b><span>Seller Center</span></div></div>
       <div class="sidebar-store">
         <div class="store-logo" id="storeLogo">S</div>
         <div class="store-copy"><b id="storeName">Seller</b><span id="storeMeta">—</span></div>
@@ -67,6 +68,10 @@
         <button class="nav-btn" data-view="orders"><i class="fa-solid fa-bag-shopping"></i><span>Buyurtmalar</span><em id="newOrderBadge">0</em></button>
         <button class="nav-btn" data-view="balance"><i class="fa-solid fa-wallet"></i><span>Balans</span></button>
         <button class="nav-btn" data-view="analytics"><i class="fa-solid fa-chart-pie"></i><span>Analitika</span></button>
+        <button class="nav-btn" data-view="onboarding"><i class="fa-solid fa-list-check"></i><span>Sozlash</span></button>
+        <button class="nav-btn" data-view="payouts"><i class="fa-solid fa-money-bill-transfer"></i><span>Pul yechish</span></button>
+        <button class="nav-btn" data-view="import"><i class="fa-solid fa-file-import"></i><span>Import</span></button>
+        <button class="nav-btn" data-view="sla"><i class="fa-solid fa-star"></i><span>Reyting</span></button>
       </nav>
       <div class="sidebar-spacer"></div>
       <div class="sidebar-note"><i class="fa-solid fa-shield-heart"></i><div><b>OrzuMall hamkor</b><span>Seller kabineti xavfsiz rejimda ishlaydi.</span></div></div>
@@ -91,6 +96,8 @@
   </div>
   <div id="modal"></div>
   <script src="/order-print-v53.js?v=20260605_seller"></script>
-  <script type="module" src="./seller.js?v=20260606_v130"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script type="module" src="./seller.js?v=20260606_v141"></script>
+  <script type="module" src="./seller-professional-v141.js?v=20260606_v141"></script>
 </body>
 </html>

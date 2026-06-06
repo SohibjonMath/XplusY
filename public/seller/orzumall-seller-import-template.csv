@@ -1,0 +1,2 @@
+name,price,oldPrice,sku,stockQty,weightKg,categoryId,subcategoryId,productType,images,description,name_ru,description_ru
+Misol mahsulot,49000,59000,ORZU001,20,0.3,beauty,skincare,original,https://example.com/image.jpg,Mahsulot tavsifi,Пример товара,Описание товара

@@ -1,0 +1,20 @@
+/* =========================================================
+   OrzuMall v136 — loading UI disabled
+   User requested no fullscreen loader, no spinner overlay and no top red strip.
+   Keep only invisible suppression for legacy progress strips.
+   ========================================================= */
+#nprogress,.nprogress,.nprogress-bar,
+.pace,.pace-progress,.pace-active,
+.top-loader,.top-progress,.loading-bar,.progress-line,.app-progress,
+.page-progress,.page-loading-line,.router-progress,.loading-progress,
+[data-top-progress],[data-page-progress],
+#omProfessionalLoader,.om-pro-loader{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+/* SPA placeholders disappear silently; content appears when ready. */
+.productPageLoading,.storePageLoading,.storeSearchLoading{
+  display:none!important;
+}

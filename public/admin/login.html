@@ -114,9 +114,9 @@
   </style>
 
 
-<link rel="stylesheet" href="/theme-redwhite.css">
-<link rel="stylesheet" href="/om-loader.css?v=20260606_v136">
-<script src="/om-loader.js?v=20260606_v136"></script>
+<link rel="stylesheet" href="/theme-redwhite.css?v=20260606_v139">
+<link rel="stylesheet" href="/no-loading-guard-v139.css?v=20260606_v139">
+<script src="/om-error-report.js?v=20260606_v139" defer></script>
 </head>
 
 <body>
@@ -131,7 +131,7 @@
       </div>
       <div>
         <h1>OrzuMall Boshqaruv paneli</h1>
-        <p>Foydalanish yopiq. Faqat <b>admin</b> yoki <b>sotuvchi (vendor)</b> gmail ro‘yxatida bo‘lganlar kira oladi.</p>
+        <p>Foydalanish yopiq. Faqat <b>OrzuMall adminlari</b> kira oladi. Sellerlar uchun alohida <b>/seller/</b> kabineti mavjud.</p>
       </div>
     </div>
 
@@ -194,29 +194,22 @@
 
   async function loadAllowLists(){
     let admins = [...DEFAULT_ADMIN_EMAILS];
-    let vendors = [];
     try{
       const aSnap = await getDoc(doc(db,"configs","admins"));
       if(aSnap.exists()) admins = uniqEmails([ ...admins, ...(aSnap.data().emails||[]) ]);
-    }catch(e){ /* ignore */ }
-
-    try{
-      const vSnap = await getDoc(doc(db,"configs","vendors"));
-      if(vSnap.exists()) vendors = uniqEmails(vSnap.data().emails||[]);
-    }catch(e){ /* ignore */ }
-
-    return { admins: uniqEmails(admins), vendors };
+    }catch(e){ /* asosiy admin hardcoded ro‘yxatda qoladi */ }
+    return { admins: uniqEmails(admins) };
   }
 
   async function decideAndGo(user){
     const email = normEmail(user?.email);
     if(!email) return { ok:false, msg:"Email topilmadi. Google hisobingizni tekshiring." };
 
-    const { admins, vendors } = await loadAllowLists();
-    if(admins.includes(email) || vendors.includes(email)){
+    const { admins } = await loadAllowLists();
+    if(admins.includes(email)){
       return { ok:true };
     }
-    return { ok:false, msg:"Ruxsat yo‘q. Gmail admin yoki sotuvchi ro‘yxatida topilmadi." };
+    return { ok:false, msg:"Ruxsat yo‘q. Ushbu Gmail OrzuMall adminlari ro‘yxatida topilmadi. Seller kabineti uchun /seller/ manzilidan foydalaning." };
   }
 
   onAuthStateChanged(auth, async (user)=>{

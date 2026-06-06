@@ -1,10 +1,10 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.37.0",
-  "description": "OrzuMall v137: public seller storefront trust statistics and partnership duration",
+  "version": "1.41.0",
+  "description": "OrzuMall v141: professional seller and admin center with live/draft products, payout requests, onboarding, bulk import, seller ratings and SLA overdue control",
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   },
   "dependencies": {
     "firebase-admin": "11.11.1",

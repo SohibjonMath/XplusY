@@ -8,6 +8,6 @@ export const CLICK_CONFIG = {
   returnPath: "/index.html#profile",
   // /api yo'li ishlamasa direct function ishlatiladi
   startEndpoint: "/.netlify/functions/click-start",
-  prepareUrl: "https://xplusy.netlify.app/.netlify/functions/click-prepare",
-  completeUrl: "https://xplusy.netlify.app/.netlify/functions/click-complete"
+  prepareUrl: "https://orzumall.uz/.netlify/functions/click-prepare",
+  completeUrl: "https://orzumall.uz/.netlify/functions/click-complete"
 };

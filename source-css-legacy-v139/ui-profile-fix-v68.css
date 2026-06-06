@@ -1,0 +1,177 @@
+/* =========================================================
+   OrzuMall v68 — Profile readability + edit-mode visibility fix
+========================================================= */
+
+/* Respect HTML hidden state even when older button styles set display:flex. */
+[hidden]{
+  display:none !important;
+}
+
+/* Profile form and Save button must appear only in edit mode. */
+#view-profile:not(.editing) .formGrid,
+#view-profile:not(.editing) #profileHint,
+#view-profile:not(.editing) .profileBottomBar,
+#view-profile:not(.editing) #profileSave{
+  display:none !important;
+}
+#view-profile.editing .formGrid{
+  display:grid !important;
+}
+#view-profile.editing #profileHint{
+  display:block !important;
+}
+#view-profile.editing .profileBottomBar{
+  display:flex !important;
+}
+#view-profile #profileSave[hidden]{
+  display:none !important;
+}
+
+/* Keep the view mode clean and readable. */
+#view-profile .profilePage{
+  gap:14px !important;
+}
+#view-profile .profileHead{
+  border:1px solid #fee2e2 !important;
+  background:linear-gradient(135deg,#fff 0%,#fff7f8 100%) !important;
+  box-shadow:0 12px 26px rgba(225,29,72,.07) !important;
+}
+#view-profile .profileName{
+  color:#0f172a !important;
+}
+#view-profile .profileUid{
+  color:#64748b !important;
+}
+
+/* Logout button: no more blank white square. */
+#view-profile #profileLogout{
+  background:#fff5f6 !important;
+  border:1px solid #fecdd3 !important;
+  color:#e11d48 !important;
+  box-shadow:0 8px 18px rgba(225,29,72,.08) !important;
+}
+#view-profile #profileLogout i,
+#view-profile #profileLogout svg,
+#view-profile #profileLogout svg path{
+  color:#e11d48 !important;
+  fill:#e11d48 !important;
+  stroke:#e11d48 !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+/* Wallet header stays light and readable. */
+#view-profile .walletHero{
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%) !important;
+}
+#view-profile .walletHeroText .profileCardTitle{
+  color:#0f172a !important;
+}
+#view-profile .walletHeroText .profileCardSub{
+  color:#64748b !important;
+}
+#view-profile .walletStatusPill{
+  background:#fff1f2 !important;
+  border:1px solid #fecdd3 !important;
+  color:#be123c !important;
+}
+#view-profile .walletStatusPill span{
+  background:#ef4444 !important;
+}
+
+/* Main balance card: dark premium surface with guaranteed contrast. */
+#view-profile .walletBalanceBox{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(135deg,#111827 0%,#1f2937 58%,#334155 100%) !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  color:#ffffff !important;
+  box-shadow:0 16px 30px rgba(15,23,42,.16) !important;
+}
+#view-profile .walletBalanceBox::before{
+  content:"";
+  position:absolute;
+  width:150px;
+  height:150px;
+  border-radius:999px;
+  right:-54px;
+  top:-76px;
+  background:rgba(255,255,255,.08);
+  pointer-events:none;
+}
+#view-profile .walletBalanceTop,
+#view-profile .walletBalanceBox .walletMiniLabel,
+#view-profile .walletBalanceBox .walletAmount,
+#view-profile .walletBalanceBox .walletSmallText{
+  position:relative;
+  z-index:1;
+}
+#view-profile .walletBalanceIcon{
+  background:rgba(255,255,255,.13) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  color:#ffffff !important;
+}
+#view-profile .walletBalanceIcon i{
+  color:#ffffff !important;
+}
+#view-profile .walletBalancePill{
+  background:rgba(255,255,255,.10) !important;
+  border:1px solid rgba(255,255,255,.15) !important;
+  color:rgba(255,255,255,.90) !important;
+}
+#view-profile .walletBalancePill span{
+  background:#4ade80 !important;
+}
+#view-profile .walletBalanceBox .walletMiniLabel,
+#view-profile .walletBalanceBox .walletSmallText{
+  color:rgba(255,255,255,.72) !important;
+}
+#view-profile .walletBalanceBox .walletAmount,
+#view-profile #balProfile{
+  color:#4ade80 !important;
+  text-shadow:none !important;
+}
+
+/* Top-up card: dark text on light surface. */
+#view-profile .walletTopupBox{
+  background:#f8fafc !important;
+  border:1px solid #e8edf5 !important;
+  color:#0f172a !important;
+}
+#view-profile .walletTopupBox .walletMiniLabel{
+  color:#475569 !important;
+}
+#view-profile .walletTopupBox .walletSmallText{
+  color:#64748b !important;
+}
+#view-profile .walletInputWrap{
+  background:#ffffff !important;
+  border:1px solid #e2e8f0 !important;
+}
+#view-profile .walletInputWrap i{
+  color:#e11d48 !important;
+}
+#view-profile .walletInputWrap input{
+  color:#0f172a !important;
+  background:transparent !important;
+}
+#view-profile .walletInputWrap input::placeholder{
+  color:#94a3b8 !important;
+}
+#view-profile #topupBtn,
+#view-profile #topupBtn i,
+#view-profile #topupBtn span{
+  color:#ffffff !important;
+}
+
+/* Profile Save CTA only while editing and always readable. */
+#view-profile.editing #profileSave:not([hidden]){
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:center;
+  color:#ffffff !important;
+}
+#view-profile.editing #profileSave:not([hidden]) i,
+#view-profile.editing #profileSave:not([hidden]) span{
+  color:#ffffff !important;
+}
