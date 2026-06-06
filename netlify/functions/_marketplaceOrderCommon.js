@@ -29,7 +29,7 @@ async function loadCatalogLines(db,rawItems){
     if(!productId||!qty)throw new Error('ITEM_FORMAT');
     if(!productCache.has(productId)){const snap=await db.doc(`products/${productId}`).get();productCache.set(productId,snap.exists?{id:snap.id,...(snap.data()||{})}:null)}
     const product=productCache.get(productId);if(!product)throw new Error(`PRODUCT_NOT_FOUND:${productId}`);
-    const status=cleanText(product.status||'approved',40).toLowerCase();if(status!=='approved')throw new Error(`PRODUCT_NOT_APPROVED:${productId}`);
+    const status=cleanText(product.status||'approved',40).toLowerCase();if(status!=='approved')throw new Error(`PRODUCT_NOT_APPROVED:${productId}`);if(product.isActive===false||product.sellerActive===false)throw new Error(`PRODUCT_INACTIVE:${productId}`);
     const variant=pickVariant(product,raw);
     const unitPriceUZS=firstPrice(variant?.priceUZS,variant?.currentPriceUZS,variant?.price,variant?.salePrice,product.priceUZS,product.currentPriceUZS,product.price,product.salePrice,product.newPrice,product.basePrice,product.amount);
     if(!unitPriceUZS)throw new Error(`PRICE_NOT_FOUND:${productId}`);
