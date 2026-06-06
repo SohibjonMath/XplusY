@@ -3616,8 +3616,9 @@ function omDrawStorePage(data){
 }
 async function renderStorePage(){
   const root=els.storePageContent;if(!root)return;const id=String(activeStoreId||"").trim();if(!id){root.innerHTML='<div class="storePageEmpty">Do‘kon tanlanmagan.</div>';return}
-  const cached=omStoreCache.get(id);if(cached)omDrawStorePage(cached);else root.innerHTML='<div class="storePageLoading"><i class="fa-solid fa-spinner fa-spin"></i> Do‘kon yuklanmoqda...</div>';
-  try{const out=await omStoreApi("public_store",{sellerId:id});omMergeStoreProducts(out.products);omStoreCache.set(id,out);if(activeTab==="store"&&activeStoreId===id)omDrawStorePage(out)}catch(e){if(!cached)root.innerHTML=`<div class="storePageEmpty"><i class="fa-solid fa-store-slash"></i> Do‘konni yuklab bo‘lmadi.</div>`;console.warn("store load",e)}
+  const cached=omStoreCache.get(id),showLoader=!cached;if(cached)omDrawStorePage(cached);else root.innerHTML='<div class="storePageLoading"><i class="fa-solid fa-store"></i> Do‘kon tayyorlanmoqda...</div>';
+  if(showLoader)try{window.OrzuLoader?.show("Do‘kon ochilmoqda",{sub:"Vitrina va mahsulotlar tayyorlanmoqda..."})}catch(_e){}
+  try{const out=await omStoreApi("public_store",{sellerId:id});omMergeStoreProducts(out.products);omStoreCache.set(id,out);if(activeTab==="store"&&activeStoreId===id)omDrawStorePage(out)}catch(e){if(!cached)root.innerHTML=`<div class="storePageEmpty"><i class="fa-solid fa-store-slash"></i> Do‘konni yuklab bo‘lmadi.</div>`;console.warn("store load",e)}finally{if(showLoader)try{window.OrzuLoader?.hide()}catch(_e){}}
 }
 async function omToggleStoreFollow(sellerId,following){
   if(!currentUser){toast("Obuna bo‘lish uchun akkauntga kiring");goTab("profile");return}
@@ -3866,6 +3867,7 @@ async function omFetchProductForPage(id){
   const key = String(id || "").trim();
   if(!key || omProductPageFetches.has(key)) return;
   omProductPageFetches.add(key);
+  try{ window.OrzuLoader?.show("Mahsulot yuklanmoqda",{sub:"Mahsulot tafsilotlari tayyorlanmoqda..."}); }catch(_e){}
   try{
     const snap = await getDoc(doc(db, "products", key));
     if(snap.exists()){
@@ -3894,6 +3896,7 @@ async function omFetchProductForPage(id){
   }catch(e){ console.warn("Product page fetch failed", e); }
   finally{
     omProductPageFetches.delete(key);
+    try{ window.OrzuLoader?.hide(); }catch(_e){}
     if(activeTab === "product") renderProductPage();
   }
 }
