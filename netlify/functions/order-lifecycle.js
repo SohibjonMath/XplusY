@@ -2,6 +2,7 @@
 const admin = require("firebase-admin");
 const { pushOrderStateChanged } = require('./_adminPush');
 const { pushToCustomer } = require('./_customerPush');
+const { refreshSellerTrustStats, sellerIdsFromOrder } = require('./_sellerTrustCommon');
 
 function initAdmin(){
   if(admin.apps.length) return;
@@ -229,6 +230,9 @@ exports.handler=async(event)=>{
         return {patch,result:{refund,ownerUid:String(order.uid||"")}};
       });
       const ownerUid=out.result?.ownerUid||"";
+      if(["delivered","returned","cancelled"].includes(next)){
+        await Promise.all(sellerIdsFromOrder(out.order).map(id=>refreshSellerTrustStats(db,id,{force:true}).catch(err=>console.warn("seller trust refresh skipped:",id,err?.message||err))));
+      }
       const label={new:"Yangi",packing:"Yig‘ilyapti",shipping:"Yetkazib berishda",delivered:"Yetkazib berildi",cancelled:"Bekor qilindi",return_requested:"Qaytarish so‘rovi",returned:"Qaytarildi",return_rejected:"Qaytarish rad etildi"}[next]||next;
       await notify(db,ownerUid,"Buyurtma holati yangilandi",`#${orderId}: ${label}${reason?`. Izoh: ${reason}`:""}`);
       await pushOrderStateChanged(db, orderId, label).catch(err => console.warn('admin status push skipped:', err?.message || err));

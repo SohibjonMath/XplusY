@@ -1,4 +1,5 @@
 const C=require("./_sellerCommon");
+const T=require("./_sellerTrustCommon");
 exports.handler=async(event)=>{
   try{
     C.initAdmin();
@@ -14,7 +15,8 @@ exports.handler=async(event)=>{
       for(const d of snap.docs){
         const seller={id:d.id,...d.data()};
         const stats=await C.syncSellerPopularity(db,d.id,{syncProducts:false});
-        rows.push({...C.publicSeller({...seller,popularity:stats.popularity,popularityAuto:true,popularityProductCount:stats.visibleProductCount}),...stats,products:undefined});
+        const trust=await T.refreshSellerTrustStats(db,d.id,{seller,maxAgeMs:10*60*1000}).catch(()=>T.publicTrust(seller));
+        rows.push({...C.publicSeller({...seller,...trust,popularity:stats.popularity,popularityAuto:true,popularityProductCount:stats.visibleProductCount}),...stats,...trust,products:undefined});
       }
       const totals={
         sellerCount:rows.length,
@@ -79,7 +81,8 @@ exports.handler=async(event)=>{
       ps.docs.forEach(d=>sync.set(d.ref,{sellerName:seller.storeName,sellerLogo:seller.logoUrl,sellerBanner:seller.bannerUrl,sellerDescription:seller.description,sellerWorkingHours:seller.workingHours,sellerPhone:seller.phone,sellerPopularity:seller.popularity,sellerVerified:seller.verified,sellerCommissionPercent:seller.commissionPercent,sellerActive:seller.active,updatedAt:C.admin.firestore.FieldValue.serverTimestamp()},{merge:true}));
       if(ps.size)await sync.commit();
       const refreshed=await C.syncSellerPopularity(db,id,{syncProducts:true});
-      return C.json(200,{ok:true,seller:C.publicSeller({...seller,popularity:refreshed.popularity,popularityAuto:true,popularityProductCount:refreshed.visibleProductCount})});
+      const trust=await T.refreshSellerTrustStats(db,id,{seller,force:true}).catch(()=>T.publicTrust(seller));
+      return C.json(200,{ok:true,seller:C.publicSeller({...seller,...trust,popularity:refreshed.popularity,popularityAuto:true,popularityProductCount:refreshed.visibleProductCount})});
     }
     if(action==="toggle"){
       const id=C.safeId(body.id);if(!id)return C.json(400,{ok:false,error:"seller_id_required"});

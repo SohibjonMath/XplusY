@@ -1,4 +1,5 @@
 const C=require('./_sellerCommon');
+const T=require('./_sellerTrustCommon');
 const F=()=>C.admin.firestore.FieldValue;
 const arr=v=>Array.isArray(v)?v:[];
 const money=v=>Math.max(0,Math.round(Number(v)||0));
@@ -12,7 +13,7 @@ function cleanImagesByColor(v){const out={};if(v&&typeof v==='object')Object.ent
 function publicProduct(id,d={}){return{
   id:String(d.id||id),name:txt(d.name,240),name_ru:txt(d.name_ru,240),description:txt(d.description,6000),description_ru:txt(d.description_ru,6000),subtitle:txt(d.subtitle,240),price:money(d.price??d.priceUZS),oldPrice:money(d.oldPrice),currency:txt(d.currency||'UZS',20),images:cleanImages(d.images),imagesByColor:cleanImagesByColor(d.imagesByColor),image:txt(d.image,900),colors:cleanColors(d.colors),sizes:cleanTextArray(d.sizes,80,40),variants:cleanVariants(d.variants),tags:cleanTextArray(d.tags,100,50),badges:cleanTextArray(d.badges,100,10),badge:txt(d.badge,100),categoryId:txt(d.categoryId,100),subcategoryId:txt(d.subcategoryId,100),categoryPathIds:cleanTextArray(d.categoryPathIds,100,8),sku:txt(d.sku,120),stockQty:Math.max(0,Math.round(Number(d.stockQty)||0)),weightKg:Number(d.weightKg??d.weight??0)||0,productType:txt(d.productType,40),youtubeUrl:txt(d.youtubeUrl||d.videoUrl,900),fulfillmentType:txt(d.fulfillmentType||d.fulfillment||'stock',50),deliveryMinDays:Number(d.deliveryMinDays||1)||1,deliveryMaxDays:Number(d.deliveryMaxDays||7)||7,prepayRequired:!!d.prepayRequired,popularScore:C.productPopularity(d),metricScore:C.metricMax(d.metricScore,d.engagementScore,d.score),engagementScore:C.metricMax(d.engagementScore,d.metricScore,d.score),views:C.metricMax(d.views,d.viewCount,d.viewsCount,d.productViews,d.popularViews),viewsCount:C.metricMax(d.views,d.viewCount,d.viewsCount,d.productViews,d.popularViews),cartAdds:C.metricMax(d.cartAdds,d.cartAddCount,d.addToCartCount),favoriteAdds:C.metricMax(d.favoriteAdds,d.favorites,d.favoriteCount,d.wishlistAdds),purchases:C.metricMax(d.purchases,d.purchaseCount,d.soldCount,d.salesCount),soldCount:C.metricMax(d.soldCount,d.purchases,d.purchaseCount,d.salesCount),sellerId:txt(d.sellerId,100),sellerName:txt(d.sellerName,180),sellerLogo:txt(d.sellerLogo,900),sellerPopularity:C.storePopularityNum(d.sellerPopularity),sellerVerified:d.sellerVerified!==false,sellerActive:d.sellerActive!==false,isOrzuMallVerified:false,ownerType:'seller',createdByRole:'seller',status:'approved',_created:safeTimestamp(d.createdAt||d.updatedAt),_price:money(d.price??d.priceUZS)
 }}
-function publicStore(id,d={},productCount=0,popularity=d.popularity){return{id,storeName:txt(d.storeName||d.name,180),logoUrl:txt(d.logoUrl,900),bannerUrl:txt(d.bannerUrl,900),description:txt(d.description,1600),workingHours:txt(d.workingHours,180),popularity:C.storePopularityNum(popularity),popularityAuto:true,popularityProductCount:Math.max(0,Math.round(Number(productCount)||0)),followersCount:Math.max(0,Math.round(Number(d.followersCount||0)||0)),verified:d.verified!==false,productCount:Math.max(0,Math.round(Number(productCount)||0)),active:d.active!==false}}
+function publicStore(id,d={},productCount=0,popularity=d.popularity,trust={}){const t=T.publicTrust({...d,...trust});return{id,storeName:txt(d.storeName||d.name,180),logoUrl:txt(d.logoUrl,900),bannerUrl:txt(d.bannerUrl,900),description:txt(d.description,1600),workingHours:txt(d.workingHours,180),popularity:C.storePopularityNum(popularity),popularityAuto:true,popularityProductCount:Math.max(0,Math.round(Number(productCount)||0)),followersCount:Math.max(0,Math.round(Number(d.followersCount||0)||0)),verified:d.verified!==false,productCount:Math.max(0,Math.round(Number(productCount)||0)),active:d.active!==false,partnerSinceMs:t.partnerSinceMs,completedOrdersCount:t.completedOrdersCount,totalSellerOrdersCount:t.totalSellerOrdersCount}}
 async function decodedOptional(event){try{const token=C.bearer(event);if(!token)return null;return await C.admin.auth().verifyIdToken(token,true)}catch(_){return null}}
 async function decodedRequired(event){const d=await decodedOptional(event);if(!d?.uid)throw new Error('unauthorized');return d}
 async function loadStore(db,id){const snap=await db.doc(`sellers/${id}`).get();if(!snap.exists)return null;const data={id:snap.id,...(snap.data()||{})};if(data.active===false)return null;return data}
@@ -28,7 +29,9 @@ function storeSearchRank(d={},q=''){
 async function searchStores(db,rawQuery,max=12){
   const q=searchNorm(rawQuery);if(!q)return[];let snap;
   try{snap=await db.collection('sellers').where('active','==',true).limit(500).get()}catch(_){snap=await db.collection('sellers').limit(500).get()}
-  return snap.docs.map(doc=>({id:doc.id,...(doc.data()||{})})).filter(d=>d.active!==false).map(d=>({d,rank:storeSearchRank(d,q)})).filter(x=>x.rank>0).sort((a,b)=>b.rank-a.rank||Number(b.d.followersCount||0)-Number(a.d.followersCount||0)||String(a.d.storeName||'').localeCompare(String(b.d.storeName||''))).slice(0,Math.max(1,Math.min(30,Math.round(Number(max)||12)))).map(({d})=>publicStore(d.id,d,d.popularityProductCount||d.productCount||0,d.popularity));
+  const picked=snap.docs.map(doc=>({id:doc.id,...(doc.data()||{})})).filter(d=>d.active!==false).map(d=>({d,rank:storeSearchRank(d,q)})).filter(x=>x.rank>0).sort((a,b)=>b.rank-a.rank||Number(b.d.followersCount||0)-Number(a.d.followersCount||0)||String(a.d.storeName||'').localeCompare(String(b.d.storeName||''))).slice(0,Math.max(1,Math.min(30,Math.round(Number(max)||12))));
+  const hydrated=await Promise.all(picked.map(async({d})=>{const trust=await T.refreshSellerTrustStats(db,d.id,{seller:d,maxAgeMs:10*60*1000}).catch(()=>T.publicTrust(d));return{...d,...trust}}));
+  return hydrated.map(d=>publicStore(d.id,d,d.popularityProductCount||d.productCount||0,d.popularity,d));
 }
 exports.handler=async event=>{try{
   C.initAdmin();if(event.httpMethod!=='POST')return C.json(405,{ok:false,error:'method_not_allowed'});
@@ -42,7 +45,8 @@ exports.handler=async event=>{try{
     const popularity=C.averageProductPopularity(products);
     products.forEach(p=>{p.sellerPopularity=popularity});
     await C.syncSellerPopularity(db,sellerId,{syncProducts:true}).catch(e=>console.error('store popularity sync',e));
-    return C.json(200,{ok:true,store:publicStore(sellerId,seller,products.length,popularity),products,following});
+    const trust=await T.refreshSellerTrustStats(db,sellerId,{seller,maxAgeMs:10*60*1000}).catch(e=>{console.error('store trust sync',e);return T.publicTrust(seller)});
+    return C.json(200,{ok:true,store:publicStore(sellerId,{...seller,...trust},products.length,popularity,trust),products,following});
   }
   if(action==='toggle_follow'){
     const decoded=await decodedRequired(event),uid=String(decoded.uid),sellerId=C.safeId(body.sellerId);if(!sellerId)return C.json(400,{ok:false,error:'seller_id_required'});

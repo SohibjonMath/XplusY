@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.32.0",
-  "description": "OrzuMall v129: home search returns premium public seller store results alongside products",
+  "version": "1.37.0",
+  "description": "OrzuMall v137: public seller storefront trust statistics and partnership duration",
   "engines": {
     "node": "18.x"
   },
