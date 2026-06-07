@@ -99,6 +99,8 @@ function cleanVariantValue(value) {
     .replace(/\s+/g, ' ')
     .trim();
 }
+const noisyVariantValue = /(?:主面料|面料|材质|成分|品牌|货号|运费|评价|参数|商品属性|包装|详情|登录|登錄|查看全部|好评|已购|起批|¥|￥|库存|庫存|stock|qoldiq|material|fabric|brand|price|delivery)/i;
+function usableVariantValue(value) { const v=cleanVariantValue(value); return !!v && v.length<=90 && !noisyVariantValue.test(v); }
 function attributeByKind(attributes = {}, kind = '') {
   const re = kind === 'color'
     ? /(?:颜色|顏色|色彩|color|colour|rang)/i
@@ -113,12 +115,12 @@ function sourceColors(source = {}) {
   const rows = [...explicit, ...(group?.options || [])];
   skuRows.forEach(row => {
     const name = cleanVariantValue(row.color || attributeByKind(row.attributes, 'color'));
-    if (name) rows.push({ id: row.id, name, image: row.image || '' });
+    if (usableVariantValue(name)) rows.push({ id: row.id, name, image: row.image || '' });
   });
   const map = new Map();
   rows.forEach(row => {
     const name = cleanVariantValue(row.name);
-    if (!name) return;
+    if (!usableVariantValue(name)) return;
     const prev = map.get(name) || {};
     map.set(name, { name, ...((row.image || prev.image) ? { image: row.image || prev.image } : {}) });
   });
@@ -130,14 +132,16 @@ function sourceSizes(source = {}) {
   const skuRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants);
   const rows = [...explicit, ...(group?.options || [])].map(row => row.name);
   skuRows.forEach(row => rows.push(row.size || attributeByKind(row.attributes, 'size')));
-  return [...new Set(rows.map(cleanVariantValue).filter(Boolean))].slice(0, 80);
+  return [...new Set(rows.map(cleanVariantValue).filter(usableVariantValue))].slice(0, 80);
 }
 function marketplaceVariants(source = {}, fallbackPrice = 0) {
-  return sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants).map(row => {
+  const mapRows = rows => rows.map(row => {
     const stockQty = safeInt(row.stock, 0, 1e9, 0);
+    const rawColor = row.color || attributeByKind(row.attributes, 'color');
+    const rawSize = row.size || attributeByKind(row.attributes, 'size');
     return {
-      color: cleanVariantValue(row.color || attributeByKind(row.attributes, 'color')) || null,
-      size: cleanVariantValue(row.size || attributeByKind(row.attributes, 'size')) || null,
+      color: usableVariantValue(rawColor) ? cleanVariantValue(rawColor) : null,
+      size: usableVariantValue(rawSize) ? cleanVariantValue(rawSize) : null,
       price: row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0),
       stock: stockQty,
       stockQty,
@@ -147,6 +151,14 @@ function marketplaceVariants(source = {}, fallbackPrice = 0) {
       ...(row.image ? { image: row.image } : {}),
     };
   }).filter(row => row.color || row.size).slice(0, 220);
+  const explicit = mapRows(sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants));
+  if (explicit.length) return explicit;
+  const colors=sourceColors(source), sizes=sourceSizes(source);
+  let generated=[];
+  if(colors.length && sizes.length) generated=colors.flatMap(c=>sizes.map((z,i)=>({id:`generated-${c.name}-${i+1}`,name:`${c.name} / ${z}`,color:c.name,size:z,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name,规格:z}})));
+  else if(colors.length) generated=colors.map((c,i)=>({id:`generated-color-${i+1}`,name:c.name,color:c.name,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name}}));
+  else if(sizes.length) generated=sizes.map((z,i)=>({id:`generated-spec-${i+1}`,name:z,size:z,stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{规格:z}}));
+  return mapRows(generated);
 }
 
 function nowIso() { return new Date().toISOString(); }

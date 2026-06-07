@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.6.0';
+  const VERSION = '1.7.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -191,101 +191,144 @@
     }
     return '';
   }
+  const variantGroupLabel = /^(?:颜色|顏色|颜色分类|顏色分類|色彩|尺码|尺碼|尺寸|大小|规格|規格|规格型号|規格型號|款式|型号|型號|color|colour|size|specification|variant)[:：]?$/i;
+  const variantGroupStop = /^(?:颜色|顏色|颜色分类|顏色分類|色彩|尺码|尺碼|尺寸|大小|规格|規格|规格型号|規格型號|款式|型号|型號|登录查看全部规格|登錄查看全部規格|查看全部规格|查看全部規格|分销代发|密文代发|商品评价|商品属性|包装信息|商品详情|热门推荐|搭配组货|立即铺货|加入铺货单|color|colour|size|specification|variant)[:：]?$/i;
+  const skuNodeSelector = ['button','li','a','[role="option"]','[role="button"]','[data-sku-id]','[data-prop-value-id]','[data-value-id]','[data-value]','[data-title]','[class*="sku-item"]','[class*="skuItem"]','[class*="spec-item"]','[class*="specItem"]','[class*="prop-item"]','[class*="propItem"]','[class*="value-item"]','[class*="valueItem"]','[class*="sku"]','[class*="spec"]'].join(',');
+  function isStrongSkuNode(node) {
+    if (!node?.matches) return false;
+    return node.matches(skuNodeSelector) || !!firstNodeImage(node) || /pointer/i.test(getComputedStyle(node)?.cursor || '');
+  }
+  function closeToLabel(labelBox, box) {
+    if (!labelBox || !box) return true;
+    const closeVertical = box.top >= labelBox.top - 40 && box.top <= labelBox.bottom + 520;
+    const plausibleHorizontal = box.left >= labelBox.left - 42 || box.top >= labelBox.bottom - 12;
+    return closeVertical && plausibleHorizontal;
+  }
   function domOptionNodes(container, labelNode, type = 'other') {
-    const stable = ['button','li','a','[role="option"]','[role="button"]','[data-sku-id]','[data-prop-value-id]','[data-value-id]','[data-value]','[class*="sku-item"]','[class*="skuItem"]','[class*="spec-item"]','[class*="specItem"]','[class*="prop-item"]','[class*="propItem"]','[class*="value-item"]','[class*="valueItem"]','[class*="sku"]','[class*="spec"]'];
-    const loose = type === 'spec' ? ['div','span'] : [];
-    const stableSelector = stable.join(',');
+    const labelBox = visibleBox(labelNode);
+    const selectors = type === 'spec' ? `${skuNodeSelector},div,span` : skuNodeSelector;
     const map = new Map();
-    [...container.querySelectorAll([...stable, ...loose].join(','))].forEach((node, index) => {
+    [...container.querySelectorAll(selectors)].forEach((node, index) => {
       if (node === labelNode || node.contains(labelNode)) return;
-      if (node.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"]')) return;
-      const box = visibleBox(node); if (!box) return;
-      if (box.width > 920 || box.height > 240) return;
+      if (node.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"],[class*="product-attribute"]')) return;
+      const box = visibleBox(node); if (!box || !closeToLabel(labelBox, box)) return;
+      if (box.width > 680 || box.height > 190) return;
       const image = firstNodeImage(node);
       const name = domCandidateName(node);
-      if (!usableVariantName(name, type, image)) return;
-      const strong = node.matches(stableSelector) || !!image || node.children.length === 0 || /pointer/i.test(getComputedStyle(node)?.cursor || '');
+      if (!usableVariantName(name, type, image) || variantGroupLabel.test(name)) return;
+      const nestedStrong = [...node.querySelectorAll(skuNodeSelector)].filter(x => x !== node).length;
+      if (nestedStrong > 1 && !image) return; // wrapper emas, haqiqiy option kerak
+      const strong = isStrongSkuNode(node) || node.children.length === 0;
       if (!strong) return;
-      const score = (image ? 70 : 0) + (node.matches(stableSelector) ? 40 : 0) + (node.children.length === 0 ? 14 : 0) + (box.width <= 420 ? 8 : 0) - Math.min(node.children.length, 12);
+      const distance = labelBox ? Math.max(0, box.top - labelBox.bottom) + Math.max(0, labelBox.left - box.left) : 0;
+      const score = (image ? 80 : 0) + (node.matches(skuNodeSelector) ? 55 : 0) + (node.children.length === 0 ? 12 : 0) + (box.width <= 420 ? 8 : 0) - Math.min(distance / 16, 35) - Math.min(nestedStrong * 4, 20);
       const row = { node, score, name, image, index };
       const old = map.get(name); if (!old || score > old.score) map.set(name, row);
     });
-    return [...map.values()].sort((a, b) => b.score - a.score || a.index - b.index).slice(0, MAX_OPTIONS).map(x => x.node);
+    return [...map.values()].sort((a,b)=>b.score-a.score || a.index-b.index).slice(0, MAX_OPTIONS).map(x=>x.node);
+  }
+  function groupFromLabel(labelNode, gi = 0) {
+    const name = text(labelNode.textContent).replace(/[:：]/g, '');
+    const type = classifyGroup(name, gi);
+    let container = labelNode.parentElement; let best = null;
+    for (let hop = 0; container && hop < 5; hop += 1, container = container.parentElement) {
+      const rawText = text(container.innerText || container.textContent);
+      if (rawText.length > 2600) break; // butun sahifa textini variant deb olishga yo‘l qo‘ymaymiz
+      const nodes = domOptionNodes(container, labelNode, type);
+      const options = [];
+      nodes.forEach((node, index) => {
+        const host = node.closest?.('[data-sku-id],[data-prop-value-id],[data-value-id],[data-value],[class*=\"sku-item\"],[class*=\"skuItem\"],[class*=\"spec-item\"],[class*=\"specItem\"]') || node;
+        const image = firstNodeImage(host) || firstNodeImage(node);
+        const option = domCandidateName(node) || domCandidateName(host);
+        if (!usableVariantName(option, type, image)) return;
+        if (!options.some(o => o.name === option)) options.push({ id: text(host.getAttribute('data-sku-id') || host.getAttribute('data-prop-value-id') || host.getAttribute('data-value-id') || host.getAttribute('data-value') || `d${gi + 1}_${index + 1}`), name: option, image, disabled: /disabled|soldout|sold-out/i.test(`${host.className || ''} ${host.getAttribute('aria-disabled') || ''}`) });
+      });
+      if (options.length >= 2 && options.length <= MAX_OPTIONS) {
+        const score = options.length * 14 + options.filter(o=>o.image).length * 22 - hop * 18 - Math.max(0, rawText.length - 900) / 80;
+        if (!best || score > best.score) best = { score, options };
+      }
+    }
+    return best ? { id:`dom${gi+1}`, name, type, options:best.options, origin:'visible-dom' } : null;
   }
   function readGroupsFromDom() {
-    const labels = /^(?:颜色|顏色|颜色分类|色彩|尺码|尺寸|大小|规格|規格|规格型号|規格型號|款式|型号|型號|color|size|specification|variant)[:：]?$/i;
-    const exactNodes = [...document.querySelectorAll('span,div,label,dt,th,p,strong')].filter(n => labels.test(text(n.textContent)));
-    const groups = [];
-    exactNodes.forEach((labelNode, gi) => {
-      if (labelNode.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"]')) return;
-      const name = text(labelNode.textContent).replace(/[:：]/g, '');
-      const type = classifyGroup(name, groups.length);
-      let container = labelNode.parentElement; let best = null;
-      for (let hop = 0; container && hop < 6; hop += 1, container = container.parentElement) {
-        const rawText = text(container.innerText || container.textContent);
-        if (rawText.length > 9000) break;
-        const nodes = domOptionNodes(container, labelNode, type);
-        const options = [];
-        nodes.forEach((node, index) => {
-          const image = firstNodeImage(node);
-          const option = domCandidateName(node);
-          if (!usableVariantName(option, type, image)) return;
-          if (!options.some(o => o.name === option)) options.push({ id: text(node.getAttribute('data-sku-id') || node.getAttribute('data-prop-value-id') || node.getAttribute('data-value-id') || node.getAttribute('data-value') || `d${gi + 1}_${index + 1}`), name: option, image, disabled: /disabled|soldout|sold-out/i.test(`${node.className || ''} ${node.getAttribute('aria-disabled') || ''}`) });
-        });
-        if (options.length >= 2 && options.length <= MAX_OPTIONS) {
-          const score = options.length * 10 + options.filter(o => o.image).length * 18 - hop * 3;
-          if (!best || score > best.score) best = { score, options };
-        }
-      }
-      if (best) groups.push({ id: `dom${gi + 1}`, name, type, options: best.options });
-    });
-    const merged = [];
-    groups.forEach(g => {
-      const existing = merged.find(x => x.type === g.type && x.name === g.name);
-      if (!existing) merged.push(g);
-      else g.options.forEach(o => { if (!existing.options.some(x => x.name === o.name)) existing.options.push(o); });
+    const labels = [...document.querySelectorAll('span,div,label,dt,th,p,strong')].filter(n => variantGroupLabel.test(text(n.textContent)));
+    const groups = labels.map((node,idx)=>groupFromLabel(node,idx)).filter(Boolean);
+    const merged=[];
+    groups.forEach(g=>{
+      const old=merged.find(x=>x.type===g.type && text(x.name)===text(g.name));
+      if(!old) merged.push(g);
+      else g.options.forEach(o=>{ if(!old.options.some(x=>x.name===o.name)) old.options.push(o); });
     });
     return merged.slice(0, MAX_VARIANT_GROUPS);
   }
-  function readSpecGroupsFromVisibleText() {
-    const lines = String(document.body?.innerText || '').split(/\n+/).map(text).filter(Boolean);
-    const out = [];
-    const stop = /^(?:登录查看全部规格|登錄查看全部規格|查看全部规格|查看全部規格|分销代发|密文代发|商品评价|商品属性|包装信息|商品详情|热门推荐|搭配组货|立即铺货|加入铺货单)$/i;
-    const noise = /^(?:库存|庫存|stock|qoldiq)\s*\d+|^(?:¥|￥)\s*\d+|^(?:运费|配送|发货|登录|登錄)/i;
-    lines.forEach((line, index) => {
-      if (!/^(?:规格|規格|规格型号|規格型號|款式|型号|型號)[:：]?$/.test(line)) return;
-      const options = [];
-      for (let i = index + 1; i < Math.min(lines.length, index + 42); i += 1) {
-        const raw = lines[i];
-        if (stop.test(raw)) break;
-        if (noise.test(raw)) continue;
-        const name = cleanOptionLabel(raw);
-        if (!usableVariantName(name, 'spec')) continue;
-        if (!/(?:\d|米|cm|厘米|层|層|色|款|号|號|蓝|藍|白|黑|红|紅|绿|綠|橙|灰|粉|紫|黄|黃)/i.test(name)) continue;
-        if (!options.some(o => o.name === name)) options.push({ id: `text-spec-${index + 1}-${options.length + 1}`, name, image: '', disabled: false });
-        if (options.length >= MAX_OPTIONS) break;
+  function scopedTextOptions(labelNode, type='spec', gi=0) {
+    let container=labelNode.parentElement;
+    for(let hop=0; container && hop<4; hop+=1, container=container.parentElement){
+      const raw=String(container.innerText||container.textContent||'');
+      if(raw.length>1500) break;
+      const lines=raw.split(/\n+/).map(text).filter(Boolean);
+      const start=lines.findIndex(line=>variantGroupLabel.test(line) && classifyGroup(line)===type);
+      if(start<0) continue;
+      const options=[];
+      for(let i=start+1;i<Math.min(lines.length,start+18);i+=1){
+        const row=lines[i];
+        if(i>start+1 && variantGroupStop.test(row)) break;
+        const name=cleanOptionLabel(row);
+        if(!usableVariantName(name,type)) continue;
+        if(type==='spec' && !/(?:\d|米|cm|厘米|层|層|色|款|号|號|蓝|藍|白|黑|红|紅|绿|綠|橙|灰|粉|紫|黄|黃|充气|充氣|泵)/i.test(name)) continue;
+        if(!options.some(x=>x.name===name)) options.push({id:`scoped-${gi+1}-${options.length+1}`,name,image:'',disabled:false});
       }
-      if (options.length >= 2) out.push({ id: `text-spec-${index + 1}`, name: line.replace(/[:：]/g, ''), type: 'spec', options });
-    });
-    return out.slice(0, 2);
+      if(options.length>=2 && options.length<=24) return options;
+    }
+    return [];
   }
-  function mergeGroups(scriptGroups, domGroups) {
-
-    const result = safeJsonClone(scriptGroups) || [];
-    domGroups.forEach(group => {
-      let target = result.find(g => g.type === group.type) || result.find(g => text(g.name) === text(group.name));
-      if (!target) { result.push(group); return; }
-      group.options.forEach(o => {
-        const old = target.options.find(x => x.name === o.name);
-        if (!old) target.options.push(o);
-        else if (!old.image && o.image) old.image = o.image;
+  function readScopedSpecGroups() {
+    const labels=[...document.querySelectorAll('span,div,label,dt,th,p,strong')].filter(n=>/^(?:规格|規格|规格型号|規格型號|型号|型號|款式)[:：]?$/.test(text(n.textContent)));
+    const groups=[];
+    labels.forEach((node,idx)=>{
+      const options=scopedTextOptions(node,'spec',idx);
+      if(options.length>=2) groups.push({id:`scoped-spec-${idx+1}`,name:text(node.textContent).replace(/[:：]/g,''),type:'spec',options,origin:'visible-text'});
+    });
+    return groups.slice(0,2);
+  }
+  function scriptGroupScore(groups=[]) {
+    return groups.reduce((sum,g,idx)=>{
+      const type=inferGroupType(g,idx); const n=(g.options||[]).length;
+      return sum + (type==='other'?0:220) + Math.min(n,24)*7 - Math.max(0,n-48)*12;
+    },0);
+  }
+  function readGroupsFromScripts() {
+    const candidates = [];
+    const keys = /(?:skuProps|sku_props|saleProps|sale_props|skuProperties|sku_properties|specProps|spec_props|productSKUProps|skuPropList|sku_prop_list|skuAttributes|sku_attributes)/i;
+    parsedScriptRoots().forEach(root => walk(root, (v, path) => {
+      const key = path[path.length - 1] || '';
+      if (!keys.test(key) || !Array.isArray(v)) return;
+      const groups = v.slice(0, MAX_VARIANT_GROUPS).map(normalizeGroup).filter(Boolean).map((g,i)=>({...g,type:inferGroupType(g,i),origin:'structured'}));
+      if(groups.some(g=>g.type!=='other')) candidates.push(groups);
+    }));
+    return candidates.sort((a,b)=>scriptGroupScore(b)-scriptGroupScore(a))[0] || [];
+  }
+  function sanitizeMergedGroup(g,i=0){
+    const type=inferGroupType(g,i);
+    const seen=new Set();
+    const options=(g.options||[]).map(o=>({...o,name:cleanOptionLabel(o.name)})).filter(o=>{
+      if(!usableVariantName(o.name,type,o.image) || seen.has(o.name)) return false;
+      seen.add(o.name); return true;
+    }).slice(0,MAX_OPTIONS);
+    return {...g,type,options};
+  }
+  function mergeGroups(visibleGroups=[], scriptGroups=[]) {
+    const result=(safeJsonClone(visibleGroups)||[]).map(sanitizeMergedGroup).filter(g=>g.options.length>=2);
+    (safeJsonClone(scriptGroups)||[]).map(sanitizeMergedGroup).filter(g=>g.options.length>=2).forEach(group=>{
+      const target=result.find(x=>x.type===group.type) || result.find(x=>text(x.name)===text(group.name));
+      if(!target){ if(group.type!=='other') result.push(group); return; }
+      // DOM sahifada ko‘rinib turgan variantlar source of truth. Structured ma’lumot faqat rasm/id bilan boyitadi.
+      group.options.forEach(o=>{
+        const same=target.options.find(x=>x.name===o.name);
+        if(same){ if(!same.image && o.image) same.image=o.image; if(!same.id && o.id) same.id=o.id; }
       });
     });
-    return result.slice(0, MAX_VARIANT_GROUPS).map((g, i) => {
-      const type = inferGroupType(g, i);
-      const options = compact(g.options.map(o => JSON.stringify({ ...o, name: cleanOptionLabel(o.name) })).filter(Boolean), MAX_OPTIONS).map(s => JSON.parse(s)).filter(o => usableVariantName(o.name, type, o.image));
-      return { ...g, type, options };
-    }).filter(g => g.options.length >= 2);
+    return result.slice(0,MAX_VARIANT_GROUPS).map(sanitizeMergedGroup).filter(g=>g.options.length>=2);
   }
 
   function readSkuRowsFromScripts() {
@@ -421,7 +464,9 @@
 
   function extract() {
     const prices = priceRange();
-    const groups = mergeGroups(readGroupsFromScripts(), [...readGroupsFromDom(), ...readSpecGroupsFromVisibleText()]);
+    const visibleGroups = readGroupsFromDom();
+    const scopedSpecs = visibleGroups.some(g => g.type === 'spec') ? [] : readScopedSpecGroups();
+    const groups = mergeGroups([...visibleGroups, ...scopedSpecs], readGroupsFromScripts());
     const colorGroup = groups.find(g => g.type === 'color'); const sizeGroup = groups.find(g => g.type === 'size') || groups.find(g => g.type === 'spec');
     const colorOptions = (colorGroup?.options || []).slice(0, MAX_OPTIONS);
     const sizeOptions = (sizeGroup?.options || []).slice(0, MAX_OPTIONS);
@@ -447,6 +492,7 @@
     };
   }
 
+  window.__ORZUMALL_1688_EXTRACT__ = extract;
   const feedback = (label, ok = true) => {
     const button = document.getElementById(BUTTON_ID); if (!button) return;
     button.textContent = label; button.style.background = ok ? '#067647' : '#b42318';

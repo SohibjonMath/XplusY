@@ -320,7 +320,7 @@ function omApplySharedMetrics(productId, raw={}){
   return m;
 }
 async function preloadProductMetrics(productIds,{force=false,rerender=false}={}){
-  const ids=[...new Set((productIds||[]).map(String).filter(Boolean))].slice(0,80);if(!ids.length)return;
+  const ids=[...new Set((productIds||[]).map(String).filter(omUsableVariantLabel))].slice(0,80);if(!ids.length)return;
   const needed=force?ids:ids.filter(id=>{const x=productMetricsCache.get(id);return !x||Date.now()-(x.ts||0)>=120000});
   if(needed.length){
     try{
@@ -1006,6 +1006,8 @@ function omCleanVariantLabel(value){
     .trim()
     .slice(0, 120);
 }
+const omNoisyVariantLabel = /(?:主面料|面料|材质|成分|品牌|货号|运费|评价|参数|商品属性|包装|详情|登录|登錄|查看全部|好评|已购|起批|¥|￥|库存|庫存|stock|qoldiq|material|fabric|brand|price|delivery)/i;
+function omUsableVariantLabel(value){ const v=omCleanVariantLabel(value); return !!v && v.length<=90 && !omNoisyVariantLabel.test(v); }
 function omVariantRows(p){
   const rows=[];
   const add=(list)=>{ if(Array.isArray(list)) list.forEach(x=>{ if(x && typeof x === "object") rows.push(x); }); };
@@ -1026,13 +1028,13 @@ function normColors(p){
   rows.forEach(v=>{
     const byAttr=Object.entries(v?.attributes||{}).find(([k])=>/(?:颜色|顏色|色彩|color|colour|rang)/i.test(String(k||"")))?.[1];
     const name=omCleanVariantLabel(v?.color || byAttr || "");
-    if(name) explicit.push({name,image:v?.image||p?.imagesByColor?.[name]?.[0]||p?.china1688?.imagesByColor?.[name]?.[0]||null});
+    if(omUsableVariantLabel(name)) explicit.push({name,image:v?.image||p?.imagesByColor?.[name]?.[0]||p?.china1688?.imagesByColor?.[name]?.[0]||null});
   });
   const map=new Map();
   explicit.forEach(c=>{
     const row=typeof c === "string" ? {name:c} : (c||{});
     const name=omCleanVariantLabel(row.name || row.label || row.value || "");
-    if(!name) return;
+    if(!omUsableVariantLabel(name)) return;
     const prev=map.get(name)||{};
     const image=row.image || row.img || row.imageUrl || p?.imagesByColor?.[name]?.[0] || p?.china1688?.imagesByColor?.[name]?.[0] || prev.image || null;
     map.set(name,{name,hex:row.hex||row.color||prev.hex||null,image});
@@ -1048,7 +1050,7 @@ function normSizes(p){
     const name=omCleanVariantLabel(v?.size || byAttr || "");
     if(name) explicit.push(name);
   });
-  return [...new Set(explicit.map(s=>omCleanVariantLabel(typeof s === "string" ? s : (s?.label||s?.name||s?.value||""))).filter(Boolean))].slice(0,80);
+  return [...new Set(explicit.map(s=>omCleanVariantLabel(typeof s === "string" ? s : (s?.label||s?.name||s?.value||""))).filter(omUsableVariantLabel))].slice(0,80);
 }
 function getDefaultSel(p){
   const colors = normColors(p);

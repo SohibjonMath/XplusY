@@ -4354,6 +4354,8 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     function apCleanVariantLabel(value){
       return String(value==null?"":value).replace(/(?:库存|庫存|stock|qoldiq|остаток)\s*[:：]?\s*\d+[\s\S]*$/i,"").replace(/(?:¥|￥)\s*\d+(?:[.,]\d+)?[\s\S]*$/i,"").replace(/^[\s:：/_-]+|[\s:：/_-]+$/g,"").replace(/\s+/g," ").trim().slice(0,120);
     }
+    const apNoisyVariantLabel=/(?:主面料|面料|材质|成分|品牌|货号|运费|评价|参数|商品属性|包装|详情|登录|登錄|查看全部|好评|已购|起批|¥|￥|库存|庫存|stock|qoldiq|material|fabric|brand|price|delivery)/i;
+    function apUsableVariantLabel(value){ const v=apCleanVariantLabel(value); return !!v && v.length<=90 && !apNoisyVariantLabel.test(v); }
     function apAttrVariant(row,kind){
       const re=kind==="color"?/(?:颜色|顏色|色彩|color|colour|rang)/i:/(?:尺码|尺寸|大小|规格|規格|型号|型號|款式|specification|variant|size|razmer|o['‘’]?lcham)/i;
       const hit=Object.entries(row?.attributes||{}).find(([k])=>re.test(String(k||"")));
@@ -4364,12 +4366,13 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       const rows=Array.isArray(o.variants)&&o.variants.length?o.variants:(Array.isArray(src.skuVariants)?src.skuVariants:[]);
       const colorRows=[]; const addColors=list=>(Array.isArray(list)?list:[]).forEach(x=>colorRows.push(typeof x==="string"?{name:x}:x));
       addColors(o.colors); addColors(src.colorOptions); addColors(groups.find(g=>String(g?.type||"").toLowerCase()==="color")?.options);
-      rows.forEach(v=>{ const name=apCleanVariantLabel(v?.color||apAttrVariant(v,"color")); if(name) colorRows.push({name,image:v?.image||src.imagesByColor?.[name]?.[0]||""}); });
-      const cMap=new Map(); colorRows.forEach(x=>{ const name=apCleanVariantLabel(x?.name||x?.label||x?.value||""); if(!name)return; const old=cMap.get(name)||{}; cMap.set(name,{name,hex:x?.hex||old.hex||"#D4AF37",...(x?.image||old.image?{image:x?.image||old.image}: {})}); });
+      rows.forEach(v=>{ const name=apCleanVariantLabel(v?.color||apAttrVariant(v,"color")); if(apUsableVariantLabel(name)) colorRows.push({name,image:v?.image||src.imagesByColor?.[name]?.[0]||""}); });
+      const cMap=new Map(); colorRows.forEach(x=>{ const name=apCleanVariantLabel(x?.name||x?.label||x?.value||""); if(!apUsableVariantLabel(name))return; const old=cMap.get(name)||{}; cMap.set(name,{name,hex:x?.hex||old.hex||"#D4AF37",...(x?.image||old.image?{image:x?.image||old.image}: {})}); });
       const sizeRows=[]; const addSizes=list=>(Array.isArray(list)?list:[]).forEach(x=>sizeRows.push(typeof x==="string"?x:(x?.name||x?.label||x?.value||"")));
       addSizes(o.sizes); addSizes(src.sizeOptions); addSizes((groups.find(g=>String(g?.type||"").toLowerCase()==="size")||groups.find(g=>String(g?.type||"").toLowerCase()==="spec"))?.options); rows.forEach(v=>sizeRows.push(v?.size||apAttrVariant(v,"size")));
-      const sizes=[...new Set(sizeRows.map(apCleanVariantLabel).filter(Boolean))];
-      const variants=rows.map(v=>{ const color=apCleanVariantLabel(v?.color||apAttrVariant(v,"color")); const size=apCleanVariantLabel(v?.size||apAttrVariant(v,"size")); return {...v,color:color||null,size:size||null,price:Number(v?.price||v?.priceUzs||o.price||0),oldPrice:Number(v?.oldPrice||0),stockQty:Number(v?.stockQty??v?.stock??0),sku:v?.sku||v?.skuId||v?.id||""}; }).filter(v=>v.color||v.size);
+      const sizes=[...new Set(sizeRows.map(apCleanVariantLabel).filter(apUsableVariantLabel))];
+      let variants=rows.map(v=>{ const color=apCleanVariantLabel(v?.color||apAttrVariant(v,"color")); const size=apCleanVariantLabel(v?.size||apAttrVariant(v,"size")); return {...v,color:apUsableVariantLabel(color)?color:null,size:apUsableVariantLabel(size)?size:null,price:Number(v?.price||v?.priceUzs||o.price||0),oldPrice:Number(v?.oldPrice||0),stockQty:Number(v?.stockQty??v?.stock??0),sku:v?.sku||v?.skuId||v?.id||""}; }).filter(v=>v.color||v.size);
+      if(!variants.length){ const colors=[...cMap.values()]; if(colors.length&&sizes.length) variants=colors.flatMap((c,ci)=>sizes.map((z,zi)=>({color:c.name,size:z,price:Number(o.price||0),oldPrice:0,stockQty:Number(src.stock||0),stock:Number(src.stock||0),sku:`generated-${ci+1}-${zi+1}`,...(c.image?{image:c.image}:{})}))); else if(sizes.length) variants=sizes.map((z,zi)=>({color:null,size:z,price:Number(o.price||0),oldPrice:0,stockQty:Number(src.stock||0),stock:Number(src.stock||0),sku:`generated-spec-${zi+1}`})); else if(colors.length) variants=colors.map((c,ci)=>({color:c.name,size:null,price:Number(o.price||0),oldPrice:0,stockQty:Number(src.stock||0),stock:Number(src.stock||0),sku:`generated-color-${ci+1}`,...(c.image?{image:c.image}:{})})); }
       if(!(Array.isArray(o.colors)&&o.colors.length)) o.colors=[...cMap.values()];
       else o.colors=[...cMap.values()];
       if(!(Array.isArray(o.sizes)&&o.sizes.length)) o.sizes=sizes; else o.sizes=sizes;
