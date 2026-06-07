@@ -6,9 +6,9 @@
 const {
   admin, cleanText, json, parseBody, safe1688Url, itemIdFromUrl,
   calculatePrice, pricingConfig, requireAdmin, rateLimit,
-  rapidApi1688Ready, rapidApi1688Host, fetch1688DetailByUrl, normalizeDetailResponse, normalizeRemoteImageUrl,
+  rapidApi1688Ready, rapidApi1688Host, fetch1688DetailByUrl, normalizeDetailResponse,
 } = require('./_china1688Common');
-const { MAX_IMAGES_PER_BATCH, IMAGE_STANDARD, copyImages } = require('./_china1688ImageStore');
+const { MAX_IMAGES_PER_BATCH, IMAGE_STANDARD, copyImages, normalizeMarketplaceImageUrl } = require('./_china1688ImageStore');
 
 function safeNumber(v, min = 0, max = 1e12, fallback = 0) {
   const n = Number(v);
@@ -18,7 +18,7 @@ function safeInt(v, min = 0, max = 1e9, fallback = 0) {
   return Math.round(safeNumber(v, min, max, fallback));
 }
 function safeUrl(v, max = 2200) {
-  return normalizeRemoteImageUrl(v, max);
+  return normalizeMarketplaceImageUrl(v, max);
 }
 function uniq(list, max = 30) {
   return [...new Set((Array.isArray(list) ? list : []).filter(Boolean))].slice(0, max);
@@ -158,7 +158,7 @@ function marketplaceVariants(source = {}, fallbackPrice = 0) {
 
 function nowIso() { return new Date().toISOString(); }
 function isStorageUrl(v) { return /^https:\/\/firebasestorage\.googleapis\.com\//i.test(String(v || '')); }
-function isNormalizedStorageUrl(v) { return isStorageUrl(v) && /square-1200-v1/i.test(String(v || '')); }
+function isNormalizedStorageUrl(v) { return isStorageUrl(v) && /square-1200/i.test(String(v || '')); }
 
 async function generateAdminProductId(db) {
   const counterRef = db.doc('meta/counters');

@@ -30,40 +30,6 @@ function clamp(v, min, max, fallback) {
   const n = Number(v);
   return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
 }
-function isAlibabaImageHost(host = '') {
-  return /(?:^|\.)(?:alicdn\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(String(host || ''));
-}
-/**
- * Upgrades Alibaba/1688 CDN thumbnail URLs to their original image URL.
- * Examples:
- *   image.jpg_60x60.jpg       -> image.jpg
- *   image.jpg_220x220q90.jpg  -> image.jpg
- *   image.jpg_.webp           -> image.jpg
- * Query-based CDN resize directives are removed as well.
- */
-function normalizeRemoteImageUrl(v, max = 2200) {
-  const s = cleanText(v, max);
-  if (!s) return '';
-  try {
-    const u = new URL(s.startsWith('//') ? `https:${s}` : s);
-    if (!/^https?:$/i.test(u.protocol)) return '';
-    if (u.protocol === 'http:' && /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(u.hostname)) u.protocol = 'https:';
-    if (isAlibabaImageHost(u.hostname)) {
-      const path = u.pathname;
-      const base = path.match(/\.(?:jpe?g|png|gif|webp|avif)/i);
-      if (base) {
-        const end = base.index + base[0].length;
-        const tail = path.slice(end);
-        if (/^_(?:(?:\d{2,5}x\d{2,5})(?:xz)?(?:q\d{1,3})?|q\d{1,3}|\.?(?:webp|avif|jpe?g|png))(?:[._-].*)?$/i.test(tail)) u.pathname = path.slice(0, end);
-      }
-      [...u.searchParams.keys()].forEach(key => {
-        if (/^(?:x-oss-process|image_process|imagemogr2|imageview2|resize|width|height|w|h|quality|q)$/i.test(key)) u.searchParams.delete(key);
-      });
-    }
-    u.hash = '';
-    return u.toString();
-  } catch (_e) { return ''; }
-}
 function asArray(v) { return Array.isArray(v) ? v : []; }
 function first(...vals) {
   for (const v of vals) {
@@ -220,8 +186,8 @@ function collectImages(...sources) {
       if (url) push(url);
       return;
     }
-    const s = normalizeRemoteImageUrl(v, 2200);
-    if (s && !out.includes(s)) out.push(s);
+    const s = cleanText(v, 1200);
+    if (/^https?:\/\//i.test(s) && !out.includes(s)) out.push(s);
   };
   sources.forEach(push);
   return out.slice(0, 18);
@@ -462,6 +428,6 @@ async function notifyTelegram(lines) {
 module.exports = {
   admin, cleanText, clamp, json, parseBody, rateLimit, cacheGet, cacheSet, tmapiToken, pricingConfig,
   rapidApi1688Ready, rapidApi1688Host, rapidApi1688ItemPath, rapidApi1688Fetch, fetch1688DetailByUrl,
-  calculatePrice, tmapiFetch, normalizeSearchResponse, normalizeDetailResponse, itemIdFromUrl, safe1688Url, normalizeRemoteImageUrl,
+  calculatePrice, tmapiFetch, normalizeSearchResponse, normalizeDetailResponse, itemIdFromUrl, safe1688Url,
   initFirebaseAdmin, requireAdmin, tgEscape, notifyTelegram,
 };

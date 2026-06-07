@@ -45,11 +45,17 @@
   }
   injectPageBridge();
 
-  const isAlibabaImageHost = host => /(?:^|\.)(?:alicdn\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(String(host || ''));
-  // 1688 ko‘pincha asl rasm o‘rniga CDN miniatyura URL'ini beradi:
-  //   photo.jpg_60x60.jpg, photo.jpg_220x220q90.jpg yoki photo.jpg_.webp
-  // Oxirgi transformatsiya qismini olib tashlasak, Firebase'ga asl katta fayl ko‘chadi.
-  const originalAlibabaImageUrl = value => {
+  const marketplaceImageHost = host => /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(String(host || ''));
+  const stripMarketplaceImageSuffix = pathname => {
+    let out = String(pathname || '');
+    for (let i = 0; i < 6; i += 1) {
+      const next = out.replace(/(\.(?:png|webp|gif|avif|jpe?g))(?:_[^/?#]+)+$/i, '$1');
+      if (next === out) break;
+      out = next;
+    }
+    return out;
+  };
+  const absUrl = value => {
     let raw = text(value)
       .replace(/&amp;/g, '&')
       .replace(/\\u002F/gi, '/')
@@ -58,24 +64,17 @@
     if (!raw || raw.startsWith('data:') || raw.startsWith('blob:')) return '';
     try {
       const url = new URL(raw.startsWith('//') ? `https:${raw}` : raw, location.href);
-      if (url.protocol === 'http:' && /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(url.hostname)) url.protocol = 'https:';
-      if (isAlibabaImageHost(url.hostname)) {
-        const path = url.pathname;
-        const base = path.match(/\.(?:jpe?g|png|gif|webp|avif)/i);
-        if (base) {
-          const end = base.index + base[0].length;
-          const tail = path.slice(end);
-          if (/^_(?:(?:\d{2,5}x\d{2,5})(?:xz)?(?:q\d{1,3})?|q\d{1,3}|\.?(?:webp|avif|jpe?g|png))(?:[._-].*)?$/i.test(tail)) url.pathname = path.slice(0, end);
-        }
-        [...url.searchParams.keys()].forEach(key => {
-          if (/^(?:x-oss-process|image_process|imagemogr2|imageview2|resize|width|height|w|h|quality|q)$/i.test(key)) url.searchParams.delete(key);
-        });
+      const imageLike = /\.(?:png|webp|gif|avif|jpe?g)(?:$|[_?#])/i.test(url.pathname) || /(?:\/img\/ibank\/|cbu\d*\.alicdn\.com\/img\/ibank\/|alicdn\.com\/imgextra\/)/i.test(url.toString());
+      if (url.protocol === 'http:' && marketplaceImageHost(url.hostname)) url.protocol = 'https:';
+      if (marketplaceImageHost(url.hostname) && imageLike) {
+        const beforePath = url.pathname;
+        url.pathname = stripMarketplaceImageSuffix(beforePath);
+        if (url.search || beforePath !== url.pathname) url.search = '';
       }
       url.hash = '';
       return url.toString();
     } catch (_e) { return ''; }
   };
-  const absUrl = originalAlibabaImageUrl;
   const itemId = () => (location.href.match(/(?:offer\/|offerId=|itemId=|id=)(\d{6,})/i) || location.href.match(/\b(\d{8,})\b/))?.[1] || '';
   const isProductCdnUrl = url => /(?:\/img\/ibank\/|cbu\d*\.alicdn\.com\/img\/ibank\/|alicdn\.com\/imgextra\/)/i.test(url);
   const isImageUrl = url => /\.(?:jpe?g|png|webp|avif)(?:[?#]|$)/i.test(url) || isProductCdnUrl(url);

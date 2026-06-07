@@ -7,7 +7,7 @@
 const crypto = require('node:crypto');
 const dns = require('node:dns').promises;
 const net = require('node:net');
-const { admin, cleanText, normalizeRemoteImageUrl } = require('./_china1688Common');
+const { admin, cleanText } = require('./_china1688Common');
 
 let sharp = null;
 try { sharp = require('sharp'); } catch (_e) { sharp = null; }
@@ -17,14 +17,50 @@ const MAX_IMAGES_PER_BATCH = 6;
 const IMAGE_STANDARD = 'square-1200-visual-fill-v2';
 const CANVAS_SIZE = 1200;
 const CONTENT_SIZE = 1176;
+const MARKETPLACE_IMAGE_HOST_RE = /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i;
+const IMAGE_FILE_RE = /\.(?:png|webp|gif|avif|jpe?g)(?:$|[_?#])/i;
+const TRANSFORM_QUERY_RE = /(?:^|[?&])(?:x-oss-process|imageView2|imageMogr2|thumbnail|resize|crop|quality|width|height|w|h|param)=/i;
 
 function safeFilePart(v, fallback = 'item') {
   const s = cleanText(v, 120).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
   return s || fallback;
 }
+function isMarketplaceImageHost(hostname = '') {
+  return MARKETPLACE_IMAGE_HOST_RE.test(String(hostname || '').toLowerCase());
+}
+function stripMarketplaceImageSuffix(pathname = '') {
+  let out = String(pathname || '');
+  for (let i = 0; i < 6; i += 1) {
+    const next = out.replace(/(\.(?:png|webp|gif|avif|jpe?g))(?:_[^/?#]+)+$/i, '$1');
+    if (next === out) break;
+    out = next;
+  }
+  return out;
+}
+function normalizeMarketplaceImageUrl(v, max = 2200) {
+  const s = cleanText(v, max)
+    .replace(/&amp;/g, '&')
+    .replace(/\\u002F/gi, '/')
+    .replace(/\\\//g, '/');
+  if (!s) return '';
+  try {
+    const u = new URL(s.startsWith('//') ? `https:${s}` : s);
+    if (!/^https?:$/i.test(u.protocol)) return '';
+    if (u.protocol === 'http:' && isMarketplaceImageHost(u.hostname)) u.protocol = 'https:';
+    const beforePath = u.pathname;
+    if (isMarketplaceImageHost(u.hostname)) {
+      const looksLikeImage = IMAGE_FILE_RE.test(beforePath) || /(?:\/img\/ibank\/|cbu\d*\.alicdn\.com\/img\/ibank\/|alicdn\.com\/imgextra\/)/i.test(u.toString());
+      if (looksLikeImage) {
+        u.pathname = stripMarketplaceImageSuffix(beforePath);
+        if (u.search || TRANSFORM_QUERY_RE.test('?' + u.searchParams.toString()) || beforePath !== u.pathname) u.search = '';
+      }
+    }
+    u.hash = '';
+    return u.toString();
+  } catch (_e) { return ''; }
+}
 function safeHttpUrl(v) {
-  // Always download the original Alibaba CDN file, never a 60×60/220×220 thumbnail.
-  return normalizeRemoteImageUrl(v, 2200);
+  return normalizeMarketplaceImageUrl(v, 2200);
 }
 function isBlockedIp(ip) {
   if (!ip) return true;
@@ -218,6 +254,7 @@ module.exports = {
   MAX_IMAGES_PER_BATCH,
   IMAGE_STANDARD,
   safeHttpUrl,
+  normalizeMarketplaceImageUrl,
   downloadImage,
   normalizeMarketplaceImage,
   copyImages,

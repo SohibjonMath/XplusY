@@ -22,19 +22,28 @@ function notice(text, type = 'info') { $('notice').hidden = !text; $('notice').c
 function copyNotice(text, type = 'info') { $('copyStatus').hidden = !text; $('copyStatus').className = 'copy-status ' + type; $('copyStatus').textContent = text || ''; }
 function safeLines(v) { return String(v || '').split(/\n+/).map(x => x.trim()).filter(Boolean); }
 function isStorageUrl(v) { return /^https:\/\/firebasestorage\.googleapis\.com\//i.test(String(v || '')); }
+const marketplaceImageHost = host => /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(String(host || ''));
+function stripMarketplaceImageSuffix(pathname = '') {
+  let out = String(pathname || '');
+  for (let i = 0; i < 6; i += 1) {
+    const next = out.replace(/(\.(?:png|webp|gif|avif|jpe?g))(?:_[^/?#]+)+$/i, '$1');
+    if (next === out) break;
+    out = next;
+  }
+  return out;
+}
 function normalizeImageUrl(v) {
   let s = String(v || '').trim().replace(/&amp;/g, '&').replace(/\\u002F/gi, '/').replace(/\\\//g, '/');
   if (!s || s.startsWith('data:') || s.startsWith('blob:')) return '';
   try {
     const u = new URL(s.startsWith('//') ? 'https:' + s : s, location.href);
-    if (u.protocol === 'http:' && /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(u.hostname)) u.protocol = 'https:';
-    if (/(?:^|\.)(?:alicdn\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(u.hostname)) {
-      const path = u.pathname, base = path.match(/\.(?:jpe?g|png|gif|webp|avif)/i);
-      if (base) {
-        const end = base.index + base[0].length, tail = path.slice(end);
-        if (/^_(?:(?:\d{2,5}x\d{2,5})(?:xz)?(?:q\d{1,3})?|q\d{1,3}|\.?(?:webp|avif|jpe?g|png))(?:[._-].*)?$/i.test(tail)) u.pathname = path.slice(0, end);
-      }
-      [...u.searchParams.keys()].forEach(key => { if (/^(?:x-oss-process|image_process|imagemogr2|imageview2|resize|width|height|w|h|quality|q)$/i.test(key)) u.searchParams.delete(key); });
+    if (!/^https?:$/i.test(u.protocol)) return '';
+    const imageLike = /\.(?:png|webp|gif|avif|jpe?g)(?:$|[_?#])/i.test(u.pathname) || /(?:\/img\/ibank\/|cbu\d*\.alicdn\.com\/img\/ibank\/|alicdn\.com\/imgextra\/)/i.test(u.toString());
+    if (u.protocol === 'http:' && marketplaceImageHost(u.hostname)) u.protocol = 'https:';
+    if (marketplaceImageHost(u.hostname) && imageLike) {
+      const beforePath = u.pathname;
+      u.pathname = stripMarketplaceImageSuffix(beforePath);
+      if (u.search || beforePath !== u.pathname) u.search = '';
     }
     u.hash = '';
     return u.toString();
