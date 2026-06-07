@@ -135,13 +135,13 @@ function sourceSizes(source = {}) {
   return [...new Set(rows.map(cleanVariantValue).filter(usableVariantValue))].slice(0, 80);
 }
 function marketplaceVariants(source = {}, fallbackPrice = 0) {
-  const mapRows = rows => rows.map(row => {
+  const toMarketplace = row => {
     const stockQty = safeInt(row.stock, 0, 1e9, 0);
-    const rawColor = row.color || attributeByKind(row.attributes, 'color');
-    const rawSize = row.size || attributeByKind(row.attributes, 'size');
+    const colorRaw = row.color || attributeByKind(row.attributes, 'color');
+    const sizeRaw = row.size || attributeByKind(row.attributes, 'size');
     return {
-      color: usableVariantValue(rawColor) ? cleanVariantValue(rawColor) : null,
-      size: usableVariantValue(rawSize) ? cleanVariantValue(rawSize) : null,
+      color: usableVariantValue(colorRaw) ? cleanVariantValue(colorRaw) : null,
+      size: usableVariantValue(sizeRaw) ? cleanVariantValue(sizeRaw) : null,
       price: row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0),
       stock: stockQty,
       stockQty,
@@ -150,15 +150,16 @@ function marketplaceVariants(source = {}, fallbackPrice = 0) {
       attributes: row.attributes,
       ...(row.image ? { image: row.image } : {}),
     };
-  }).filter(row => row.color || row.size).slice(0, 220);
-  const explicit = mapRows(sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants));
-  if (explicit.length) return explicit;
+  };
+  const cleanRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants).map(toMarketplace).filter(row => row.color || row.size);
+  if (cleanRows.length) return cleanRows.slice(0, 220);
+  // Kengaytma strukturali SKU topa olmagan holatda admin tasdiqlagan variantlardan xavfsiz SKU yaratiladi.
   const colors=sourceColors(source), sizes=sourceSizes(source);
-  let generated=[];
-  if(colors.length && sizes.length) generated=colors.flatMap(c=>sizes.map((z,i)=>({id:`generated-${c.name}-${i+1}`,name:`${c.name} / ${z}`,color:c.name,size:z,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name,规格:z}})));
-  else if(colors.length) generated=colors.map((c,i)=>({id:`generated-color-${i+1}`,name:c.name,color:c.name,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name}}));
-  else if(sizes.length) generated=sizes.map((z,i)=>({id:`generated-spec-${i+1}`,name:z,size:z,stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{规格:z}}));
-  return mapRows(generated);
+  let rows=[];
+  if(colors.length && sizes.length) rows=colors.flatMap(c=>sizes.map((z,i)=>({id:`generated-${c.name}-${i+1}`,name:`${c.name} / ${z}`,color:c.name,size:z,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name,规格:z}})));
+  else if(colors.length) rows=colors.map((c,i)=>({id:`generated-color-${i+1}`,name:c.name,color:c.name,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name}}));
+  else if(sizes.length) rows=sizes.map((z,i)=>({id:`generated-spec-${i+1}`,name:z,size:z,stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{规格:z}}));
+  return rows.map(toMarketplace).filter(row=>row.color || row.size).slice(0,220);
 }
 
 function nowIso() { return new Date().toISOString(); }

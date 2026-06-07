@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./china1688-import.css?v=20260607_v160_strict_variant_builder">
+  <link rel="stylesheet" href="./china1688-import.css?v=20260607_v161_safe_media_variants">
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
       <div class="hero-copy">
         <span class="eyebrow"><i class="fa-solid fa-infinity"></i> Oylik API to‘lovisiz ishlaydi</span>
         <h1>1688 trend mahsulotini <em>bir tugma</em> orqali OrzuMall’ga import qiling</h1>
-        <p>Chrome kengaytmasi siz ochgan 1688 sahifasidagi nom, narx va xususiyatlarni o‘qiydi. Asosiy galereya, rang ikonkalari, razmerlar va SKU kombinatsiyalari qat’iy ajratiladi. Noto‘g‘ri atributlar filtrlanadi va variantlar xaridor tanlovi sifatida saqlanadi. Tekshirib saqlaganingizdan keyin mahsulot Firestore va Firebase Storage’dan ko‘rsatiladi.</p>
+        <p>Chrome kengaytmasi siz ochgan 1688 sahifasidagi nom, narx va xususiyatlarni o‘qiydi. Faqat asosiy mahsulot galereyasi olinadi. Xaridor yuklagan rasmlar, sharh suratlari va rang ikonkalari galereyaga aralashtirilmaydi. Rang, razmer va model tanlovlari alohida SKU sifatida tayyorlanadi. Noto‘g‘ri atributlar filtrlanadi va variantlar xaridor tanlovi sifatida saqlanadi. Tekshirib saqlaganingizdan keyin mahsulot Firestore va Firebase Storage’dan ko‘rsatiladi.</p>
         <div class="hero-tags"><span><i class="fa-solid fa-plug-circle-xmark"></i> Pullik API yo‘q</span><span><i class="fa-solid fa-puzzle-piece"></i> Chrome kengaytma</span><span><i class="fa-solid fa-cloud-arrow-up"></i> Rasmlar Storage’da</span></div>
       </div>
       <div class="hero-flow">
@@ -38,7 +38,7 @@
         <p>ZIP faylni yuklab oling, arxivdan chiqaring va Chrome Extensions sahifasida <b>Load unpacked</b> orqali bir marta ulang. Keyin 1688 mahsulot sahifalarida qizil import tugmasi avtomatik chiqadi.</p>
         <div class="extension-steps"><span>1. ZIPni oching</span><span>2. <code>chrome://extensions</code></span><span>3. Developer mode</span><span>4. Load unpacked</span></div>
       </div>
-      <a class="primary-btn download" href="/downloads/OrzuMall_1688_Importer_v1_7_STRICT_VARIANT_BUILDER.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
+      <a class="primary-btn download" href="/downloads/OrzuMall_1688_Importer_v1_8_SAFE_MEDIA_VARIANTS.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
     </section>
 
     <section class="login-box" id="loginBox">
@@ -59,7 +59,7 @@
         <div class="section-title compact"><div><span class="step">02</span><h2>1688 sahifasidan olingan ma’lumot</h2></div><a class="mini-link" id="open1688" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> 1688’da ochish</a></div>
         <div class="source-head"><div class="source-cover" id="sourceCover"><i class="fa-solid fa-image"></i></div><div><h3 id="sourceTitle">Mahsulot ma’lumoti</h3><p id="sourceMeta">—</p><div class="chips" id="sourceChips"></div></div></div>
         <div class="price-grid"><div><span>1688 narxi</span><b id="cnyLabel">—</b></div><div><span>Avto hisob</span><b id="autoPriceLabel">—</b></div><div><span>MOQ</span><b id="moqLabel">—</b></div><div><span>Qoldiq</span><b id="stockLabel">—</b></div></div>
-        <div class="source-block"><h4><i class="fa-solid fa-images"></i> Import qilinadigan rasmlar</h4><p>Bu yerga faqat xaridorga ko‘rsatiladigan asosiy galereya suratlari kiradi. Rang ikonkalari alohida saqlanadi va galereyaga aralashtirilmaydi.</p><div class="images-grid" id="imagesGrid"></div></div>
+        <div class="source-block"><h4><i class="fa-solid fa-images"></i> Import qilinadigan rasmlar</h4><p>Faqat chap tomondagi asosiy mahsulot galereyasi va uning miniatyuralari qabul qilinadi. Sharhlar, foydalanuvchi yuklagan rasmlar, hujjatlar va rang ikonkalari avtomatik rad etiladi. Saqlashdan oldin belgilangan rasmlarni ko‘zdan kechiring.</p><div class="images-grid" id="imagesGrid"></div></div>
         <div class="source-block"><h4><i class="fa-solid fa-layer-group"></i> Variant konstruktori</h4><p>1688 sahifasidagi haqiqiy tanlovlar avtomatik ajratiladi va SKU variantlariga aylantiriladi. Noto‘g‘ri qiymat ko‘rinsa, saqlashdan oldin shu yerda tahrirlang.</p>
           <div class="variant-review">
             <div class="variant-review-head"><div><h5><i class="fa-solid fa-list-check"></i> Xaridor tanlaydigan variantlarni tekshiring</h5><p>Har qatorga bittadan qiymat yozing. Kiyimda razmer, boshqa tovarlarda model yoki spetsifikatsiya bo‘lishi mumkin. Rang uchun ixtiyoriy rasm URL’ini <code>rang | https://...</code> shaklida kiriting.</p></div><span>Avto SKU</span></div>
@@ -111,6 +111,6 @@ yoki: 1.8 m, 2 qatlam"></textarea></label>
   </main>
 
   <div class="toast" id="toast"></div>
-  <script type="module" src="./china1688-import.js?v=20260607_v160_strict_variant_builder"></script>
+  <script type="module" src="./china1688-import.js?v=20260607_v161_safe_media_variants"></script>
 </body>
 </html>

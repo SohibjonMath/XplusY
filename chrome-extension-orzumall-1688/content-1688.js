@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.7.0';
+  const VERSION = '1.8.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -33,6 +33,10 @@
   const badImageHint = /(?:icon|logo|sprite|avatar|qrcode|qr-code|qr_|service|shield|truck|delivery|warranty|loading|placeholder|default|emoji|favicon|coupon|guarantee|protect|cart|chat|tip|blank|badge|security|safe|wangwang|ww-online|video-play|parameter)/i;
   const variantContextHint = /(?:sku|spec|variant|saleprop|sale-prop|color|colour|颜色|尺码|尺寸|规格|款式|型号|属性)/i;
   const galleryContextHint = /(?:gallery|detail-gallery|main-image|mainimage|main-img|preview|thumbnail|thumb|carousel|album|image-list|imagelist|pic-list|piclist)/i;
+  // Galereya faqat mahsulotning chap media blokidan olinadi. Sharhlar, UGC va tavsif ichidagi rasmlar kiritilmaydi.
+  const galleryRejectContextHint = /(?:review|comment|feedback|buyer|ugc|upload|evaluate|evaluation|rate|rating|showcase|晒图|晒单|评价|评论|买家|用户上传|追评|attribute|parameter|detail-desc|description|商品详情|商品评价|包装信息|参数)/i;
+  const rectOf = node => { try { return node?.getBoundingClientRect?.() || null; } catch (_e) { return null; } };
+  const isRejectedGalleryContext = node => galleryRejectContextHint.test(contextText(node));
 
   const attrRows = node => {
     if (!node) return [];
@@ -403,30 +407,57 @@
     const variants = new Set(variantImages.map(absUrl).filter(Boolean));
     const add = (raw, score = 0, node = null, origin = '') => {
       const url = absUrl(raw); if (!url || !isImageUrl(url) || badImageHint.test(url)) return;
-      const box = node?.getBoundingClientRect?.(); const w = Number(node?.naturalWidth || box?.width || 0); const h = Number(node?.naturalHeight || box?.height || 0);
-      if (w && h && w < 70 && h < 70) return;
-      if (variants.has(url) && origin !== 'cover' && origin !== 'main') return;
-      let total = score + (isProductCdnUrl(url) ? 70 : 0) + ((w >= 260 || h >= 260) ? 20 : 0);
+      if (node && isRejectedGalleryContext(node)) return;
+      const box = rectOf(node); const w = Number(node?.naturalWidth || box?.width || 0); const h = Number(node?.naturalHeight || box?.height || 0);
+      if (w && h && w < 58 && h < 58) return;
+      if (variants.has(url) && origin !== 'main') return; // rang ikonkalari galereyaga aralashmasin
+      const total = score + (isProductCdnUrl(url) ? 65 : 0) + ((w >= 240 || h >= 240) ? 20 : 0);
       const old = found.get(url); if (!old || total > old.score) found.set(url, { url, score: total, order: order++ });
     };
-    document.querySelectorAll('meta[property="og:image"],meta[name="og:image"],meta[itemprop="image"]').forEach(n => add(n.content, 300, null, 'cover'));
-    const selectors = [
-      '[class*="detail-gallery"] img','[class*="detailGallery"] img','[class*="main-image"] img','[class*="mainImage"] img','[class*="main-img"] img',
-      '[class*="gallery"] img','[class*="preview"] img','[class*="thumbnail"] img','[class*="thumb"] img','[class*="carousel"] img','[class*="album"] img','[class*="pic-list"] img'
-    ];
-    document.querySelectorAll(selectors.join(',')).forEach(img => {
-      if (isVariantContext(img) && !isGalleryContext(img)) return;
-      attrRows(img).forEach(url => add(url, isGalleryContext(img) ? 180 : 115, img, 'gallery'));
+    const all = [...document.querySelectorAll('img')].map(img => ({ img, box: rectOf(img), urls: attrRows(img) })).filter(row => {
+      const { img, box, urls } = row;
+      if (!box || !urls.length || isRejectedGalleryContext(img) || (isVariantContext(img) && !isGalleryContext(img))) return false;
+      if (box.width < 42 || box.height < 42 || box.bottom < -10 || box.top > Math.max(1150, innerHeight + 260)) return false;
+      return urls.some(isProductCdnUrl);
     });
-    // Modern detail page often places the product thumbnails in a compact strip without stable class names.
-    document.querySelectorAll('img').forEach(img => {
-      const box = img.getBoundingClientRect?.(); if (!box) return;
-      if (box.top < 0 || box.top > 1250 || box.width < 46 || box.height < 46 || box.width > 760 || box.height > 760) return;
-      if (isVariantContext(img) && !isGalleryContext(img)) return;
-      if (!isProductCdnUrl(attrRows(img)[0] || '')) return;
-      attrRows(img).forEach(url => add(url, box.width >= 180 || box.height >= 180 ? 155 : 115, img, box.width >= 180 ? 'main' : 'thumb'));
-    });
-    return [...found.values()].sort((a, b) => b.score - a.score || a.order - b.order).map(x => x.url).slice(0, MAX_GALLERY);
+    // Asosiy surat odatda sahifaning chap yarmidagi eng katta ko‘rinadigan rasm.
+    const primary = all.map(row => {
+      const b = row.box; const area = Math.min(b.width, 900) * Math.min(b.height, 900);
+      const leftBonus = b.left < innerWidth * .56 ? 240000 : -420000;
+      const topBonus = b.top >= 40 && b.top < 820 ? 160000 : -180000;
+      const largeBonus = b.width >= 260 && b.height >= 220 ? 260000 : -240000;
+      const galleryBonus = isGalleryContext(row.img) ? 120000 : 0;
+      return { ...row, score: area + leftBonus + topBonus + largeBonus + galleryBonus };
+    }).sort((a,b)=>b.score-a.score)[0];
+    if (primary) {
+      primary.urls.forEach(url => add(url, 520, primary.img, 'main'));
+      const mainBox = primary.box;
+      // Eng kichik, ammo asosiy surat va miniatyuralarni o‘z ichiga olgan media konteynerni topamiz.
+      let media = primary.img.parentElement; let selectedMedia = null;
+      for (let hop=0; media && hop<7; hop+=1, media=media.parentElement) {
+        const box=rectOf(media); if(!box) continue;
+        const imgs=[...media.querySelectorAll('img')].filter(img=>!isRejectedGalleryContext(img) && attrRows(img).some(isProductCdnUrl));
+        if(imgs.length>=2 && imgs.length<=34 && box.width<=Math.min(innerWidth*.72,920) && box.height<=1050) selectedMedia=media;
+      }
+      if(selectedMedia){
+        [...selectedMedia.querySelectorAll('img')].forEach(img=>{
+          if(isRejectedGalleryContext(img) || (isVariantContext(img) && !isGalleryContext(img))) return;
+          const b=rectOf(img); if(!b || b.width<42 || b.height<42) return;
+          attrRows(img).forEach(url=>add(url, img===primary.img?500:260, img, img===primary.img?'main':'media'));
+        });
+      }
+      // Class nomi bo‘lmagan yangi 1688 dizaynida miniatyuralar asosiy suratning tagida yoki yonida turadi.
+      all.forEach(({img,box,urls})=>{
+        const below = box.top >= mainBox.bottom - 36 && box.top <= mainBox.bottom + 245 && box.left >= mainBox.left - 110 && box.left <= mainBox.right + 135;
+        const side = box.left >= mainBox.left - 160 && box.right <= mainBox.left + 80 && box.top >= mainBox.top - 50 && box.top <= mainBox.bottom + 80;
+        const sameMedia = box.left < Math.min(innerWidth*.58, 760) && (below || side);
+        if(!sameMedia) return;
+        urls.forEach(url=>add(url, 245, img, 'thumb'));
+      });
+    }
+    // Faqat galereya butunlay topilmasa og:image zaxira sifatida ishlatiladi.
+    if(!found.size) document.querySelectorAll('meta[property="og:image"],meta[name="og:image"],meta[itemprop="image"]').forEach(n=>add(n.content,300,null,'main'));
+    return [...found.values()].sort((a,b)=>b.score-a.score || a.order-b.order).map(x=>x.url).slice(0,12);
   }
 
   function readProps() {
@@ -462,6 +493,27 @@
     return rows.sort((a, b) => b.score - a.score)[0]?.value || '';
   }
 
+  function optionSet(group) { return new Set((group?.options || []).map(o=>cleanOptionLabel(o.name)).filter(Boolean)); }
+  function rowMapsToDetectedGroups(row, groups=[]) {
+    const colorGroup=groups.find(g=>g.type==='color'); const sizeGroup=groups.find(g=>g.type==='size') || groups.find(g=>g.type==='spec');
+    const colors=optionSet(colorGroup), sizes=optionSet(sizeGroup);
+    const color=cleanOptionLabel(row?.color || attrByKind(row?.attributes,'color'));
+    const size=cleanOptionLabel(row?.size || attrByKind(row?.attributes,'size'));
+    if(colorGroup && (!color || !colors.has(color))) return false;
+    if(sizeGroup && (!size || !sizes.has(size))) return false;
+    return !!(color || size);
+  }
+  function cleanSkuRows(rows=[], groups=[], basePrice=0) {
+    const mapped=(rows||[]).filter(row=>rowMapsToDetectedGroups(row,groups));
+    const source=mapped.length ? mapped : cartesianSkuFallback(groups,basePrice);
+    const seen=new Set();
+    return source.filter(row=>{
+      const key=`${cleanOptionLabel(row.color)}|||${cleanOptionLabel(row.size)}`;
+      if(!key.replace(/\|/g,'') || seen.has(key)) return false;
+      seen.add(key); return true;
+    }).slice(0,MAX_SKUS);
+  }
+
   function extract() {
     const prices = priceRange();
     const visibleGroups = readGroupsFromDom();
@@ -472,9 +524,10 @@
     const sizeOptions = (sizeGroup?.options || []).slice(0, MAX_OPTIONS);
     const variantImages = compact(groups.flatMap(g => g.options.map(o => absUrl(o.image))).filter(Boolean), MAX_OPTIONS);
     const images = galleryImages(variantImages);
-    let skuVariants = readSkuRowsFromScripts().map((v, i) => skuRecord(v, i, groups)).filter(v => v.name || v.color || v.size).slice(0, MAX_SKUS);
-    const dedup = new Map(); skuVariants.forEach(v => { const key = `${v.id}|${v.color}|${v.size}|${v.name}`; if (!dedup.has(key)) dedup.set(key, v); }); skuVariants = [...dedup.values()];
-    if (!skuVariants.length) skuVariants = cartesianSkuFallback(groups, prices.min);
+    const structuredSkuRows = readSkuRowsFromScripts().map((v, i) => skuRecord(v, i, groups));
+    // Strukturali JSON ichida reklama yoki yordamchi yozuvlar uchrasa ishlatilmaydi.
+    // Ko‘rinadigan variant guruhlaridan xavfsiz SKU kombinatsiyasi qayta yaratiladi.
+    const skuVariants = cleanSkuRows(structuredSkuRows, groups, prices.min);
     const imagesByColor = {};
     colorOptions.forEach(o => { if (o.image) imagesByColor[o.name] = [o.image]; });
     skuVariants.forEach(v => { if (v.color && v.image && !imagesByColor[v.color]) imagesByColor[v.color] = [v.image]; });
