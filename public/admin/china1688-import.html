@@ -3,53 +3,64 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>1688 havoladan import — OrzuMall Admin</title>
+  <title>API’siz 1688 import — OrzuMall Admin</title>
   <link rel="icon" href="/favicon.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./china1688-import.css?v=20260607_v147">
+  <link rel="stylesheet" href="./china1688-import.css?v=20260607_v148">
 </head>
 <body>
   <header class="topbar">
     <a class="icon-btn" href="./panel.html" aria-label="Admin panelga qaytish"><i class="fa-solid fa-arrow-left"></i></a>
-    <div class="brand"><img src="/logo-256.webp" alt=""><div><b>1688 trend import</b><span>OrzuMall Admin Center</span></div></div>
+    <div class="brand"><img src="/logo-256.webp" alt=""><div><b>API’siz 1688 import</b><span>OrzuMall Admin Center</span></div></div>
     <div class="top-actions"><button class="ghost-btn" id="refreshBtn"><i class="fa-solid fa-rotate"></i><span>Yangilash</span></button><button class="primary-btn" id="authBtn"><i class="fa-brands fa-google"></i><span>Kirish</span></button></div>
   </header>
 
   <main class="page">
     <section class="hero">
       <div class="hero-copy">
-        <span class="eyebrow"><i class="fa-solid fa-wand-magic-sparkles"></i> Limitni tejaydigan model</span>
-        <h1>Trend mahsulotni <em>1688 havolasi</em> orqali bir marta import qiling</h1>
-        <p>TMAPI faqat havolani yuklashda ishlaydi. Saqlangandan keyin mahsulot OrzuMall katalogidan chiqadi va mijozlar ko‘rganida API limiti sarflanmaydi.</p>
-        <div class="hero-tags"><span><i class="fa-solid fa-link"></i> Havoladan olish</span><span><i class="fa-solid fa-database"></i> Firestore katalog</span><span><i class="fa-solid fa-box"></i> Cargo mahsulot</span></div>
+        <span class="eyebrow"><i class="fa-solid fa-infinity"></i> Oylik API to‘lovisiz ishlaydi</span>
+        <h1>1688 trend mahsulotini <em>bir tugma</em> orqali OrzuMall’ga import qiling</h1>
+        <p>Chrome kengaytmasi siz ochgan 1688 sahifasidagi nom, narx, rasmlar va variantlarni o‘qiydi. Ma’lumotlar admin oynasida qoralama bo‘lib ochiladi. Tekshirib saqlaganingizdan keyin mahsulot Firestore va Firebase Storage’dan ko‘rsatiladi.</p>
+        <div class="hero-tags"><span><i class="fa-solid fa-plug-circle-xmark"></i> Pullik API yo‘q</span><span><i class="fa-solid fa-puzzle-piece"></i> Chrome kengaytma</span><span><i class="fa-solid fa-cloud-arrow-up"></i> Rasmlar Storage’da</span></div>
       </div>
       <div class="hero-flow">
-        <div><i class="fa-solid fa-link"></i><b>1688 link</b></div><i class="fa-solid fa-arrow-right"></i><div><i class="fa-solid fa-cloud-arrow-down"></i><b>1 API</b></div><i class="fa-solid fa-arrow-right"></i><div><i class="fa-solid fa-shop"></i><b>OrzuMall</b></div>
+        <div><i class="fa-solid fa-globe"></i><b>1688 sahifa</b></div><i class="fa-solid fa-arrow-right"></i><div><i class="fa-solid fa-puzzle-piece"></i><b>Importer</b></div><i class="fa-solid fa-arrow-right"></i><div><i class="fa-solid fa-shop"></i><b>OrzuMall</b></div>
       </div>
+    </section>
+
+    <section class="extension-card">
+      <div class="extension-icon"><i class="fa-brands fa-chrome"></i></div>
+      <div class="extension-copy">
+        <h2>OrzuMall 1688 Importer kengaytmasini o‘rnating</h2>
+        <p>ZIP faylni yuklab oling, arxivdan chiqaring va Chrome Extensions sahifasida <b>Load unpacked</b> orqali bir marta ulang. Keyin 1688 mahsulot sahifalarida qizil import tugmasi avtomatik chiqadi.</p>
+        <div class="extension-steps"><span>1. ZIPni oching</span><span>2. <code>chrome://extensions</code></span><span>3. Developer mode</span><span>4. Load unpacked</span></div>
+      </div>
+      <a class="primary-btn download" href="/downloads/OrzuMall_1688_Importer_v1.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
     </section>
 
     <section class="login-box" id="loginBox">
       <i class="fa-solid fa-shield-halved"></i>
-      <div><h3>Admin akkaunti bilan kiring</h3><p>1688 mahsulotlarini faqat OrzuMall admini import qila oladi.</p></div>
+      <div><h3>Admin akkaunti bilan kiring</h3><p>Mahsulotni katalogga saqlash va rasmlarni Storage’ga ko‘chirish faqat OrzuMall adminiga ruxsat etiladi.</p></div>
       <button class="primary-btn" id="loginBtn"><i class="fa-brands fa-google"></i> Google orqali kirish</button>
     </section>
 
     <section class="import-card">
-      <div class="section-title"><div><span class="step">01</span><h2>1688 havolasini joylang</h2><p>Masalan: <code>https://detail.1688.com/offer/859086919394.html</code></p></div><span class="quota"><i class="fa-solid fa-bolt"></i> Har yuklash ≈ 1 API so‘rovi</span></div>
-      <div class="url-row"><div class="url-input"><i class="fa-solid fa-link"></i><input id="sourceUrl" autocomplete="off" placeholder="1688 mahsulot havolasini shu yerga joylang"></div><button class="primary-btn large" id="previewBtn"><i class="fa-solid fa-cloud-arrow-down"></i> Avtomatik olish</button><button class="ghost-btn large" id="manualBtn"><i class="fa-solid fa-pen-to-square"></i> Qo‘lda kiritish</button></div>
+      <div class="section-title"><div><span class="step">01</span><h2>Kengaytmadan kelgan qoralama</h2><p>Eng oson usul: 1688 mahsulot sahifasini oching va <b>OrzuMall’ga import</b> tugmasini bosing.</p></div><span class="quota free"><i class="fa-solid fa-circle-check"></i> API’siz rejim</span></div>
+      <div class="import-ready" id="extensionReady"><i class="fa-solid fa-puzzle-piece"></i><div><b>Kengaytma qoralamasini kutmoqda</b><p>Importer orqali yuborilgan mahsulot shu oynada avtomatik ochiladi.</p></div></div>
+      <div class="url-row"><div class="url-input"><i class="fa-solid fa-link"></i><input id="sourceUrl" autocomplete="off" placeholder="Yoki 1688 havolasini joylab, ma’lumotlarni qo‘lda kiriting"></div><button class="ghost-btn large" id="manualBtn"><i class="fa-solid fa-pen-to-square"></i> Qo‘lda kiritish</button></div>
       <div class="notice" id="notice" hidden></div>
     </section>
 
     <section class="editor" id="editor" hidden>
       <div class="source-panel card">
-        <div class="section-title compact"><div><span class="step">02</span><h2>Manba ma’lumoti</h2></div><a class="mini-link" id="open1688" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> 1688’da ochish</a></div>
+        <div class="section-title compact"><div><span class="step">02</span><h2>1688 sahifasidan olingan ma’lumot</h2></div><a class="mini-link" id="open1688" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> 1688’da ochish</a></div>
         <div class="source-head"><div class="source-cover" id="sourceCover"><i class="fa-solid fa-image"></i></div><div><h3 id="sourceTitle">Mahsulot ma’lumoti</h3><p id="sourceMeta">—</p><div class="chips" id="sourceChips"></div></div></div>
         <div class="price-grid"><div><span>1688 narxi</span><b id="cnyLabel">—</b></div><div><span>Avto hisob</span><b id="autoPriceLabel">—</b></div><div><span>MOQ</span><b id="moqLabel">—</b></div><div><span>Qoldiq</span><b id="stockLabel">—</b></div></div>
-        <div class="source-block"><h4><i class="fa-solid fa-images"></i> Import qilinadigan rasmlar</h4><p>Keraksiz rasmlardagi belgilashni olib tashlang. Qo‘shimcha URL’larni pastdagi maydonga yozish mumkin.</p><div class="images-grid" id="imagesGrid"></div></div>
-        <div class="source-block"><h4><i class="fa-solid fa-layer-group"></i> 1688 variantlari</h4><p>Variantlar manba ma’lumoti sifatida saqlanadi. Keyinchalik asosiy admin panelda rang va o‘lchamlarni tartiblab chiqishingiz mumkin.</p><div class="variant-list" id="variantList"></div></div>
+        <div class="source-block"><h4><i class="fa-solid fa-images"></i> Import qilinadigan rasmlar</h4><p>Keraksiz rasmlardagi belgilashni olib tashlang. Tanlangan rasmlar saqlash vaqtida Firebase Storage’ga nusxalanadi.</p><div class="images-grid" id="imagesGrid"></div></div>
+        <div class="source-block"><h4><i class="fa-solid fa-layer-group"></i> Variantlar</h4><p>Kengaytma aniqlagan variantlar manba ma’lumoti sifatida saqlanadi. Aniqlanmagan joylarni asosiy admin panelda tartiblashingiz mumkin.</p><div class="variant-list" id="variantList"></div></div>
       </div>
 
       <div class="form-panel card">
@@ -67,21 +78,23 @@
           <label><span>Qoldiq</span><input id="stock" type="number" min="0" value="0"></label>
           <label><span>Popularlik balli</span><input id="popularScore" type="number" min="0" value="50"></label>
           <label><span>Teglar</span><input id="tags" value="1688, Xitoydan buyurtma, trend"></label>
-          <label class="full"><span>Rasm URL’lari</span><textarea id="imagesText" rows="4" placeholder="Har qatorga bittadan rasm URL"></textarea></label>
+          <label class="full"><span>Qo‘shimcha rasm URL’lari</span><textarea id="imagesText" rows="3" placeholder="Har qatorga bittadan rasm URL"></textarea></label>
           <label class="full"><span>Tavsif</span><textarea id="description" rows="7" placeholder="Mahsulot haqida qisqacha ma’lumot"></textarea></label>
         </div>
+        <label class="storage-toggle"><input id="copyImages" type="checkbox" checked><span><b>Rasmlarni Firebase Storage’ga nusxalash</b><small>Tavsiya etiladi: 1688’dagi mahsulot o‘chsa ham OrzuMall rasmlari qoladi.</small></span></label>
+        <div class="copy-status" id="copyStatus" hidden></div>
         <div class="save-row"><div><b>Cargo rejimi avtomatik yoqiladi</b><p>Mahsulot mijozlarga Xitoydan buyurtma sifatida ko‘rsatiladi.</p></div><button class="primary-btn save" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> Katalogga saqlash</button></div>
       </div>
     </section>
 
     <section class="saved-section">
-      <div class="section-title"><div><span class="step">04</span><h2>1688’dan import qilingan mahsulotlar</h2><p>Bu mahsulotlar mijozlarga Firebase katalogidan ko‘rsatiladi.</p></div><span class="saved-count" id="savedCount">0 ta</span></div>
+      <div class="section-title"><div><span class="step">04</span><h2>1688’dan import qilingan mahsulotlar</h2><p>Mahsulot kartalari Firestore’dan, nusxalangan rasmlar Firebase Storage’dan chiqadi.</p></div><span class="saved-count" id="savedCount">0 ta</span></div>
       <div class="saved-grid" id="savedGrid"></div>
-      <div class="empty" id="empty">Hozircha 1688 havolasidan mahsulot import qilinmagan.</div>
+      <div class="empty" id="empty">Hozircha 1688 mahsuloti import qilinmagan.</div>
     </section>
   </main>
 
   <div class="toast" id="toast"></div>
-  <script type="module" src="./china1688-import.js?v=20260607_v147"></script>
+  <script type="module" src="./china1688-import.js?v=20260607_v148"></script>
 </body>
 </html>

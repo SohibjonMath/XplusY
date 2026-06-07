@@ -1,13 +1,15 @@
 /*
- * OrzuMall admin-only 1688 trend product importer.
- * One TMAPI call is used when an admin previews a 1688 URL.
- * Customers read the saved Firestore product and do not consume TMAPI quota.
+ * OrzuMall admin-only API-free 1688 trend importer.
+ * Product data is extracted locally by the OrzuMall Chrome extension from the
+ * 1688 page that the admin opened. This Netlify function only authenticates the
+ * OrzuMall admin, copies selected images into Firebase Storage, and saves the
+ * reviewed catalog card into Firestore.
  */
 const {
-  admin, cleanText, json, parseBody, tmapiToken, tmapiFetch,
-  normalizeDetailResponse, safe1688Url, itemIdFromUrl,
-  calculatePrice, pricingConfig, requireAdmin,
+  admin, cleanText, json, parseBody, safe1688Url, itemIdFromUrl,
+  calculatePrice, pricingConfig, requireAdmin, rateLimit,
 } = require('./_china1688Common');
+const { MAX_IMAGES_PER_BATCH, copyImages } = require('./_china1688ImageStore');
 
 function safeNumber(v, min = 0, max = 1e12, fallback = 0) {
   const n = Number(v);
@@ -16,11 +18,11 @@ function safeNumber(v, min = 0, max = 1e12, fallback = 0) {
 function safeInt(v, min = 0, max = 1e9, fallback = 0) {
   return Math.round(safeNumber(v, min, max, fallback));
 }
-function safeUrl(v, max = 1600) {
+function safeUrl(v, max = 2200) {
   const s = cleanText(v, max);
   if (!s) return '';
   try {
-    const u = new URL(s);
+    const u = new URL(s.startsWith('//') ? `https:${s}` : s);
     return /^https?:$/i.test(u.protocol) ? u.toString() : '';
   } catch (_e) { return ''; }
 }
@@ -28,28 +30,29 @@ function uniq(list, max = 30) {
   return [...new Set((Array.isArray(list) ? list : []).filter(Boolean))].slice(0, max);
 }
 function sanitizeImages(list) {
-  return uniq((Array.isArray(list) ? list : []).map(v => safeUrl(v, 1800)).filter(Boolean), 18);
+  return uniq((Array.isArray(list) ? list : []).map(v => safeUrl(v, 2200)).filter(Boolean), 18);
 }
 function sanitizeTags(list) {
   const src = Array.isArray(list) ? list : String(list || '').split(',');
   return uniq(src.map(v => cleanText(v, 48)).filter(Boolean), 16);
 }
 function sanitizeProps(list) {
-  return (Array.isArray(list) ? list : []).slice(0, 24).map(row => ({
-    name: cleanText(row?.name, 90), value: cleanText(row?.value, 260),
+  return (Array.isArray(list) ? list : []).slice(0, 30).map(row => ({
+    name: cleanText(row?.name, 90), value: cleanText(row?.value, 300),
   })).filter(x => x.name || x.value);
 }
 function sanitizeSourceVariants(list) {
-  return (Array.isArray(list) ? list : []).slice(0, 120).map(row => ({
-    id: cleanText(row?.id, 120),
-    name: cleanText(row?.name, 240),
-    image: safeUrl(row?.image, 1800),
+  return (Array.isArray(list) ? list : []).slice(0, 160).map(row => ({
+    id: cleanText(row?.id, 140),
+    name: cleanText(row?.name, 260),
+    image: safeUrl(row?.image, 2200),
     stock: safeInt(row?.stock, 0, 1e9, 0),
     priceCny: safeNumber(row?.priceCny, 0, 1e8, 0),
     priceUzs: safeInt(row?.priceUzs, 0, 1e12, 0),
   })).filter(x => x.name || x.id);
 }
 function nowIso() { return new Date().toISOString(); }
+function isStorageUrl(v) { return /^https:\/\/firebasestorage\.googleapis\.com\//i.test(String(v || '')); }
 
 async function generateAdminProductId(db) {
   const counterRef = db.doc('meta/counters');
@@ -70,14 +73,21 @@ async function generateAdminProductId(db) {
     throw new Error('PRODUCT_ID_GENERATION_FAILED');
   });
 }
-
+async function findExistingByItemId(db, itemId) {
+  const id = cleanText(itemId, 100).replace(/[^0-9]/g, '');
+  if (!id) return '';
+  const snap = await db.collection('products').where('sourceItemId', '==', id).limit(8).get();
+  const hit = snap.docs.find(doc => (doc.data() || {}).sourcePlatform === '1688');
+  return hit?.id || '';
+}
 function sourceSummary(item = {}) {
+  const images = sanitizeImages(item.images);
   return {
-    id: cleanText(item.id, 100),
+    id: cleanText(item.id, 100).replace(/[^0-9]/g, ''),
     url: safe1688Url(item.url),
-    title: cleanText(item.title || item.originalTitle, 420),
-    image: safeUrl(item.image, 1800),
-    images: sanitizeImages(item.images),
+    title: cleanText(item.title || item.originalTitle, 520),
+    image: safeUrl(item.image || images[0], 2200),
+    images,
     priceCny: safeNumber(item.priceCny, 0, 1e8, 0),
     priceCnyMax: safeNumber(item.priceCnyMax, 0, 1e8, 0),
     priceUzs: safeInt(item.priceUzs, 0, 1e12, 0),
@@ -91,30 +101,17 @@ function sourceSummary(item = {}) {
     serviceTags: sanitizeTags(item.serviceTags),
     props: sanitizeProps(item.props),
     variants: sanitizeSourceVariants(item.variants),
+    extractedAt: cleanText(item.extractedAt, 80),
+    extractorVersion: cleanText(item.extractorVersion, 40),
   };
 }
-
-async function previewByUrl(url) {
-  const safe = safe1688Url(url);
-  if (!safe) throw Object.assign(new Error('1688 havolasi noto‘g‘ri.'), { statusCode: 400 });
-  if (!tmapiToken()) throw Object.assign(new Error('TMAPI_API_TOKEN Netlify Environment Variables ichiga kiritilmagan.'), { statusCode: 503, code: 'TMAPI_TOKEN_MISSING' });
-  const raw = await tmapiFetch('/1688/item_detail_by_url', {
-    method: 'POST', body: { url: safe, language: 'ru' }, timeoutMs: 26000,
-  });
-  const item = normalizeDetailResponse(raw);
-  if (!item.id) item.id = itemIdFromUrl(safe);
-  if (!item.url) item.url = safe;
-  return sourceSummary(item);
-}
-
 function buildDescription(source = {}) {
   const lines = ['Xitoydan buyurtma qilinadigan mahsulot. Yetkazib berish muddati taxminiy.'];
-  (source.props || []).slice(0, 10).forEach(p => {
+  (source.props || []).slice(0, 12).forEach(p => {
     if (p.name && p.value) lines.push(`${p.name}: ${p.value}`);
   });
   return lines.join('\n');
 }
-
 function sanitizeDraft(raw = {}) {
   const sourceUrl = safe1688Url(raw.sourceUrl || raw?.source?.url);
   if (!sourceUrl) throw Object.assign(new Error('1688 mahsulot havolasini kiriting.'), { statusCode: 400 });
@@ -122,16 +119,17 @@ function sanitizeDraft(raw = {}) {
   const priceCny = safeNumber(raw.priceCny ?? raw?.source?.priceCny, 0, 1e8, 0);
   const source = sourceSummary({ ...(raw.source || {}), id: itemId, url: sourceUrl, priceCny });
   const images = sanitizeImages(raw.images?.length ? raw.images : source.images);
-  const name = cleanText(raw.name || source.title, 320);
+  const externalImages = sanitizeImages(raw.externalImages?.length ? raw.externalImages : source.images);
+  const name = cleanText(raw.name || source.title, 360);
   if (!name) throw Object.assign(new Error('Mahsulot nomini kiriting.'), { statusCode: 400 });
   const autoPrice = calculatePrice(priceCny).priceUzs;
   const price = safeInt(raw.price, 0, 1e12, autoPrice);
   if (!price) throw Object.assign(new Error('Mahsulot narxini kiriting.'), { statusCode: 400 });
   return {
     productId: cleanText(raw.productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, ''),
-    sourceUrl, itemId, source, images, name,
-    name_ru: cleanText(raw.name_ru || '', 320),
-    name_en: cleanText(raw.name_en || '', 320),
+    sourceUrl, itemId, source, images, externalImages, name,
+    name_ru: cleanText(raw.name_ru || '', 360),
+    name_en: cleanText(raw.name_en || '', 360),
     description: cleanText(raw.description || buildDescription(source), 7000),
     description_ru: cleanText(raw.description_ru || '', 7000),
     description_en: cleanText(raw.description_en || '', 7000),
@@ -145,15 +143,13 @@ function sanitizeDraft(raw = {}) {
     stock: safeInt(raw.stock ?? source.stock, 0, 1e9, 0),
   };
 }
-
 async function saveProduct(db, raw, actor) {
   const draft = sanitizeDraft(raw);
-  let productId = draft.productId;
-  let created = false;
-  if (!productId) { productId = await generateAdminProductId(db); created = true; }
+  let productId = draft.productId || await findExistingByItemId(db, draft.itemId);
+  if (!productId) productId = await generateAdminProductId(db);
   const ref = db.doc(`products/${productId}`);
   const existing = await ref.get();
-  if (existing.exists && !created) {
+  if (existing.exists) {
     const before = existing.data() || {};
     if (before.sourcePlatform && before.sourcePlatform !== '1688') {
       throw Object.assign(new Error('Bu mahsulot 1688 import mahsuloti emas.'), { statusCode: 409 });
@@ -161,6 +157,7 @@ async function saveProduct(db, raw, actor) {
   }
   const ts = admin.firestore.FieldValue.serverTimestamp();
   const source = draft.source;
+  const storedCount = draft.images.filter(isStorageUrl).length;
   const payload = {
     name: draft.name,
     name_ru: draft.name_ru,
@@ -186,7 +183,7 @@ async function saveProduct(db, raw, actor) {
     isOrzuMallVerified: true,
     sellerId: 'orzumall',
     sellerName: 'OrzuMall',
-    sourceType: 'china1688',
+    sourceType: 'china1688-extension',
     sourcePlatform: '1688',
     sourceUrl: draft.sourceUrl,
     sourceItemId: draft.itemId,
@@ -205,6 +202,10 @@ async function saveProduct(db, raw, actor) {
       serviceTags: sanitizeTags(source.serviceTags),
       props: sanitizeProps(source.props),
       variants: sanitizeSourceVariants(source.variants),
+      externalImages: draft.externalImages,
+      localImageCount: storedCount,
+      importer: 'chrome-extension',
+      extractorVersion: cleanText(source.extractorVersion, 40),
       importedBy: actor.email,
       lastSyncedAt: ts,
     },
@@ -212,9 +213,8 @@ async function saveProduct(db, raw, actor) {
   };
   if (!existing.exists) payload.createdAt = nowIso();
   await ref.set(payload, { merge: true });
-  return { id: productId, created: !existing.exists, product: { id: productId, ...payload, updatedAt: nowIso() } };
+  return { id: productId, created: !existing.exists, localImageCount: storedCount };
 }
-
 function stampMs(v) {
   try {
     if (!v) return 0;
@@ -227,43 +227,47 @@ function stampMs(v) {
 function publicRow(doc) {
   const p = doc.data() || {};
   const src = p.china1688 || {};
+  const images = sanitizeImages(p.images);
   return {
-    id: doc.id, name: cleanText(p.name, 320), name_ru: cleanText(p.name_ru, 320), name_en: cleanText(p.name_en, 320),
+    id: doc.id, name: cleanText(p.name, 360), name_ru: cleanText(p.name_ru, 360), name_en: cleanText(p.name_en, 360),
     description: cleanText(p.description, 7000), description_ru: cleanText(p.description_ru, 7000), description_en: cleanText(p.description_en, 7000),
     price: safeInt(p.price, 0, 1e12, 0), oldPrice: safeInt(p.oldPrice, 0, 1e12, 0),
-    image: sanitizeImages(p.images)[0] || '', images: sanitizeImages(p.images),
+    image: images[0] || '', images,
     sourceUrl: safe1688Url(p.sourceUrl || src.url), itemId: cleanText(p.sourceItemId || src.itemId, 100),
     priceCny: safeNumber(src.priceCny, 0, 1e8, 0), moq: safeInt(src.moq, 1, 1e8, 1),
     fulfillmentType: cleanText(p.fulfillmentType, 32), isActive: p.isActive !== false,
     deliveryMinDays: safeInt(p.deliveryMinDays, 1, 365, 15), deliveryMaxDays: safeInt(p.deliveryMaxDays, 1, 365, 30),
     tags: sanitizeTags(p.tags), weightKg: safeNumber(p.weightKg, 0, 100000, 0),
     popularScore: safeInt(p.popularScore, 0, 1e12, 0), updatedAtMs: stampMs(p.updatedAt),
-    source: sourceSummary({ ...src, id: p.sourceItemId || src.itemId, url: p.sourceUrl || src.url, images: p.images?.length ? p.images : src.images }),
+    localImageCount: safeInt(src.localImageCount, 0, 1000, images.filter(isStorageUrl).length),
+    source: sourceSummary({ ...src, id: p.sourceItemId || src.itemId, url: p.sourceUrl || src.url, images: p.images?.length ? p.images : src.externalImages }),
   };
 }
-
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return json(204, {});
   if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' });
   const body = parseBody(event);
   if (body == null) return json(400, { error: 'INVALID_JSON' });
+  const limited = rateLimit(event, 'china1688-admin', 90, 10 * 60 * 1000);
+  if (!limited.ok) return json(429, { error: 'TOO_MANY_REQUESTS', retryAfterSec: limited.retryAfterSec });
   const actor = await requireAdmin(event);
   if (!actor.ok) return json(actor.statusCode, { error: actor.error });
   const db = admin.firestore();
   const action = cleanText(body.action || '', 50).toLowerCase();
   try {
-    if (action === 'preview') {
-      const item = await previewByUrl(body.url);
-      return json(200, { item, pricing: pricingConfig(), tmapiConfigured: true });
+    if (action === 'copyimages') {
+      const itemId = cleanText(body.itemId || 'draft', 100).replace(/[^a-z0-9_-]/gi, '') || 'draft';
+      const result = await copyImages(body.urls, itemId);
+      return json(200, { ...result, maxPerBatch: MAX_IMAGES_PER_BATCH });
     }
     if (action === 'save') {
       const result = await saveProduct(db, body.product || {}, actor);
       return json(200, result);
     }
     if (action === 'list') {
-      const snap = await db.collection('products').where('sourcePlatform', '==', '1688').limit(160).get();
+      const snap = await db.collection('products').where('sourcePlatform', '==', '1688').limit(200).get();
       const products = snap.docs.map(publicRow).sort((a, b) => b.updatedAtMs - a.updatedAtMs);
-      return json(200, { products, pricing: pricingConfig(), tmapiConfigured: !!tmapiToken() });
+      return json(200, { products, pricing: pricingConfig(), importerMode: 'api-free-extension' });
     }
     if (action === 'archive') {
       const id = cleanText(body.productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');

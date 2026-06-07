@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "OrzuMall 1688 Importer",
+  "version": "1.0.0",
+  "description": "1688 mahsulot sahifasidan OrzuMall admin paneliga API'siz qoralama import qiladi.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://*.1688.com/*", "https://1688.com/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "OrzuMall 1688 Importer",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.1688.com/*", "https://1688.com/*"],
+      "js": ["content-1688.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html"
+}

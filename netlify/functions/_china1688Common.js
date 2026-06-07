@@ -323,7 +323,9 @@ function initFirebaseAdmin() {
   const raw = String(process.env.FIREBASE_SERVICE_ACCOUNT_B64 || '').replace(/\s+/g, '');
   if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT_B64_MISSING');
   const serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  const defaultStorageBucket = serviceAccount.project_id ? `${serviceAccount.project_id}.firebasestorage.app` : '';
+  const storageBucket = cleanText(process.env.FIREBASE_STORAGE_BUCKET || defaultStorageBucket, 300);
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount), ...(storageBucket ? { storageBucket } : {}) });
   return admin;
 }
 function bearer(event) {

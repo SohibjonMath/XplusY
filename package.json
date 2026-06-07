@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.47.0",
-  "description": "OrzuMall v147: admin-only 1688 trend product import by URL with one-time TMAPI preview and Firestore catalog save",
+  "version": "1.48.0",
+  "description": "OrzuMall v148: API-free 1688 Chrome extension importer with Firestore catalog save and Firebase Storage image copy",
   "engines": {
     "node": "22.x"
   },
