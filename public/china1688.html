@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>1688 katalogi — OrzuMall</title>
+  <link rel="icon" type="image/webp" href="/favicon.webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="/china1688.css?v=20260607_v146">
+</head>
+<body>
+<header class="top">
+  <a class="back" href="/" aria-label="Orqaga"><i class="fa-solid fa-arrow-left"></i></a>
+  <a class="brand" href="/"><img src="/logo-256.webp" alt="OrzuMall"><span class="brandText"><b>OrzuMall</b><span>Xitoydan buyurtma</span></span></a>
+  <span class="topBadge"><i class="fa-solid fa-shield-halved"></i> 1688 katalogi</span>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <span class="heroKicker"><i class="fa-solid fa-globe-asia"></i> Xitoydan to‘g‘ridan-to‘g‘ri buyurtma</span>
+    <h1>1688 mahsulotlarini OrzuMall orqali toping va buyurtma qiling</h1>
+    <p>Mahsulot havolasini joylang yoki katalogdan qidiring. Narx yuan kursi va xizmat haqi bilan taxminiy so‘mda hisoblanadi. Yakuniy summa operator tekshiruvidan keyin tasdiqlanadi.</p>
+    <div class="heroPills"><span>Havola orqali import</span><span>Jonli qidiruv</span><span>Operator tekshiruvi</span><span>Cargo keyin hisoblanadi</span></div>
+  </section>
+
+  <section class="panel">
+    <div class="panelTitle"><i class="fa-solid fa-link"></i> 1688 mahsulot havolasini kiriting</div>
+    <div class="formRow"><input class="input" id="linkInput" placeholder="https://detail.1688.com/offer/...html"><button class="btn" id="importBtn"><i class="fa-solid fa-wand-magic-sparkles"></i> Mahsulotni ochish</button></div>
+    <p class="small">Eng oson usul: 1688 ilovasi yoki saytidan mahsulot havolasini nusxalab shu yerga joylang.</p>
+    <div class="sep">yoki katalogdan qidiring</div>
+    <div class="searchTools"><input class="input" id="searchInput" placeholder="Masalan: telefon aksessuarlari yoki 手机配件"><select class="select" id="sort"><option value="default">Tavsiya etilgan</option><option value="sales">Ko‘p sotilgan</option><option value="price_up">Arzonidan</option><option value="price_down">Qimmatidan</option></select><button class="btn" id="searchBtn"><i class="fa-solid fa-magnifying-glass"></i> Qidirish</button></div>
+    <div class="chips" id="chips">
+      <button class="chip" data-q="手机配件">Telefon aksessuarlari</button><button class="chip" data-q="美妆个护">Kosmetika</button><button class="chip" data-q="家居日用">Uy-ro‘zg‘or</button><button class="chip" data-q="女装">Ayollar kiyimi</button><button class="chip" data-q="儿童玩具">Bolalar o‘yinchoqlari</button><button class="chip" data-q="汽车用品">Avto aksessuarlar</button>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <div class="resultHead"><div><h2 id="resultTitle">1688 katalogi</h2><span id="resultSub">Mahsulot qidiring yoki havola kiriting</span></div></div>
+  <section class="grid" id="grid"></section>
+  <div class="empty" id="empty"><i class="fa-solid fa-box-open"></i><b>Mahsulotlar topilmadi</b><div class="small">Boshqa kalit so‘z kiriting yoki 1688 havolasini joylang.</div></div>
+  <button class="btn loadMore" id="loadMore"><i class="fa-solid fa-plus"></i> Yana yuklash</button>
+  <footer class="footer">OrzuMall · 1688 mahsulotlari uchinchi tomon katalog API orqali ko‘rsatiladi · Narxlar taxminiy</footer>
+</main>
+
+<div class="modal" id="detailModal" aria-hidden="true"><div class="sheet"><div class="sheetTop"><b>1688 mahsuloti</b><button class="x" data-close="detailModal"><i class="fa-solid fa-xmark"></i></button></div><div id="detailBody"></div></div></div>
+<div class="modal" id="requestModal" aria-hidden="true"><div class="sheet"><div class="sheetTop"><b>Buyurtma so‘rovi</b><button class="x" data-close="requestModal"><i class="fa-solid fa-xmark"></i></button></div><div class="requestBody" id="requestBody"></div></div></div>
+<script src="/china1688.js?v=20260607_v146" defer></script>
+</body>
+</html>

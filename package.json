@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.41.0",
-  "description": "OrzuMall v141: professional seller and admin center with live/draft products, payout requests, onboarding, bulk import, seller ratings and SLA overdue control",
+  "version": "1.46.0",
+  "description": "OrzuMall v146: secure 1688 China catalog search, URL import, price calculation, customer request flow and admin request management",
   "engines": {
     "node": "22.x"
   },
