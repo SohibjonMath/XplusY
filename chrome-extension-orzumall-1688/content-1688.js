@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.8.0';
+  const VERSION = '1.9.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -41,14 +41,26 @@
   const attrRows = node => {
     if (!node) return [];
     const rows = [node.currentSrc];
-    ['src', 'data-src', 'data-lazy-src', 'data-lazyload-src', 'data-original', 'data-origin-src', 'data-zoom-image', 'data-image', 'data-ks-lazyload', 'data-url', 'data-img', 'data-pic'].forEach(a => rows.push(node.getAttribute?.(a)));
+    ['src', 'data-src', 'data-lazy-src', 'data-lazyload-src', 'data-original', 'data-origin-src', 'data-zoom-image', 'data-image', 'data-ks-lazyload', 'data-url', 'data-img', 'data-pic', 'data-bg', 'data-background-image'].forEach(a => rows.push(node.getAttribute?.(a)));
     const srcset = node.getAttribute?.('srcset');
     if (srcset) srcset.split(',').forEach(part => rows.push(part.trim().split(/\s+/)[0]));
-    const styleBg = node.style?.backgroundImage?.match(/url\(["']?(.+?)["']?\)/)?.[1];
-    if (styleBg) rows.push(styleBg);
-    return compact(rows.map(absUrl).filter(u => u && isImageUrl(u) && !badImageHint.test(u)), 12);
+    node.querySelectorAll?.('source[srcset],source[data-srcset]').forEach(source => {
+      const raw = source.getAttribute('srcset') || source.getAttribute('data-srcset') || '';
+      raw.split(',').forEach(part => rows.push(part.trim().split(/\s+/)[0]));
+    });
+    const pushBg = value => {
+      String(value || '').replace(/url\(["']?(.+?)["']?\)/g, (_m, url) => { rows.push(url); return _m; });
+    };
+    pushBg(node.style?.backgroundImage);
+    try { pushBg(getComputedStyle(node)?.backgroundImage); } catch (_e) {}
+    return compact(rows.map(absUrl).filter(u => u && isImageUrl(u) && !badImageHint.test(u)), 18);
   };
-  const firstNodeImage = node => attrRows(node?.matches?.('img') ? node : node?.querySelector?.('img'))[0] || '';
+  const firstNodeImage = node => {
+    if (!node) return '';
+    const own = attrRows(node)[0]; if (own) return own;
+    const visual = node.matches?.('img') ? node : node.querySelector?.('img,picture,[style*="background"],[class*="image"],[class*="Image"],[class*="pic"],[class*="Pic"]');
+    return attrRows(visual)[0] || '';
+  };
   const contextText = node => {
     let cur = node; const parts = [];
     for (let i = 0; cur && i < 4; i += 1, cur = cur.parentElement) parts.push(`${cur.tagName || ''} ${cur.id || ''} ${cur.className || ''} ${cur.getAttribute?.('data-testid') || ''}`);
@@ -409,54 +421,65 @@
       const url = absUrl(raw); if (!url || !isImageUrl(url) || badImageHint.test(url)) return;
       if (node && isRejectedGalleryContext(node)) return;
       const box = rectOf(node); const w = Number(node?.naturalWidth || box?.width || 0); const h = Number(node?.naturalHeight || box?.height || 0);
-      if (w && h && w < 58 && h < 58) return;
-      if (variants.has(url) && origin !== 'main') return; // rang ikonkalari galereyaga aralashmasin
-      const total = score + (isProductCdnUrl(url) ? 65 : 0) + ((w >= 240 || h >= 240) ? 20 : 0);
+      if (w && h && w < 46 && h < 46) return;
+      if (variants.has(url) && origin !== 'main') return; // SKU ikonkalari asosiy galereyaga aralashmasin
+      const total = score + (isProductCdnUrl(url) ? 48 : 0) + ((w >= 220 || h >= 220) ? 20 : 0);
       const old = found.get(url); if (!old || total > old.score) found.set(url, { url, score: total, order: order++ });
     };
-    const all = [...document.querySelectorAll('img')].map(img => ({ img, box: rectOf(img), urls: attrRows(img) })).filter(row => {
-      const { img, box, urls } = row;
-      if (!box || !urls.length || isRejectedGalleryContext(img) || (isVariantContext(img) && !isGalleryContext(img))) return false;
-      if (box.width < 42 || box.height < 42 || box.bottom < -10 || box.top > Math.max(1150, innerHeight + 260)) return false;
-      return urls.some(isProductCdnUrl);
+    const visualNodes = [...document.querySelectorAll('img,picture,[style*="background-image"],[data-bg],[data-background-image]')];
+    const rows = visualNodes.map(node => ({ node, box: rectOf(node), urls: attrRows(node) })).filter(row => {
+      const { node, box, urls } = row;
+      if (!box || !urls.length || isRejectedGalleryContext(node)) return false;
+      if (box.width < 30 || box.height < 30 || box.bottom < -24 || box.top > Math.max(1350, innerHeight + 420)) return false;
+      return true;
     });
-    // Asosiy surat odatda sahifaning chap yarmidagi eng katta ko‘rinadigan rasm.
-    const primary = all.map(row => {
-      const b = row.box; const area = Math.min(b.width, 900) * Math.min(b.height, 900);
-      const leftBonus = b.left < innerWidth * .56 ? 240000 : -420000;
-      const topBonus = b.top >= 40 && b.top < 820 ? 160000 : -180000;
-      const largeBonus = b.width >= 260 && b.height >= 220 ? 260000 : -240000;
-      const galleryBonus = isGalleryContext(row.img) ? 120000 : 0;
-      return { ...row, score: area + leftBonus + topBonus + largeBonus + galleryBonus };
+    // 1) Eng ishonchli urinish: galereya nomli kontekst va mahsulot CDN rasmlari.
+    let primaryPool = rows.filter(({node, box, urls}) => {
+      if ((isVariantContext(node) && !isGalleryContext(node)) || !urls.some(isProductCdnUrl)) return false;
+      return box.left < Math.min(innerWidth * .64, 880) && box.width >= 180 && box.height >= 180;
+    });
+    // 2) Yangi 1688 shablonlari class nomlarini yashirishi mumkin. Katta chap rasmni fazoviy usulda topamiz.
+    if (!primaryPool.length) primaryPool = rows.filter(({box}) => box.left < Math.min(innerWidth * .66, 900) && box.width >= 180 && box.height >= 180);
+    const primary = primaryPool.map(row => {
+      const b = row.box; const area = Math.min(b.width, 960) * Math.min(b.height, 960);
+      const leftBonus = b.left < innerWidth * .58 ? 250000 : -320000;
+      const topBonus = b.top >= -80 && b.top < 920 ? 170000 : -150000;
+      const largeBonus = b.width >= 300 && b.height >= 260 ? 270000 : 0;
+      const galleryBonus = isGalleryContext(row.node) ? 145000 : 0;
+      const cdnBonus = row.urls.some(isProductCdnUrl) ? 65000 : 0;
+      return { ...row, score: area + leftBonus + topBonus + largeBonus + galleryBonus + cdnBonus };
     }).sort((a,b)=>b.score-a.score)[0];
     if (primary) {
-      primary.urls.forEach(url => add(url, 520, primary.img, 'main'));
+      primary.urls.forEach(url => add(url, 620, primary.node, 'main'));
       const mainBox = primary.box;
-      // Eng kichik, ammo asosiy surat va miniatyuralarni o‘z ichiga olgan media konteynerni topamiz.
-      let media = primary.img.parentElement; let selectedMedia = null;
-      for (let hop=0; media && hop<7; hop+=1, media=media.parentElement) {
+      // Asosiy rasmni o‘rab turgan eng kichik media blokni topamiz.
+      let media = primary.node.parentElement; let selectedMedia = null;
+      for (let hop=0; media && hop<8; hop+=1, media=media.parentElement) {
         const box=rectOf(media); if(!box) continue;
-        const imgs=[...media.querySelectorAll('img')].filter(img=>!isRejectedGalleryContext(img) && attrRows(img).some(isProductCdnUrl));
-        if(imgs.length>=2 && imgs.length<=34 && box.width<=Math.min(innerWidth*.72,920) && box.height<=1050) selectedMedia=media;
+        const imgs=[...media.querySelectorAll('img,picture,[style*="background-image"],[data-bg],[data-background-image]')].filter(node=>!isRejectedGalleryContext(node) && attrRows(node).length);
+        const spatialOk = box.width <= Math.min(innerWidth*.78, 980) && box.height <= 1180;
+        if(imgs.length>=2 && imgs.length<=42 && spatialOk) selectedMedia=media;
       }
       if(selectedMedia){
-        [...selectedMedia.querySelectorAll('img')].forEach(img=>{
-          if(isRejectedGalleryContext(img) || (isVariantContext(img) && !isGalleryContext(img))) return;
-          const b=rectOf(img); if(!b || b.width<42 || b.height<42) return;
-          attrRows(img).forEach(url=>add(url, img===primary.img?500:260, img, img===primary.img?'main':'media'));
+        [...selectedMedia.querySelectorAll('img,picture,[style*="background-image"],[data-bg],[data-background-image]')].forEach(node=>{
+          if(isRejectedGalleryContext(node)) return;
+          const b=rectOf(node); if(!b || b.width<30 || b.height<30) return;
+          const near = b.left <= mainBox.right + 190 && b.right >= mainBox.left - 190 && b.top <= mainBox.bottom + 290 && b.bottom >= mainBox.top - 100;
+          if(!near) return;
+          attrRows(node).forEach(url=>add(url, node===primary.node?590:285, node, node===primary.node?'main':'media'));
         });
       }
-      // Class nomi bo‘lmagan yangi 1688 dizaynida miniatyuralar asosiy suratning tagida yoki yonida turadi.
-      all.forEach(({img,box,urls})=>{
-        const below = box.top >= mainBox.bottom - 36 && box.top <= mainBox.bottom + 245 && box.left >= mainBox.left - 110 && box.left <= mainBox.right + 135;
-        const side = box.left >= mainBox.left - 160 && box.right <= mainBox.left + 80 && box.top >= mainBox.top - 50 && box.top <= mainBox.bottom + 80;
-        const sameMedia = box.left < Math.min(innerWidth*.58, 760) && (below || side);
-        if(!sameMedia) return;
-        urls.forEach(url=>add(url, 245, img, 'thumb'));
+      // Classsiz shablonlar uchun: faqat asosiy rasm atrofidagi miniatyuralar olinadi.
+      rows.forEach(({node,box,urls})=>{
+        const below = box.top >= mainBox.bottom - 40 && box.top <= mainBox.bottom + 280 && box.left >= mainBox.left - 140 && box.left <= mainBox.right + 180;
+        const side = box.left >= mainBox.left - 190 && box.right <= mainBox.left + 110 && box.top >= mainBox.top - 80 && box.top <= mainBox.bottom + 110;
+        if(!(below || side)) return;
+        urls.forEach(url=>add(url, 270, node, 'thumb'));
       });
     }
-    // Faqat galereya butunlay topilmasa og:image zaxira sifatida ishlatiladi.
-    if(!found.size) document.querySelectorAll('meta[property="og:image"],meta[name="og:image"],meta[itemprop="image"]').forEach(n=>add(n.content,300,null,'main'));
+    // 3) Xavfsiz zaxira: mahsulot metadata rasmi. Sharh va foydalanuvchi rasmlariga tushmaydi.
+    if(!found.size) document.querySelectorAll('meta[property="og:image"],meta[name="og:image"],meta[itemprop="image"],link[rel="image_src"]')
+      .forEach(n=>add(n.content || n.href, 360, null, 'main'));
     return [...found.values()].sort((a,b)=>b.score-a.score || a.order-b.order).map(x=>x.url).slice(0,12);
   }
 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "OrzuMall 1688 Importer",
-  "version": "1.8.0",
-  "description": "1688 mahsulotining faqat asosiy galereyasi va haqiqiy variantlarini API-siz OrzuMall qoralamasiga aylantiradi.",
+  "version": "1.9.0",
+  "description": "1688 mahsulot galereyasini adaptiv fazoviy usulda topadi va haqiqiy variantlarni API-siz OrzuMall qoralamasiga aylantiradi.",
   "permissions": [
     "storage",
     "tabs"
