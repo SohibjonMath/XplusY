@@ -91,28 +91,62 @@ function sanitizeImagesByColor(value) {
   });
   return out;
 }
+function cleanVariantValue(value) {
+  return cleanText(value, 180)
+    .replace(/(?:库存|庫存|stock|qoldiq|остаток)\s*[:：]?\s*\d+[\s\S]*$/i, '')
+    .replace(/(?:¥|￥)\s*\d+(?:[.,]\d+)?[\s\S]*$/i, '')
+    .replace(/^[\s:：/_-]+|[\s:：/_-]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function attributeByKind(attributes = {}, kind = '') {
+  const re = kind === 'color'
+    ? /(?:颜色|顏色|色彩|color|colour|rang)/i
+    : /(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i;
+  const hit = Object.entries(attributes || {}).find(([key]) => re.test(cleanText(key, 160)));
+  return cleanVariantValue(hit?.[1] || '');
+}
 function sourceColors(source = {}) {
   const explicit = sanitizeVariantOptions(source.colorOptions);
   const group = sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'color');
-  const rows = explicit.length ? explicit : (group?.options || []);
-  return rows.map(row => ({ name: row.name, ...(row.image ? { image: row.image } : {}) }));
+  const skuRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants);
+  const rows = [...explicit, ...(group?.options || [])];
+  skuRows.forEach(row => {
+    const name = cleanVariantValue(row.color || attributeByKind(row.attributes, 'color'));
+    if (name) rows.push({ id: row.id, name, image: row.image || '' });
+  });
+  const map = new Map();
+  rows.forEach(row => {
+    const name = cleanVariantValue(row.name);
+    if (!name) return;
+    const prev = map.get(name) || {};
+    map.set(name, { name, ...((row.image || prev.image) ? { image: row.image || prev.image } : {}) });
+  });
+  return [...map.values()].slice(0, 64);
 }
 function sourceSizes(source = {}) {
   const explicit = sanitizeVariantOptions(source.sizeOptions);
   const group = sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'size');
-  const rows = explicit.length ? explicit : (group?.options || []);
-  return [...new Set(rows.map(row => row.name).filter(Boolean))].slice(0, 80);
+  const skuRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants);
+  const rows = [...explicit, ...(group?.options || [])].map(row => row.name);
+  skuRows.forEach(row => rows.push(row.size || attributeByKind(row.attributes, 'size')));
+  return [...new Set(rows.map(cleanVariantValue).filter(Boolean))].slice(0, 80);
 }
 function marketplaceVariants(source = {}, fallbackPrice = 0) {
-  return sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants).map(row => ({
-    color: row.color || null,
-    size: row.size || null,
-    price: row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0),
-    stock: row.stock,
-    skuId: row.id,
-    attributes: row.attributes,
-    ...(row.image ? { image: row.image } : {}),
-  })).slice(0, 220);
+  return sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants).map(row => {
+    const stockQty = safeInt(row.stock, 0, 1e9, 0);
+    return {
+      color: cleanVariantValue(row.color || attributeByKind(row.attributes, 'color')) || null,
+      size: cleanVariantValue(row.size || attributeByKind(row.attributes, 'size')) || null,
+      price: row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0),
+      stock: stockQty,
+      stockQty,
+      sku: row.id,
+      skuId: row.id,
+      attributes: row.attributes,
+      ...(row.image ? { image: row.image } : {}),
+    };
+  }).filter(row => row.color || row.size).slice(0, 220);
 }
 
 function nowIso() { return new Date().toISOString(); }

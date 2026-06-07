@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "OrzuMall 1688 Importer",
-  "version": "1.3.0",
-  "description": "1688 sahifasidan API'siz professional import: asosiy galereya, rang ikonkalari, razmerlar va SKU kombinatsiyalari alohida olinadi.",
+  "version": "1.4.0",
+  "description": "1688 sahifasidan API'siz professional import: galereya, rang, razmer va SKU qatlamlari ajratiladi; noto'g'ri atributlar filtrlanadi.",
   "permissions": [
     "storage",
     "tabs"

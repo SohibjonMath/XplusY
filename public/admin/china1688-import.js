@@ -47,10 +47,14 @@ function variantMedia(src = {}) {
 }
 function renderImages(images = []) { const rows = uniq(images.map(normalizeImageUrl).filter(Boolean)); $('imagesGrid').innerHTML = rows.length ? rows.map((u, idx) => `<label class="image-choice${isStorageUrl(u) ? ' local' : ''}">${previewImg(u, 'alt=""')}<input type="checkbox" value="${esc(u)}" checked><b>${idx + 1}</b>${isStorageUrl(u) ? '<small>Storage</small>' : ''}</label>`).join('') : '<div class="empty-mini">Asosiy galereya topilmadi. URL’larni qo‘lda kiriting.</div>'; armPreviewFallbacks($('imagesGrid')); }
 function optionCards(rows = [], kind = '') { return rows.length ? rows.slice(0, 48).map(x => `<span class="variant-option ${kind}">${x.image ? previewImg(x.image, 'alt=""') : ''}<b>${esc(x.name || '—')}</b>${x.disabled ? '<i>mavjud emas</i>' : ''}</span>`).join('') : '<em class="empty-variant">topilmadi</em>'; }
+function cleanVariantLabel(v) { return String(v || '').replace(/(?:库存|庫存|stock|qoldiq|остаток)\s*[:：]?\s*\d+[\s\S]*$/i, '').replace(/(?:¥|￥)\s*\d+(?:[.,]\d+)?[\s\S]*$/i, '').replace(/^[\s:：/_-]+|[\s:：/_-]+$/g, '').replace(/\s+/g, ' ').trim().slice(0, 120); }
+function attrVariant(row = {}, kind = '') { const re = kind === 'color' ? /(?:颜色|顏色|色彩|color|colour|rang)/i : /(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i; const hit = Object.entries(row.attributes || {}).find(([key]) => re.test(String(key || ''))); return cleanVariantLabel(hit?.[1] || ''); }
+function previewColors(src = {}) { const groups = src.variantGroups || [], rows = [...(src.colorOptions || []), ...(groups.find(g => g.type === 'color')?.options || [])], skus = src.skuVariants?.length ? src.skuVariants : (src.variants || []); skus.forEach(v => { const name = cleanVariantLabel(v.color || attrVariant(v, 'color')); if (name) rows.push({ name, image: v.image || src.imagesByColor?.[name]?.[0] || '' }); }); const map = new Map(); rows.forEach(x => { const row = typeof x === 'string' ? { name: x } : (x || {}), name = cleanVariantLabel(row.name || row.label || row.value); if (!name) return; const old = map.get(name) || {}; map.set(name, { ...old, ...row, name, image: row.image || old.image || '' }); }); return [...map.values()].slice(0, 64); }
+function previewSizes(src = {}) { const groups = src.variantGroups || [], rows = [...(src.sizeOptions || []), ...(groups.find(g => g.type === 'size')?.options || [])], skus = src.skuVariants?.length ? src.skuVariants : (src.variants || []); skus.forEach(v => { const name = cleanVariantLabel(v.size || attrVariant(v, 'size')); if (name) rows.push({ name }); }); const seen = new Set(); return rows.map(x => ({ ...(typeof x === 'string' ? {} : x), name: cleanVariantLabel(typeof x === 'string' ? x : (x?.name || x?.label || x?.value)) })).filter(x => x.name && !seen.has(x.name) && seen.add(x.name)).slice(0, 80); }
 function renderVariants(src = {}) {
   const groups = src.variantGroups || [];
-  const colors = src.colorOptions?.length ? src.colorOptions : (groups.find(g => g.type === 'color')?.options || []);
-  const sizes = src.sizeOptions?.length ? src.sizeOptions : (groups.find(g => g.type === 'size')?.options || []);
+  const colors = previewColors(src);
+  const sizes = previewSizes(src);
   const skus = src.skuVariants?.length ? src.skuVariants : (src.variants || []);
   const diagnostics = src.diagnostics || {};
   $('variantList').innerHTML = `

@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.3.0';
+  const VERSION = '1.4.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -88,11 +88,29 @@
   };
   const visibleText = () => text(document.body?.innerText || '').slice(0, 400000);
 
+  function cleanOptionLabel(value = '') {
+    return text(value)
+      .replace(/(?:库存|庫存|stock|qoldiq|остаток)\s*[:：]?\s*\d+[\s\S]*$/i, '')
+      .replace(/(?:¥|￥)\s*\d+(?:[.,]\d+)?[\s\S]*$/i, '')
+      .replace(/^[\s:：/_-]+|[\s:：/_-]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 120);
+  }
   function classifyGroup(label = '', index = 0) {
     const s = text(label).toLowerCase();
     if (/(?:颜色|顏色|颜色分类|色彩|colour|color|rang)/i.test(s)) return 'color';
     if (/(?:尺码|尺寸|大小|规格尺寸|size|razmer|o['‘’]?lcham)/i.test(s)) return 'size';
-    return index === 0 ? 'color' : (index === 1 ? 'size' : 'other');
+    return 'other';
+  }
+  function inferGroupType(group = {}, index = 0) {
+    const direct = classifyGroup(group.name, index);
+    if (direct !== 'other') return direct;
+    const names = (group.options || []).map(o => cleanOptionLabel(o?.name)).filter(Boolean);
+    if (names.length >= 2 && names.every(v => /^(?:xxxs|xxs|xs|s|m|l|xl|xxl|xxxl|[2-8]xl|\d{2,3}(?:cm)?)$/i.test(v))) return 'size';
+    const withImages = (group.options || []).filter(o => !!o?.image).length;
+    if (names.length >= 2 && withImages >= Math.ceil(names.length / 2) && !/(?:面料|材质|成分|工艺|brand|material|fabric)/i.test(text(group.name))) return 'color';
+    return 'other';
   }
   function optionName(v) {
     if (typeof v === 'string' || typeof v === 'number') return text(v);
@@ -109,7 +127,7 @@
     return absUrl(raw);
   }
   function normalizeOption(v, index = 0) {
-    const name = optionName(v);
+    const name = cleanOptionLabel(optionName(v));
     if (!name) return null;
     return { id: optionId(v, `o${index + 1}`), name: name.slice(0, 120), image: optionImage(v), disabled: Boolean(v?.disabled || v?.soldOut || v?.sold_out) };
   }
@@ -158,7 +176,7 @@
         const nodes = domOptionNodes(container, labelNode);
         const options = [];
         nodes.forEach((node, index) => {
-          const name = text(node.getAttribute('title') || node.getAttribute('aria-label') || ownLabel(node) || node.innerText || node.textContent).replace(/^[：:]+/, '');
+          const name = cleanOptionLabel(node.getAttribute('title') || node.getAttribute('aria-label') || ownLabel(node) || node.innerText || node.textContent);
           const image = firstNodeImage(node);
           if (!name || name === text(labelNode.textContent) || name.length > 120) return;
           if (!options.some(o => o.name === name)) options.push({ id: text(node.getAttribute('data-sku-id') || node.getAttribute('data-prop-value-id') || node.getAttribute('data-value-id') || `d${gi + 1}_${index + 1}`), name, image, disabled: /disabled|soldout|sold-out/i.test(`${node.className || ''} ${node.getAttribute('aria-disabled') || ''}`) });
@@ -189,7 +207,7 @@
         else if (!old.image && o.image) old.image = o.image;
       });
     });
-    return result.slice(0, MAX_VARIANT_GROUPS).map((g, i) => ({ ...g, type: classifyGroup(g.name, i), options: compact(g.options.map(o => JSON.stringify(o)), MAX_OPTIONS).map(s => JSON.parse(s)) }));
+    return result.slice(0, MAX_VARIANT_GROUPS).map((g, i) => ({ ...g, type: inferGroupType(g, i), options: compact(g.options.map(o => JSON.stringify({ ...o, name: cleanOptionLabel(o.name) })).filter(Boolean), MAX_OPTIONS).map(s => JSON.parse(s)).filter(o => o.name) }));
   }
 
   function readSkuRowsFromScripts() {
@@ -208,23 +226,38 @@
     return rows.slice(0, 1000);
   }
   function splitSkuName(raw = '') {
-    return text(raw).replace(/[;；]/g, ';').split(/[;|,，/]/).map(v => text(v.replace(/^\d+[:：]/, '').replace(/^[-_:：]+/, ''))).filter(Boolean);
+    return text(raw).replace(/[;；]/g, ';').split(/[;|,，/]/).map(v => cleanOptionLabel(v.replace(/^\d+[:：]/, '').replace(/^[-_:：]+/, ''))).filter(Boolean);
+  }
+  function skuAttributePairs(raw = '') {
+    const attrs = {};
+    text(raw).replace(/[;；|]/g, ';').split(';').forEach(part => {
+      const m = text(part).match(/^(.{1,80}?)[：:](.{1,140})$/);
+      if (!m) return;
+      const key = cleanOptionLabel(m[1]); const value = cleanOptionLabel(m[2]);
+      if (key && value) attrs[key] = value;
+    });
+    return attrs;
+  }
+  function attrByKind(attrs = {}, kind = '') {
+    const re = kind === 'color' ? /(?:颜色|顏色|色彩|color|colour|rang)/i : /(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i;
+    const hit = Object.entries(attrs).find(([key]) => re.test(key));
+    return cleanOptionLabel(hit?.[1] || '');
   }
   function skuPrice(v) { return numberFrom(v?.price ?? v?.salePrice ?? v?.sale_price ?? v?.skuPrice ?? v?.sku_price ?? v?.discountPrice ?? v?.discount_price ?? v?.priceRange ?? v?.price_range); }
   function skuStock(v) { return Math.max(0, Number(v?.stock ?? v?.stockQty ?? v?.stock_qty ?? v?.quantity ?? v?.amountOnSale ?? v?.amount_on_sale ?? v?.canBookCount ?? 0) || 0); }
   function skuRecord(v, index, groups) {
     const directName = text(v?.name ?? v?.title ?? v?.spec ?? v?.skuName ?? v?.sku_name ?? v?.propertiesName ?? v?.properties_name ?? v?.propsNames ?? v?.props_names ?? v?.__key);
-    const values = Array.isArray(v?.attributes) ? v.attributes.map(optionName) : splitSkuName(directName);
-    const attrs = {};
-    groups.forEach((group, gi) => {
-      const found = values.find(bit => group.options.some(o => o.name === bit)) || '';
+    const values = Array.isArray(v?.attributes) ? v.attributes.map(optionName).map(cleanOptionLabel).filter(Boolean) : splitSkuName(directName);
+    const attrs = { ...skuAttributePairs(directName) };
+    if (isPlainObject(v?.attributes)) Object.entries(v.attributes).forEach(([k, val]) => { const key = cleanOptionLabel(k), value = cleanOptionLabel(optionName(val) || val); if (key && value) attrs[key] = value; });
+    groups.forEach(group => {
+      const found = values.find(bit => group.options.some(o => cleanOptionLabel(o.name) === bit)) || '';
       if (found) attrs[group.name] = found;
-      else if (values[gi]) attrs[group.name] = values[gi];
     });
     const colorGroup = groups.find(g => g.type === 'color');
     const sizeGroup = groups.find(g => g.type === 'size');
-    const color = colorGroup ? attrs[colorGroup.name] || values.find(bit => colorGroup.options.some(o => o.name === bit)) || '' : '';
-    const size = sizeGroup ? attrs[sizeGroup.name] || values.find(bit => sizeGroup.options.some(o => o.name === bit)) || '' : '';
+    const color = cleanOptionLabel(attrByKind(attrs, 'color') || (colorGroup ? attrs[colorGroup.name] || values.find(bit => colorGroup.options.some(o => cleanOptionLabel(o.name) === bit)) || '' : ''));
+    const size = cleanOptionLabel(attrByKind(attrs, 'size') || (sizeGroup ? attrs[sizeGroup.name] || values.find(bit => sizeGroup.options.some(o => cleanOptionLabel(o.name) === bit)) || '' : ''));
     const image = absUrl(v?.image ?? v?.imageUrl ?? v?.image_url ?? v?.picUrl ?? v?.pic_url ?? v?.thumbnail) || colorGroup?.options.find(o => o.name === color)?.image || '';
     return { id: text(v?.skuId ?? v?.sku_id ?? v?.id ?? v?.specId ?? v?.spec_id ?? `sku${index + 1}`), name: directName || values.join(' / ') || `SKU ${index + 1}`, color, size, attributes: attrs, image, stock: skuStock(v), priceCny: skuPrice(v) };
   }
