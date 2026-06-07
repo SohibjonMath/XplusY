@@ -88,6 +88,7 @@ function renderVariants(src = {}, opts = {}) {
   const skus = src.skuVariants?.length ? src.skuVariants : (src.variants || []);
   const diagnostics = src.diagnostics || {};
   $('variantList').innerHTML = `
+    ${diagnostics.loginRequired ? `<div class="variant-alert warning"><i class="fa-solid fa-triangle-exclamation"></i><div><b>1688 akkauntiga kiring</b><p>Sahifada <code>登录查看全部规格</code> cheklovi bor. Hozir faqat ko‘rinib turgan variantlar olindi. To‘liq rang, razmer va SKU ro‘yxati uchun 1688’da login qiling va qayta import bosing.</p></div></div>` : ''}
     <div class="variant-summary">
       <span><i class="fa-solid fa-palette"></i><b>${colors.length}</b> rang</span>
       <span><i class="fa-solid fa-ruler"></i><b>${sizes.length}</b> razmer</span>
@@ -107,10 +108,11 @@ function applySource(src = {}, opts = {}) {
   $('editor').hidden = false; $('open1688').href = src.url || $('sourceUrl').value || '#'; $('sourceUrl').value = src.url || $('sourceUrl').value || '';
   $('sourceTitle').textContent = src.title || 'Qo‘lda kiritiladigan 1688 mahsuloti';
   const d = src.diagnostics || {};
-  $('sourceMeta').textContent = [src.id ? '1688 ID: ' + src.id : '', src.sellerName || '', src.sellerLocation || '', src.extractorVersion ? 'Importer v' + src.extractorVersion : '', d.galleryCount != null ? `${d.galleryCount} galereya · ${d.variantImageCount || 0} rang rasmi · ${d.skuCount || 0} SKU` : ''].filter(Boolean).join(' · ') || 'Manba ma’lumoti qo‘lda to‘ldiriladi';
+  $('sourceMeta').textContent = [src.id ? '1688 ID: ' + src.id : '', src.sellerName || '', src.sellerLocation || '', src.extractorVersion ? 'Importer v' + src.extractorVersion : '', d.galleryCount != null ? `${d.galleryCount} galereya · ${d.variantImageCount || 0} rang rasmi · ${d.skuCount || 0} SKU` : '', d.loginRequired ? '1688 login kerak: variantlar qisman' : ''].filter(Boolean).join(' · ') || 'Manba ma’lumoti qo‘lda to‘ldiriladi';
   $('sourceCover').innerHTML = src.image ? previewImg(src.image, 'alt=""') : '<i class="fa-solid fa-image"></i>'; armPreviewFallbacks($('sourceCover'));
   $('sourceChips').innerHTML = (src.serviceTags || []).map(x => `<span>${esc(x)}</span>`).join(''); $('cnyLabel').textContent = src.priceCny ? cny(src.priceCny) : '—'; $('autoPriceLabel').textContent = src.priceUzs ? money(src.priceUzs) : money(calcAutoPrice(src.priceCny)); $('moqLabel').textContent = String(src.moq || 1) + ' ta'; $('stockLabel').textContent = src.stock ? Number(src.stock).toLocaleString('ru-RU') + ' ta' : '—';
   renderImages(images); renderVariants(src); const prepared=autoPrepareVariants(src); if(prepared!==src) renderVariants(prepared,{keepReview:true});
+  if (src?.diagnostics?.loginRequired) notice('1688 sahifasi barcha variantlarni yashiryapti. 1688 akkauntiga kirib, mahsulotni qayta import qiling. Hozir ko‘rinib turgan variantlarni qo‘lda tekshirib saqlash mumkin.', 'warning');
   if (!opts.keepForm) { $('name').value = src.title || ''; $('nameRu').value = src.title || ''; $('priceCny').value = src.priceCny || ''; $('price').value = src.priceUzs || calcAutoPrice(src.priceCny) || ''; $('moq').value = src.moq || 1; $('stock').value = src.stock || 0; $('description').value = defaultDescription(src); $('imagesText').value = ''; }
   markExistingBySource(); window.scrollTo({ top: $('editor').offsetTop - 86, behavior: 'smooth' });
 }

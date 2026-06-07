@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "OrzuMall 1688 Importer",
-  "version": "1.10.0",
-  "description": "1688 video faol bo‘lgan sahifalarda ham chap media lentasidan mahsulot galereyasini xavfsiz topadi va variantlarni API-siz OrzuMall qoralamasiga aylantiradi.",
+  "version": "2.0.0",
+  "description": "1688 sahifasidagi ko‘rinadigan rang, razmer va model qatorlarini ishonchli o‘qiydi, page-state bridge orqali strukturali SKU ma’lumotini boyitadi va login talab qilingan holatni ogohlantiradi.",
   "permissions": [
     "storage",
     "tabs"
@@ -42,5 +42,16 @@
       "run_at": "document_idle"
     }
   ],
-  "options_page": "options.html"
+  "options_page": "options.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "page-bridge.js"
+      ],
+      "matches": [
+        "https://*.1688.com/*",
+        "https://1688.com/*"
+      ]
+    }
+  ]
 }

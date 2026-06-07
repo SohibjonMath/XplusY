@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.10.0';
+  const VERSION = '2.0.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -12,6 +12,38 @@
   const compact = (arr, max) => uniq(arr).slice(0, max);
   const safeJsonClone = value => { try { return JSON.parse(JSON.stringify(value)); } catch (_e) { return null; } };
   const isPlainObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
+
+  // Modern 1688 sahifalarida SKU holati ko‘pincha page-world JavaScript obyektlarida turadi.
+  // Content-script izolatsiyalangan muhitda ishlaydi, shu sababli xavfsiz bridge orqali faqat
+  // mahsulotga tegishli strukturali snapshot olinadi. DOM fallback baribir saqlanadi.
+  let PAGE_STATE_ROOTS = [];
+  let PAGE_STATE_UPDATED_AT = 0;
+  window.addEventListener('message', event => {
+    if (event.source !== window || event.data?.type !== '__ORZUMALL_1688_PAGE_STATE__') return;
+    const roots = Array.isArray(event.data.roots) ? event.data.roots.filter(v => v && typeof v === 'object').slice(0, 24) : [];
+    if (roots.length) { PAGE_STATE_ROOTS = roots; PAGE_STATE_UPDATED_AT = Date.now(); }
+  });
+  function injectPageBridge() {
+    try {
+      if (!chrome?.runtime?.getURL || document.documentElement.dataset.om1688Bridge === '1') return;
+      document.documentElement.dataset.om1688Bridge = '1';
+      const script = document.createElement('script');
+      script.src = chrome.runtime.getURL('page-bridge.js');
+      script.async = false;
+      (document.head || document.documentElement).appendChild(script);
+      script.addEventListener('load', () => script.remove());
+    } catch (_e) {}
+  }
+  async function waitForPageSnapshot() {
+    injectPageBridge();
+    try { window.postMessage({ type: '__ORZUMALL_1688_SNAPSHOT_REQUEST__' }, '*'); } catch (_e) {}
+    const start = Date.now();
+    while (Date.now() - start < 420) {
+      if (PAGE_STATE_ROOTS.length && Date.now() - PAGE_STATE_UPDATED_AT < 5000) break;
+      await new Promise(resolve => setTimeout(resolve, 55));
+    }
+  }
+  injectPageBridge();
 
   const absUrl = value => {
     let raw = text(value)
@@ -71,7 +103,7 @@
 
   const scriptTexts = () => [...document.scripts].map(s => s.textContent || '').filter(s => s.length > 20 && s.length < 2800000).slice(0, 120);
   const parsedScriptRoots = () => {
-    const roots = [];
+    const roots = [...PAGE_STATE_ROOTS];
     document.querySelectorAll('script[type="application/json"],script[type="application/ld+json"]').forEach(s => {
       try { const v = JSON.parse(s.textContent || ''); if (v) roots.push(v); } catch (_e) {}
     });
@@ -220,13 +252,62 @@
     const plausibleHorizontal = box.left >= labelBox.left - 42 || box.top >= labelBox.bottom - 12;
     return closeVertical && plausibleHorizontal;
   }
+  function loginGateDetected() {
+    return /(?:登录查看全部规格|登錄查看全部規格|登录后查看全部规格|登錄後查看全部規格|请登录查看全部规格|請登錄查看全部規格)/i.test(visibleText());
+  }
+  function variantRejectedContext(node) {
+    const ctx = contextText(node);
+    return /(?:review|comment|feedback|buyer|ugc|upload|evaluate|rating|description|detail-desc|parameter|attribute|商品评价|商品評價|晒单|晒图|评论|用户上传|商品详情|包装信息)/i.test(ctx);
+  }
+  function genericCandidateName(node) {
+    const rows = [
+      node?.getAttribute?.('data-value'), node?.getAttribute?.('data-name'), node?.getAttribute?.('data-title'),
+      node?.getAttribute?.('title'), node?.getAttribute?.('aria-label'), ownLabel(node), node?.innerText, node?.textContent,
+    ];
+    for (const raw of rows) {
+      const pieces = String(raw || '').split(/\n+/).map(cleanOptionLabel).filter(Boolean);
+      for (const value of pieces) if (value && value.length <= 72 && !uiNoiseVariant.test(value)) return value;
+      const merged = cleanOptionLabel(raw);
+      if (merged && merged.length <= 72 && !uiNoiseVariant.test(merged)) return merged;
+    }
+    return '';
+  }
+  function genericVisualOptionNodes(container, labelNode, type = 'other') {
+    const labelBox = visibleBox(labelNode); if (!labelBox) return [];
+    const selector = 'button,li,a,label,div,span,[role="option"],[role="button"],[data-value],[data-title],[data-name]';
+    const map = new Map();
+    [...container.querySelectorAll(selector)].forEach((node, index) => {
+      if (node === labelNode || node.contains(labelNode) || labelNode.contains(node)) return;
+      if (variantRejectedContext(node) || node.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="product-attribute"]')) return;
+      const box = visibleBox(node); if (!box) return;
+      // Variantlar labelning o‘ng tomonida yoki bevosita pastida bo‘ladi. Butun sahifani qamramaymiz.
+      if (box.top < labelBox.top - 28 || box.top > labelBox.bottom + 720) return;
+      if (box.left < labelBox.left - 34 && box.top < labelBox.bottom + 14) return;
+      if (box.width < 16 || box.height < 14 || box.width > 720 || box.height > 148) return;
+      const image = firstNodeImage(node);
+      const name = genericCandidateName(node);
+      if (!usableVariantName(name, type, image) || variantGroupLabel.test(name) || variantGroupStop.test(name)) return;
+      const visualCount = node.querySelectorAll?.('img,picture,[style*="background"]').length || 0;
+      if (visualCount > 2) return; // wrapper emas, bitta variant qatori kerak
+      const children = node.children?.length || 0;
+      const clickable = node.matches?.(skuNodeSelector) || /pointer/i.test(getComputedStyle(node)?.cursor || '') || !!node.closest?.('[role="option"],[role="button"],[data-value],[data-sku-id],[data-prop-value-id]');
+      if (!image && !clickable && children > 1) return;
+      if (type === 'color' && !image && name.length > 32) return;
+      const dx = Math.max(0, box.left - labelBox.right); const dy = Math.max(0, box.top - labelBox.bottom);
+      const score = (image ? 150 : 0) + (clickable ? 65 : 0) + (children <= 2 ? 20 : 0) + (box.height <= 72 ? 18 : 0) - Math.min(dx / 30, 20) - Math.min(dy / 18, 35) - children * 2;
+      const row = { node, name, image, score, index };
+      const old = map.get(name); if (!old || score > old.score) map.set(name, row);
+    });
+    return [...map.values()].sort((a,b)=>a.index-b.index || b.score-a.score).slice(0, MAX_OPTIONS).map(x=>x.node);
+  }
+
   function domOptionNodes(container, labelNode, type = 'other') {
     const labelBox = visibleBox(labelNode);
-    const selectors = type === 'spec' ? `${skuNodeSelector},div,span` : skuNodeSelector;
+    const selectors = `${skuNodeSelector},div,span,label`;
     const map = new Map();
     [...container.querySelectorAll(selectors)].forEach((node, index) => {
       if (node === labelNode || node.contains(labelNode)) return;
-      if (node.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"],[class*="product-attribute"]')) return;
+      if (variantRejectedContext(node) || node.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"],[class*="product-attribute"]')) return;
       const box = visibleBox(node); if (!box || !closeToLabel(labelBox, box)) return;
       if (box.width > 680 || box.height > 190) return;
       const image = firstNodeImage(node);
@@ -234,7 +315,7 @@
       if (!usableVariantName(name, type, image) || variantGroupLabel.test(name)) return;
       const nestedStrong = [...node.querySelectorAll(skuNodeSelector)].filter(x => x !== node).length;
       if (nestedStrong > 1 && !image) return; // wrapper emas, haqiqiy option kerak
-      const strong = isStrongSkuNode(node) || node.children.length === 0;
+      const strong = isStrongSkuNode(node) || node.children.length === 0 || (!!image && node.children.length <= 4);
       if (!strong) return;
       const distance = labelBox ? Math.max(0, box.top - labelBox.bottom) + Math.max(0, labelBox.left - box.left) : 0;
       const score = (image ? 80 : 0) + (node.matches(skuNodeSelector) ? 55 : 0) + (node.children.length === 0 ? 12 : 0) + (box.width <= 420 ? 8 : 0) - Math.min(distance / 16, 35) - Math.min(nestedStrong * 4, 20);
@@ -250,7 +331,7 @@
     for (let hop = 0; container && hop < 5; hop += 1, container = container.parentElement) {
       const rawText = text(container.innerText || container.textContent);
       if (rawText.length > 2600) break; // butun sahifa textini variant deb olishga yo‘l qo‘ymaymiz
-      const nodes = domOptionNodes(container, labelNode, type);
+      const nodes = [...new Set([...domOptionNodes(container, labelNode, type), ...genericVisualOptionNodes(container, labelNode, type)])];
       const options = [];
       nodes.forEach((node, index) => {
         const host = node.closest?.('[data-sku-id],[data-prop-value-id],[data-value-id],[data-value],[class*=\"sku-item\"],[class*=\"skuItem\"],[class*=\"spec-item\"],[class*=\"specItem\"]') || node;
@@ -565,6 +646,18 @@
     }).slice(0,MAX_SKUS);
   }
 
+  function variantDiagnostics(groups = [], skuVariants = []) {
+    const gate = loginGateDetected();
+    return {
+      loginRequired: gate,
+      variantsMayBePartial: gate,
+      bridgeRootCount: PAGE_STATE_ROOTS.length,
+      visibleVariantLabelCount: [...document.querySelectorAll('span,div,label,dt,th,p,strong')].filter(n => variantGroupLabel.test(text(n.textContent))).length,
+      groupNames: groups.map(g => `${g.name}:${g.options.length}`).slice(0, 12),
+      hasVariants: groups.length > 0 || skuVariants.length > 0,
+    };
+  }
+
   function extract() {
     const prices = priceRange();
     const visibleGroups = readGroupsFromDom();
@@ -591,7 +684,7 @@
       variantGroups: groups, colorOptions, sizeOptions, variantImages, imagesByColor,
       genericSpecName: sizeGroup?.type === 'spec' ? sizeGroup.name : '',
       skuVariants, variants: skuVariants,
-      diagnostics: { galleryCount: images.length, variantImageCount: variantImages.length, groupCount: groups.length, skuCount: skuVariants.length, mode: skuVariants.some(x => /^fallback/.test(x.id)) ? 'dom-fallback' : 'structured' },
+      diagnostics: { galleryCount: images.length, variantImageCount: variantImages.length, groupCount: groups.length, skuCount: skuVariants.length, mode: skuVariants.some(x => /^fallback/.test(x.id)) ? 'dom-fallback' : 'structured', ...variantDiagnostics(groups, skuVariants) },
       extractedAt: new Date().toISOString(), extractorVersion: VERSION,
     };
   }
@@ -605,6 +698,7 @@
   const importNow = async () => {
     try {
       feedback('Professional import...');
+      await waitForPageSnapshot();
       const payload = extract();
       if (!payload.id && !/detail\.1688\.com\/offer/i.test(location.href)) throw new Error('Mahsulot sahifasi topilmadi');
       if (!payload.images.length) throw new Error('Asosiy galereya topilmadi. Sahifani to‘liq yuklab qayta urinib ko‘ring.');
