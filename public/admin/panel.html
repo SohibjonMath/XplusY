@@ -4351,8 +4351,35 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       document.body.appendChild(wrap);
     }
 
+    function apCleanVariantLabel(value){
+      return String(value==null?"":value).replace(/(?:库存|庫存|stock|qoldiq|остаток)\s*[:：]?\s*\d+[\s\S]*$/i,"").replace(/(?:¥|￥)\s*\d+(?:[.,]\d+)?[\s\S]*$/i,"").replace(/^[\s:：/_-]+|[\s:：/_-]+$/g,"").replace(/\s+/g," ").trim().slice(0,120);
+    }
+    function apAttrVariant(row,kind){
+      const re=kind==="color"?/(?:颜色|顏色|色彩|color|colour|rang)/i:/(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i;
+      const hit=Object.entries(row?.attributes||{}).find(([k])=>re.test(String(k||"")));
+      return apCleanVariantLabel(hit?.[1]||"");
+    }
+    function apHydrateChinaVariants(product){
+      const o={...product}; const src=o.china1688||{}; const groups=Array.isArray(src.variantGroups)?src.variantGroups:[];
+      const rows=Array.isArray(o.variants)&&o.variants.length?o.variants:(Array.isArray(src.skuVariants)?src.skuVariants:[]);
+      const colorRows=[]; const addColors=list=>(Array.isArray(list)?list:[]).forEach(x=>colorRows.push(typeof x==="string"?{name:x}:x));
+      addColors(o.colors); addColors(src.colorOptions); addColors(groups.find(g=>String(g?.type||"").toLowerCase()==="color")?.options);
+      rows.forEach(v=>{ const name=apCleanVariantLabel(v?.color||apAttrVariant(v,"color")); if(name) colorRows.push({name,image:v?.image||src.imagesByColor?.[name]?.[0]||""}); });
+      const cMap=new Map(); colorRows.forEach(x=>{ const name=apCleanVariantLabel(x?.name||x?.label||x?.value||""); if(!name)return; const old=cMap.get(name)||{}; cMap.set(name,{name,hex:x?.hex||old.hex||"#D4AF37",...(x?.image||old.image?{image:x?.image||old.image}: {})}); });
+      const sizeRows=[]; const addSizes=list=>(Array.isArray(list)?list:[]).forEach(x=>sizeRows.push(typeof x==="string"?x:(x?.name||x?.label||x?.value||"")));
+      addSizes(o.sizes); addSizes(src.sizeOptions); addSizes(groups.find(g=>String(g?.type||"").toLowerCase()==="size")?.options); rows.forEach(v=>sizeRows.push(v?.size||apAttrVariant(v,"size")));
+      const sizes=[...new Set(sizeRows.map(apCleanVariantLabel).filter(Boolean))];
+      const variants=rows.map(v=>{ const color=apCleanVariantLabel(v?.color||apAttrVariant(v,"color")); const size=apCleanVariantLabel(v?.size||apAttrVariant(v,"size")); return {...v,color:color||null,size:size||null,price:Number(v?.price||v?.priceUzs||o.price||0),oldPrice:Number(v?.oldPrice||0),stockQty:Number(v?.stockQty??v?.stock??0),sku:v?.sku||v?.skuId||v?.id||""}; }).filter(v=>v.color||v.size);
+      if(!(Array.isArray(o.colors)&&o.colors.length)) o.colors=[...cMap.values()];
+      else o.colors=[...cMap.values()];
+      if(!(Array.isArray(o.sizes)&&o.sizes.length)) o.sizes=sizes; else o.sizes=sizes;
+      if(!(Array.isArray(o.variants)&&o.variants.length) && variants.length) o.variants=variants;
+      if((!o.imagesByColor || typeof o.imagesByColor!=="object") && src.imagesByColor) o.imagesByColor=src.imagesByColor;
+      return o;
+    }
+
     function normalize(p){
-      const o = { ...p };
+      let o = { ...p };
       o.id = o.id || p.id;
       o.price = Number(o.price||0);
       o.oldPrice = Number(o.oldPrice||0);
@@ -4365,6 +4392,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       o.variants = Array.isArray(o.variants)?o.variants:[];
       o.createdAt = o.createdAt || nowISO();
       if(o.imagesByColor && typeof o.imagesByColor !== "object") delete o.imagesByColor;
+      if(o.sourcePlatform==="1688" || o.china1688) o=apHydrateChinaVariants(o);
       return o;
     }
 
@@ -5818,14 +5846,18 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       div.className="list-item";
       div.style.alignItems="flex-start";
       const o=v||{};
+      div.dataset.sku=String(o.sku||o.skuId||o.id||"");
+      div.dataset.image=String(o.image||"");
+      try{ div.dataset.attributes=JSON.stringify(o.attributes||{}); }catch(_e){ div.dataset.attributes="{}"; }
       div.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px;flex:1">
           <div style="display:flex;gap:10px">
-            <input class="form-control" placeholder="Color" value="${esc(o.color||"")}" style="flex:1">
-            <input class="form-control" placeholder="Size" value="${esc(o.size||"")}" style="flex:1">
+            <input class="form-control vColor" placeholder="Rang" value="${esc(o.color||"")}" style="flex:1">
+            <input class="form-control vSize" placeholder="O‘lcham" value="${esc(o.size||"")}" style="flex:1">
           </div>
-          <div style="display:flex;gap:10px">
-            <input type="number" class="form-control" placeholder="Price" value="${o.price??""}" style="flex:1">
-            <input type="number" class="form-control" placeholder="Old" value="${o.oldPrice??0}" style="flex:1">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input type="number" class="form-control vPrice" placeholder="Narx" value="${o.price??o.priceUzs??""}" style="flex:1;min-width:100px">
+            <input type="number" class="form-control vOldPrice" placeholder="Eski narx" value="${o.oldPrice??0}" style="flex:1;min-width:100px">
+            <input type="number" class="form-control vStock" placeholder="Qoldiq" value="${o.stockQty??o.stock??0}" style="flex:1;min-width:90px">
           </div>
 </div>
         <button type="button" class="btn btn-light btn-sm rm"><i class="fas fa-times"></i></button>`;
@@ -6154,16 +6186,12 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
       const images=[...document.querySelectorAll("#imagesContainer .list-item input")].map(i=>i.value.trim()).filter(Boolean);
 
       const variants=[...document.querySelectorAll("#variantsContainer .list-item")].map(li=>{
-        const ins=li.querySelectorAll("input");
-        if(ins.length<5) return null;
-        const price=ins[2].value.trim();
-        if(!price) return null;
-        return {
-          color: ins[0].value.trim()||null,
-          size: ins[1].value.trim()||null,
-          price: Number(price),
-          oldPrice: Number(ins[3].value||0)
-        };
+        const color=(li.querySelector(".vColor")?.value||"").trim();
+        const size=(li.querySelector(".vSize")?.value||"").trim();
+        const price=Number(li.querySelector(".vPrice")?.value||0);
+        if(!color&&!size) return null;
+        let attributes={}; try{ attributes=JSON.parse(li.dataset.attributes||"{}"); }catch(_e){}
+        return { color:color||null,size:size||null,price:price||Number($("price").value||0),oldPrice:Number(li.querySelector(".vOldPrice")?.value||0),stockQty:Number(li.querySelector(".vStock")?.value||0),stock:Number(li.querySelector(".vStock")?.value||0),sku:li.dataset.sku||"",skuId:li.dataset.sku||"",attributes,...(li.dataset.image?{image:li.dataset.image}:{}) };
       }).filter(Boolean);
 
       const data={
@@ -6246,9 +6274,9 @@ $("currency").value=p.currency||"UZS";
       updateTagsPreview();
 
       $("colorsContainer").innerHTML="";
-      (p.colors?.length?p.colors:[{name:"",hex:"#D4AF37"}]).forEach(c=>addColor(c.name,c.hex));
+      (p.colors?.length?p.colors:[{name:"",hex:"#D4AF37"}]).forEach(c=>{ const row=typeof c==="string"?{name:c}:c; addColor(row.name||"",row.hex||"#D4AF37"); });
       $("sizesContainer").innerHTML="";
-      (p.sizes?.length?p.sizes:[""]).forEach(s=>addSize(s));
+      (p.sizes?.length?p.sizes:[""]).forEach(s=>addSize(typeof s==="string"?s:(s?.name||s?.label||s?.value||"")));
       $("imagesContainer").innerHTML="";
       (p.images?.length?p.images:[""]).forEach(u=>addImage(u));
 

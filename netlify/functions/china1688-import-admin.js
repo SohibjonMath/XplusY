@@ -366,7 +366,7 @@ function publicRow(doc) {
     fulfillmentType: cleanText(p.fulfillmentType, 32), isActive: p.isActive !== false,
     deliveryMinDays: safeInt(p.deliveryMinDays, 1, 365, 15), deliveryMaxDays: safeInt(p.deliveryMaxDays, 1, 365, 30),
     tags: sanitizeTags(p.tags), weightKg: safeNumber(p.weightKg, 0, 100000, 0),
-    popularScore: safeInt(p.popularScore, 0, 1e12, 0), updatedAtMs: stampMs(p.updatedAt),
+    popularScore: safeInt(p.popularScore, 0, 1e12, 0), colors: Array.isArray(p.colors) ? p.colors : [], sizes: Array.isArray(p.sizes) ? p.sizes : [], variants: Array.isArray(p.variants) ? p.variants : [], imagesByColor: p.imagesByColor || {}, updatedAtMs: stampMs(p.updatedAt),
     localImageCount: safeInt(src.localImageCount, 0, 1000, images.filter(isStorageUrl).length),
     imageStandard: cleanText(src.imageStandard, 80), normalizedImageCount: safeInt(src.normalizedImageCount, 0, 1000, images.filter(isNormalizedStorageUrl).length),
     source: sourceSummary({ ...src, id: p.sourceItemId || src.itemId, url: p.sourceUrl || src.url, images: src.externalImages?.length ? src.externalImages : p.images }),

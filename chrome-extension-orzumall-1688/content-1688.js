@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.4.0';
+  const VERSION = '1.5.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -97,6 +97,17 @@
       .trim()
       .slice(0, 120);
   }
+  const badVariantText = /(?:主面料|面料|材质|成分|工艺|品牌|货号|库存|庫存|起批|价格|运费|评价|参数|商品属性|包装|详情|¥|￥|stock|qoldiq|material|fabric|brand|price|delivery)/i;
+  const sizeToken = /^(?:xxxs|xxs|xs|s|m|l|xl|xxl|xxxl|xxxxl|[2-9]xl|均码|free|one\s*size|(?:xxxs|xxs|xs|s|m|l|xl|xxl|xxxl|xxxxl|[2-9]xl)码|\d{2,3}(?:\s*(?:cm|码))?)$/i;
+  function looksLikeSize(value = '') { const v = cleanOptionLabel(value); return !!v && v.length <= 18 && sizeToken.test(v); }
+  function usableVariantName(value = '', type = 'other', image = '') {
+    const v = cleanOptionLabel(value);
+    if (!v || v.length > 48 || badVariantText.test(v)) return false;
+    if (type === 'size') return looksLikeSize(v);
+    if (type === 'color') return !!image || (v.length <= 28 && !/^(?:s|m|l|xl|xxl|xxxl|[2-9]xl|\d{2,3})$/i.test(v));
+    return v.length <= 36;
+  }
+
   function classifyGroup(label = '', index = 0) {
     const s = text(label).toLowerCase();
     if (/(?:颜色|顏色|颜色分类|色彩|colour|color|rang)/i.test(s)) return 'color';
@@ -156,14 +167,16 @@
   function ownLabel(el) {
     return text([...el.childNodes].filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent).join(' '));
   }
-  function domOptionNodes(container, labelNode) {
-    const selectors = ['button', 'li', '[role="option"]', '[data-sku-id]', '[data-prop-value-id]', '[data-value-id]', '[class*="sku-item"]', '[class*="skuItem"]', '[class*="prop-item"]', '[class*="propItem"]', '[class*="value-item"]', '[class*="valueItem"]', 'span[class*="value"]', 'div[class*="value"]', '[class*="item"]', '[class*="Item"]'];
+  function domOptionNodes(container, labelNode, type = 'other') {
+    const selectors = ['button','li','[role="option"]','[data-sku-id]','[data-prop-value-id]','[data-value-id]','[class*="sku-item"]','[class*="skuItem"]','[class*="spec-item"]','[class*="specItem"]','[class*="prop-item"]','[class*="propItem"]','[class*="value-item"]','[class*="valueItem"]'];
     return [...container.querySelectorAll(selectors.join(','))]
       .filter(n => n !== labelNode && !n.contains(labelNode))
+      .filter(n => !n.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"]'))
       .filter(n => {
-        const name = text(n.getAttribute('title') || n.getAttribute('aria-label') || ownLabel(n) || n.innerText || n.textContent);
+        const image = firstNodeImage(n);
+        const name = cleanOptionLabel(n.getAttribute('title') || n.getAttribute('aria-label') || ownLabel(n) || n.innerText || n.textContent);
         const box = n.getBoundingClientRect?.();
-        return name && name.length <= 120 && (!box || box.width >= 14 || box.height >= 14);
+        return usableVariantName(name, type, image) && (!box || box.width >= 14 || box.height >= 14);
       });
   }
   function readGroupsFromDom() {
@@ -171,21 +184,20 @@
     const exactNodes = [...document.querySelectorAll('span,div,label,dt,th,p')].filter(n => labels.test(text(n.textContent)));
     const groups = [];
     exactNodes.forEach((labelNode, gi) => {
+      if (labelNode.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"]')) return;
+      const name = text(labelNode.textContent).replace(/[:：]/g, '');
+      const type = classifyGroup(name, groups.length);
       let container = labelNode.parentElement;
-      for (let hop = 0; container && hop < 4; hop += 1, container = container.parentElement) {
-        const nodes = domOptionNodes(container, labelNode);
+      for (let hop = 0; container && hop < 3; hop += 1, container = container.parentElement) {
+        const nodes = domOptionNodes(container, labelNode, type);
         const options = [];
         nodes.forEach((node, index) => {
-          const name = cleanOptionLabel(node.getAttribute('title') || node.getAttribute('aria-label') || ownLabel(node) || node.innerText || node.textContent);
           const image = firstNodeImage(node);
-          if (!name || name === text(labelNode.textContent) || name.length > 120) return;
-          if (!options.some(o => o.name === name)) options.push({ id: text(node.getAttribute('data-sku-id') || node.getAttribute('data-prop-value-id') || node.getAttribute('data-value-id') || `d${gi + 1}_${index + 1}`), name, image, disabled: /disabled|soldout|sold-out/i.test(`${node.className || ''} ${node.getAttribute('aria-disabled') || ''}`) });
+          const option = cleanOptionLabel(node.getAttribute('title') || node.getAttribute('aria-label') || ownLabel(node) || node.innerText || node.textContent);
+          if (!usableVariantName(option, type, image)) return;
+          if (!options.some(o => o.name === option)) options.push({ id: text(node.getAttribute('data-sku-id') || node.getAttribute('data-prop-value-id') || node.getAttribute('data-value-id') || `d${gi + 1}_${index + 1}`), name: option, image, disabled: /disabled|soldout|sold-out/i.test(`${node.className || ''} ${node.getAttribute('aria-disabled') || ''}`) });
         });
-        if (options.length >= 2 && options.length <= MAX_OPTIONS) {
-          const name = text(labelNode.textContent).replace(/[:：]/g, '');
-          groups.push({ id: `dom${gi + 1}`, name, type: classifyGroup(name, groups.length), options });
-          break;
-        }
+        if (options.length >= 2 && options.length <= MAX_OPTIONS) { groups.push({ id: `dom${gi + 1}`, name, type, options }); break; }
       }
     });
     const merged = [];
@@ -197,6 +209,7 @@
     return merged.slice(0, MAX_VARIANT_GROUPS);
   }
   function mergeGroups(scriptGroups, domGroups) {
+
     const result = safeJsonClone(scriptGroups) || [];
     domGroups.forEach(group => {
       let target = result.find(g => g.type === group.type) || result.find(g => text(g.name) === text(group.name));
@@ -207,7 +220,11 @@
         else if (!old.image && o.image) old.image = o.image;
       });
     });
-    return result.slice(0, MAX_VARIANT_GROUPS).map((g, i) => ({ ...g, type: inferGroupType(g, i), options: compact(g.options.map(o => JSON.stringify({ ...o, name: cleanOptionLabel(o.name) })).filter(Boolean), MAX_OPTIONS).map(s => JSON.parse(s)).filter(o => o.name) }));
+    return result.slice(0, MAX_VARIANT_GROUPS).map((g, i) => {
+      const type = inferGroupType(g, i);
+      const options = compact(g.options.map(o => JSON.stringify({ ...o, name: cleanOptionLabel(o.name) })).filter(Boolean), MAX_OPTIONS).map(s => JSON.parse(s)).filter(o => usableVariantName(o.name, type, o.image));
+      return { ...g, type, options };
+    }).filter(g => g.options.length >= 2);
   }
 
   function readSkuRowsFromScripts() {
