@@ -4,3 +4,6 @@
 @media(max-width:720px){.extension-card{padding:14px;border-radius:19px;align-items:flex-start;flex-wrap:wrap}.extension-icon{width:44px;height:44px}.extension-copy{flex:1;min-width:220px}.extension-card .download{margin-left:0;width:100%}.extension-steps{display:none}.url-row{grid-template-columns:1fr}}
 
 img.broken-preview{opacity:.18;filter:grayscale(1)}
+
+/* v155 — marketplace-ready image standard controls */
+.image-standard{display:inline-flex;align-items:center;border-radius:999px;padding:2px 6px;font-size:9px;font-weight:900}.image-standard.ready{background:#ecfdf3;color:#067647}.image-standard.pending{background:#fffaeb;color:#b54708}.tiny-btn.normalize{background:#eff8ff;color:#175cd3}.tiny-btn.normalize:hover{background:#dbeafe}.saved-card img{background:#fff;object-fit:contain}

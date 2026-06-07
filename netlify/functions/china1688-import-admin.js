@@ -9,7 +9,7 @@ const {
   admin, cleanText, json, parseBody, safe1688Url, itemIdFromUrl,
   calculatePrice, pricingConfig, requireAdmin, rateLimit,
 } = require('./_china1688Common');
-const { MAX_IMAGES_PER_BATCH, copyImages } = require('./_china1688ImageStore');
+const { MAX_IMAGES_PER_BATCH, IMAGE_STANDARD, copyImages } = require('./_china1688ImageStore');
 
 function safeNumber(v, min = 0, max = 1e12, fallback = 0) {
   const n = Number(v);
@@ -53,6 +53,7 @@ function sanitizeSourceVariants(list) {
 }
 function nowIso() { return new Date().toISOString(); }
 function isStorageUrl(v) { return /^https:\/\/firebasestorage\.googleapis\.com\//i.test(String(v || '')); }
+function isNormalizedStorageUrl(v) { return isStorageUrl(v) && /square-1200-v1/i.test(String(v || '')); }
 
 async function generateAdminProductId(db) {
   const counterRef = db.doc('meta/counters');
@@ -158,6 +159,7 @@ async function saveProduct(db, raw, actor) {
   const ts = admin.firestore.FieldValue.serverTimestamp();
   const source = draft.source;
   const storedCount = draft.images.filter(isStorageUrl).length;
+  const normalizedCount = draft.images.filter(isNormalizedStorageUrl).length;
   const payload = {
     name: draft.name,
     name_ru: draft.name_ru,
@@ -204,6 +206,8 @@ async function saveProduct(db, raw, actor) {
       variants: sanitizeSourceVariants(source.variants),
       externalImages: draft.externalImages,
       localImageCount: storedCount,
+      imageStandard: draft.images.length && normalizedCount === draft.images.length ? IMAGE_STANDARD : cleanText(source.imageStandard, 80),
+      normalizedImageCount: normalizedCount,
       importer: 'chrome-extension',
       extractorVersion: cleanText(source.extractorVersion, 40),
       importedBy: actor.email,
@@ -240,9 +244,84 @@ function publicRow(doc) {
     tags: sanitizeTags(p.tags), weightKg: safeNumber(p.weightKg, 0, 100000, 0),
     popularScore: safeInt(p.popularScore, 0, 1e12, 0), updatedAtMs: stampMs(p.updatedAt),
     localImageCount: safeInt(src.localImageCount, 0, 1000, images.filter(isStorageUrl).length),
-    source: sourceSummary({ ...src, id: p.sourceItemId || src.itemId, url: p.sourceUrl || src.url, images: p.images?.length ? p.images : src.externalImages }),
+    imageStandard: cleanText(src.imageStandard, 80), normalizedImageCount: safeInt(src.normalizedImageCount, 0, 1000, images.filter(isNormalizedStorageUrl).length),
+    source: sourceSummary({ ...src, id: p.sourceItemId || src.itemId, url: p.sourceUrl || src.url, images: src.externalImages?.length ? src.externalImages : p.images }),
   };
 }
+
+
+async function applyNormalizedImages(db, raw = {}, actor) {
+  const id = cleanText(raw.productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  if (!id) throw Object.assign(new Error('PRODUCT_ID_REQUIRED'), { statusCode: 400 });
+  const ref = db.doc(`products/${id}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw Object.assign(new Error('PRODUCT_NOT_FOUND'), { statusCode: 404 });
+  const before = snap.data() || {};
+  if (before.sourcePlatform !== '1688') throw Object.assign(new Error('NOT_1688_PRODUCT'), { statusCode: 409 });
+  const images = sanitizeImages(raw.images);
+  if (!images.length) throw Object.assign(new Error('PRODUCT_IMAGES_NOT_FOUND'), { statusCode: 400 });
+  const externalImages = sanitizeImages(raw.externalImages?.length ? raw.externalImages : (before.china1688 || {}).externalImages);
+  const storedCount = images.filter(isStorageUrl).length;
+  const normalizedCount = images.filter(isNormalizedStorageUrl).length;
+  const ts = admin.firestore.FieldValue.serverTimestamp();
+  await ref.set({
+    images,
+    china1688: {
+      externalImages,
+      localImageCount: storedCount,
+      normalizedImageCount: normalizedCount,
+      imageStandard: normalizedCount ? IMAGE_STANDARD : '',
+      imageNormalizedBy: actor.email,
+      imageNormalizedAt: ts,
+    },
+    updatedAt: ts,
+  }, { merge: true });
+  return { id, images, copied: storedCount, normalized: normalizedCount, failed: Math.max(0, images.length - storedCount), standard: normalizedCount ? IMAGE_STANDARD : '' };
+}
+
+async function normalizeStoredProductImages(db, productId, actor) {
+  const id = cleanText(productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  if (!id) throw Object.assign(new Error('PRODUCT_ID_REQUIRED'), { statusCode: 400 });
+  const ref = db.doc(`products/${id}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw Object.assign(new Error('PRODUCT_NOT_FOUND'), { statusCode: 404 });
+  const before = snap.data() || {};
+  if (before.sourcePlatform !== '1688') throw Object.assign(new Error('NOT_1688_PRODUCT'), { statusCode: 409 });
+  const src = before.china1688 || {};
+  const rawUrls = sanitizeImages(src.externalImages?.length ? src.externalImages : before.images);
+  if (!rawUrls.length) throw Object.assign(new Error('PRODUCT_IMAGES_NOT_FOUND'), { statusCode: 400 });
+  const copied = [], failed = [];
+  for (let i = 0; i < rawUrls.length; i += MAX_IMAGES_PER_BATCH) {
+    const part = rawUrls.slice(i, i + MAX_IMAGES_PER_BATCH);
+    const result = await copyImages(part, `${id}-normalized`, { normalize: true });
+    copied.push(...(result.copied || []));
+    failed.push(...(result.failed || []));
+  }
+  if (!copied.length) throw Object.assign(new Error('IMAGE_NORMALIZATION_FAILED'), { statusCode: 502 });
+  const finalImages = [...copied.map(x => x.url), ...failed.map(x => x.sourceUrl)].slice(0, 18);
+  const ts = admin.firestore.FieldValue.serverTimestamp();
+  await ref.set({
+    images: finalImages,
+    china1688: {
+      externalImages: rawUrls,
+      localImageCount: copied.length,
+      normalizedImageCount: copied.filter(x => x.normalized).length,
+      imageStandard: IMAGE_STANDARD,
+      imageNormalizedBy: actor.email,
+      imageNormalizedAt: ts,
+    },
+    updatedAt: ts,
+  }, { merge: true });
+  return {
+    id,
+    images: finalImages,
+    copied: copied.length,
+    normalized: copied.filter(x => x.normalized).length,
+    failed: failed.length,
+    standard: IMAGE_STANDARD,
+  };
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return json(204, {});
   if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' });
@@ -257,8 +336,8 @@ exports.handler = async function handler(event) {
   try {
     if (action === 'copyimages') {
       const itemId = cleanText(body.itemId || 'draft', 100).replace(/[^a-z0-9_-]/gi, '') || 'draft';
-      const result = await copyImages(body.urls, itemId);
-      return json(200, { ...result, maxPerBatch: MAX_IMAGES_PER_BATCH });
+      const result = await copyImages(body.urls, itemId, { normalize: body.normalize !== false });
+      return json(200, { ...result, maxPerBatch: MAX_IMAGES_PER_BATCH, imageStandard: IMAGE_STANDARD });
     }
     if (action === 'save') {
       const result = await saveProduct(db, body.product || {}, actor);
@@ -268,6 +347,14 @@ exports.handler = async function handler(event) {
       const snap = await db.collection('products').where('sourcePlatform', '==', '1688').limit(200).get();
       const products = snap.docs.map(publicRow).sort((a, b) => b.updatedAtMs - a.updatedAtMs);
       return json(200, { products, pricing: pricingConfig(), importerMode: 'api-free-extension' });
+    }
+    if (action === 'applynormalizedimages') {
+      const result = await applyNormalizedImages(db, body, actor);
+      return json(200, result);
+    }
+    if (action === 'normalizeproductimages') {
+      const result = await normalizeStoredProductImages(db, body.productId, actor);
+      return json(200, result);
     }
     if (action === 'archive') {
       const id = cleanText(body.productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');

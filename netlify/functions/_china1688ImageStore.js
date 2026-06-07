@@ -1,15 +1,22 @@
 /*
  * API-free 1688 image copier for OrzuMall.
- * Downloads explicitly selected remote product images and stores private-token
- * Firebase download URLs so the catalog remains independent from 1688 pages.
+ * Downloads explicitly selected remote product images, normalizes them into a
+ * consistent marketplace-ready square canvas, and stores private-token Firebase
+ * download URLs so the catalog remains independent from 1688 pages.
  */
 const crypto = require('node:crypto');
 const dns = require('node:dns').promises;
 const net = require('node:net');
 const { admin, cleanText } = require('./_china1688Common');
 
+let sharp = null;
+try { sharp = require('sharp'); } catch (_e) { sharp = null; }
+
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGES_PER_BATCH = 6;
+const IMAGE_STANDARD = 'square-1200-v1';
+const CANVAS_SIZE = 1200;
+const CONTENT_SIZE = 1120;
 
 function safeFilePart(v, fallback = 'item') {
   const s = cleanText(v, 120).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
@@ -103,37 +110,121 @@ async function downloadImage(rawUrl) {
     return { url, buffer, contentType: contentType.startsWith('image/') ? contentType : 'image/jpeg' };
   } finally { clearTimeout(timer); }
 }
-async function copyOne(rawUrl, itemId, index) {
+
+async function normalizeMarketplaceImage(source) {
+  if (!sharp) {
+    return {
+      buffer: source.buffer,
+      contentType: source.contentType,
+      ext: contentExtension(source.contentType, source.url),
+      normalized: false,
+      standard: 'raw-fallback',
+      reason: 'SHARP_NOT_AVAILABLE',
+    };
+  }
+  try {
+    // Important: trim runs before the fixed canvas resize. This removes common
+    // white/transparent source borders from supplier images so products do not
+    // look randomly tiny next to each other. The final 40px frame is identical
+    // for every photo.
+    const result = await sharp(source.buffer, { failOn: 'none', animated: false })
+      .rotate()
+      .flatten({ background: '#ffffff' })
+      .trim({ background: '#ffffff', threshold: 8 })
+      .resize(CONTENT_SIZE, CONTENT_SIZE, {
+        fit: 'contain',
+        position: 'centre',
+        background: '#ffffff',
+        withoutEnlargement: false,
+      })
+      .extend({ top: 40, bottom: 40, left: 40, right: 40, background: '#ffffff' })
+      .jpeg({ quality: 90, mozjpeg: true, chromaSubsampling: '4:4:4' })
+      .toBuffer({ resolveWithObject: true });
+    return {
+      buffer: result.data,
+      contentType: 'image/jpeg',
+      ext: 'jpg',
+      normalized: true,
+      standard: IMAGE_STANDARD,
+      width: Number(result.info?.width || CANVAS_SIZE),
+      height: Number(result.info?.height || CANVAS_SIZE),
+    };
+  } catch (e) {
+    // A corrupt supplier photo must not block the whole import. Store the raw
+    // source as a safe fallback and report the reason to the admin endpoint.
+    return {
+      buffer: source.buffer,
+      contentType: source.contentType,
+      ext: contentExtension(source.contentType, source.url),
+      normalized: false,
+      standard: 'raw-fallback',
+      reason: cleanText(e?.message || 'IMAGE_NORMALIZE_FAILED', 160),
+    };
+  }
+}
+
+async function copyOne(rawUrl, itemId, index, options = {}) {
   const source = await downloadImage(rawUrl);
+  const shouldNormalize = options.normalize !== false;
+  const prepared = shouldNormalize ? await normalizeMarketplaceImage(source) : {
+    buffer: source.buffer,
+    contentType: source.contentType,
+    ext: contentExtension(source.contentType, source.url),
+    normalized: false,
+    standard: 'raw-copy',
+  };
   const bucket = firebaseBucket();
   const token = crypto.randomUUID();
   const hash = crypto.createHash('sha256').update(source.url).digest('hex').slice(0, 14);
-  const ext = contentExtension(source.contentType, source.url);
-  const name = `products/china1688/${safeFilePart(itemId)}/${Date.now()}-${index + 1}-${hash}.${ext}`;
+  const stamp = Date.now();
+  const name = `products/china1688/${safeFilePart(itemId)}/${stamp}-${index + 1}-${hash}-${prepared.standard}.${prepared.ext}`;
   const file = bucket.file(name);
-  await file.save(source.buffer, {
+  await file.save(prepared.buffer, {
     resumable: false,
     metadata: {
-      contentType: source.contentType,
+      contentType: prepared.contentType,
       cacheControl: 'public,max-age=31536000,immutable',
       metadata: {
         firebaseStorageDownloadTokens: token,
         sourcePlatform: '1688',
         sourceUrl: source.url,
+        imageStandard: prepared.standard,
+        normalized: prepared.normalized ? 'true' : 'false',
       },
     },
   });
   const url = `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucket.name)}/o/${encodeURIComponent(name)}?alt=media&token=${encodeURIComponent(token)}`;
-  return { sourceUrl: source.url, url, path: name };
+  return {
+    sourceUrl: source.url,
+    url,
+    path: name,
+    normalized: !!prepared.normalized,
+    standard: prepared.standard,
+    normalizationReason: prepared.reason || '',
+  };
 }
-async function copyImages(rawUrls, itemId) {
+async function copyImages(rawUrls, itemId, options = {}) {
   const urls = [...new Set((Array.isArray(rawUrls) ? rawUrls : []).map(safeHttpUrl).filter(Boolean))].slice(0, MAX_IMAGES_PER_BATCH);
-  const settled = await Promise.allSettled(urls.map((url, index) => copyOne(url, itemId, index)));
+  const settled = await Promise.allSettled(urls.map((url, index) => copyOne(url, itemId, index, options)));
   const copied = [], failed = [];
   settled.forEach((row, index) => {
     if (row.status === 'fulfilled') copied.push(row.value);
     else failed.push({ sourceUrl: urls[index], error: cleanText(row.reason?.message || 'IMAGE_COPY_FAILED', 160) });
   });
-  return { copied, failed, requested: urls.length };
+  return {
+    copied,
+    failed,
+    requested: urls.length,
+    normalized: copied.filter(x => x.normalized).length,
+    standard: options.normalize === false ? 'raw-copy' : IMAGE_STANDARD,
+    sharpAvailable: !!sharp,
+  };
 }
-module.exports = { MAX_IMAGES_PER_BATCH, safeHttpUrl, downloadImage, copyImages };
+module.exports = {
+  MAX_IMAGES_PER_BATCH,
+  IMAGE_STANDARD,
+  safeHttpUrl,
+  downloadImage,
+  normalizeMarketplaceImage,
+  copyImages,
+};
