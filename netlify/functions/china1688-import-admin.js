@@ -51,6 +51,70 @@ function sanitizeSourceVariants(list) {
     priceUzs: safeInt(row?.priceUzs, 0, 1e12, 0),
   })).filter(x => x.name || x.id);
 }
+
+function sanitizeVariantOptions(list) {
+  return (Array.isArray(list) ? list : []).slice(0, 64).map((row, idx) => ({
+    id: cleanText(row?.id || `o${idx + 1}`, 140),
+    name: cleanText(row?.name || row?.label || row?.value, 160),
+    image: safeUrl(row?.image, 2200),
+    disabled: row?.disabled === true,
+  })).filter(x => x.name);
+}
+function sanitizeVariantGroups(list) {
+  return (Array.isArray(list) ? list : []).slice(0, 10).map((row, idx) => ({
+    id: cleanText(row?.id || `g${idx + 1}`, 140),
+    name: cleanText(row?.name || `Variant ${idx + 1}`, 160),
+    type: ['color', 'size', 'other'].includes(cleanText(row?.type, 20).toLowerCase()) ? cleanText(row?.type, 20).toLowerCase() : 'other',
+    options: sanitizeVariantOptions(row?.options),
+  })).filter(x => x.options.length);
+}
+function sanitizeSkuVariants(list) {
+  return (Array.isArray(list) ? list : []).slice(0, 220).map((row, idx) => ({
+    id: cleanText(row?.id || `sku${idx + 1}`, 160),
+    name: cleanText(row?.name, 300),
+    color: cleanText(row?.color, 160),
+    size: cleanText(row?.size, 160),
+    attributes: Object.fromEntries(Object.entries(row?.attributes || {}).slice(0, 12).map(([k, v]) => [cleanText(k, 120), cleanText(v, 160)]).filter(([k, v]) => k && v)),
+    image: safeUrl(row?.image, 2200),
+    stock: safeInt(row?.stock, 0, 1e9, 0),
+    priceCny: safeNumber(row?.priceCny, 0, 1e8, 0),
+    priceUzs: safeInt(row?.priceUzs, 0, 1e12, 0),
+  })).filter(x => x.name || x.color || x.size || x.id);
+}
+function sanitizeImagesByColor(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out = {};
+  Object.entries(value).slice(0, 64).forEach(([key, rows]) => {
+    const name = cleanText(key, 160);
+    const images = sanitizeImages(Array.isArray(rows) ? rows : [rows]);
+    if (name && images.length) out[name] = images;
+  });
+  return out;
+}
+function sourceColors(source = {}) {
+  const explicit = sanitizeVariantOptions(source.colorOptions);
+  const group = sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'color');
+  const rows = explicit.length ? explicit : (group?.options || []);
+  return rows.map(row => ({ name: row.name, ...(row.image ? { image: row.image } : {}) }));
+}
+function sourceSizes(source = {}) {
+  const explicit = sanitizeVariantOptions(source.sizeOptions);
+  const group = sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'size');
+  const rows = explicit.length ? explicit : (group?.options || []);
+  return [...new Set(rows.map(row => row.name).filter(Boolean))].slice(0, 80);
+}
+function marketplaceVariants(source = {}, fallbackPrice = 0) {
+  return sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants).map(row => ({
+    color: row.color || null,
+    size: row.size || null,
+    price: row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0),
+    stock: row.stock,
+    skuId: row.id,
+    attributes: row.attributes,
+    ...(row.image ? { image: row.image } : {}),
+  })).slice(0, 220);
+}
+
 function nowIso() { return new Date().toISOString(); }
 function isStorageUrl(v) { return /^https:\/\/firebasestorage\.googleapis\.com\//i.test(String(v || '')); }
 function isNormalizedStorageUrl(v) { return isStorageUrl(v) && /square-1200-v1/i.test(String(v || '')); }
@@ -102,6 +166,20 @@ function sourceSummary(item = {}) {
     serviceTags: sanitizeTags(item.serviceTags),
     props: sanitizeProps(item.props),
     variants: sanitizeSourceVariants(item.variants),
+    galleryImages: sanitizeImages(item.galleryImages?.length ? item.galleryImages : images),
+    variantImages: sanitizeImages(item.variantImages),
+    colorOptions: sanitizeVariantOptions(item.colorOptions),
+    sizeOptions: sanitizeVariantOptions(item.sizeOptions),
+    variantGroups: sanitizeVariantGroups(item.variantGroups),
+    skuVariants: sanitizeSkuVariants(item.skuVariants?.length ? item.skuVariants : item.variants),
+    imagesByColor: sanitizeImagesByColor(item.imagesByColor),
+    diagnostics: {
+      galleryCount: safeInt(item?.diagnostics?.galleryCount, 0, 1000, images.length),
+      variantImageCount: safeInt(item?.diagnostics?.variantImageCount, 0, 1000, 0),
+      groupCount: safeInt(item?.diagnostics?.groupCount, 0, 100, 0),
+      skuCount: safeInt(item?.diagnostics?.skuCount, 0, 1000, 0),
+      mode: cleanText(item?.diagnostics?.mode, 50),
+    },
     extractedAt: cleanText(item.extractedAt, 80),
     extractorVersion: cleanText(item.extractorVersion, 40),
   };
@@ -173,6 +251,10 @@ async function saveProduct(db, raw, actor) {
     popularScore: draft.popularScore,
     currency: 'UZS',
     images: draft.images,
+    colors: sourceColors(source),
+    sizes: sourceSizes(source),
+    imagesByColor: sanitizeImagesByColor(source.imagesByColor),
+    variants: marketplaceVariants(source, draft.price),
     tags: draft.tags,
     fulfillmentType: 'cargo',
     deliveryMinDays: Math.min(draft.deliveryMinDays, draft.deliveryMaxDays),
@@ -204,6 +286,14 @@ async function saveProduct(db, raw, actor) {
       serviceTags: sanitizeTags(source.serviceTags),
       props: sanitizeProps(source.props),
       variants: sanitizeSourceVariants(source.variants),
+      galleryImages: sanitizeImages(source.galleryImages?.length ? source.galleryImages : draft.externalImages),
+      variantImages: sanitizeImages(source.variantImages),
+      colorOptions: sanitizeVariantOptions(source.colorOptions),
+      sizeOptions: sanitizeVariantOptions(source.sizeOptions),
+      variantGroups: sanitizeVariantGroups(source.variantGroups),
+      skuVariants: sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants),
+      imagesByColor: sanitizeImagesByColor(source.imagesByColor),
+      diagnostics: source.diagnostics || {},
       externalImages: draft.externalImages,
       localImageCount: storedCount,
       imageStandard: draft.images.length && normalizedCount === draft.images.length ? IMAGE_STANDARD : cleanText(source.imageStandard, 80),

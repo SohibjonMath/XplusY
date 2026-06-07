@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "OrzuMall 1688 Importer",
-  "version": "1.2.0",
-  "description": "1688 mahsulot sahifasidan OrzuMall admin paneliga API'siz qoralama import qiladi. Galereya va CDN preview tuzatilgan.",
+  "version": "1.3.0",
+  "description": "1688 sahifasidan API'siz professional import: asosiy galereya, rang ikonkalari, razmerlar va SKU kombinatsiyalari alohida olinadi.",
   "permissions": [
     "storage",
     "tabs"
