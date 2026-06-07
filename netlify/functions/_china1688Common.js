@@ -2,7 +2,11 @@
  * OrzuMall 1688 integration common helpers.
  * Third-party TMAPI token stays server-side only.
  * ENV:
- *   TMAPI_API_TOKEN or TMAPI_TOKEN       required for live catalog
+ * Hybrid API import environment variables (server-side only):
+ *   RAPIDAPI_1688_KEY                    RapidAPI X-RapidAPI-Key (recommended)
+ *   RAPIDAPI_1688_HOST                   optional; default 1688-product2.p.rapidapi.com
+ *   RAPIDAPI_1688_ITEM_PATH              optional; default /1688/v2/item_detail_by_url
+ *   TMAPI_API_TOKEN or TMAPI_TOKEN       optional direct TMAPI fallback
  *   TMAPI_BASE_URL                       optional; default https://api.tmapi.top
  *   CHINA1688_CNY_TO_UZS                 optional; default 1850
  *   CHINA1688_SERVICE_PERCENT            optional; default 12
@@ -91,6 +95,47 @@ function cacheSet(key, value, ttlMs) {
 }
 function tmapiToken() { return cleanText(process.env.TMAPI_API_TOKEN || process.env.TMAPI_TOKEN || '', 300); }
 function tmapiBase() { return cleanText(process.env.TMAPI_BASE_URL || 'https://api.tmapi.top', 300).replace(/\/$/, ''); }
+
+function rapidApi1688Key() { return cleanText(process.env.RAPIDAPI_1688_KEY || process.env.X_RAPIDAPI_KEY || process.env.RAPIDAPI_KEY || '', 400); }
+function rapidApi1688Host() { return cleanText(process.env.RAPIDAPI_1688_HOST || '1688-product2.p.rapidapi.com', 260).replace(/^https?:\/\//i, '').replace(/\/$/, ''); }
+function rapidApi1688ItemPath() {
+  const path = cleanText(process.env.RAPIDAPI_1688_ITEM_PATH || '/1688/v2/item_detail_by_url', 400);
+  return path.startsWith('/') ? path : `/${path}`;
+}
+function rapidApi1688Ready() { return !!rapidApi1688Key(); }
+async function rapidApi1688Fetch(path, { method = 'GET', query = {}, body = null, timeoutMs = 25000 } = {}) {
+  const key = rapidApi1688Key();
+  if (!key) { const e = new Error('RAPIDAPI_1688_KEY_MISSING'); e.code = 'RAPIDAPI_1688_KEY_MISSING'; e.statusCode = 503; throw e; }
+  const host = rapidApi1688Host();
+  const url = new URL(`https://${host}${path}`);
+  Object.entries(query || {}).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v)); });
+  const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { method, headers: { 'x-rapidapi-key': key, 'x-rapidapi-host': host, ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined, signal: ctrl.signal });
+    const text = await res.text(); let data = null;
+    try { data = JSON.parse(text); } catch (_e) { data = { raw: text.slice(0, 1400) }; }
+    if (!res.ok) { const e = new Error(`RAPIDAPI_HTTP_${res.status}`); e.statusCode = res.status; e.details = data; throw e; }
+    const code = Number(data?.code);
+    if (Number.isFinite(code) && code !== 200) { const e = new Error(cleanText(data?.msg || `RAPIDAPI_CODE_${code}`, 300)); e.statusCode = code >= 400 && code < 600 ? code : 502; e.details = data; throw e; }
+    return data;
+  } finally { clearTimeout(timer); }
+}
+async function fetch1688DetailByUrl(rawUrl, { force = false } = {}) {
+  const url = safe1688Url(rawUrl); if (!url) { const e = new Error('1688 mahsulot havolasini kiriting.'); e.statusCode = 400; throw e; }
+  const itemId = itemIdFromUrl(url); const cacheKey = `detail:${itemId || url}`;
+  if (!force) { const hit = cacheGet(cacheKey); if (hit) return { ...hit, cached: true }; }
+  let raw = null, provider = '';
+  if (rapidApi1688Ready()) {
+    raw = await rapidApi1688Fetch(rapidApi1688ItemPath(), { method: 'POST', body: { url, language: 'zh', optimize_title: false } });
+    provider = 'rapidapi';
+  } else if (tmapiToken()) {
+    raw = await tmapiFetch('/1688/v2/item_detail_by_url', { method: 'POST', body: { url, language: 'zh', optimize_title: false } });
+    provider = 'tmapi-direct';
+  } else {
+    const e = new Error('RAPIDAPI_1688_KEY_MISSING'); e.code = 'RAPIDAPI_1688_KEY_MISSING'; e.statusCode = 503; throw e;
+  }
+  const value = { raw, provider, cached: false }; cacheSet(cacheKey, value, 12 * 60 * 1000); return value;
+}
 function pricingConfig() {
   return {
     cnyToUzs: clamp(process.env.CHINA1688_CNY_TO_UZS, 1, 100000, 1850),
@@ -137,7 +182,7 @@ function collectImages(...sources) {
     if (!v) return;
     if (Array.isArray(v)) return v.forEach(push);
     if (typeof v === 'object') {
-      const url = first(v.url, v.image, v.image_url, v.pic_url, v.original, v.src);
+      const url = first(v.url, v.image, v.imageUrl, v.image_url, v.pic_url, v.original, v.src);
       if (url) push(url);
       return;
     }
@@ -215,30 +260,61 @@ function normalizeSearchResponse(raw, page = 1) {
     hasMore: Boolean(first(payload.has_more, payload.hasMore, payload.next_page)) || rows.length >= 20,
   };
 }
-function stringifyVariantName(v = {}) {
-  const attrs = firstArray(v.specs, v.attributes, v.props, v.sku_props, v.sale_attributes);
-  const bits = [];
-  attrs.forEach(a => {
-    if (typeof a === 'string') bits.push(a);
-    else if (a && typeof a === 'object') bits.push(cleanText(first(a.value, a.name, a.value_name, a.prop_value, a.text), 80));
-  });
-  const direct = cleanText(first(v.name, v.title, v.spec, v.sku_name, v.properties_name, v.props_names), 180);
-  return direct || bits.filter(Boolean).join(' / ') || 'Variant';
+function skuPropType(name = '') {
+  const s = cleanText(name, 120);
+  if (/(?:颜色|顏色|色彩|color|colour|rang)/i.test(s)) return 'color';
+  if (/(?:尺码|尺寸|大小|规格|規格|型号|型號|款式|容量|specification|variant|size|razmer|o['‘’]?lcham|model)/i.test(s)) return 'size';
+  return 'spec';
 }
-function normalizeVariants(payload = {}) {
+function normalizeSkuProps(payload = {}) {
+  const src = firstArray(payload.sku_props, payload.skuProps, payload.sku_properties, payload.sale_props, payload.sku_info?.sku_props);
+  const groups = [], byPair = new Map(), byVid = new Map(), imagesByColor = {};
+  src.slice(0, 12).forEach((row, groupIndex) => {
+    const name = cleanText(first(row.prop_name, row.name, row.label, row.property_name, `Variant ${groupIndex + 1}`), 140);
+    const pid = cleanText(first(row.pid, row.id, row.prop_id, `g${groupIndex + 1}`), 120);
+    const type = skuPropType(name);
+    const options = firstArray(row.values, row.options, row.items, row.children).slice(0, 100).map((v, optionIndex) => {
+      const valueName = cleanText(first(v.name, v.value, v.label, v.text), 180);
+      const vid = cleanText(first(v.vid, v.id, v.value_id, `${optionIndex + 1}`), 120);
+      const image = collectImages(v.imageUrl, v.image, v.image_url, v.pic_url, v.thumbnail)[0] || '';
+      const option = { id: vid, name: valueName, ...(image ? { image } : {}) };
+      if (pid && vid) byPair.set(`${pid}:${vid}`, { ...option, pid, groupName: name, type });
+      if (vid) byVid.set(vid, { ...option, pid, groupName: name, type });
+      if (type === 'color' && valueName && image) imagesByColor[valueName] = [image];
+      return option;
+    }).filter(x => x.name);
+    if (options.length) groups.push({ id: pid, name, type, options });
+  });
+  return { groups, byPair, byVid, imagesByColor };
+}
+function stringifyVariantName(v = {}, attrs = {}) {
+  const direct = cleanText(first(v.name, v.title, v.spec, v.sku_name, v.properties_name, v.props_names), 300);
+  return direct || Object.values(attrs).filter(Boolean).join(' / ') || 'Variant';
+}
+function parseSkuAttributes(v = {}, props = { byPair: new Map(), byVid: new Map(), groups: [] }) {
+  const out = {};
+  const ids = cleanText(first(v.props_ids, v.propsIds, v.properties, v.prop_path), 800).split(/[;,|]+/).map(x => x.trim()).filter(Boolean);
+  ids.forEach(token => { const hit = props.byPair.get(token) || props.byVid.get(token.split(':').pop()); if (hit?.groupName && hit?.name) out[hit.groupName] = hit.name; });
+  const names = cleanText(first(v.props_names, v.propsNames, v.properties_name, v.sku_name), 800).split(/[;|]+/).map(x => x.trim()).filter(Boolean);
+  if (!Object.keys(out).length && names.length && props.groups?.length) props.groups.forEach((g, i) => { if (names[i]) out[g.name] = names[i]; });
+  if (!Object.keys(out).length && names.length) names.forEach((name, i) => { out[`Variant ${i + 1}`] = name; });
+  const rawAttrs = first(v.attributes, v.attrs, v.props, v.specs);
+  if (rawAttrs && typeof rawAttrs === 'object' && !Array.isArray(rawAttrs)) Object.entries(rawAttrs).forEach(([k,val]) => { const key=cleanText(k,120), value=cleanText(val,180); if(key&&value) out[key]=value; });
+  return out;
+}
+function normalizeVariants(payload = {}, propsInfo = normalizeSkuProps(payload)) {
   let rows = firstArray(payload.skus, payload.sku_list, payload.skuList, payload.variants, payload.sku_info?.skus, payload.sku_info?.sku_list, payload.sku_infos);
-  if (!rows.length && payload.sku_map && typeof payload.sku_map === 'object') rows = Object.entries(payload.sku_map).map(([key, v]) => ({ ...(v || {}), name: key }));
-  return rows.slice(0, 120).map((v, idx) => {
-    const range = parseRange(first(v.price, v.sale_price, v.discount_price, v.sku_price, v.price_cny));
-    const p = calculatePrice(range.min || parseNumber(first(v.price, v.sale_price, v.sku_price)));
-    return {
-      id: cleanText(first(v.sku_id, v.skuid, v.id, v.spec_id, v.specid, v.specId, idx + 1), 120),
-      name: stringifyVariantName(v),
-      image: collectImages(v.image, v.image_url, v.pic_url, v.thumbnail)[0] || '',
-      stock: Math.max(0, Math.round(parseNumber(first(v.stock, v.stock_qty, v.amount_on_sale, v.quantity, 0)) || 0)),
-      priceCny: p.priceCny,
-      priceUzs: p.priceUzs,
-    };
+  if (!rows.length && payload.sku_map && typeof payload.sku_map === 'object') rows = Object.entries(payload.sku_map).map(([key, v]) => ({ ...(v || {}), props_names: key }));
+  return rows.slice(0, 260).map((v, idx) => {
+    const attrs = parseSkuAttributes(v, propsInfo), entries = Object.entries(attrs);
+    const colorEntry = entries.find(([k]) => skuPropType(k) === 'color');
+    const sizeEntries = entries.filter(([k]) => skuPropType(k) !== 'color');
+    const color = cleanText(colorEntry?.[1] || '', 180);
+    const size = cleanText(sizeEntries.map(([,value]) => value).filter(Boolean).join(' / '), 260);
+    const image = collectImages(v.imageUrl, v.image, v.image_url, v.pic_url, v.thumbnail, color ? propsInfo.imagesByColor?.[color] : '')[0] || '';
+    const range = parseRange(first(v.sale_price, v.price, v.discount_price, v.sku_price, v.price_cny));
+    const price = calculatePrice(range.min || parseNumber(first(v.sale_price, v.price, v.sku_price)));
+    return { id: cleanText(first(v.skuid, v.sku_id, v.id, v.specid, v.spec_id, v.specId, idx + 1), 160), name: stringifyVariantName(v, attrs), color, size, attributes: attrs, ...(image ? { image } : {}), stock: Math.max(0, Math.round(parseNumber(first(v.stock, v.stock_qty, v.amount_on_sale, v.quantity, 0)) || 0)), priceCny: price.priceCny, priceUzs: price.priceUzs };
   });
 }
 function normalizeProps(payload = {}) {
@@ -253,30 +329,18 @@ function normalizeProps(payload = {}) {
 function normalizeDetailResponse(raw) {
   const payload = unwrap(raw);
   const id = cleanText(first(payload.item_id, payload.offer_id, payload.id, payload.product_id, payload.offerId), 80);
-  const title = cleanText(first(payload.title, payload.subject, payload.name, payload.item_title, payload.offer_title), 320) || '1688 mahsuloti';
-  const images = collectImages(payload.images, payload.main_images, payload.main_imgs, payload.image_list, payload.item_imgs, payload.image, payload.pic_url, payload.main_image);
+  const title = cleanText(first(payload.title, payload.subject, payload.name, payload.item_title, payload.offer_title), 520) || '1688 mahsuloti';
+  const images = collectImages(payload.main_imgs, payload.images, payload.main_images, payload.image_list, payload.item_imgs, payload.image, payload.pic_url, payload.main_image);
   const range = parseRange(first(payload.sku_price_scale, payload.price_range, payload.price, payload.min_price, payload.price_min));
-  const p = calculatePrice(range.min || parseNumber(first(payload.price, payload.min_price, payload.price_min)));
-  const delivery = payload.delivery_info || payload.shipping || {};
-  const shop = payload.shop_info || payload.shop || payload.seller || {};
-  const variants = normalizeVariants(payload);
-  return {
-    id,
-    url: normalizedUrl(id, first(payload.product_url, payload.url, payload.detail_url, payload.item_url)),
-    title,
-    image: images[0] || '', images,
-    priceCny: p.priceCny, priceCnyMax: range.max || p.priceCny, priceUzs: p.priceUzs,
-    pricing: p,
-    moq: Math.max(1, Math.round(parseNumber(first(payload.moq, payload.begin_num, payload.sku_price_range?.begin_num, payload.min_order, payload.minOrder, 1)) || 1)),
-    stock: Math.max(0, Math.round(parseNumber(first(payload.stock, payload.total_stock, payload.sku_price_range?.stock, payload.amount_on_sale, 0)) || 0)),
-    unit: cleanText(first(payload.offer_unit, payload.unit, payload.sku_price_range?.sell_unit, 'dona'), 30),
-    sellerName: cleanText(first(shop.shop_name, payload.shop_name, payload.seller_login_id, shop.seller_login_id, shop.company_name, payload.member_id), 180),
-    sellerLocation: cleanText(first(delivery.location, shop.address, payload.location), 180),
-    deliveryFeeCny: parseNumber(first(delivery.delivery_fee, payload.shipping_fee, 0)),
-    serviceTags: firstArray(payload.service_tags, payload.services).map(v => cleanText(typeof v === 'string' ? v : first(v.name, v.title, v.value), 80)).filter(Boolean).slice(0, 10),
-    props: normalizeProps(payload),
-    variants,
-  };
+  const pricing = calculatePrice(range.min || parseNumber(first(payload.price, payload.min_price, payload.price_min)));
+  const delivery = payload.delivery_info || payload.shipping || {}, shop = payload.shop_info || payload.shop || payload.seller || {};
+  const skuProps = normalizeSkuProps(payload), skuVariants = normalizeVariants(payload, skuProps);
+  const colorGroup = skuProps.groups.find(x => x.type === 'color'), nonColorGroups = skuProps.groups.filter(x => x.type !== 'color');
+  const sizeOptions = [];
+  if (nonColorGroups.length === 1) sizeOptions.push(...nonColorGroups[0].options);
+  else if (nonColorGroups.length > 1) { const seen = new Set(); skuVariants.forEach(v => { if (v.size && !seen.has(v.size)) { seen.add(v.size); sizeOptions.push({ id: `spec-${seen.size}`, name: v.size }); } }); }
+  const variantImages = collectImages(...skuProps.groups.flatMap(g => g.options.map(o => o.image)), ...skuVariants.map(v => v.image));
+  return { id, url: normalizedUrl(id, first(payload.product_url, payload.url, payload.detail_url, payload.item_url)), title, image: images[0] || '', images, galleryImages: images, priceCny: pricing.priceCny, priceCnyMax: range.max || pricing.priceCny, priceUzs: pricing.priceUzs, pricing, moq: Math.max(1, Math.round(parseNumber(first(payload.moq, payload.begin_num, payload.sku_price_range?.begin_num, payload.min_order, payload.minOrder, 1)) || 1)), stock: Math.max(0, Math.round(parseNumber(first(payload.stock, payload.total_stock, payload.sku_price_range?.stock, payload.amount_on_sale, 0)) || 0)), unit: cleanText(first(payload.offer_unit, payload.unit, payload.sku_price_range?.sell_unit, 'dona'), 30), sellerName: cleanText(first(shop.shop_name, payload.shop_name, payload.seller_login_id, shop.seller_login_id, shop.company_name, payload.member_id), 180), sellerLocation: cleanText(first(delivery.location, shop.address, payload.location), 180), deliveryFeeCny: parseNumber(first(delivery.delivery_fee, payload.shipping_fee, 0)), serviceTags: firstArray(payload.service_tags, payload.services).map(v => cleanText(typeof v === 'string' ? v : first(v.name, v.title, v.value), 80)).filter(Boolean).slice(0, 10), props: normalizeProps(payload), variants: skuVariants, skuVariants, variantGroups: skuProps.groups, colorOptions: colorGroup?.options || [], sizeOptions, imagesByColor: skuProps.imagesByColor, variantImages, genericSpecName: nonColorGroups.map(x => x.name).join(' / '), diagnostics: { mode: 'rapidapi-structured', galleryCount: images.length, variantImageCount: variantImages.length, groupCount: skuProps.groups.length, skuCount: skuVariants.length, groupNames: skuProps.groups.map(x => x.name) }, extractorVersion: 'api-v2', extractedAt: new Date().toISOString() };
 }
 async function tmapiFetch(path, { method = 'GET', query = {}, body = null, timeoutMs = 18000 } = {}) {
   const token = tmapiToken();
@@ -363,6 +427,7 @@ async function notifyTelegram(lines) {
 }
 module.exports = {
   admin, cleanText, clamp, json, parseBody, rateLimit, cacheGet, cacheSet, tmapiToken, pricingConfig,
+  rapidApi1688Ready, rapidApi1688Host, rapidApi1688ItemPath, rapidApi1688Fetch, fetch1688DetailByUrl,
   calculatePrice, tmapiFetch, normalizeSearchResponse, normalizeDetailResponse, itemIdFromUrl, safe1688Url,
   initFirebaseAdmin, requireAdmin, tgEscape, notifyTelegram,
 };

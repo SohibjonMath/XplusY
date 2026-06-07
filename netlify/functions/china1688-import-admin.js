@@ -1,13 +1,12 @@
 /*
- * OrzuMall admin-only API-free 1688 trend importer.
- * Product data is extracted locally by the OrzuMall Chrome extension from the
- * 1688 page that the admin opened. This Netlify function only authenticates the
- * OrzuMall admin, copies selected images into Firebase Storage, and saves the
- * reviewed catalog card into Firestore.
+ * OrzuMall admin-only hybrid 1688 trend importer.
+ * RapidAPI link import is the recommended path for structured SKU variants.
+ * Chrome extension and manual form remain fallback modes.
  */
 const {
   admin, cleanText, json, parseBody, safe1688Url, itemIdFromUrl,
   calculatePrice, pricingConfig, requireAdmin, rateLimit,
+  rapidApi1688Ready, rapidApi1688Host, fetch1688DetailByUrl, normalizeDetailResponse,
 } = require('./_china1688Common');
 const { MAX_IMAGES_PER_BATCH, IMAGE_STANDARD, copyImages } = require('./_china1688ImageStore');
 
@@ -478,9 +477,18 @@ exports.handler = async function handler(event) {
   const db = admin.firestore();
   const action = cleanText(body.action || '', 50).toLowerCase();
   try {
+    if (action === 'apipreview') {
+      const sourceUrl = safe1688Url(body.sourceUrl || body.url);
+      if (!sourceUrl) return json(400, { error: 'SOURCE_URL_REQUIRED', message: 'Haqiqiy 1688 mahsulot havolasini kiriting.' });
+      const fetched = await fetch1688DetailByUrl(sourceUrl, { force: body.force === true });
+      const item = normalizeDetailResponse(fetched.raw);
+      item.url = sourceUrl; item.id = item.id || itemIdFromUrl(sourceUrl);
+      item.diagnostics = { ...(item.diagnostics || {}), provider: fetched.provider, cached: fetched.cached === true };
+      return json(200, { item, provider: fetched.provider, cached: fetched.cached === true, pricing: pricingConfig() });
+    }
     if (action === 'copyimages') {
       const itemId = cleanText(body.itemId || 'draft', 100).replace(/[^a-z0-9_-]/gi, '') || 'draft';
-      const result = await copyImages(body.urls, itemId, { normalize: body.normalize !== false });
+      const result = await copyImages(body.urls, itemId, { normalize: body.normalize !== false, strictNormalize: body.strictNormalize === true });
       return json(200, { ...result, maxPerBatch: MAX_IMAGES_PER_BATCH, imageStandard: IMAGE_STANDARD });
     }
     if (action === 'save') {
@@ -490,7 +498,7 @@ exports.handler = async function handler(event) {
     if (action === 'list') {
       const snap = await db.collection('products').where('sourcePlatform', '==', '1688').limit(200).get();
       const products = snap.docs.map(publicRow).sort((a, b) => b.updatedAtMs - a.updatedAtMs);
-      return json(200, { products, pricing: pricingConfig(), importerMode: 'api-free-extension' });
+      return json(200, { products, pricing: pricingConfig(), importerMode: rapidApi1688Ready() ? 'rapidapi-hybrid' : 'extension-fallback', rapidApiReady: rapidApi1688Ready(), rapidApiHost: rapidApi1688Ready() ? rapidApi1688Host() : '' });
     }
     if (action === 'applynormalizedimages') {
       const result = await applyNormalizedImages(db, body, actor);

@@ -26,3 +26,6 @@ img.broken-preview{opacity:.18;filter:grayscale(1)}
 
 /* v164: visible variant login-gate warning */
 .variant-alert{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;margin:0 0 12px;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;font-size:12px;line-height:1.45}.variant-alert i{margin-top:2px}.variant-alert b{display:block;font-size:13px;margin-bottom:3px}.variant-alert p{margin:0}.variant-alert code{font-weight:800;background:#ffedd5;padding:1px 4px;border-radius:5px}
+
+/* v165 RapidAPI hybrid */
+.api-helper{margin-top:10px;padding:10px 12px;border-radius:14px;background:#f4f8ff;border:1px solid #dce8ff;color:#405577;font-size:12px;display:flex;gap:8px;align-items:center}.api-helper.ready{background:#ecfff3;border-color:#bfeecf;color:#176d3b}.api-helper.warn{background:#fff8e8;border-color:#ffe0a2;color:#885d05}.url-row{flex-wrap:wrap}.url-input{min-width:280px;flex:1 1 420px}.url-row .large{white-space:nowrap}@media(max-width:720px){.url-row .large{flex:1 1 auto}.api-helper{font-size:11px}}

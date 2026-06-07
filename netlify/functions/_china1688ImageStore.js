@@ -173,6 +173,7 @@ async function copyOne(rawUrl, itemId, index, options = {}) {
     normalized: false,
     standard: 'raw-copy',
   };
+  if (shouldNormalize && options.strictNormalize === true && !prepared.normalized) throw new Error(prepared.reason || 'IMAGE_NORMALIZE_REQUIRED');
   const bucket = firebaseBucket();
   const token = crypto.randomUUID();
   const hash = crypto.createHash('sha256').update(source.url).digest('hex').slice(0, 14);
