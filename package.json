@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.46.0",
-  "description": "OrzuMall v146: secure 1688 China catalog search, URL import, price calculation, customer request flow and admin request management",
+  "version": "1.47.0",
+  "description": "OrzuMall v147: admin-only 1688 trend product import by URL with one-time TMAPI preview and Firestore catalog save",
   "engines": {
     "node": "22.x"
   },

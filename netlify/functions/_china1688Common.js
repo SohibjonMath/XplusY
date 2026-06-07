@@ -165,11 +165,14 @@ function itemIdFromUrl(url) {
 function safe1688Url(url) {
   const s = cleanText(url, 1500);
   if (!s) return '';
-  try {
-    const u = new URL(s);
-    const h = u.hostname.toLowerCase();
-    if (h === '1688.com' || h.endsWith('.1688.com') || h === 'm.1688.com') return u.toString();
-  } catch (_e) {}
+  const candidates = [s, ...(s.match(/https?:\/\/[^\s<>"']+/gi) || [])];
+  for (const raw of candidates) {
+    try {
+      const u = new URL(raw.replace(/[),.;]+$/, ''));
+      const h = u.hostname.toLowerCase();
+      if (h === '1688.com' || h.endsWith('.1688.com')) return u.toString();
+    } catch (_e) {}
+  }
   return '';
 }
 function normalizedUrl(id, rawUrl = '') {
@@ -219,17 +222,17 @@ function stringifyVariantName(v = {}) {
     if (typeof a === 'string') bits.push(a);
     else if (a && typeof a === 'object') bits.push(cleanText(first(a.value, a.name, a.value_name, a.prop_value, a.text), 80));
   });
-  const direct = cleanText(first(v.name, v.title, v.spec, v.sku_name, v.properties_name), 180);
+  const direct = cleanText(first(v.name, v.title, v.spec, v.sku_name, v.properties_name, v.props_names), 180);
   return direct || bits.filter(Boolean).join(' / ') || 'Variant';
 }
 function normalizeVariants(payload = {}) {
-  let rows = firstArray(payload.skus, payload.sku_list, payload.skuList, payload.variants, payload.sku_info?.skus, payload.sku_info?.sku_list);
+  let rows = firstArray(payload.skus, payload.sku_list, payload.skuList, payload.variants, payload.sku_info?.skus, payload.sku_info?.sku_list, payload.sku_infos);
   if (!rows.length && payload.sku_map && typeof payload.sku_map === 'object') rows = Object.entries(payload.sku_map).map(([key, v]) => ({ ...(v || {}), name: key }));
   return rows.slice(0, 120).map((v, idx) => {
     const range = parseRange(first(v.price, v.sale_price, v.discount_price, v.sku_price, v.price_cny));
     const p = calculatePrice(range.min || parseNumber(first(v.price, v.sale_price, v.sku_price)));
     return {
-      id: cleanText(first(v.sku_id, v.id, v.spec_id, v.specId, idx + 1), 120),
+      id: cleanText(first(v.sku_id, v.skuid, v.id, v.spec_id, v.specid, v.specId, idx + 1), 120),
       name: stringifyVariantName(v),
       image: collectImages(v.image, v.image_url, v.pic_url, v.thumbnail)[0] || '',
       stock: Math.max(0, Math.round(parseNumber(first(v.stock, v.stock_qty, v.amount_on_sale, v.quantity, 0)) || 0)),
@@ -264,10 +267,10 @@ function normalizeDetailResponse(raw) {
     image: images[0] || '', images,
     priceCny: p.priceCny, priceCnyMax: range.max || p.priceCny, priceUzs: p.priceUzs,
     pricing: p,
-    moq: Math.max(1, Math.round(parseNumber(first(payload.moq, payload.begin_num, payload.min_order, payload.minOrder, 1)) || 1)),
-    stock: Math.max(0, Math.round(parseNumber(first(payload.stock, payload.total_stock, payload.amount_on_sale, 0)) || 0)),
-    unit: cleanText(first(payload.offer_unit, payload.unit, 'dona'), 30),
-    sellerName: cleanText(first(payload.seller_login_id, payload.shop_name, shop.shop_name, shop.company_name, payload.member_id), 180),
+    moq: Math.max(1, Math.round(parseNumber(first(payload.moq, payload.begin_num, payload.sku_price_range?.begin_num, payload.min_order, payload.minOrder, 1)) || 1)),
+    stock: Math.max(0, Math.round(parseNumber(first(payload.stock, payload.total_stock, payload.sku_price_range?.stock, payload.amount_on_sale, 0)) || 0)),
+    unit: cleanText(first(payload.offer_unit, payload.unit, payload.sku_price_range?.sell_unit, 'dona'), 30),
+    sellerName: cleanText(first(shop.shop_name, payload.shop_name, payload.seller_login_id, shop.seller_login_id, shop.company_name, payload.member_id), 180),
     sellerLocation: cleanText(first(delivery.location, shop.address, payload.location), 180),
     deliveryFeeCny: parseNumber(first(delivery.delivery_fee, payload.shipping_fee, 0)),
     serviceTags: firstArray(payload.service_tags, payload.services).map(v => cleanText(typeof v === 'string' ? v : first(v.name, v.title, v.value), 80)).filter(Boolean).slice(0, 10),
