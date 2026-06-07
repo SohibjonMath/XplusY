@@ -21553,3 +21553,30 @@ button:disabled span{
   #view-categories .catItem{min-height:49px !important;}
   #view-categories .catName{font-size:12px !important;}
 }
+
+
+/* ===== product-page-china-gallery-v166.css =====
+   v166 — make imported 1688 photos visually larger while preserving contain.
+   Runtime JS applies adaptive zoom only to china/cargo products. */
+@media (max-width: 900px){
+  #view-product .ppMainImage,
+  #view-product .ppMainImage.ppMainImageBtn{
+    min-height:min(calc(100vw - 20px),390px) !important;
+    height:min(calc(100vw - 20px),390px) !important;
+    max-height:390px !important;
+    padding:0 !important;
+  }
+  #view-product .ppMainImage img{
+    max-width:100% !important;
+    max-height:100% !important;
+    object-fit:contain !important;
+    object-position:center center !important;
+  }
+}
+@media (max-width: 480px){
+  #view-product .ppGallery{padding:8px !important;}
+  #view-product .ppMainImage,
+  #view-product .ppMainImage.ppMainImageBtn{
+    border-radius:20px !important;
+  }
+}

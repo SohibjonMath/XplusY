@@ -14,9 +14,9 @@ try { sharp = require('sharp'); } catch (_e) { sharp = null; }
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGES_PER_BATCH = 6;
-const IMAGE_STANDARD = 'square-1200-v1';
+const IMAGE_STANDARD = 'square-1200-visual-fill-v2';
 const CANVAS_SIZE = 1200;
-const CONTENT_SIZE = 1120;
+const CONTENT_SIZE = 1176;
 
 function safeFilePart(v, fallback = 'item') {
   const s = cleanText(v, 120).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
@@ -130,14 +130,14 @@ async function normalizeMarketplaceImage(source) {
     const result = await sharp(source.buffer, { failOn: 'none', animated: false })
       .rotate()
       .flatten({ background: '#ffffff' })
-      .trim({ background: '#ffffff', threshold: 8 })
+      .trim({ background: '#ffffff', threshold: 18 })
       .resize(CONTENT_SIZE, CONTENT_SIZE, {
         fit: 'contain',
         position: 'centre',
         background: '#ffffff',
         withoutEnlargement: false,
       })
-      .extend({ top: 40, bottom: 40, left: 40, right: 40, background: '#ffffff' })
+      .extend({ top: 12, bottom: 12, left: 12, right: 12, background: '#ffffff' })
       .jpeg({ quality: 90, mozjpeg: true, chromaSubsampling: '4:4:4' })
       .toBuffer({ resolveWithObject: true });
     return {
