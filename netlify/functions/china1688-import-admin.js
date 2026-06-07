@@ -64,7 +64,7 @@ function sanitizeVariantGroups(list) {
   return (Array.isArray(list) ? list : []).slice(0, 10).map((row, idx) => ({
     id: cleanText(row?.id || `g${idx + 1}`, 140),
     name: cleanText(row?.name || `Variant ${idx + 1}`, 160),
-    type: ['color', 'size', 'other'].includes(cleanText(row?.type, 20).toLowerCase()) ? cleanText(row?.type, 20).toLowerCase() : 'other',
+    type: ['color', 'size', 'spec', 'other'].includes(cleanText(row?.type, 20).toLowerCase()) ? cleanText(row?.type, 20).toLowerCase() : 'other',
     options: sanitizeVariantOptions(row?.options),
   })).filter(x => x.options.length);
 }
@@ -102,7 +102,7 @@ function cleanVariantValue(value) {
 function attributeByKind(attributes = {}, kind = '') {
   const re = kind === 'color'
     ? /(?:颜色|顏色|色彩|color|colour|rang)/i
-    : /(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i;
+    : /(?:尺码|尺寸|大小|规格|規格|型号|型號|款式|specification|variant|size|razmer|o['‘’]?lcham)/i;
   const hit = Object.entries(attributes || {}).find(([key]) => re.test(cleanText(key, 160)));
   return cleanVariantValue(hit?.[1] || '');
 }
@@ -126,7 +126,7 @@ function sourceColors(source = {}) {
 }
 function sourceSizes(source = {}) {
   const explicit = sanitizeVariantOptions(source.sizeOptions);
-  const group = sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'size');
+  const group = sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'size') || sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'spec');
   const skuRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants);
   const rows = [...explicit, ...(group?.options || [])].map(row => row.name);
   skuRows.forEach(row => rows.push(row.size || attributeByKind(row.attributes, 'size')));
@@ -207,6 +207,7 @@ function sourceSummary(item = {}) {
     variantGroups: sanitizeVariantGroups(item.variantGroups),
     skuVariants: sanitizeSkuVariants(item.skuVariants?.length ? item.skuVariants : item.variants),
     imagesByColor: sanitizeImagesByColor(item.imagesByColor),
+    genericSpecName: cleanText(item.genericSpecName, 120),
     diagnostics: {
       galleryCount: safeInt(item?.diagnostics?.galleryCount, 0, 1000, images.length),
       variantImageCount: safeInt(item?.diagnostics?.variantImageCount, 0, 1000, 0),
@@ -327,6 +328,7 @@ async function saveProduct(db, raw, actor) {
       variantGroups: sanitizeVariantGroups(source.variantGroups),
       skuVariants: sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants),
       imagesByColor: sanitizeImagesByColor(source.imagesByColor),
+      genericSpecName: cleanText(source.genericSpecName, 120),
       diagnostics: source.diagnostics || {},
       externalImages: draft.externalImages,
       localImageCount: storedCount,

@@ -4355,7 +4355,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       return String(value==null?"":value).replace(/(?:库存|庫存|stock|qoldiq|остаток)\s*[:：]?\s*\d+[\s\S]*$/i,"").replace(/(?:¥|￥)\s*\d+(?:[.,]\d+)?[\s\S]*$/i,"").replace(/^[\s:：/_-]+|[\s:：/_-]+$/g,"").replace(/\s+/g," ").trim().slice(0,120);
     }
     function apAttrVariant(row,kind){
-      const re=kind==="color"?/(?:颜色|顏色|色彩|color|colour|rang)/i:/(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i;
+      const re=kind==="color"?/(?:颜色|顏色|色彩|color|colour|rang)/i:/(?:尺码|尺寸|大小|规格|規格|型号|型號|款式|specification|variant|size|razmer|o['‘’]?lcham)/i;
       const hit=Object.entries(row?.attributes||{}).find(([k])=>re.test(String(k||"")));
       return apCleanVariantLabel(hit?.[1]||"");
     }
@@ -4367,7 +4367,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       rows.forEach(v=>{ const name=apCleanVariantLabel(v?.color||apAttrVariant(v,"color")); if(name) colorRows.push({name,image:v?.image||src.imagesByColor?.[name]?.[0]||""}); });
       const cMap=new Map(); colorRows.forEach(x=>{ const name=apCleanVariantLabel(x?.name||x?.label||x?.value||""); if(!name)return; const old=cMap.get(name)||{}; cMap.set(name,{name,hex:x?.hex||old.hex||"#D4AF37",...(x?.image||old.image?{image:x?.image||old.image}: {})}); });
       const sizeRows=[]; const addSizes=list=>(Array.isArray(list)?list:[]).forEach(x=>sizeRows.push(typeof x==="string"?x:(x?.name||x?.label||x?.value||"")));
-      addSizes(o.sizes); addSizes(src.sizeOptions); addSizes(groups.find(g=>String(g?.type||"").toLowerCase()==="size")?.options); rows.forEach(v=>sizeRows.push(v?.size||apAttrVariant(v,"size")));
+      addSizes(o.sizes); addSizes(src.sizeOptions); addSizes((groups.find(g=>String(g?.type||"").toLowerCase()==="size")||groups.find(g=>String(g?.type||"").toLowerCase()==="spec"))?.options); rows.forEach(v=>sizeRows.push(v?.size||apAttrVariant(v,"size")));
       const sizes=[...new Set(sizeRows.map(apCleanVariantLabel).filter(Boolean))];
       const variants=rows.map(v=>{ const color=apCleanVariantLabel(v?.color||apAttrVariant(v,"color")); const size=apCleanVariantLabel(v?.size||apAttrVariant(v,"size")); return {...v,color:color||null,size:size||null,price:Number(v?.price||v?.priceUzs||o.price||0),oldPrice:Number(v?.oldPrice||0),stockQty:Number(v?.stockQty??v?.stock??0),sku:v?.sku||v?.skuId||v?.id||""}; }).filter(v=>v.color||v.size);
       if(!(Array.isArray(o.colors)&&o.colors.length)) o.colors=[...cMap.values()];

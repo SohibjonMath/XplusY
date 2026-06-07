@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.5.0';
+  const VERSION = '1.6.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -90,6 +90,7 @@
 
   function cleanOptionLabel(value = '') {
     return text(value)
+      .replace(/(?:登录查看全部规格|登錄查看全部規格|查看全部规格|查看全部規格|全部规格|全部規格)/gi, '')
       .replace(/(?:库存|庫存|stock|qoldiq|остаток)\s*[:：]?\s*\d+[\s\S]*$/i, '')
       .replace(/(?:¥|￥)\s*\d+(?:[.,]\d+)?[\s\S]*$/i, '')
       .replace(/^[\s:：/_-]+|[\s:：/_-]+$/g, '')
@@ -97,21 +98,24 @@
       .trim()
       .slice(0, 120);
   }
-  const badVariantText = /(?:主面料|面料|材质|成分|工艺|品牌|货号|库存|庫存|起批|价格|运费|评价|参数|商品属性|包装|详情|¥|￥|stock|qoldiq|material|fabric|brand|price|delivery)/i;
+  const badVariantText = /(?:主面料|面料|材质|成分|工艺|品牌|货号|库存|庫存|起批|价格|运费|评价|参数|商品属性|包装|详情|登录|登錄|查看全部|¥|￥|stock|qoldiq|material|fabric|brand|price|delivery)/i;
+  const uiNoiseVariant = /(?:登录|登錄|查看全部|全部规格|全部規格|库存|庫存|起批|运费|评价|参数|商品详情|联系客服|加入购物车|立即铺货)/i;
   const sizeToken = /^(?:xxxs|xxs|xs|s|m|l|xl|xxl|xxxl|xxxxl|[2-9]xl|均码|free|one\s*size|(?:xxxs|xxs|xs|s|m|l|xl|xxl|xxxl|xxxxl|[2-9]xl)码|\d{2,3}(?:\s*(?:cm|码))?)$/i;
   function looksLikeSize(value = '') { const v = cleanOptionLabel(value); return !!v && v.length <= 18 && sizeToken.test(v); }
   function usableVariantName(value = '', type = 'other', image = '') {
     const v = cleanOptionLabel(value);
-    if (!v || v.length > 48 || badVariantText.test(v)) return false;
+    if (!v || v.length > 72 || badVariantText.test(v) || uiNoiseVariant.test(v)) return false;
     if (type === 'size') return looksLikeSize(v);
+    if (type === 'spec') return v.length <= 64;
     if (type === 'color') return !!image || (v.length <= 28 && !/^(?:s|m|l|xl|xxl|xxxl|[2-9]xl|\d{2,3})$/i.test(v));
-    return v.length <= 36;
+    return v.length <= 42;
   }
 
   function classifyGroup(label = '', index = 0) {
     const s = text(label).toLowerCase();
     if (/(?:颜色|顏色|颜色分类|色彩|colour|color|rang)/i.test(s)) return 'color';
     if (/(?:尺码|尺寸|大小|规格尺寸|size|razmer|o['‘’]?lcham)/i.test(s)) return 'size';
+    if (/(?:^|\s)(?:规格|規格|规格型号|規格型號|型号|型號|款式|specification|variant)(?:\s|$)/i.test(s) || /^(?:规格|規格|型号|型號|款式)$/i.test(s)) return 'spec';
     return 'other';
   }
   function inferGroupType(group = {}, index = 0) {
@@ -167,38 +171,73 @@
   function ownLabel(el) {
     return text([...el.childNodes].filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent).join(' '));
   }
+  function visibleBox(node) {
+    try {
+      const box = node?.getBoundingClientRect?.();
+      if (!box) return null;
+      if (box.width < 10 || box.height < 10 || box.bottom < -20 || box.top > innerHeight + 1200) return null;
+      return box;
+    } catch (_e) { return null; }
+  }
+  function domCandidateName(node) {
+    const rows = [
+      node?.getAttribute?.('title'), node?.getAttribute?.('aria-label'), node?.getAttribute?.('data-title'),
+      node?.getAttribute?.('data-name'), node?.getAttribute?.('data-value'), node?.getAttribute?.('data-text'),
+      ownLabel(node), node?.innerText, node?.textContent,
+    ];
+    for (const raw of rows) {
+      const value = cleanOptionLabel(raw);
+      if (value && value.length <= 72 && !uiNoiseVariant.test(value)) return value;
+    }
+    return '';
+  }
   function domOptionNodes(container, labelNode, type = 'other') {
-    const selectors = ['button','li','[role="option"]','[data-sku-id]','[data-prop-value-id]','[data-value-id]','[class*="sku-item"]','[class*="skuItem"]','[class*="spec-item"]','[class*="specItem"]','[class*="prop-item"]','[class*="propItem"]','[class*="value-item"]','[class*="valueItem"]'];
-    return [...container.querySelectorAll(selectors.join(','))]
-      .filter(n => n !== labelNode && !n.contains(labelNode))
-      .filter(n => !n.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"]'))
-      .filter(n => {
-        const image = firstNodeImage(n);
-        const name = cleanOptionLabel(n.getAttribute('title') || n.getAttribute('aria-label') || ownLabel(n) || n.innerText || n.textContent);
-        const box = n.getBoundingClientRect?.();
-        return usableVariantName(name, type, image) && (!box || box.width >= 14 || box.height >= 14);
-      });
+    const stable = ['button','li','a','[role="option"]','[role="button"]','[data-sku-id]','[data-prop-value-id]','[data-value-id]','[data-value]','[class*="sku-item"]','[class*="skuItem"]','[class*="spec-item"]','[class*="specItem"]','[class*="prop-item"]','[class*="propItem"]','[class*="value-item"]','[class*="valueItem"]','[class*="sku"]','[class*="spec"]'];
+    const loose = type === 'spec' ? ['div','span'] : [];
+    const stableSelector = stable.join(',');
+    const map = new Map();
+    [...container.querySelectorAll([...stable, ...loose].join(','))].forEach((node, index) => {
+      if (node === labelNode || node.contains(labelNode)) return;
+      if (node.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"]')) return;
+      const box = visibleBox(node); if (!box) return;
+      if (box.width > 920 || box.height > 240) return;
+      const image = firstNodeImage(node);
+      const name = domCandidateName(node);
+      if (!usableVariantName(name, type, image)) return;
+      const strong = node.matches(stableSelector) || !!image || node.children.length === 0 || /pointer/i.test(getComputedStyle(node)?.cursor || '');
+      if (!strong) return;
+      const score = (image ? 70 : 0) + (node.matches(stableSelector) ? 40 : 0) + (node.children.length === 0 ? 14 : 0) + (box.width <= 420 ? 8 : 0) - Math.min(node.children.length, 12);
+      const row = { node, score, name, image, index };
+      const old = map.get(name); if (!old || score > old.score) map.set(name, row);
+    });
+    return [...map.values()].sort((a, b) => b.score - a.score || a.index - b.index).slice(0, MAX_OPTIONS).map(x => x.node);
   }
   function readGroupsFromDom() {
-    const labels = /^(?:颜色|顏色|颜色分类|色彩|尺码|尺寸|大小|规格|款式|型号|color|size)[:：]?$/i;
-    const exactNodes = [...document.querySelectorAll('span,div,label,dt,th,p')].filter(n => labels.test(text(n.textContent)));
+    const labels = /^(?:颜色|顏色|颜色分类|色彩|尺码|尺寸|大小|规格|規格|规格型号|規格型號|款式|型号|型號|color|size|specification|variant)[:：]?$/i;
+    const exactNodes = [...document.querySelectorAll('span,div,label,dt,th,p,strong')].filter(n => labels.test(text(n.textContent)));
     const groups = [];
     exactNodes.forEach((labelNode, gi) => {
       if (labelNode.closest('table,[class*="parameter"],[class*="attribute-table"],[class*="detail-attribute"]')) return;
       const name = text(labelNode.textContent).replace(/[:：]/g, '');
       const type = classifyGroup(name, groups.length);
-      let container = labelNode.parentElement;
-      for (let hop = 0; container && hop < 3; hop += 1, container = container.parentElement) {
+      let container = labelNode.parentElement; let best = null;
+      for (let hop = 0; container && hop < 6; hop += 1, container = container.parentElement) {
+        const rawText = text(container.innerText || container.textContent);
+        if (rawText.length > 9000) break;
         const nodes = domOptionNodes(container, labelNode, type);
         const options = [];
         nodes.forEach((node, index) => {
           const image = firstNodeImage(node);
-          const option = cleanOptionLabel(node.getAttribute('title') || node.getAttribute('aria-label') || ownLabel(node) || node.innerText || node.textContent);
+          const option = domCandidateName(node);
           if (!usableVariantName(option, type, image)) return;
-          if (!options.some(o => o.name === option)) options.push({ id: text(node.getAttribute('data-sku-id') || node.getAttribute('data-prop-value-id') || node.getAttribute('data-value-id') || `d${gi + 1}_${index + 1}`), name: option, image, disabled: /disabled|soldout|sold-out/i.test(`${node.className || ''} ${node.getAttribute('aria-disabled') || ''}`) });
+          if (!options.some(o => o.name === option)) options.push({ id: text(node.getAttribute('data-sku-id') || node.getAttribute('data-prop-value-id') || node.getAttribute('data-value-id') || node.getAttribute('data-value') || `d${gi + 1}_${index + 1}`), name: option, image, disabled: /disabled|soldout|sold-out/i.test(`${node.className || ''} ${node.getAttribute('aria-disabled') || ''}`) });
         });
-        if (options.length >= 2 && options.length <= MAX_OPTIONS) { groups.push({ id: `dom${gi + 1}`, name, type, options }); break; }
+        if (options.length >= 2 && options.length <= MAX_OPTIONS) {
+          const score = options.length * 10 + options.filter(o => o.image).length * 18 - hop * 3;
+          if (!best || score > best.score) best = { score, options };
+        }
       }
+      if (best) groups.push({ id: `dom${gi + 1}`, name, type, options: best.options });
     });
     const merged = [];
     groups.forEach(g => {
@@ -207,6 +246,28 @@
       else g.options.forEach(o => { if (!existing.options.some(x => x.name === o.name)) existing.options.push(o); });
     });
     return merged.slice(0, MAX_VARIANT_GROUPS);
+  }
+  function readSpecGroupsFromVisibleText() {
+    const lines = String(document.body?.innerText || '').split(/\n+/).map(text).filter(Boolean);
+    const out = [];
+    const stop = /^(?:登录查看全部规格|登錄查看全部規格|查看全部规格|查看全部規格|分销代发|密文代发|商品评价|商品属性|包装信息|商品详情|热门推荐|搭配组货|立即铺货|加入铺货单)$/i;
+    const noise = /^(?:库存|庫存|stock|qoldiq)\s*\d+|^(?:¥|￥)\s*\d+|^(?:运费|配送|发货|登录|登錄)/i;
+    lines.forEach((line, index) => {
+      if (!/^(?:规格|規格|规格型号|規格型號|款式|型号|型號)[:：]?$/.test(line)) return;
+      const options = [];
+      for (let i = index + 1; i < Math.min(lines.length, index + 42); i += 1) {
+        const raw = lines[i];
+        if (stop.test(raw)) break;
+        if (noise.test(raw)) continue;
+        const name = cleanOptionLabel(raw);
+        if (!usableVariantName(name, 'spec')) continue;
+        if (!/(?:\d|米|cm|厘米|层|層|色|款|号|號|蓝|藍|白|黑|红|紅|绿|綠|橙|灰|粉|紫|黄|黃)/i.test(name)) continue;
+        if (!options.some(o => o.name === name)) options.push({ id: `text-spec-${index + 1}-${options.length + 1}`, name, image: '', disabled: false });
+        if (options.length >= MAX_OPTIONS) break;
+      }
+      if (options.length >= 2) out.push({ id: `text-spec-${index + 1}`, name: line.replace(/[:：]/g, ''), type: 'spec', options });
+    });
+    return out.slice(0, 2);
   }
   function mergeGroups(scriptGroups, domGroups) {
 
@@ -256,7 +317,7 @@
     return attrs;
   }
   function attrByKind(attrs = {}, kind = '') {
-    const re = kind === 'color' ? /(?:颜色|顏色|色彩|color|colour|rang)/i : /(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i;
+    const re = kind === 'color' ? /(?:颜色|顏色|色彩|color|colour|rang)/i : /(?:尺码|尺寸|大小|规格|規格|型号|型號|款式|specification|variant|size|razmer|o['‘’]?lcham)/i;
     const hit = Object.entries(attrs).find(([key]) => re.test(key));
     return cleanOptionLabel(hit?.[1] || '');
   }
@@ -272,7 +333,7 @@
       if (found) attrs[group.name] = found;
     });
     const colorGroup = groups.find(g => g.type === 'color');
-    const sizeGroup = groups.find(g => g.type === 'size');
+    const sizeGroup = groups.find(g => g.type === 'size') || groups.find(g => g.type === 'spec');
     const color = cleanOptionLabel(attrByKind(attrs, 'color') || (colorGroup ? attrs[colorGroup.name] || values.find(bit => colorGroup.options.some(o => cleanOptionLabel(o.name) === bit)) || '' : ''));
     const size = cleanOptionLabel(attrByKind(attrs, 'size') || (sizeGroup ? attrs[sizeGroup.name] || values.find(bit => sizeGroup.options.some(o => cleanOptionLabel(o.name) === bit)) || '' : ''));
     const image = absUrl(v?.image ?? v?.imageUrl ?? v?.image_url ?? v?.picUrl ?? v?.pic_url ?? v?.thumbnail) || colorGroup?.options.find(o => o.name === color)?.image || '';
@@ -280,13 +341,13 @@
   }
   function cartesianSkuFallback(groups, basePrice) {
     if (!groups.length) return [];
-    const relevant = groups.filter(g => ['color', 'size'].includes(g.type)).slice(0, 2);
+    const relevant = groups.filter(g => ['color', 'size', 'spec'].includes(g.type)).slice(0, 2);
     if (!relevant.length) return [];
     let rows = [{ attributes: {} }];
     relevant.forEach(group => {
       rows = rows.flatMap(row => group.options.map(o => ({ attributes: { ...row.attributes, [group.name]: o.name } }))).slice(0, MAX_SKUS);
     });
-    const colorGroup = relevant.find(g => g.type === 'color'); const sizeGroup = relevant.find(g => g.type === 'size');
+    const colorGroup = relevant.find(g => g.type === 'color'); const sizeGroup = relevant.find(g => g.type === 'size') || relevant.find(g => g.type === 'spec');
     return rows.map((row, i) => {
       const color = colorGroup ? row.attributes[colorGroup.name] || '' : '';
       const size = sizeGroup ? row.attributes[sizeGroup.name] || '' : '';
@@ -360,8 +421,8 @@
 
   function extract() {
     const prices = priceRange();
-    const groups = mergeGroups(readGroupsFromScripts(), readGroupsFromDom());
-    const colorGroup = groups.find(g => g.type === 'color'); const sizeGroup = groups.find(g => g.type === 'size');
+    const groups = mergeGroups(readGroupsFromScripts(), [...readGroupsFromDom(), ...readSpecGroupsFromVisibleText()]);
+    const colorGroup = groups.find(g => g.type === 'color'); const sizeGroup = groups.find(g => g.type === 'size') || groups.find(g => g.type === 'spec');
     const colorOptions = (colorGroup?.options || []).slice(0, MAX_OPTIONS);
     const sizeOptions = (sizeGroup?.options || []).slice(0, MAX_OPTIONS);
     const variantImages = compact(groups.flatMap(g => g.options.map(o => absUrl(o.image))).filter(Boolean), MAX_OPTIONS);
@@ -379,6 +440,7 @@
       moq: readMoq(), stock: readStock(), unit: 'dona',
       sellerName: '', sellerLocation: '', props: readProps(), serviceTags: [],
       variantGroups: groups, colorOptions, sizeOptions, variantImages, imagesByColor,
+      genericSpecName: sizeGroup?.type === 'spec' ? sizeGroup.name : '',
       skuVariants, variants: skuVariants,
       diagnostics: { galleryCount: images.length, variantImageCount: variantImages.length, groupCount: groups.length, skuCount: skuVariants.length, mode: skuVariants.some(x => /^fallback/.test(x.id)) ? 'dom-fallback' : 'structured' },
       extractedAt: new Date().toISOString(), extractorVersion: VERSION,

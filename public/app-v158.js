@@ -1016,6 +1016,8 @@ function omVariantGroups(p){
   return Array.isArray(p?.variantGroups) ? p.variantGroups : (Array.isArray(p?.china1688?.variantGroups) ? p.china1688.variantGroups : []);
 }
 function omGroupByType(p,type){ return omVariantGroups(p).find(g=>String(g?.type||"").toLowerCase()===type); }
+function omSizeGroup(p){ return omGroupByType(p,"size") || omGroupByType(p,"spec"); }
+function omSizeLabel(p){ return (p?.china1688?.genericSpecName || omGroupByType(p,"spec")?.name) ? "Variantlar" : "O‘lchamlar"; }
 function normColors(p){
   const explicit=[];
   const add=(list)=>{ if(Array.isArray(list)) explicit.push(...list); };
@@ -1040,9 +1042,9 @@ function normColors(p){
 function normSizes(p){
   const explicit=[];
   const add=(list)=>{ if(Array.isArray(list)) explicit.push(...list); };
-  add(p?.sizes); add(p?.sizeOptions); add(p?.china1688?.sizeOptions); add(omGroupByType(p,"size")?.options);
+  add(p?.sizes); add(p?.sizeOptions); add(p?.china1688?.sizeOptions); add(omSizeGroup(p)?.options);
   omVariantRows(p).forEach(v=>{
-    const byAttr=Object.entries(v?.attributes||{}).find(([k])=>/(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i.test(String(k||"")))?.[1];
+    const byAttr=Object.entries(v?.attributes||{}).find(([k])=>/(?:尺码|尺寸|大小|规格|規格|型号|型號|款式|specification|variant|size|razmer|o['‘’]?lcham)/i.test(String(k||"")))?.[1];
     const name=omCleanVariantLabel(v?.size || byAttr || "");
     if(name) explicit.push(name);
   });
@@ -2338,7 +2340,7 @@ function renderOptions(p){
     </div>` : "";
 
   const sz = sizes.length ? `
-    <div class="optLine sizesLine" aria-label="O'lcham">
+    <div class="optLine sizesLine" aria-label="${escapeHtml(omSizeLabel(p))}">
       ${sizes.map(s=>{
         const active = (sel.size===s) ? "active" : "";
         return `<button class="sizeChip ${active}" data-s="${escapeHtml(s)}">${escapeHtml(s)}</button>`;
@@ -2806,6 +2808,7 @@ function renderVariantModal(){
 
   const showSizes = sizes.length > 0;
   if(els.vSizes) els.vSizes.hidden = !showSizes;
+  const vSizeLabel = els.vSizes?.querySelector?.(".vLabel"); if(vSizeLabel) vSizeLabel.textContent = omSizeLabel(p);
   if(els.vSizeRow) els.vSizeRow.innerHTML = showSizes ? sizes.map(s=>{
     const active = sel.size === s ? "active" : "";
     return `<button class="vChip ${active}" data-s="${escapeHtml(s)}">${escapeHtml(s)}</button>`;
@@ -4554,7 +4557,7 @@ function omQVVariantHtml(p, interactive=false){
     }).join("")}${colors.length>18?`<b>+${colors.length-18}</b>`:""}</div></div>`);
   }
   if(sizes.length){
-    parts.push(`<div class="qvVarGroup"><span>O‘lchamlar</span><div class="qvSizeList">${sizes.slice(0,24).map(s=>interactive?`<button type="button" data-pp-size="${escapeHtml(s)}" class="${sel.size===s?"active":""}" aria-pressed="${sel.size===s?"true":"false"}">${escapeHtml(s)}</button>`:`<b>${escapeHtml(s)}</b>`).join("")}${sizes.length>24?`<b>+${sizes.length-24}</b>`:""}</div></div>`);
+    parts.push(`<div class="qvVarGroup"><span>${escapeHtml(omSizeLabel(p))}</span><div class="qvSizeList">${sizes.slice(0,24).map(s=>interactive?`<button type="button" data-pp-size="${escapeHtml(s)}" class="${sel.size===s?"active":""}" aria-pressed="${sel.size===s?"true":"false"}">${escapeHtml(s)}</button>`:`<b>${escapeHtml(s)}</b>`).join("")}${sizes.length>24?`<b>+${sizes.length-24}</b>`:""}</div></div>`);
   }
   return parts.length ? parts.join("") : `<div class="qvVarEmpty"><i class="fa-solid fa-check"></i> Variant tanlash shart emas</div>`;
 }
