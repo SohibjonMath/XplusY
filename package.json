@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.48.0",
-  "description": "OrzuMall v148: API-free 1688 Chrome extension importer with Firestore catalog save and Firebase Storage image copy",
+  "version": "1.50.0",
+  "description": "OrzuMall v150: API-free 1688 Chrome importer with filtered gallery, CDN preview proxy and Firebase Storage image copy",
   "engines": {
     "node": "22.x"
   },

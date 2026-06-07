@@ -21,6 +21,8 @@ function safeHttpUrl(v) {
   try {
     const u = new URL(s.startsWith('//') ? `https:${s}` : s);
     if (!/^https?:$/i.test(u.protocol)) return '';
+    if (u.protocol === 'http:' && /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(u.hostname)) u.protocol = 'https:';
+    u.hash = '';
     return u.toString();
   } catch (_e) { return ''; }
 }
@@ -78,7 +80,12 @@ async function downloadImage(rawUrl) {
       res = await fetch(url, {
         signal: controller.signal,
         redirect: 'manual',
-        headers: { 'user-agent': 'OrzuMall-Image-Importer/1.0' },
+        headers: {
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/142.0 Safari/537.36',
+          'accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          'accept-language': 'en-US,en;q=0.9',
+          'referer': 'https://detail.1688.com/',
+        },
       });
       if (![301, 302, 303, 307, 308].includes(res.status)) break;
       const location = res.headers.get('location');
@@ -129,4 +136,4 @@ async function copyImages(rawUrls, itemId) {
   });
   return { copied, failed, requested: urls.length };
 }
-module.exports = { MAX_IMAGES_PER_BATCH, safeHttpUrl, copyImages };
+module.exports = { MAX_IMAGES_PER_BATCH, safeHttpUrl, downloadImage, copyImages };

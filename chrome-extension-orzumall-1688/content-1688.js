@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_IMAGES = 14;
   const MAX_VARIANTS = 100;
@@ -14,11 +14,12 @@
       .replace(/^url\(["']?|["']?\)$/g, '');
     if (!raw || raw.startsWith('data:') || raw.startsWith('blob:')) return '';
     try {
-      raw = new URL(raw.startsWith('//') ? `https:${raw}` : raw, location.href).toString();
-      const url = new URL(raw);
+      const url = new URL(raw.startsWith('//') ? `https:${raw}` : raw, location.href);
+      // Avoid mixed-content failures when the admin panel is opened over HTTPS.
+      if (url.protocol === 'http:' && /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(url.hostname)) url.protocol = 'https:';
       url.hash = '';
-      // Alibaba thumbnail suffixes often look like: image.jpg_60x60.jpg
-      url.pathname = url.pathname.replace(/_\d{2,5}x\d{2,5}(?:q\d+)?\.(?:jpe?g|png|webp)$/i, '');
+      // Keep the URL exactly as exposed by 1688. Some CDN thumbnail suffixes are
+      // required by the current product template; removing them can produce 404.
       return url.toString();
     } catch (_e) { return ''; }
   };
@@ -38,7 +39,8 @@
   const isImageUrl = url => /\.(?:jpe?g|png|webp|avif)(?:[?#]|$)/i.test(url) || isProductCdnUrl(url);
   const imageAttrs = img => {
     const rows = [];
-    ['src', 'data-src', 'data-lazy-src', 'data-original', 'data-image', 'data-ks-lazyload', 'data-url', 'data-img'].forEach(a => rows.push(img.getAttribute?.(a)));
+    rows.push(img.currentSrc);
+    ['src', 'data-src', 'data-lazy-src', 'data-lazyload-src', 'data-original', 'data-origin-src', 'data-zoom-image', 'data-image', 'data-ks-lazyload', 'data-url', 'data-img'].forEach(a => rows.push(img.getAttribute?.(a)));
     const srcset = img.getAttribute?.('srcset');
     if (srcset) srcset.split(',').forEach(part => rows.push(part.trim().split(/\s+/)[0]));
     const styleBg = img.style?.backgroundImage?.match(/url\(["']?(.+?)["']?\)/)?.[1];
@@ -149,7 +151,7 @@
   const extract = () => {
     const prices = priceRange();
     const images = imageCandidates();
-    const title = firstText(['h1', '[class*="title"] h1', '[class*="Title"]', 'meta[property="og:title"]', 'title']).replace(/[-_]?阿里巴巴.*$/i, '').slice(0, 520);
+    const title = firstText(['meta[property="og:title"]', 'meta[name="title"]', '[class*="title"] h1', '[class*="offer-title"]', '[class*="product-title"]', 'h1', 'title']).replace(/[-_]?阿里巴巴.*$/i, '').slice(0, 520);
     return {
       id: itemId(), url: location.href, title,
       image: images[0] || '', images,

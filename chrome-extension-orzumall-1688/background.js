@@ -8,7 +8,7 @@ function bytesToBase64Url(bytes) {
 function encodePayload(payload) {
   const minimal = {
     source: 'orzumall-1688-extension',
-    version: '1.1.0',
+    version: '1.2.0',
     importedAt: new Date().toISOString(),
     item: payload,
   };
