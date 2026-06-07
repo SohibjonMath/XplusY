@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.9.0';
+  const VERSION = '1.10.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -41,7 +41,7 @@
   const attrRows = node => {
     if (!node) return [];
     const rows = [node.currentSrc];
-    ['src', 'data-src', 'data-lazy-src', 'data-lazyload-src', 'data-original', 'data-origin-src', 'data-zoom-image', 'data-image', 'data-ks-lazyload', 'data-url', 'data-img', 'data-pic', 'data-bg', 'data-background-image'].forEach(a => rows.push(node.getAttribute?.(a)));
+    ['src', 'poster', 'data-poster', 'data-src', 'data-lazy-src', 'data-lazyload-src', 'data-original', 'data-origin-src', 'data-zoom-image', 'data-image', 'data-ks-lazyload', 'data-url', 'data-img', 'data-pic', 'data-bg', 'data-background-image'].forEach(a => rows.push(node.getAttribute?.(a)));
     const srcset = node.getAttribute?.('srcset');
     if (srcset) srcset.split(',').forEach(part => rows.push(part.trim().split(/\s+/)[0]));
     node.querySelectorAll?.('source[srcset],source[data-srcset]').forEach(source => {
@@ -422,11 +422,11 @@
       if (node && isRejectedGalleryContext(node)) return;
       const box = rectOf(node); const w = Number(node?.naturalWidth || box?.width || 0); const h = Number(node?.naturalHeight || box?.height || 0);
       if (w && h && w < 46 && h < 46) return;
-      if (variants.has(url) && origin !== 'main') return; // SKU ikonkalari asosiy galereyaga aralashmasin
+      if (variants.has(url) && origin !== 'main' && origin !== 'trusted-strip') return; // SKU ikonkalari umumiy galereyaga aralashmasin; chap media lentasi bundan mustasno
       const total = score + (isProductCdnUrl(url) ? 48 : 0) + ((w >= 220 || h >= 220) ? 20 : 0);
       const old = found.get(url); if (!old || total > old.score) found.set(url, { url, score: total, order: order++ });
     };
-    const visualNodes = [...document.querySelectorAll('img,picture,[style*="background-image"],[data-bg],[data-background-image]')];
+    const visualNodes = [...document.querySelectorAll('img,picture,video[poster],[style*="background-image"],[data-bg],[data-background-image]')];
     const rows = visualNodes.map(node => ({ node, box: rectOf(node), urls: attrRows(node) })).filter(row => {
       const { node, box, urls } = row;
       if (!box || !urls.length || isRejectedGalleryContext(node)) return false;
@@ -456,12 +456,12 @@
       let media = primary.node.parentElement; let selectedMedia = null;
       for (let hop=0; media && hop<8; hop+=1, media=media.parentElement) {
         const box=rectOf(media); if(!box) continue;
-        const imgs=[...media.querySelectorAll('img,picture,[style*="background-image"],[data-bg],[data-background-image]')].filter(node=>!isRejectedGalleryContext(node) && attrRows(node).length);
+        const imgs=[...media.querySelectorAll('img,picture,video[poster],[style*="background-image"],[data-bg],[data-background-image]')].filter(node=>!isRejectedGalleryContext(node) && attrRows(node).length);
         const spatialOk = box.width <= Math.min(innerWidth*.78, 980) && box.height <= 1180;
         if(imgs.length>=2 && imgs.length<=42 && spatialOk) selectedMedia=media;
       }
       if(selectedMedia){
-        [...selectedMedia.querySelectorAll('img,picture,[style*="background-image"],[data-bg],[data-background-image]')].forEach(node=>{
+        [...selectedMedia.querySelectorAll('img,picture,video[poster],[style*="background-image"],[data-bg],[data-background-image]')].forEach(node=>{
           if(isRejectedGalleryContext(node)) return;
           const b=rectOf(node); if(!b || b.width<30 || b.height<30) return;
           const near = b.left <= mainBox.right + 190 && b.right >= mainBox.left - 190 && b.top <= mainBox.bottom + 290 && b.bottom >= mainBox.top - 100;
@@ -477,7 +477,35 @@
         urls.forEach(url=>add(url, 270, node, 'thumb'));
       });
     }
-    // 3) Xavfsiz zaxira: mahsulot metadata rasmi. Sharh va foydalanuvchi rasmlariga tushmaydi.
+    // 3) Video faol bo'lgan yangi 1688 shablonlari: katta rasm DOM'da bo'lmasligi mumkin.
+    // Bunday holatda faqat chap media panelidagi bir qatorda turgan miniatyuralarni olamiz.
+    // Bu review/UGC rasmlariga tushib ketmaslik uchun fazoviy jihatdan juda tor scope bilan ishlaydi.
+    if(!found.size){
+      const leftLimit = Math.min(innerWidth * .58, 720);
+      const stripRows = rows.filter(({node,box,urls})=>{
+        if(!box || !urls.some(isProductCdnUrl) || isRejectedGalleryContext(node) || isVariantContext(node)) return false;
+        const smallEnough = box.width >= 42 && box.width <= 145 && box.height >= 42 && box.height <= 145;
+        const visibleLeftMedia = box.left >= -8 && box.right <= leftLimit && box.top >= 170 && box.top <= Math.min(1180, innerHeight + 360);
+        return smallEnough && visibleLeftMedia;
+      });
+      const bands = new Map();
+      stripRows.forEach(row=>{
+        const key=Math.round(row.box.top/34);
+        if(!bands.has(key)) bands.set(key,[]);
+        bands.get(key).push(row);
+      });
+      const best=[...bands.values()].map(group=>{
+        const rowsSorted=group.sort((a,b)=>a.box.left-b.box.left);
+        const unique=uniq(rowsSorted.flatMap(x=>x.urls.filter(isProductCdnUrl)));
+        const span=rowsSorted.length ? rowsSorted[rowsSorted.length-1].box.right-rowsSorted[0].box.left : 0;
+        const top=rowsSorted[0]?.box.top || 9999;
+        return { rows:rowsSorted, unique, score:unique.length*100 + Math.min(span,720) - Math.abs(top-760)*.08 };
+      }).filter(x=>x.unique.length>=2).sort((a,b)=>b.score-a.score)[0];
+      if(best){
+        best.rows.forEach(({node,urls})=>urls.forEach(url=>add(url,430,node,'trusted-strip')));
+      }
+    }
+    // 4) Xavfsiz zaxira: mahsulot metadata rasmi. Sharh va foydalanuvchi rasmlariga tushmaydi.
     if(!found.size) document.querySelectorAll('meta[property="og:image"],meta[name="og:image"],meta[itemprop="image"],link[rel="image_src"]')
       .forEach(n=>add(n.content || n.href, 360, null, 'main'));
     return [...found.values()].sort((a,b)=>b.score-a.score || a.order-b.order).map(x=>x.url).slice(0,12);
