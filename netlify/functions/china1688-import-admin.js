@@ -6,7 +6,7 @@
 const {
   admin, cleanText, json, parseBody, safe1688Url, itemIdFromUrl,
   calculatePrice, pricingConfig, requireAdmin, rateLimit,
-  rapidApi1688Ready, rapidApi1688Host, fetch1688DetailByUrl, normalizeDetailResponse,
+  rapidApi1688Ready, rapidApi1688Host, fetch1688DetailByUrl, normalizeDetailResponse, normalizeRemoteImageUrl,
 } = require('./_china1688Common');
 const { MAX_IMAGES_PER_BATCH, IMAGE_STANDARD, copyImages } = require('./_china1688ImageStore');
 
@@ -18,12 +18,7 @@ function safeInt(v, min = 0, max = 1e9, fallback = 0) {
   return Math.round(safeNumber(v, min, max, fallback));
 }
 function safeUrl(v, max = 2200) {
-  const s = cleanText(v, max);
-  if (!s) return '';
-  try {
-    const u = new URL(s.startsWith('//') ? `https:${s}` : s);
-    return /^https?:$/i.test(u.protocol) ? u.toString() : '';
-  } catch (_e) { return ''; }
+  return normalizeRemoteImageUrl(v, max);
 }
 function uniq(list, max = 30) {
   return [...new Set((Array.isArray(list) ? list : []).filter(Boolean))].slice(0, max);

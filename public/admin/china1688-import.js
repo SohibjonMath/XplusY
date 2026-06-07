@@ -25,7 +25,20 @@ function isStorageUrl(v) { return /^https:\/\/firebasestorage\.googleapis\.com\/
 function normalizeImageUrl(v) {
   let s = String(v || '').trim().replace(/&amp;/g, '&').replace(/\\u002F/gi, '/').replace(/\\\//g, '/');
   if (!s || s.startsWith('data:') || s.startsWith('blob:')) return '';
-  try { const u = new URL(s.startsWith('//') ? 'https:' + s : s, location.href); if (u.protocol === 'http:' && /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(u.hostname)) u.protocol = 'https:'; u.hash = ''; return u.toString(); } catch { return ''; }
+  try {
+    const u = new URL(s.startsWith('//') ? 'https:' + s : s, location.href);
+    if (u.protocol === 'http:' && /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(u.hostname)) u.protocol = 'https:';
+    if (/(?:^|\.)(?:alicdn\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(u.hostname)) {
+      const path = u.pathname, base = path.match(/\.(?:jpe?g|png|gif|webp|avif)/i);
+      if (base) {
+        const end = base.index + base[0].length, tail = path.slice(end);
+        if (/^_(?:(?:\d{2,5}x\d{2,5})(?:xz)?(?:q\d{1,3})?|q\d{1,3}|\.?(?:webp|avif|jpe?g|png))(?:[._-].*)?$/i.test(tail)) u.pathname = path.slice(0, end);
+      }
+      [...u.searchParams.keys()].forEach(key => { if (/^(?:x-oss-process|image_process|imagemogr2|imageview2|resize|width|height|w|h|quality|q)$/i.test(key)) u.searchParams.delete(key); });
+    }
+    u.hash = '';
+    return u.toString();
+  } catch { return ''; }
 }
 function imageProxyUrl(v) { const u = normalizeImageUrl(v); if (!u || isStorageUrl(u)) return u; return '/.netlify/functions/china1688-image-proxy?url=' + encodeURIComponent(u); }
 function previewImg(u, extra = '') { const original = normalizeImageUrl(u); if (!original) return ''; return `<img src="${esc(imageProxyUrl(original))}" data-original-src="${esc(original)}" referrerpolicy="no-referrer" loading="lazy" decoding="async" ${extra}>`; }

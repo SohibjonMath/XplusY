@@ -7,7 +7,7 @@
 const crypto = require('node:crypto');
 const dns = require('node:dns').promises;
 const net = require('node:net');
-const { admin, cleanText } = require('./_china1688Common');
+const { admin, cleanText, normalizeRemoteImageUrl } = require('./_china1688Common');
 
 let sharp = null;
 try { sharp = require('sharp'); } catch (_e) { sharp = null; }
@@ -23,15 +23,8 @@ function safeFilePart(v, fallback = 'item') {
   return s || fallback;
 }
 function safeHttpUrl(v) {
-  const s = cleanText(v, 2200);
-  if (!s) return '';
-  try {
-    const u = new URL(s.startsWith('//') ? `https:${s}` : s);
-    if (!/^https?:$/i.test(u.protocol)) return '';
-    if (u.protocol === 'http:' && /(?:^|\.)(?:alicdn\.com|1688\.com|tbcdn\.cn|alibabausercontent\.com)$/i.test(u.hostname)) u.protocol = 'https:';
-    u.hash = '';
-    return u.toString();
-  } catch (_e) { return ''; }
+  // Always download the original Alibaba CDN file, never a 60×60/220×220 thumbnail.
+  return normalizeRemoteImageUrl(v, 2200);
 }
 function isBlockedIp(ip) {
   if (!ip) return true;
