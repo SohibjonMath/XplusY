@@ -156,6 +156,230 @@ function marketplaceVariants(source = {}, fallbackPrice = 0) {
   return rows.map(toMarketplace).filter(row=>row.color || row.size).slice(0,220);
 }
 
+
+function customerGroupType(name = '', hint = '') {
+  const raw = `${hint} ${name}`.toLowerCase();
+  if (/(?:color|colour|rang|颜色|顏色|色彩)/i.test(raw)) return 'color';
+  if (/(?:size|razmer|o['‘’]?lcham|尺码|尺寸|大小)/i.test(raw)) return 'size';
+  if (/(?:规格|規格|型号|型號|款式|model|variant|spec)/i.test(raw)) return 'spec';
+  return 'other';
+}
+function customerSlug(value = '', fallback = 'g') {
+  const out = cleanText(value, 140).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-+|-+$/g, '');
+  return out || fallback;
+}
+function customerOption(value = {}, index = 0) {
+  const row = typeof value === 'string' ? { name: value } : (value || {});
+  const name = cleanVariantValue(row.name || row.label || row.value || row.text || '');
+  if (!usableVariantValue(name)) return null;
+  return {
+    id: cleanText(row.id || `o${index + 1}`, 140),
+    name,
+    image: safeUrl(row.image || row.img || row.imageUrl || '', 2200),
+    disabled: row.disabled === true,
+  };
+}
+function dedupeCustomerOptions(rows = []) {
+  const map = new Map();
+  rows.forEach((row, index) => {
+    const opt = customerOption(row, index);
+    if (!opt) return;
+    const key = opt.name.toLowerCase();
+    const prev = map.get(key) || {};
+    map.set(key, { ...prev, ...opt, image: opt.image || prev.image || '' });
+  });
+  return [...map.values()].slice(0, 96);
+}
+function customerGroup(value = {}, index = 0) {
+  const row = value || {};
+  const name = cleanText(row.name || row.label || `Variant ${index + 1}`, 160);
+  const type = customerGroupType(name, row.type);
+  const options = dedupeCustomerOptions(row.options || row.values || []);
+  if (!options.length) return null;
+  return {
+    id: cleanText(row.id || customerSlug(name, `g${index + 1}`), 140),
+    name,
+    type,
+    required: row.required !== false,
+    options,
+  };
+}
+function customerAttrValue(attributes = {}, group = {}) {
+  const entries = Object.entries(attributes || {});
+  const exact = entries.find(([key]) => cleanText(key, 160).toLowerCase() === cleanText(group.name, 160).toLowerCase());
+  if (exact) return cleanVariantValue(exact[1]);
+  const re = group.type === 'color'
+    ? /(?:颜色|顏色|色彩|color|colour|rang)/i
+    : group.type === 'size'
+      ? /(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i
+      : group.type === 'spec'
+        ? /(?:规格|規格|型号|型號|款式|model|variant|spec)/i
+        : null;
+  const hit = re ? entries.find(([key]) => re.test(cleanText(key, 160))) : null;
+  return cleanVariantValue(hit?.[1] || '');
+}
+function upsertCustomerGroup(groupMap, raw = {}, fallbackIndex = 0) {
+  const group = customerGroup(raw, fallbackIndex);
+  if (!group) return;
+  const key = `${group.type}::${group.name.toLowerCase()}`;
+  const byType = [...groupMap.values()].find(x => ['color', 'size'].includes(group.type) && x.type === group.type);
+  const existing = groupMap.get(key) || byType;
+  if (existing) {
+    existing.options = dedupeCustomerOptions([...(existing.options || []), ...(group.options || [])]);
+    return;
+  }
+  groupMap.set(key, group);
+}
+function buildChina1688CustomerCatalog(source = {}, fallbackPrice = 0) {
+  const sourceGroups = sanitizeVariantGroups(source.variantGroups);
+  const skuRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants);
+  const groupMap = new Map();
+  sourceGroups.forEach((group, idx) => upsertCustomerGroup(groupMap, group, idx));
+
+  const colors = sourceColors(source);
+  if (colors.length) upsertCustomerGroup(groupMap, { id: 'color', name: 'Rang', type: 'color', options: colors }, groupMap.size);
+  const sizes = sourceSizes(source);
+  if (sizes.length) upsertCustomerGroup(groupMap, { id: 'size', name: source.genericSpecName || 'O‘lcham / model', type: 'size', options: sizes.map(name => ({ name })) }, groupMap.size);
+
+  skuRows.forEach(row => {
+    Object.entries(row.attributes || {}).forEach(([name, value]) => {
+      const option = customerOption({ name: value }, 0);
+      if (!option) return;
+      upsertCustomerGroup(groupMap, { id: customerSlug(name, `g${groupMap.size + 1}`), name, type: customerGroupType(name), options: [option] }, groupMap.size);
+    });
+    if (row.color) upsertCustomerGroup(groupMap, { id: 'color', name: 'Rang', type: 'color', options: [{ name: row.color, image: row.image }] }, groupMap.size);
+    if (row.size) upsertCustomerGroup(groupMap, { id: 'size', name: source.genericSpecName || 'O‘lcham / model', type: 'size', options: [{ name: row.size }] }, groupMap.size);
+  });
+
+  let optionGroups = [...groupMap.values()].map((group, idx) => ({ ...group, id: cleanText(group.id || `g${idx + 1}`, 140) })).filter(group => group.options.length).slice(0, 8);
+
+  if (!optionGroups.length && skuRows.length) {
+    const fallbackRows = dedupeCustomerOptions(skuRows.map(row => ({ name: row.name || row.id, image: row.image })));
+    if (fallbackRows.length) optionGroups = [{ id: 'variant', name: 'Variant', type: 'spec', required: true, options: fallbackRows }];
+  }
+
+  const ensureGroupOption = (group, value, image = '') => {
+    const name = cleanVariantValue(value);
+    if (!usableVariantValue(name)) return '';
+    const hit = group.options.find(opt => opt.name.toLowerCase() === name.toLowerCase());
+    if (hit) {
+      if (!hit.image && image) hit.image = safeUrl(image, 2200);
+      return hit.name;
+    }
+    group.options.push({ id: `o${group.options.length + 1}`, name, image: safeUrl(image, 2200), disabled: false });
+    return name;
+  };
+
+  const rows = [];
+  skuRows.forEach((row, idx) => {
+    const selections = {};
+    optionGroups.forEach(group => {
+      let value = customerAttrValue(row.attributes, group);
+      if (!value && group.type === 'color') value = row.color;
+      if (!value && ['size', 'spec'].includes(group.type)) value = row.size;
+      if (!value && optionGroups.length === 1) value = row.name;
+      const normalized = ensureGroupOption(group, value, row.image);
+      if (normalized) selections[group.id] = normalized;
+    });
+    if (!Object.keys(selections).length) return;
+    const price = row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0);
+    rows.push({
+      id: cleanText(row.id || `sku${idx + 1}`, 160),
+      skuId: cleanText(row.id || `sku${idx + 1}`, 160),
+      name: cleanText(row.name || Object.values(selections).join(' / '), 300),
+      selections,
+      price,
+      priceCny: safeNumber(row.priceCny, 0, 1e8, 0),
+      stock: safeInt(row.stock, 0, 1e9, 0),
+      image: safeUrl(row.image, 2200),
+      disabled: false,
+    });
+  });
+
+  const maxGenerated = 240;
+  if (rows.length && optionGroups.length && rows.some(row => optionGroups.some(group => !row.selections?.[group.id]))) {
+    const expanded = [];
+    rows.forEach((row, rowIndex) => {
+      let partial = [{ ...row, selections: { ...(row.selections || {}) } }];
+      optionGroups.forEach(group => {
+        if (partial.every(item => item.selections?.[group.id])) return;
+        const next = [];
+        partial.forEach(item => {
+          if (item.selections?.[group.id]) { next.push(item); return; }
+          group.options.forEach(option => {
+            if (next.length + expanded.length >= maxGenerated) return;
+            next.push({ ...item, id: `${item.id || `sku${rowIndex + 1}`}-${group.id}-${option.id}`, skuId: `${item.skuId || item.id || `sku${rowIndex + 1}`}-${group.id}-${option.id}`, name: cleanText(`${item.name || ''} / ${option.name}`, 300), selections: { ...(item.selections || {}), [group.id]: option.name }, image: item.image || option.image || '' });
+          });
+        });
+        partial = next;
+      });
+      expanded.push(...partial.slice(0, Math.max(0, maxGenerated - expanded.length)));
+    });
+    rows.splice(0, rows.length, ...expanded.slice(0, maxGenerated));
+  }
+  if (!rows.length && optionGroups.length) {
+    let combos = [{}];
+    optionGroups.forEach(group => {
+      const next = [];
+      combos.forEach(combo => group.options.forEach(opt => {
+        if (next.length < maxGenerated) next.push({ ...combo, [group.id]: opt.name });
+      }));
+      combos = next;
+    });
+    combos.slice(0, maxGenerated).forEach((selections, idx) => {
+      const colorGroup = optionGroups.find(g => g.type === 'color');
+      const colorValue = colorGroup ? selections[colorGroup.id] : '';
+      const image = colorGroup?.options.find(opt => opt.name === colorValue)?.image || '';
+      rows.push({
+        id: `generated-${idx + 1}`,
+        skuId: `generated-${idx + 1}`,
+        name: Object.values(selections).join(' / '),
+        selections,
+        price: safeInt(fallbackPrice, 0, 1e12, 0),
+        priceCny: safeNumber(source.priceCny, 0, 1e8, 0),
+        stock: safeInt(source.stock, 0, 1e9, 0),
+        image,
+        disabled: false,
+      });
+    });
+  }
+
+  optionGroups = optionGroups.map(group => ({ ...group, options: dedupeCustomerOptions(group.options) }));
+  const skuMap = new Map();
+  rows.forEach(row => {
+    const key = optionGroups.map(group => `${group.id}:${row.selections?.[group.id] || ''}`).join('|') || row.id;
+    if (!skuMap.has(key)) skuMap.set(key, row);
+  });
+  const skus = [...skuMap.values()].slice(0, maxGenerated);
+  return {
+    version: 1,
+    kind: 'china1688-catalog',
+    optionGroups,
+    skus,
+    optionGroupCount: optionGroups.length,
+    skuCount: skus.length,
+    hasVariants: optionGroups.length > 0,
+    sourceMode: source?.diagnostics?.mode || (skuRows.length ? 'source-sku' : 'admin-generated'),
+  };
+}
+function catalogToLegacyVariants(catalog = {}) {
+  const groups = Array.isArray(catalog.optionGroups) ? catalog.optionGroups : [];
+  const colorGroup = groups.find(g => g.type === 'color');
+  const sizeGroup = groups.find(g => ['size', 'spec'].includes(g.type));
+  return (Array.isArray(catalog.skus) ? catalog.skus : []).map(row => ({
+    color: colorGroup ? row.selections?.[colorGroup.id] || null : null,
+    size: sizeGroup ? row.selections?.[sizeGroup.id] || null : null,
+    price: safeInt(row.price, 0, 1e12, 0),
+    stock: safeInt(row.stock, 0, 1e9, 0),
+    stockQty: safeInt(row.stock, 0, 1e9, 0),
+    sku: cleanText(row.skuId || row.id, 160),
+    skuId: cleanText(row.skuId || row.id, 160),
+    image: safeUrl(row.image, 2200),
+    attributes: row.selections || {},
+    chinaOptions: row.selections || {},
+  }));
+}
+
 function nowIso() { return new Date().toISOString(); }
 function isStorageUrl(v) { return /^https:\/\/firebasestorage\.googleapis\.com\//i.test(String(v || '')); }
 function isNormalizedStorageUrl(v) { return isStorageUrl(v) && /square-1200/i.test(String(v || '')); }
@@ -283,6 +507,7 @@ async function saveProduct(db, raw, actor) {
   }
   const ts = admin.firestore.FieldValue.serverTimestamp();
   const source = draft.source;
+  const customerCatalog = buildChina1688CustomerCatalog(source, draft.price);
   const storedCount = draft.images.filter(isStorageUrl).length;
   const normalizedCount = draft.images.filter(isNormalizedStorageUrl).length;
   const payload = {
@@ -301,7 +526,8 @@ async function saveProduct(db, raw, actor) {
     colors: sourceColors(source),
     sizes: sourceSizes(source),
     imagesByColor: sanitizeImagesByColor(source.imagesByColor),
-    variants: marketplaceVariants(source, draft.price),
+    variants: catalogToLegacyVariants(customerCatalog).length ? catalogToLegacyVariants(customerCatalog) : marketplaceVariants(source, draft.price),
+    china1688Catalog: customerCatalog,
     tags: draft.tags,
     fulfillmentType: 'cargo',
     deliveryMinDays: Math.min(draft.deliveryMinDays, draft.deliveryMaxDays),
@@ -342,6 +568,7 @@ async function saveProduct(db, raw, actor) {
       imagesByColor: sanitizeImagesByColor(source.imagesByColor),
       genericSpecName: cleanText(source.genericSpecName, 120),
       diagnostics: source.diagnostics || {},
+      customerCatalog,
       externalImages: draft.externalImages,
       localImageCount: storedCount,
       imageStandard: draft.images.length && normalizedCount === draft.images.length ? IMAGE_STANDARD : cleanText(source.imageStandard, 80),
@@ -380,7 +607,7 @@ function publicRow(doc) {
     fulfillmentType: cleanText(p.fulfillmentType, 32), isActive: p.isActive !== false,
     deliveryMinDays: safeInt(p.deliveryMinDays, 1, 365, 15), deliveryMaxDays: safeInt(p.deliveryMaxDays, 1, 365, 30),
     tags: sanitizeTags(p.tags), weightKg: safeNumber(p.weightKg, 0, 100000, 0),
-    popularScore: safeInt(p.popularScore, 0, 1e12, 0), colors: Array.isArray(p.colors) ? p.colors : [], sizes: Array.isArray(p.sizes) ? p.sizes : [], variants: Array.isArray(p.variants) ? p.variants : [], imagesByColor: p.imagesByColor || {}, updatedAtMs: stampMs(p.updatedAt),
+    popularScore: safeInt(p.popularScore, 0, 1e12, 0), colors: Array.isArray(p.colors) ? p.colors : [], sizes: Array.isArray(p.sizes) ? p.sizes : [], variants: Array.isArray(p.variants) ? p.variants : [], imagesByColor: p.imagesByColor || {}, china1688Catalog: p.china1688Catalog || src.customerCatalog || {}, updatedAtMs: stampMs(p.updatedAt),
     localImageCount: safeInt(src.localImageCount, 0, 1000, images.filter(isStorageUrl).length),
     imageStandard: cleanText(src.imageStandard, 80), normalizedImageCount: safeInt(src.normalizedImageCount, 0, 1000, images.filter(isNormalizedStorageUrl).length),
     source: sourceSummary({ ...src, id: p.sourceItemId || src.itemId, url: p.sourceUrl || src.url, images: src.externalImages?.length ? src.externalImages : p.images }),
@@ -460,6 +687,51 @@ async function normalizeStoredProductImages(db, productId, actor) {
   };
 }
 
+async function rebuildStoredCustomerCatalog(db, productId, actor) {
+  const id = cleanText(productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  if (!id) throw Object.assign(new Error('PRODUCT_ID_REQUIRED'), { statusCode: 400 });
+  const ref = db.doc(`products/${id}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw Object.assign(new Error('PRODUCT_NOT_FOUND'), { statusCode: 404 });
+  const before = snap.data() || {};
+  if (before.sourcePlatform !== '1688') throw Object.assign(new Error('NOT_1688_PRODUCT'), { statusCode: 409 });
+  const src = before.china1688 || {};
+  const source = sourceSummary({
+    ...src,
+    id: before.sourceItemId || src.itemId,
+    url: before.sourceUrl || src.url,
+    title: src.originalTitle || before.name,
+    images: src.externalImages?.length ? src.externalImages : before.images,
+    galleryImages: src.galleryImages?.length ? src.galleryImages : (src.externalImages?.length ? src.externalImages : before.images),
+    variantGroups: src.variantGroups?.length ? src.variantGroups : before.variantGroups,
+    skuVariants: src.skuVariants?.length ? src.skuVariants : (src.variants?.length ? src.variants : before.variants),
+    variants: src.variants?.length ? src.variants : before.variants,
+    colorOptions: src.colorOptions?.length ? src.colorOptions : before.colors,
+    sizeOptions: src.sizeOptions?.length ? src.sizeOptions : before.sizes,
+    imagesByColor: (src.imagesByColor && Object.keys(src.imagesByColor).length) ? src.imagesByColor : before.imagesByColor,
+    priceCny: src.priceCny,
+    stock: src.stock,
+    moq: src.moq,
+    diagnostics: src.diagnostics,
+  });
+  const catalog = buildChina1688CustomerCatalog(source, safeInt(before.price, 0, 1e12, 0));
+  const legacyVariants = catalogToLegacyVariants(catalog);
+  const ts = admin.firestore.FieldValue.serverTimestamp();
+  await ref.set({
+    china1688Catalog: catalog,
+    colors: sourceColors(source),
+    sizes: sourceSizes(source),
+    ...(legacyVariants.length ? { variants: legacyVariants } : {}),
+    china1688: {
+      customerCatalog: catalog,
+      catalogRebuiltBy: actor.email,
+      catalogRebuiltAt: ts,
+    },
+    updatedAt: ts,
+  }, { merge: true });
+  return { id, optionGroupCount: catalog.optionGroupCount || 0, skuCount: catalog.skuCount || 0, hasVariants: catalog.hasVariants === true };
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return json(204, {});
   if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' });
@@ -501,6 +773,10 @@ exports.handler = async function handler(event) {
     }
     if (action === 'normalizeproductimages') {
       const result = await normalizeStoredProductImages(db, body.productId, actor);
+      return json(200, result);
+    }
+    if (action === 'rebuildcustomercatalog') {
+      const result = await rebuildStoredCustomerCatalog(db, body.productId, actor);
       return json(200, result);
     }
     if (action === 'archive') {

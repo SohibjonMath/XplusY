@@ -1,13 +1,14 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.50.0",
-  "description": "OrzuMall v150: API-free 1688 Chrome importer with filtered gallery, CDN preview proxy and Firebase Storage image copy",
+  "version": "1.68.0",
+  "description": "OrzuMall v168: dedicated 1688 catalog system with separate storefront, arbitrary variant groups, SKU combinations and normalized original images",
   "engines": {
     "node": "22.x"
   },
   "dependencies": {
     "firebase-admin": "11.11.1",
-    "protobufjs": "7.2.5"
+    "protobufjs": "7.2.5",
+    "sharp": "0.34.5"
   }
 }

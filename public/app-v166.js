@@ -562,6 +562,8 @@ const els = {
   vImg: document.getElementById("vImg"),
   vName: document.getElementById("vName"),
   vPrice: document.getElementById("vPrice"),
+  v1688Notice: document.getElementById("v1688Notice"),
+  v1688Groups: document.getElementById("v1688Groups"),
   vColors: document.getElementById("vColors"),
   vColorRow: document.getElementById("vColorRow"),
   vColorHint: document.getElementById("vColorHint"),
@@ -1008,6 +1010,76 @@ function omCleanVariantLabel(value){
 }
 const omNoisyVariantLabel = /(?:主面料|面料|材质|成分|品牌|货号|运费|评价|参数|商品属性|包装|详情|登录|登錄|查看全部|好评|已购|起批|¥|￥|库存|庫存|stock|qoldiq|material|fabric|brand|price|delivery)/i;
 function omUsableVariantLabel(value){ const v=omCleanVariantLabel(value); return !!v && v.length<=90 && !omNoisyVariantLabel.test(v); }
+
+function omChina1688Catalog(p){
+  const raw = p?.china1688Catalog || p?.china1688?.customerCatalog || null;
+  if(!raw || typeof raw !== "object") return null;
+  const groups = Array.isArray(raw.optionGroups) ? raw.optionGroups.filter(g=>g && Array.isArray(g.options) && g.options.length) : [];
+  const skus = Array.isArray(raw.skus) ? raw.skus.filter(x=>x && typeof x === "object") : [];
+  return { ...raw, optionGroups:groups, skus };
+}
+function om1688Groups(p){ return omChina1688Catalog(p)?.optionGroups || []; }
+function om1688Skus(p){ return omChina1688Catalog(p)?.skus || []; }
+function om1688OptionMap(sel){ return { ...((sel?.chinaOptions && typeof sel.chinaOptions === "object") ? sel.chinaOptions : {}) }; }
+function om1688GroupValue(sel, group){
+  const opts=om1688OptionMap(sel);
+  if(opts[group?.id]) return opts[group.id];
+  if(group?.type === "color") return sel?.color || null;
+  if(["size","spec"].includes(String(group?.type||"").toLowerCase())) return sel?.size || null;
+  return null;
+}
+function om1688SelectionFor(p, baseSel={}, {defaultFirst=true}={}){
+  const groups=om1688Groups(p);
+  const chinaOptions=om1688OptionMap(baseSel);
+  let color=baseSel?.color || null, size=baseSel?.size || null;
+  groups.forEach(group=>{
+    let value=chinaOptions[group.id] || om1688GroupValue(baseSel,group);
+    if(!value && defaultFirst) value=group.options?.[0]?.name || null;
+    if(value) chinaOptions[group.id]=value;
+    if(group.type==="color" && value) color=value;
+    if(["size","spec"].includes(String(group.type||"").toLowerCase()) && value && !size) size=value;
+  });
+  return { ...baseSel, color, size, chinaOptions, imgIdx:Number(baseSel?.imgIdx||0) };
+}
+function om1688SkuMatches(p, sel, row){
+  const groups=om1688Groups(p); if(!groups.length) return false;
+  const options=om1688OptionMap(om1688SelectionFor(p,sel,{defaultFirst:false}));
+  return groups.every(group=>{
+    const selected=options[group.id] || null;
+    const actual=row?.selections?.[group.id] || row?.chinaOptions?.[group.id] || null;
+    return !selected || !actual || String(selected)===String(actual);
+  });
+}
+function om1688SelectedSku(p, sel){
+  const rows=om1688Skus(p); if(!rows.length) return null;
+  const groups=om1688Groups(p), safe=om1688SelectionFor(p,sel||{}, {defaultFirst:true});
+  const exact=rows.find(row=>groups.every(group=>String(row?.selections?.[group.id]||row?.chinaOptions?.[group.id]||"")===String(safe.chinaOptions?.[group.id]||"")));
+  return exact || rows.find(row=>om1688SkuMatches(p,safe,row)) || rows[0] || null;
+}
+function om1688SelectionText(p, sel){
+  const safe=om1688SelectionFor(p,sel||{}, {defaultFirst:false});
+  return om1688Groups(p).map(group=>safe.chinaOptions?.[group.id]).filter(Boolean).join(" / ");
+}
+function om1688VariantHtml(p, interactive=false){
+  const groups=om1688Groups(p); const sel=om1688SelectionFor(p,getSel(p),{defaultFirst:true});
+  if(!groups.length) return `<div class="qvVarEmpty china"><i class="fa-solid fa-circle-info"></i> Variant ma’lumoti hozircha kiritilmagan</div>`;
+  return `<div class="qv1688VariantHead"><span><i class="fa-solid fa-layer-group"></i> 1688 variantlari</span><small>${om1688Skus(p).length || 0} SKU</small></div>${groups.map(group=>`<div class="qvVarGroup qv1688Group"><span>${escapeHtml(group.name||"Variant")}</span><div class="qv1688Options">${(group.options||[]).slice(0,48).map(opt=>{
+    const active=String(sel.chinaOptions?.[group.id]||"")===String(opt.name||"");
+    const attrs=interactive?` type="button" data-pp-1688-group="${escapeHtml(group.id)}" data-pp-1688-value="${escapeHtml(opt.name)}" aria-pressed="${active?"true":"false"}"`:"";
+    const tag=interactive?"button":"i";
+    return `<${tag}${attrs} class="qv1688Option ${opt.image?"hasImage":""} ${active?"active":""}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<b>${escapeHtml(opt.name||"Variant")}</b></${tag}>`;
+  }).join("")}</div></div>`).join("")}`;
+}
+function om1688ProductIntroHtml(p){
+  if(!omIsChina1688Product(p)) return "";
+  const groups=om1688Groups(p), skus=om1688Skus(p);
+  const min=Math.max(1,Number(p?.deliveryMinDays||15)||15), max=Math.max(min,Number(p?.deliveryMaxDays||30)||30);
+  return `<section class="pp1688Intro"><div class="pp1688IntroIcon"><img src="assets/flags/cn-48.webp" alt="CN"></div><div><span>1688 Xitoy katalogi</span><b>Buyurtma asosida olib kelinadi</b><small>Oddiy ombor mahsulotidan alohida tizim · ${min}–${max} kun · ${groups.length} guruh · ${skus.length} SKU</small></div><em><i class="fa-solid fa-shield-halved"></i> Oldindan to‘lov</em></section>`;
+}
+function om1688ProductGuideHtml(p){
+  if(!omIsChina1688Product(p)) return "";
+  return `<section class="pp1688Guide"><div><i class="fa-solid fa-sliders"></i><b>Variantni aniq tanlang</b><span>Rang, model, o‘lcham yoki komplekt alohida SKU sifatida hisoblanadi.</span></div><div><i class="fa-solid fa-plane-arrival"></i><b>Xitoydan yetkaziladi</b><span>Mahsulot buyurtmangiz uchun olib kelinadi.</span></div><div><i class="fa-solid fa-wallet"></i><b>Oldindan to‘lov</b><span>Buyurtma tasdiqlangach xarid jarayoni boshlanadi.</span></div></section>`;
+}
 function omVariantRows(p){
   const rows=[];
   const add=(list)=>{ if(Array.isArray(list)) list.forEach(x=>{ if(x && typeof x === "object") rows.push(x); }); };
@@ -1053,6 +1125,7 @@ function normSizes(p){
   return [...new Set(explicit.map(s=>omCleanVariantLabel(typeof s === "string" ? s : (s?.label||s?.name||s?.value||""))).filter(omUsableVariantLabel))].slice(0,80);
 }
 function getDefaultSel(p){
+  if(omIsChina1688Product(p) && om1688Groups(p).length) return om1688SelectionFor(p,{imgIdx:0},{defaultFirst:true});
   const colors = normColors(p);
   const sizes = normSizes(p);
   return {
@@ -1075,6 +1148,20 @@ function getSel(p){
 // 3) imagesByColor: { "Gold": [...], ... }               (per color)
 // 4) image: "url"                                       (legacy fallback)
 function normImages(p, sel){
+  if(omIsChina1688Product(p) && om1688Groups(p).length){
+    const safe=om1688SelectionFor(p,sel||{}, {defaultFirst:true});
+    const sku=om1688SelectedSku(p,safe);
+    const rows=[];
+    if(sku?.image) rows.push(sku.image);
+    om1688Groups(p).forEach(group=>{
+      const value=safe.chinaOptions?.[group.id];
+      const image=group.options?.find(opt=>String(opt.name||"")===String(value||""))?.image;
+      if(image) rows.push(image);
+    });
+    if(Array.isArray(p?.images)) rows.push(...p.images);
+    if(p?.image) rows.push(p.image);
+    return [...new Set(rows.filter(Boolean))];
+  }
   const color = sel?.color || "";
 
   // explicit imagesByColor (top-level or original 1688 source fallback)
@@ -1114,12 +1201,15 @@ function setImageIndex(p, idx){
   selected.set(p.id, sel);
 }
 function variantKey(id, sel){
+  const china=sel?.chinaOptions && typeof sel.chinaOptions === "object" ? Object.entries(sel.chinaOptions).sort(([a],[b])=>String(a).localeCompare(String(b))).map(([k,v])=>`${k}=${v}`).join("|") : "";
+  if(china) return `${id}::1688::${china}`;
   const c = sel?.color || "";
   const s = sel?.size || "";
   return `${id}::${c}::${s}`;
 }
 
 function getImagesFor(p, sel){
+  if(omIsChina1688Product(p) && om1688Groups(p).length) return normImages(p,sel);
   // Supports:
   // 1) imagesByColor: {"Gold": [..], "Black": [..]}
   // 2) images: object map (same as above)
@@ -1239,7 +1329,7 @@ function omNormalizeCart(arr){
   (Array.isArray(arr) ? arr : []).forEach(x=>{
     if(!x || !x.id) return;
     const item = {...x};
-    item.key = item.key || variantKey(item.id, {color:item.color||null, size:item.size||null});
+    item.key = item.key || variantKey(item.id, {color:item.color||null, size:item.size||null, chinaOptions:item.chinaOptions||null});
     item.qty = Math.max(1, Number(item.qty||1));
     const old = map.get(item.key);
     if(old){
@@ -1918,6 +2008,16 @@ function getVariantPricing(p, sel){
     installmentText: (p.installmentText ?? "").toString()
   };
 
+  if(omIsChina1688Product(p) && om1688Groups(p).length){
+    const sku=om1688SelectedSku(p,sel||{});
+    if(sku){
+      if(sku.price != null) base.price=parsePrice(sku.price);
+      if(sku.oldPrice != null) base.oldPrice=parsePrice(sku.oldPrice);
+      if(sku.installmentText != null) base.installmentText=String(sku.installmentText||"");
+    }
+    return base;
+  }
+
   // New optimized format: variants: [{color, size, price, oldPrice?, installmentText?}]
   const marketVariants = omVariantRows(p);
   if(marketVariants.length){
@@ -1967,6 +2067,13 @@ function getVariantPricing(p, sel){
 
 function minVariantPrice(p){
   let min = parsePrice(p.price);
+  if(omIsChina1688Product(p) && om1688Skus(p).length){
+    for(const sku of om1688Skus(p)){
+      const n=parsePrice(sku?.price);
+      if(n>0) min=Math.min(min||n,n);
+    }
+    return min||0;
+  }
 
   // new optimized
   const marketVariants = omVariantRows(p);
@@ -2551,7 +2658,9 @@ function render(arr){
   let __i = 0;
   for(const p of arr){
     const card = document.createElement("div");
-    card.className = "pcard";
+    const isChinaCard = omIsChina1688Product(p);
+    card.className = `pcard ${isChinaCard ? "china1688Card" : "stockCard"}`;
+    card.setAttribute("data-product-kind", isChinaCard ? "china1688" : "stock");
 
     const isFav = favs.has(p.id);
 
@@ -2576,7 +2685,9 @@ for(const b of adminBadges.slice(0,3)){
 
 const badgeHTML = badgeHtmlParts.length ? `<div class="pbadgeStack">${badgeHtmlParts.join("")}</div>` : "";
 const authHTML = renderProductTypeBadge(p);
-const sellerMiniHTML = renderSellerMiniLine(p);
+const sellerMiniHTML = isChinaCard ? "" : renderSellerMiniLine(p);
+const chinaCardHead = isChinaCard ? `<div class="china1688Ribbon"><img src="assets/flags/cn-48.webp" alt="CN" loading="lazy" decoding="async"><span>1688 katalog</span></div>` : "";
+const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i class="fa-solid fa-plane-arrival"></i> Xitoydan buyurtma</span><small>${Math.max(1,Number(p?.deliveryMinDays||15)||15)}–${Math.max(1,Number(p?.deliveryMaxDays||30)||30)} kun</small></div>` : "";
 
     const st = getStats(p.id);
     const showAvg = st.count ? st.avg : 0;
@@ -2586,7 +2697,8 @@ const sellerMiniHTML = renderSellerMiniLine(p);
       <div class="pmedia">
         <img class="pimg" src="${currentImg || ""}" alt="${escapeHtml(omProductText(p, "name", p.name || "product"))}" loading="lazy" decoding="async"/>
         ${badgeHTML}
-        ${authHTML?`<div class="authOnImg">${authHTML}</div>`:""}
+        ${chinaCardHead}
+        ${authHTML && !isChinaCard?`<div class="authOnImg">${authHTML}</div>`:""}
         <button class="favBtn ${isFav ? "active" : ""}" title="Sevimli" aria-label="Sevimli" aria-pressed="${isFav ? "true" : "false"}"><i class="fa-${isFav ? "solid" : "regular"} fa-heart" aria-hidden="true"></i></button>
       </div>
 
@@ -2600,6 +2712,7 @@ const sellerMiniHTML = renderSellerMiniLine(p);
 
         <div class="pname clamp2">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         ${sellerMiniHTML}
+        ${chinaCardMeta}
         ${showCount ? `<div class="pratingInline compact"><i class="fa-solid fa-star" aria-hidden="true"></i> ${Number(showAvg).toFixed(1)} <span>(${showCount})</span></div>` : ""}
         <div class="omPowerRow">${omProductPowerMiniHtml(p)}</div>
 
@@ -2717,7 +2830,7 @@ function addToCart(id, qty, sel){
     // keep latest selected image for this variant
     if(img) item.image = img;
   } else {
-    cart.push({key, id, color: sel?.color || null, size: sel?.size || null, qty, image: img || null});
+    cart.push({key, id, color: sel?.color || null, size: sel?.size || null, chinaOptions: sel?.chinaOptions && typeof sel.chinaOptions === "object" ? { ...sel.chinaOptions } : null, variantText: p && omIsChina1688Product(p) ? om1688SelectionText(p,sel) : "", qty, image: img || null});
   }
   cart = cart.filter(x=>x.qty>0);
   saveLS(LS.cart, cart);
@@ -2728,10 +2841,12 @@ function addToCart(id, qty, sel){
 const vState = { open:false, product:null, qty:1, sel:{color:null,size:null}, openCartAfter:false };
 
 function productNeedsVariantModal(p){
+  if(omIsChina1688Product(p) && om1688Groups(p).length) return true;
   return normColors(p).length > 0 || normSizes(p).length > 0;
 }
 
 function normalizeSelectionForProduct(p, baseSel){
+  if(omIsChina1688Product(p) && om1688Groups(p).length) return om1688SelectionFor(p,baseSel||{}, {defaultFirst:false});
   const colors = normColors(p);
   const sizes = normSizes(p);
   const sel = { ...(baseSel || {}) };
@@ -2775,12 +2890,36 @@ function closeVariantModal(){
   hideOverlay(els.vOverlay);
 }
 
+function renderChina1688VariantModal(p){
+  const groups=om1688Groups(p);
+  const sel=om1688SelectionFor(p,vState.sel||{}, {defaultFirst:false});
+  vState.sel=sel;
+  if(els.v1688Notice) els.v1688Notice.hidden=false;
+  if(els.v1688Groups){
+    els.v1688Groups.hidden=false;
+    els.v1688Groups.innerHTML=groups.map(group=>`<div class="v1688Group"><div class="v1688GroupLabel"><b>${escapeHtml(group.name||"Variant")}</b><span>${(group.options||[]).length} ta</span></div><div class="v1688OptionRow">${(group.options||[]).map(opt=>{
+      const active=String(sel.chinaOptions?.[group.id]||"")===String(opt.name||"");
+      return `<button type="button" class="v1688Option ${active?"active":""} ${opt.image?"hasImage":""}" data-v1688-group="${escapeHtml(group.id)}" data-v1688-value="${escapeHtml(opt.name)}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<span>${escapeHtml(opt.name||"Variant")}</span></button>`;
+    }).join("")}</div><small class="v1688Required" data-v1688-hint="${escapeHtml(group.id)}" hidden>Iltimos, variantni tanlang</small></div>`).join("");
+    els.v1688Groups.querySelectorAll("[data-v1688-group]").forEach(btn=>btn.addEventListener("click",()=>{
+      const groupId=btn.getAttribute("data-v1688-group")||"";
+      const value=btn.getAttribute("data-v1688-value")||"";
+      vState.sel=om1688SelectionFor(p,{...vState.sel,chinaOptions:{...om1688OptionMap(vState.sel),[groupId]:value},imgIdx:0},{defaultFirst:false});
+      selected.set(p.id,{...vState.sel});
+      renderVariantModal();
+    }));
+  }
+  if(els.vColors) els.vColors.hidden=true;
+  if(els.vSizes) els.vSizes.hidden=true;
+}
+
 function renderVariantModal(){
   const p = vState.product;
   if(!p) return;
   const colors = normColors(p);
   const sizes = normSizes(p);
   const sel = vState.sel || {color:null,size:null};
+  const china1688Mode=omIsChina1688Product(p) && om1688Groups(p).length;
 
   if(els.vName) els.vName.textContent = omProductText(p, "name", p.name || "—");
   const pricing = getVariantPricing(p, sel);
@@ -2798,6 +2937,14 @@ function renderVariantModal(){
       openImageZoom(els.vImg.src || "");
     };
   }
+
+  if(china1688Mode){
+    renderChina1688VariantModal(p);
+    omI18nRefresh(80);
+    return;
+  }
+  if(els.v1688Notice) els.v1688Notice.hidden=true;
+  if(els.v1688Groups){ els.v1688Groups.hidden=true; els.v1688Groups.innerHTML=""; }
 
   const showColors = colors.length > 0;
   if(els.vColors) els.vColors.hidden = !showColors;
@@ -2845,6 +2992,18 @@ function renderVariantModal(){
 function validateVariantSelection(){
   const p = vState.product;
   if(!p) return false;
+  if(omIsChina1688Product(p) && om1688Groups(p).length){
+    const sel=om1688SelectionFor(p,vState.sel||{}, {defaultFirst:false});
+    vState.sel=sel;
+    let ok=true;
+    om1688Groups(p).forEach(group=>{
+      const has=!!sel.chinaOptions?.[group.id];
+      const hint=[...(els.v1688Groups?.querySelectorAll?.("[data-v1688-hint]")||[])].find(node=>node.getAttribute("data-v1688-hint")===String(group.id||""));
+      if(hint) hint.hidden=has;
+      if(group.required!==false && !has) ok=false;
+    });
+    return ok;
+  }
   const colors = normColors(p);
   const sizes = normSizes(p);
   const sel = normalizeSelectionForProduct(p, vState.sel);
@@ -4023,12 +4182,18 @@ function omProductPageGalleryHtml(p, imgs){
 
 function omIsChina1688Product(p){
   const source = String(p?.sourcePlatform || p?.source || p?.marketplace || "").toLowerCase();
-  const fulfillment = String(p?.fulfillmentType || p?.fulfillment || p?.deliveryType || "").toLowerCase();
-  return source.includes("1688") || fulfillment.includes("cargo") || !!p?.source1688Url || !!p?.sourceUrl1688;
+  const sourceType = String(p?.sourceType || "").toLowerCase();
+  const sourceUrl = String(p?.sourceUrl || p?.source1688Url || p?.sourceUrl1688 || p?.china1688?.url || "").toLowerCase();
+  return source.includes("1688") || sourceType.includes("china1688") || !!p?.china1688 || !!p?.china1688Catalog || /(?:^|\.)1688\.com\//i.test(sourceUrl);
+}
+
+function omIsCargoProduct(p){
+  const fulfillment=String(p?.fulfillmentType || p?.fulfillment || p?.deliveryType || "").toLowerCase();
+  return fulfillment.includes("cargo") || fulfillment.includes("order") || fulfillment.includes("buyurt");
 }
 
 function omProductPageCargoHtml(p){
-  if(!omIsChina1688Product(p)) return "";
+  if(!omIsChina1688Product(p) && !omIsCargoProduct(p)) return "";
   const min = Math.max(1, Number(p?.deliveryMinDays || p?.pMinDays || 15) || 15);
   const max = Math.max(min, Number(p?.deliveryMaxDays || p?.pMaxDays || 30) || 30);
   const prepay = p?.prepayRequired !== false;
@@ -4039,10 +4204,11 @@ function omProductPageCargoHtml(p){
   </section>`;
 }
 
-function omProductPageDesktopBuyHtml(pricing){
+function omProductPageDesktopBuyHtml(pricing,p={}){
+  const text=omIsChina1688Product(p)?"Variantni tanlab buyurtma":"Savatga qo‘shish";
   return `<section class="ppDesktopBuy" aria-label="Xarid qilish">
     <div><span>Jami narx</span><strong>${moneyUZS(pricing.price||0)}</strong></div>
-    <button type="button" data-pp-cart><i class="fa-solid fa-cart-shopping"></i><span>Savatga qo‘shish</span></button>
+    <button type="button" data-pp-cart><i class="fa-solid fa-cart-shopping"></i><span>${text}</span></button>
   </section>`;
 }
 
@@ -4248,6 +4414,7 @@ function renderProductPage(){
   const isChina1688 = omIsChina1688Product(p);
   root.innerHTML = `
     <div class="ppShell ${isChina1688?"ppShellChina":"ppShellStock"}">
+      ${om1688ProductIntroHtml(p)}
       <div class="ppGrid">
         ${omProductPageGalleryHtml(p, imgs)}
         <article class="ppInfo">
@@ -4255,14 +4422,15 @@ function renderProductPage(){
             <div class="ppCatTrail">${catTrail}</div>
             ${tagsHtml?`<div class="ppTags">${tagsHtml}</div>`:""}
             ${renderProductTypeBadge(p)?`<div class="ppAuthRow">${renderProductTypeBadge(p)}</div>`:""}
-            ${renderSellerMiniLine(p,{page:true})?`<div class="ppSellerRow">${renderSellerMiniLine(p,{page:true})}</div>`:""}
+            ${!isChina1688 && renderSellerMiniLine(p,{page:true})?`<div class="ppSellerRow">${renderSellerMiniLine(p,{page:true})}</div>`:""}
             <h1>${escapeHtml(omProductText(p,"name",p.name||"Nomsiz mahsulot"))}</h1>
             <div class="ppPriceLine"><strong>${moneyUZS(pricing.price||0)}</strong>${pricing.oldPrice?`<del>${moneyUZS(pricing.oldPrice)}</del>`:""}</div>
           </div>
           ${omProductPageCargoHtml(p)}
-          <div class="ppVariantCard">${omQVVariantHtml(p,true)}</div>
+          ${om1688ProductGuideHtml(p)}
+          <div class="ppVariantCard ${isChina1688?"ppVariantChina":""}">${omQVVariantHtml(p,true)}</div>
           <div class="ppTrustGrid">${omQVTrustHtml(p)}</div>
-          ${omProductPageDesktopBuyHtml(pricing)}
+          ${omProductPageDesktopBuyHtml(pricing,p)}
           <div class="ppMetrics">${omQVMetricHtml(p)}</div>
           <div class="ppActionGrid">
             <button type="button" class="ppAction" data-pp-info><i class="fa-solid fa-circle-info"></i><span>Tavsif</span></button>
@@ -4282,7 +4450,7 @@ function renderProductPage(){
       </div>
       <div class="ppStickyBuy">
         <div><span>Jami</span><strong>${moneyUZS(pricing.price||0)}</strong></div>
-        <button type="button" id="productPageCartBtn"><i class="fa-solid fa-cart-shopping"></i> Savatga qo‘shish</button>
+        <button type="button" id="productPageCartBtn"><i class="fa-solid fa-cart-shopping"></i> ${isChina1688?"Variantni tanlash":"Savatga qo‘shish"}</button>
       </div>
       ${omProductPageReviewsSectionHtml()}
     </div>`;
@@ -4307,6 +4475,13 @@ function bindProductPage(p){
   });
   root.querySelectorAll("[data-store-id]").forEach(btn=>btn.addEventListener("click",(e)=>{
     e.preventDefault();e.stopPropagation();openStorePage(btn.getAttribute("data-store-id"));
+  }));
+  root.querySelectorAll("[data-pp-1688-group]").forEach(btn=>btn.addEventListener("click",(e)=>{
+    e.preventDefault(); e.stopPropagation();
+    const groupId=btn.getAttribute("data-pp-1688-group")||"";
+    const value=btn.getAttribute("data-pp-1688-value")||"";
+    const now=om1688SelectionFor(p,{...getSel(p),chinaOptions:{...om1688OptionMap(getSel(p)),[groupId]:value},imgIdx:0},{defaultFirst:true});
+    selected.set(p.id,now); renderProductPage();
   }));
   root.querySelectorAll("[data-pp-color]").forEach(btn=>btn.addEventListener("click",(e)=>{
     e.preventDefault(); e.stopPropagation();
@@ -4558,6 +4733,7 @@ function omBindQvTagClicks(){
   });
 }
 function omQVVariantHtml(p, interactive=false){
+  if(omIsChina1688Product(p) && om1688Groups(p).length) return om1688VariantHtml(p,interactive);
   const colors = normColors(p||{});
   const sizes = normSizes(p||{});
   const sel = getSel(p||{});
@@ -5043,13 +5219,19 @@ function renderReviewsUI(productId){
 }
 
 
+function omCartSelection(ci){ return { color:ci?.color||null, size:ci?.size||null, chinaOptions:ci?.chinaOptions||null, imgIdx:0 }; }
 function renderVariantLine(ci){
   if(!ci) return "";
   const parts = [];
-  if(ci.color) parts.push(ci.color);
-  if(ci.size) parts.push(ci.size);
-  if(parts.length===0) return "";
-  return `<div class="ptags">${parts.map(x=>`#${escapeHtml(x)}`).join(" ")}</div>`;
+  if(ci.variantText) parts.push(...String(ci.variantText).split(" / ").filter(Boolean));
+  else {
+    if(ci.color) parts.push(ci.color);
+    if(ci.size) parts.push(ci.size);
+    if(ci.chinaOptions && typeof ci.chinaOptions === "object") parts.push(...Object.values(ci.chinaOptions).filter(Boolean));
+  }
+  const rows=[...new Set(parts.map(x=>String(x||"").trim()).filter(Boolean))];
+  if(rows.length===0) return "";
+  return `<div class="ptags">${rows.map(x=>`#${escapeHtml(x)}`).join(" ")}</div>`;
 }
 
 function renderPanel(mode){
@@ -5076,10 +5258,10 @@ function renderPanel(mode){
 
   for(const row of list){
     const {p, qty} = row;
-    if(mode === "cart" && cartSelected.has(row.ci?.key)) total += (getVariantPricing(p, {color: row.ci?.color || null, size: row.ci?.size || null}).price||0) * qty;
+    if(mode === "cart" && cartSelected.has(row.ci?.key)) total += (getVariantPricing(p, omCartSelection(row.ci)).price||0) * qty;
 
     const imgSrc = (mode === "cart")
-      ? (row.ci?.image || getCurrentImage(p, {color: row.ci?.color || null, size: row.ci?.size || null, imgIdx: 0}))
+      ? (row.ci?.image || getCurrentImage(p, omCartSelection(row.ci)))
       : getCurrentImage(p, getSel(p));
 
     const item = document.createElement("div");
@@ -5091,7 +5273,7 @@ function renderPanel(mode){
         <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         ${mode==="cart" ? (renderVariantLine(row.ci) + (((_normPType(p)==="cargo" || p.prepayRequired===true)) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Oldindan to‘lov</span></div>` : ``)) : ""}
         <div class="cartRow">
-          <div class="price">${moneyUZS(getVariantPricing(p, {color: row.ci?.color || null, size: row.ci?.size || null}).price||0)}</div>
+          <div class="price">${moneyUZS(getVariantPricing(p, omCartSelection(row.ci)).price||0)}</div>
           <button class="removeBtn" title="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
         </div>
         ${mode==="cart" ? `
@@ -5101,7 +5283,7 @@ function renderPanel(mode){
             <span>${qty}</span>
             <button data-q="+">+</button>
           </div>
-          <div class="badge">${moneyUZS((getVariantPricing(p, {color: row.ci?.color || null, size: row.ci?.size || null}).price||0)*qty)}</div>
+          <div class="badge">${moneyUZS((getVariantPricing(p, omCartSelection(row.ci)).price||0)*qty)}</div>
         </div>` : `
         <div class="cartRow">
           <button class="pBtn iconOnly" title="Savatchaga" data-add><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></button>
@@ -5278,10 +5460,10 @@ function renderCartPage(){
 
   for(const row of list){
     const {p, qty, ci} = row;
-    const vp = getVariantPricing(p, {color: ci?.color||null, size: ci?.size||null});
+    const vp = getVariantPricing(p, omCartSelection(ci));
     if(cartSelected.has(ci.key)) { total += (vp.price||0) * qty; selectedCount += qty; selectedWeightKg += omProductWeightKg(p) * qty; }
 
-    const imgSrc = ci?.image || getCurrentImage(p, {color: ci?.color||null, size: ci?.size||null, imgIdx:0});
+    const imgSrc = ci?.image || getCurrentImage(p, omCartSelection(ci));
 
     const item = document.createElement("div");
     item.className = `cartItem premiumCartItem ${cartSelected.has(ci.key) ? "isSelected" : ""}`;
@@ -7284,7 +7466,7 @@ function buildSelectedItems(){
   let totalWeightKg = 0;
   const items = _selCart.map(ci=>{
     const p = products.find(x=>x.id===ci.id);
-    const pr = p ? getVariantPricing(p, {color: ci.color||null, size: ci.size||null}) : {price:0};
+    const pr = p ? getVariantPricing(p, omCartSelection(ci)) : {price:0};
     const qty = Number(ci.qty||1);
     const weightKg = omProductWeightKg(p);
     const lineWeightKg = weightKg * qty;
@@ -7294,6 +7476,8 @@ function buildSelectedItems(){
       name: p?.name || "",
       color: ci.color || null,
       size: ci.size || null,
+      chinaOptions: ci.chinaOptions && typeof ci.chinaOptions === "object" ? { ...ci.chinaOptions } : null,
+      variantText: ci.variantText || (p && omIsChina1688Product(p) ? om1688SelectionText(p,omCartSelection(ci)) : ""),
       qty,
       priceUZS: Number(pr.price||0),
       weightKg,

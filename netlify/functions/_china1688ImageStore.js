@@ -166,6 +166,7 @@ async function normalizeMarketplaceImage(source) {
         background: '#ffffff',
         withoutEnlargement: false,
       })
+      .sharpen()
       .extend({ top: 12, bottom: 12, left: 12, right: 12, background: '#ffffff' })
       .jpeg({ quality: 90, mozjpeg: true, chromaSubsampling: '4:4:4' })
       .toBuffer({ resolveWithObject: true });

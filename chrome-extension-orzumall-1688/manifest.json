@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "OrzuMall 1688 Importer",
-  "version": "2.0.0",
-  "description": "1688 sahifasidagi ko‘rinadigan rang, razmer va model qatorlarini ishonchli o‘qiydi, page-state bridge orqali strukturali SKU ma’lumotini boyitadi va login talab qilingan holatni ogohlantiradi.",
+  "version": "2.2.0",
+  "description": "1688 mahsulotlarini alohida OrzuMall katalog modeliga import qiladi: galereya, istalgan variant guruhlari, SKU kombinatsiyalari va original rasm URLlarini yig‘adi.",
   "permissions": [
     "storage",
     "tabs"

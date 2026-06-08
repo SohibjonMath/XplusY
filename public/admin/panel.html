@@ -2878,6 +2878,10 @@ button[data-x] i{
   .ap4-title{font-size:14px}
   .ap4-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* v168 — 1688 katalogi oddiy admin mahsulotlaridan ajratildi */
+.china1688-admin-lane{display:flex;align-items:center;gap:13px;margin:14px 0 18px;padding:15px 17px;border:1px solid #fed7aa;border-radius:20px;background:linear-gradient(135deg,#fff7ed,#fffbeb 58%,#fff);box-shadow:0 12px 28px rgba(194,65,12,.08);text-decoration:none;color:#9a3412;transition:.18s ease}.china1688-admin-lane:hover{transform:translateY(-2px);border-color:#fdba74;box-shadow:0 16px 34px rgba(194,65,12,.13)}.china1688-admin-lane-icon{display:grid;place-items:center;width:43px;height:43px;border-radius:14px;background:#ffedd5;color:#c2410c;font-size:18px;flex:0 0 auto}.china1688-admin-lane-main{display:grid;gap:3px;min-width:0}.china1688-admin-lane-main b{font-size:13px;color:#9a3412}.china1688-admin-lane-main span{font-size:11px;color:#b45309;line-height:1.45}.china1688-admin-lane-count{display:flex;align-items:center;gap:6px;margin-left:auto;border-radius:999px;background:#7c2d12;padding:7px 10px;color:#fff;font-size:10px;font-weight:900;white-space:nowrap}.china1688-admin-lane-arrow{color:#c2410c}.products-toolbar-title small .china-separate-hint{color:#c2410c;font-weight:900}@media(max-width:720px){.china1688-admin-lane{padding:13px}.china1688-admin-lane-count{margin-left:0}.china1688-admin-lane-arrow{display:none}}
+
 </style>
 
 
@@ -2889,7 +2893,7 @@ button[data-x] i{
       <div class="logo"><h1><i class="fas fa-bag-shopping"></i> <span>OrzuMall<br>Admin</span></h1></div>
       <ul class="nav-menu">
         <li class="nav-item"><a href="#" class="nav-link active" data-view="products"><i class="fas fa-boxes-stacked"></i><span>Mahsulotlar</span></a></li>
-<li class="nav-item"><a href="./china1688-import.html" class="nav-link"><i class="fas fa-link"></i><span>API’siz 1688 import</span></a></li>
+<li class="nav-item"><a href="./china1688-import.html" class="nav-link"><i class="fas fa-link"></i><span>1688 maxsus katalog</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="categories"><i class="fas fa-sitemap"></i><span>Kategoriyalar</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="orders"><i class="fas fa-cart-shopping"></i><span>Buyurtmalar</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-view="topups"><i class="fas fa-wallet"></i><span>Balans</span></a></li>
@@ -2929,7 +2933,7 @@ button[data-x] i{
         <div class="header-actions">
         <button class="btn btn-primary" id="inventoryShortcut" type="button"><i class="fa-solid fa-boxes-stacked"></i> Ombor</button>
         <button class="btn btn-light" id="quickAddProductBtn" type="button"><i class="fa-solid fa-plus"></i> Tez qo‘shish</button>
-        <a class="btn btn-light" href="./china1688-import.html"><i class="fa-solid fa-link"></i> API’siz 1688 import</a>
+        <a class="btn btn-light" href="./china1688-import.html"><i class="fa-solid fa-link"></i> 1688 maxsus katalog</a>
         <a class="btn btn-light" href="/Kassa/"><i class="fa-solid fa-cash-register"></i> Kassa</a>
           <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Qidirish: mahsulot, buyurtma, mijoz..."></div>
           <button class="btn btn-light" id="importJsonBtn"><i class="fas fa-file-import"></i> Import JSON</button>
@@ -2967,7 +2971,7 @@ button[data-x] i{
             <div class="hero-caption">ko‘rsatilayotgan mahsulot</div>
             <div class="hero-actions">
               <button class="btn btn-primary" id="productAddHeroBtn"><i class="fas fa-plus"></i> Mahsulot qo‘shish</button>
-              <a class="btn btn-light" href="./china1688-import.html"><i class="fas fa-link"></i> API’siz 1688 import</a>
+              <a class="btn btn-light" href="./china1688-import.html"><i class="fas fa-link"></i> 1688 maxsus katalog</a>
               <button class="btn btn-light" id="productImportHeroBtn"><i class="fas fa-file-import"></i> Import</button>
               <button class="btn btn-light" id="productExportHeroBtn"><i class="fas fa-download"></i> Export</button>
             </div>
@@ -2980,6 +2984,13 @@ button[data-x] i{
           <div class="product-mini-stat purple"><i class="fas fa-chart-line"></i><div><b id="productAvgScoreInline">0</b><span>O‘rtacha ball</span></div></div>
           <div class="product-mini-stat gold"><i class="fas fa-sack-dollar"></i><div><b id="productCatalogValue">0</b><span>Katalog qiymati</span></div></div>
         </div>
+
+        <a class="china1688-admin-lane" href="./china1688-import.html">
+          <div class="china1688-admin-lane-icon"><i class="fas fa-plane-arrival"></i></div>
+          <div class="china1688-admin-lane-main"><b>1688 mahsulotlari mustaqil katalogda boshqariladi</b><span>1688 kartalarini oddiy mahsulot oynasida tahrirlamang. Variantlar, SKU, rasmlar va cargo ma’lumotlari uchun maxsus ish maydoniga o‘ting.</span></div>
+          <div class="china1688-admin-lane-count"><i class="fas fa-layer-group"></i><span id="china1688AdminCount">0 ta 1688</span></div>
+          <i class="fas fa-arrow-right china1688-admin-lane-arrow"></i>
+        </a>
 
         <div class="card products-workbench">
           <div class="products-toolbar">
@@ -5478,6 +5489,13 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       return "stock";
     }
 
+    function isAdminChina1688Product(p){
+      const source=String(p?.sourcePlatform||p?.source||p?.marketplace||"").toLowerCase();
+      const sourceType=String(p?.sourceType||"").toLowerCase();
+      const sourceUrl=String(p?.sourceUrl||p?.china1688?.url||"").toLowerCase();
+      return source.includes("1688") || sourceType.includes("china1688") || !!p?.china1688 || !!p?.china1688Catalog || /(?:^|\.)1688\.com\//i.test(sourceUrl);
+    }
+
     function productMatchesQuery(p, q){
       if(!q) return true;
       const hay = [
@@ -5495,7 +5513,7 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       const fulfillment = $("productFulfillmentFilter")?.value || "all";
       const category = $("productCategoryFilter")?.value || "all";
       const sort = $("productSort")?.value || "default";
-      let data = [...(base || state.products)];
+      let data = [...(base || state.products)].filter(p=>!isAdminChina1688Product(p));
       data = data.filter(p=>{
         if(!productMatchesQuery(p,q)) return false;
         if(status!=="all" && getProductStatusKey(p)!==status) return false;
@@ -5513,7 +5531,9 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
     }
 
     function updateProductPremiumCounters(data){
-      const all = state.products || [];
+      const sourceAll = state.products || [];
+      const china = sourceAll.filter(isAdminChina1688Product);
+      const all = sourceAll.filter(p=>!isAdminChina1688Product(p));
       const approved = all.filter(p=>getProductStatusKey(p)==="approved").length;
       const pending = all.filter(p=>getProductStatusKey(p)==="pending").length;
       const avgScore = all.length ? Math.round(all.reduce((s,p)=>s+Number(p.popularScore||0),0)/all.length) : 0;
@@ -5523,12 +5543,14 @@ function nowISO(){ return new Date().toISOString().split("T")[0]; }
       if($("productApprovedCount")) $("productApprovedCount").textContent = approved;
       if($("productAvgScoreInline")) $("productAvgScoreInline").textContent = compactMetric(avgScore);
       if($("productCatalogValue")) $("productCatalogValue").textContent = formatPrice(catalogValue).replace(" so‘m","");
+      if($("china1688AdminCount")) $("china1688AdminCount").textContent = `${china.length} ta 1688`;
       const hint = $("productViewHint");
       if(hint){
         const q = ($("productSectionSearch")?.value || $("searchInput")?.value || "").trim();
         hint.textContent = q ? `${data.length} ta natija: “${q}”` : `${data.length} ta mahsulot ko‘rsatilmoqda`;
         const cf = $("productCategoryFilter")?.value || "all";
         if(cf!=="all") hint.textContent += ` · ${adminGetCategoryDef(cf)?.name || cf}`;
+        if(china.length) hint.textContent += ` · ${china.length} ta 1688 mahsulot maxsus katalogda`;
       }
     }
 
@@ -6254,6 +6276,7 @@ const tags=($("tagsInput").value||"").split(",").map(s=>s.trim()).filter(Boolean
     function openEdit(id){
       const p=state.products.find(x=>x.id===id);
       if(!p) return;
+      if(isAdminChina1688Product(p)){ location.href=`./china1688-import.html?edit=${encodeURIComponent(id)}`; return; }
       state.editingId=id;
       $("modalTitle").textContent="Tahrirlash";
       $("productId").value=p.id;
