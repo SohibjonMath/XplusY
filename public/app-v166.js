@@ -575,19 +575,45 @@ const els = {
   vQty: document.getElementById("vQty")
 };
 
+// ---- Unified scroll-lock guard (v174) ----
+// All modal systems share one lock reconciler. This prevents a closed modal
+// from leaving html/body in overflow:hidden after navigation or failed checkout.
+const OM_BLOCKING_MODAL_IDS = [
+  "vOverlay", "imgViewer", "miniModal", "checkoutOverlay", "paymentOverlay",
+  "pickupExplorerOverlay", "topupModal", "orderReceiptModal", "orderActionModal",
+  "notificationOverlay"
+];
+function omBlockingModalIsOpen(el){
+  if(!el || el.hidden) return false;
+  try{ if(getComputedStyle(el).display === "none") return false; }catch(_e){}
+  return true;
+}
+function omHasBlockingModalOpen(){
+  return OM_BLOCKING_MODAL_IDS.some(id=>omBlockingModalIsOpen(document.getElementById(id)));
+}
+function omReconcileBodyScrollLock(){
+  const open = omHasBlockingModalOpen();
+  try{ document.documentElement.classList.toggle("modalOpen", open); }catch(_e){}
+  try{ document.body.classList.toggle("modalOpen", open); }catch(_e){}
+  try{
+    if(open){
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    }else{
+      document.documentElement.style.removeProperty("overflow");
+      document.body.style.removeProperty("overflow");
+    }
+  }catch(_e){}
+  return open;
+}
+window.omReconcileBodyScrollLock = omReconcileBodyScrollLock;
+
 // ---- Modal helpers (world-class, animated, accessibility-friendly) ----
 function _anyOverlayOpen(){
-  return [ els.vOverlay, els.imgViewer, els.miniModal].some(el=>el && !el.hidden);
+  return omHasBlockingModalOpen();
 }
 function _syncModalBody(){
-  const open = _anyOverlayOpen();
-  if(open){
-    document.body.classList.add("modalOpen");
-    document.documentElement.classList.add("modalOpen");
-  } else {
-    document.body.classList.remove("modalOpen");
-    document.documentElement.classList.remove("modalOpen");
-  }
+  omReconcileBodyScrollLock();
 }
 function showOverlay(el){
   if(!el) return;
@@ -3325,7 +3351,7 @@ function closeOrderReceipt(){
     els.orderReceiptModal.hidden = true;
   }
   try{ document.body.classList.remove('modalOpen'); }catch(_){ }
-  document.body.style.overflow = '';
+  try{ omReconcileBodyScrollLock(); }catch(_e){}
 }
 
 function printOrderReceipt(){
@@ -3385,7 +3411,7 @@ function closeOrderActionModal(){
   const modal=document.getElementById('orderActionModal');
   if(modal){ modal.classList.remove('isOpen'); modal.hidden=true; }
   try{ document.body.classList.remove('modalOpen'); }catch(_e){}
-  document.body.style.overflow='';
+  try{ omReconcileBodyScrollLock(); }catch(_e){}
   omOrderActionState={type:"",orderId:"",stars:0};
 }
 function openOrderActionModal(type, orderId){
@@ -3990,6 +4016,8 @@ function showView(tab){
   }
 
   try{ ensureProfileSocialLinks(); }catch(e){}
+  // Navigation must release stale scroll locks left by a modal that already closed.
+  try{ setTimeout(()=>omReconcileBodyScrollLock(), 0); }catch(_e){}
 }
 
 function goTab(tab){
@@ -4022,6 +4050,8 @@ function handleHash(){
 
 
 window.addEventListener("hashchange", handleHash);
+window.addEventListener("pageshow", ()=>{ try{ omReconcileBodyScrollLock(); }catch(_e){} });
+window.addEventListener("popstate", ()=>{ try{ setTimeout(()=>omReconcileBodyScrollLock(),0); }catch(_e){} });
 
 els.productBackBtn?.addEventListener("click", ()=>{
   try{
@@ -6024,12 +6054,7 @@ function openCheckout(){
 }
 
 function omSyncModalOpenState(){
-  const checkoutOpen = !!(els.checkoutOverlay && !els.checkoutOverlay.hidden);
-  const paymentOpen = !!(els.paymentOverlay && !els.paymentOverlay.hidden);
-  const pickupExplorerOpen = !!(!document.getElementById('pickupExplorerOverlay')?.hidden);
-  const hasOpenModal = checkoutOpen || paymentOpen || pickupExplorerOpen;
-  try{ document.documentElement.classList.toggle("modalOpen", hasOpenModal); }catch(_e){}
-  try{ document.body.classList.toggle("modalOpen", hasOpenModal); }catch(_e){}
+  return omReconcileBodyScrollLock();
 }
 
 function closeCheckout(){
@@ -6971,6 +6996,8 @@ async function createOrderFromCheckout(){
   }
   if(cart.length === 0){ toast("Savatcha bo'sh."); return; }
 
+  const hydrated = await omEnsureSelectedCartProductsLoaded();
+  if(!hydrated.ok){ toast(hydrated.reason); return; }
   const built = buildSelectedItems();
   if(!built.ok){ toast(built.reason); return; }
 
@@ -7085,6 +7112,11 @@ async function createOrderFromCheckout(){
   }catch(e){
     console.warn("checkout order create failed", e);
     const msg = (e && e.message) ? String(e.message) : "";
+    if(omHandleMissingProductCheckoutError(msg)){
+      hideOrderWaitOverlay();
+      __omOrderSubmitting = false;
+      return;
+    }
     const upperMsg = msg.toUpperCase();
     const friendly = msg === "out_of_stock" || msg.startsWith("OUT_OF_STOCK:")
       ? "Mahsulot qoldig‘i yetarli emas. Savatni yangilang."
@@ -7564,6 +7596,72 @@ els.clearBtn?.addEventListener("click", ()=>{
   updateCartSelectUI();
   if(viewMode === "fav") applyFilterSort();
 });
+function omProductFromFirestoreDoc(snap){
+  if(!snap?.exists?.()) return null;
+  const data=snap.data()||{};
+  const price=(data.price ?? data.priceUZS ?? data.uzs ?? data.amount);
+  const created=(data.createdAt ?? data.created_at ?? data.created ?? data.updatedAt ?? data.updated_at ?? data.updated);
+  return {
+    id:String(data.id||snap.id),
+    weightKg:Number(data.weightKg ?? data.weight_kg ?? data.weight ?? data.massKg ?? 0)||0,
+    fulfillmentType:(data.fulfillmentType||data.fulfillment||(data.isCargo?'cargo':'stock')||'stock'),
+    deliveryMinDays:(data.deliveryMinDays ?? (data.fulfillmentType==='cargo'||data.fulfillment==='cargo'||data.isCargo?15:1)),
+    deliveryMaxDays:(data.deliveryMaxDays ?? (data.fulfillmentType==='cargo'||data.fulfillment==='cargo'||data.isCargo?30:7)),
+    prepayRequired:(data.prepayRequired ?? ((data.fulfillmentType==='cargo'||data.fulfillment==='cargo'||data.isCargo)?true:false)),
+    ...data,
+    _docId:snap.id,
+    _price:parseUZS(price),
+    _created:toMillis(created),
+  };
+}
+function omMergeHydratedProduct(p){
+  if(!p?.id) return;
+  const idx=products.findIndex(x=>String(x?.id||'')===String(p.id));
+  if(idx>=0) products[idx]={...products[idx],...p};
+  else products.push(p);
+}
+function omRemoveCartProducts(ids=[]){
+  const set=new Set((ids||[]).map(x=>String(x||'')).filter(Boolean));
+  if(!set.size) return 0;
+  const before=cart.length;
+  cart=cart.filter(ci=>!set.has(String(ci?.id||ci?.productId||'')));
+  cartSelected=new Set([...cartSelected].filter(key=>cart.some(ci=>String(ci?.key||'')===String(key))));
+  saveLS(LS.cart,cart);
+  try{updateBadges();}catch(_e){}
+  try{renderCartPage();}catch(_e){}
+  try{renderPanel?.('cart');}catch(_e){}
+  try{updateCartSelectUI();}catch(_e){}
+  return before-cart.length;
+}
+async function omEnsureSelectedCartProductsLoaded(){
+  const selected=selectedCartItems();
+  const ids=[...new Set(selected.map(ci=>String(ci?.id||ci?.productId||'')).filter(Boolean))];
+  const missing=ids.filter(id=>!products.some(p=>String(p?.id||'')===id));
+  if(!missing.length) return {ok:true,removed:0};
+  const stale=[];
+  for(const id of missing){
+    try{
+      const snap=await getDoc(doc(db,'products',id));
+      if(!snap.exists()){stale.push(id);continue;}
+      const p=omProductFromFirestoreDoc(snap);
+      if(!p||p.status==='archived'||p.isActive===false||p.sellerActive===false){stale.push(id);continue;}
+      omMergeHydratedProduct(p);
+    }catch(_e){
+      // If a direct read fails, let the secure checkout endpoint decide.
+    }
+  }
+  const removed=omRemoveCartProducts(stale);
+  if(removed) return {ok:false,removed,reason:`Savatdagi ${removed} ta eski yoki o‘chirilgan mahsulot olib tashlandi. Savat yangilandi, qayta buyurtma bering.`};
+  return {ok:true,removed:0};
+}
+function omHandleMissingProductCheckoutError(message=''){
+  const match=String(message||'').match(/PRODUCT_NOT_FOUND:([a-zA-Z0-9_-]+)/i);
+  if(!match) return false;
+  const removed=omRemoveCartProducts([match[1]]);
+  toast(removed?"Savatdagi mavjud bo‘lmagan eski mahsulot olib tashlandi. Savat yangilandi, qayta urinib ko‘ring.":"Mahsulot katalogda topilmadi. Savatni yangilang.");
+  return true;
+}
+
 function buildSelectedItems(){
   const _selCart = selectedCartItems();
   if(_selCart.length === 0) return { ok:false, reason:"Hech narsa tanlanmagan.", sel:[], items:[], totalUZS:0, totalWeightKg:0 };
@@ -7753,7 +7851,7 @@ function closeTopupModal(){
   try{ modal.classList.remove('isOpen'); }catch(_){ }
   try{ document.body.classList.remove('modalOpen'); }catch(_){ }
   modal.hidden = true;
-  document.body.style.overflow = '';
+  try{ omReconcileBodyScrollLock(); }catch(_e){}
 }
 
 function normCard(s){
