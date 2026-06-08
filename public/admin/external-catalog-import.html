@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./external-catalog-import.css?v=20260608_v169_multi_market">
+  <link rel="stylesheet" href="./external-catalog-import.css?v=20260609_v185_china_pricing">
 </head>
 <body>
   <header class="topbar">
@@ -38,7 +38,7 @@
         <p>ZIP faylni yuklab oling, arxivdan chiqaring va Chrome Extensions sahifasida <b>Load unpacked</b> orqali bir marta ulang. Keyin Sahiy, Uzum Market, 1688 va Pinduoduo mahsulot sahifalarida import tugmasi chiqadi.</p>
         <div class="extension-steps"><span>1. ZIPni oching</span><span>2. <code>chrome://extensions</code></span><span>3. Developer mode</span><span>4. Load unpacked</span></div>
       </div>
-      <a class="primary-btn download" href="/downloads/OrzuMall_Market_Importer_v3_1_SAHIY_FIX.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
+      <a class="primary-btn download" href="/downloads/OrzuMall_Market_Importer_v3_3_CHINA_LANDED_PRICE.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
     </section>
 
     <section class="login-box" id="loginBox">
@@ -95,8 +95,10 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
           <label class="full"><span>Ruscha nomi</span><input id="nameRu" placeholder="Ruscha nomi"></label>
           <label><span>Sotuv narxi (UZS) *</span><input id="price" type="number" min="0"></label>
           <label><span>Eski narx</span><input id="oldPrice" type="number" min="0" value="0"></label>
-          <label><span>Manba narxi (yuan, kerak bo‘lsa)</span><input id="priceCny" type="number" min="0" step="0.01"></label>
-          <label><span>Taxminiy vazn (kg)</span><input id="weightKg" type="number" min="0" step="0.01" placeholder="0.35"></label>
+          <label><span>Manba narxi (yuan, kerak bo‘lsa)</span><input id="priceCny" type="number" min="0" step="0.01" placeholder="1688 uchun"></label>
+          <label><span>Manba narxi (UZS)</span><input id="sourcePriceUzs" type="number" min="0" step="1" placeholder="Sahiydan avtomatik olinadi"></label>
+          <label><span>Xitoy ichki yetkazish (UZS)</span><input id="chinaDomesticFeeUzs" type="number" min="0" step="1" placeholder="Masalan: 6900"></label>
+          <label><span>Taxminiy vazn (kg) *</span><input id="weightKg" type="number" min="0" step="0.01" placeholder="Masalan: 0.35"></label>
           <label><span>Yetkazish min. kun</span><input id="minDays" type="number" min="1" value="15"></label>
           <label><span>Yetkazish max. kun</span><input id="maxDays" type="number" min="1" value="30"></label>
           <label><span>MOQ</span><input id="moq" type="number" min="1" value="1"></label>
@@ -106,9 +108,23 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
           <label class="full"><span>Qo‘shimcha rasm URL’lari</span><textarea id="imagesText" rows="3" placeholder="Har qatorga bittadan rasm URL"></textarea></label>
           <label class="full"><span>Tavsif</span><textarea id="description" rows="7" placeholder="Mahsulot haqida qisqacha ma’lumot"></textarea></label>
         </div>
+        <section class="china-pricing-panel" id="chinaPricingPanel">
+          <div class="china-pricing-head">
+            <div><span><i class="fa-solid fa-calculator"></i> Xitoy narx kalkulyatori</span><h3>Yakuniy narx avtomatik hisoblanadi</h3><p>Manba narxi + Xitoy ichki yetkazish + 7 kg dan oshgan yuk haqi + OrzuMall foydasi.</p></div>
+            <b id="pricingFinal">0 so‘m</b>
+          </div>
+          <div class="china-pricing-grid">
+            <div><span>Mahsulot narxi</span><b id="pricingSource">0 so‘m</b></div>
+            <div><span>Xitoy ichki yetkazish</span><b id="pricingDomestic">0 so‘m</b></div>
+            <div><span>7 kg dan ortiq yuk</span><b id="pricingOverweight">0 so‘m</b><small id="pricingWeight">0 kg · bepul 7 kg</small></div>
+            <div><span>Tannarx</span><b id="pricingLanded">0 so‘m</b></div>
+            <div><span>OrzuMall foydasi</span><b id="pricingProfit">0 so‘m</b><small id="pricingTier">—</small></div>
+          </div>
+          <div class="china-pricing-note"><i class="fa-solid fa-circle-info"></i><span>7 kg gacha qo‘shimcha xalqaro yuk haqi olinmaydi. 7 kg dan oshgan har boshlangan 1 kg uchun 77 777 so‘m qo‘shiladi. Arzon mahsulotlarda minimal foyda himoyasi ishlaydi.</span></div>
+        </section>
         <label class="storage-toggle"><input id="copyImages" type="checkbox" checked><span><b>Rasmlarni Storage’ga saqlash va bir xil 1:1 formatga tayyorlash</b><small>Tavsiya etiladi: oq chetlar tozalanadi, har bir surat 1200×1200 px standartga keltiriladi va manba sahifasi o‘zgarsa ham OrzuMall’da qoladi.</small></span></label>
         <div class="copy-status" id="copyStatus" hidden></div>
-        <div class="save-row"><div><b>Tashqi market rejimi avtomatik yoqiladi</b><p>Mahsulot oddiy ombor kartasiga aralashmaydi. Mijoz manba marketini va buyurtma asosida kelishini kartaning o‘zida ko‘radi.</p></div><button class="primary-btn save" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> Katalogga saqlash</button></div>
+        <div class="save-row"><div><b>Tashqi market rejimi avtomatik yoqiladi</b><p>Mahsulot oddiy ombor kartasiga aralashmaydi. Xitoy mahsulotining yakuniy narxi vazn va logistika asosida serverda qayta tekshiriladi.</p></div><button class="primary-btn save" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> Katalogga saqlash</button></div>
       </div>
     </section>
 
@@ -120,6 +136,6 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
   </main>
 
   <div class="toast" id="toast"></div>
-  <script type="module" src="./external-catalog-import.js?v=20260608_v169_multi_market"></script>
+  <script type="module" src="./external-catalog-import.js?v=20260609_v185_china_pricing"></script>
 </body>
 </html>
