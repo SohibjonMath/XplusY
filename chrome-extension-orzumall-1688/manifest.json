@@ -1,21 +1,29 @@
 {
   "manifest_version": 3,
-  "name": "OrzuMall 1688 Importer",
-  "version": "2.2.0",
-  "description": "1688 mahsulotlarini alohida OrzuMall katalog modeliga import qiladi: galereya, istalgan variant guruhlari, SKU kombinatsiyalari va original rasm URLlarini yig‘adi.",
+  "name": "OrzuMall Market Importer",
+  "version": "3.1.0",
+  "description": "Sahiy Market, Uzum Market, 1688 va Pinduoduo mahsulotlarini OrzuMall tashqi katalogiga qoralama sifatida yuboradi. Sahiy uchun toza galereya va variant kartalari maxsus o‘qiladi.",
   "permissions": [
     "storage",
     "tabs"
   ],
   "host_permissions": [
     "https://*.1688.com/*",
-    "https://1688.com/*"
+    "https://1688.com/*",
+    "https://sahiy.uz/*",
+    "https://*.sahiy.uz/*",
+    "https://uzum.uz/*",
+    "https://*.uzum.uz/*",
+    "https://yangkeduo.com/*",
+    "https://*.yangkeduo.com/*",
+    "https://pinduoduo.com/*",
+    "https://*.pinduoduo.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "OrzuMall 1688 Importer",
+    "default_title": "OrzuMall Market Importer",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -38,6 +46,22 @@
       ],
       "js": [
         "content-1688.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://sahiy.uz/*",
+        "https://*.sahiy.uz/*",
+        "https://uzum.uz/*",
+        "https://*.uzum.uz/*",
+        "https://yangkeduo.com/*",
+        "https://*.yangkeduo.com/*",
+        "https://pinduoduo.com/*",
+        "https://*.pinduoduo.com/*"
+      ],
+      "js": [
+        "content-market.js"
       ],
       "run_at": "document_idle"
     }

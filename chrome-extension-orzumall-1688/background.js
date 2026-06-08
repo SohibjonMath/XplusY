@@ -1,36 +1,6 @@
-const DEFAULT_ADMIN_URL = 'https://orzumall.uz/admin/china1688-import.html';
-
-function bytesToBase64Url(bytes) {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-function encodePayload(payload) {
-  const minimal = {
-    source: 'orzumall-1688-extension',
-    version: '2.0.0',
-    importedAt: new Date().toISOString(),
-    item: payload,
-  };
-  return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(minimal)));
-}
-function normalizeAdminUrl(v) {
-  try {
-    const url = new URL(String(v || DEFAULT_ADMIN_URL));
-    if (!/^https?:$/i.test(url.protocol)) return DEFAULT_ADMIN_URL;
-    url.hash = '';
-    return url.toString();
-  } catch (_e) { return DEFAULT_ADMIN_URL; }
-}
-async function openAdmin(payload) {
-  const settings = await chrome.storage.sync.get({ adminUrl: DEFAULT_ADMIN_URL });
-  const adminUrl = normalizeAdminUrl(settings.adminUrl);
-  const hash = `#om1688=${encodePayload(payload)}`;
-  await chrome.tabs.create({ url: `${adminUrl}${hash}` });
-  return { ok: true };
-}
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== 'IMPORT_TO_ORZUMALL') return false;
-  openAdmin(message.payload).then(sendResponse).catch(error => sendResponse({ ok: false, error: error.message || 'IMPORT_OPEN_FAILED' }));
-  return true;
-});
+const DEFAULT_ADMIN_URL = 'https://orzumall.uz/admin/external-catalog-import.html';
+function bytesToBase64Url(bytes){let binary='';for(let i=0;i<bytes.length;i+=1)binary+=String.fromCharCode(bytes[i]);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'')}
+function encodePayload(payload){const minimal={source:'orzumall-market-extension',version:'3.1.0',importedAt:new Date().toISOString(),item:payload};return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(minimal)))}
+function normalizeAdminUrl(v){try{const url=new URL(String(v||DEFAULT_ADMIN_URL));if(!/^https?:$/i.test(url.protocol))return DEFAULT_ADMIN_URL;url.hash='';return url.toString()}catch(_e){return DEFAULT_ADMIN_URL}}
+async function openAdmin(payload){const settings=await chrome.storage.sync.get({adminUrl:DEFAULT_ADMIN_URL});const adminUrl=normalizeAdminUrl(settings.adminUrl);const hash=`#ommarket=${encodePayload(payload)}`;await chrome.tabs.create({url:`${adminUrl}${hash}`});return{ok:true}}
+chrome.runtime.onMessage.addListener((message,_sender,sendResponse)=>{if(message?.type!=='IMPORT_TO_ORZUMALL')return false;openAdmin(message.payload).then(sendResponse).catch(error=>sendResponse({ok:false,error:error.message||'IMPORT_OPEN_FAILED'}));return true});

@@ -1,12 +1,3 @@
-const DEFAULT_ADMIN_URL = 'https://orzumall.uz/admin/china1688-import.html';
-const input = document.getElementById('adminUrl');
-chrome.storage.sync.get({ adminUrl: DEFAULT_ADMIN_URL }, row => { input.value = row.adminUrl; });
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  try {
-    const url = new URL(input.value.trim());
-    if (!/^https?:$/i.test(url.protocol)) throw new Error('HTTP yoki HTTPS manzil kiriting.');
-    url.hash = '';
-    await chrome.storage.sync.set({ adminUrl: url.toString() });
-    document.getElementById('notice').textContent = 'Saqlandi.';
-  } catch (error) { document.getElementById('notice').textContent = error.message || 'Manzil noto‘g‘ri.'; }
-});
+const DEFAULT_ADMIN_URL='https://orzumall.uz/admin/external-catalog-import.html';
+const input=document.getElementById('adminUrl');chrome.storage.sync.get({adminUrl:DEFAULT_ADMIN_URL},row=>{input.value=row.adminUrl});
+document.getElementById('saveBtn').addEventListener('click',async()=>{try{const url=new URL(input.value.trim());if(!/^https?:$/i.test(url.protocol))throw new Error('HTTP yoki HTTPS manzil kiriting.');url.hash='';await chrome.storage.sync.set({adminUrl:url.toString()});document.getElementById('notice').textContent='Saqlandi.'}catch(error){document.getElementById('notice').textContent=error.message||'Manzil noto‘g‘ri.'}});

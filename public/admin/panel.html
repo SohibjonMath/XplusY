@@ -7308,6 +7308,7 @@ function formatLifecycleTimelineAdmin(o){
         return String(it.variantText||dynamic||[it.color,it.size,it.variant].filter(Boolean).join(" / ")||"—");
       };
       const getSourceLink = (it)=>String(it.sourceUrl||it.externalMarket?.url||"").trim();
+      const getSourceUpstreamLink = (it)=>String(it.sourceUpstreamUrl||it.externalMarket?.upstreamUrl||"").trim();
       const getSourceLabel = (it)=>String(it.sourceLabel||it.externalMarket?.label||it.sourcePlatform||it.externalMarket?.platform||"Tashqi market").trim();
       const getPid = (it)=>{
         return String(it.productId || it.pid || it.id || it.product || "");
@@ -7327,6 +7328,8 @@ function formatLifecycleTimelineAdmin(o){
         const pid = escapeHtml(pidRaw);
         const sourceLinkRaw=getSourceLink(it);
         const sourceLink=escapeHtml(sourceLinkRaw);
+        const upstreamLinkRaw=getSourceUpstreamLink(it);
+        const upstreamLink=escapeHtml(upstreamLinkRaw);
         const sourceLabel=escapeHtml(getSourceLabel(it));
 
         const img = getItemImage(it);
@@ -7341,7 +7344,8 @@ function formatLifecycleTimelineAdmin(o){
                 <span class="order-item-pill">Variant: <b>${variant}</b></span>
                 <span class="order-item-pill">Soni: <b>${escapeHtml(String(qty))}</b></span>
                 <span class="order-item-pill">Narx: <b>${escapeHtml(price ? price.toLocaleString() : "—")}</b> so‘m</span>
-                ${sourceLinkRaw?`<a class="order-item-pill" href="${sourceLink}" target="_blank" rel="noopener noreferrer" title="Asl mahsulot sahifasini ochish"><i class="fas fa-arrow-up-right-from-square"></i> <b>${sourceLabel}</b>da ochish</a>`:""}
+                ${sourceLinkRaw?`<a class="order-item-pill" href="${sourceLink}" target="_blank" rel="noopener noreferrer" title="Import qilingan market sahifasini ochish"><i class="fas fa-arrow-up-right-from-square"></i> <b>${sourceLabel}</b>da ochish</a>`:""}
+                ${upstreamLinkRaw&&upstreamLinkRaw!==sourceLinkRaw?`<a class="order-item-pill" href="${upstreamLink}" target="_blank" rel="noopener noreferrer" title="Asl yetkazib beruvchi sahifasini ochish"><i class="fas fa-link"></i> Asl manba</a>`:""}
               </div>
             </div>
           </div>
