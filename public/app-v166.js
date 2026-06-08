@@ -3376,7 +3376,7 @@ function buildOrderReceiptHTML(order){
     const variant = [it?.color, it?.size].filter(Boolean).join(' / ');
     return `
       <div class="orderReceiptItem">
-        <div class="orderReceiptItemMedia">${omOrderItemImage(it)?`<img src="${escapeHtml(omOrderItemImage(it))}" alt="">`:`<i class="fa-solid fa-image"></i>`}</div>
+        <div class="orderReceiptItemMedia">${omOrderItemImageMarkup(it)}</div>
         <div class="orderReceiptItemBody">
           <div class="orderReceiptItemName">${escapeHtml(receiptItemName(it))}</div>
           <div class="orderReceiptItemMeta">${escapeHtml([variant, `${qty} ta`].filter(Boolean).join(' • '))}</div>
@@ -3424,7 +3424,7 @@ function buildOrderReceiptHTML(order){
 function openOrderReceipt(orderId){
   const order = (ordersCache || []).find(o => String(o?.id || o?.orderId || '') === String(orderId || ''));
   if(!order){ toast("Buyurtma topilmadi.", "error"); return; }
-  if(els.orderReceiptContent) els.orderReceiptContent.innerHTML = buildOrderReceiptHTML(order);
+  if(els.orderReceiptContent){ els.orderReceiptContent.innerHTML = buildOrderReceiptHTML(order); omArmOrderHistoryImages(els.orderReceiptContent); }
   if(els.orderReceiptModal){
     els.orderReceiptModal.hidden = false;
     try{ els.orderReceiptModal.classList.add('isOpen'); }catch(_){ }
@@ -3478,9 +3478,66 @@ function omOrderItemReview(order,it,index=0){
 function omOrderItemProduct(it){
   try{return findProductById(String(it?.productId||it?.id||"")) || null;}catch(_e){return null;}
 }
-function omOrderItemImage(it){
-  const p=omOrderItemProduct(it);
-  return String(it?.image||it?.imageUrl||p?.images?.[0]||p?.image||p?.imageUrl||"").trim();
+function omOrderImageValue(value){
+  if(Array.isArray(value)){ for(const row of value){ const hit=omOrderImageValue(row); if(hit) return hit; } return ""; }
+  if(value && typeof value === "object"){
+    for(const key of ["url","src","image","imageUrl","downloadUrl","original","originalUrl","thumb","thumbnail"]){ const hit=omOrderImageValue(value[key]); if(hit) return hit; }
+    return "";
+  }
+  const s=String(value||"").trim();
+  if(!s || s==="undefined" || s==="null" || s==="[object Object]") return "";
+  return s;
+}
+function omOrderItemImageCandidates(it){
+  const p=omOrderItemProduct(it)||{};
+  const out=[]; const seen=new Set();
+  const push=(value)=>{
+    if(Array.isArray(value)){ value.forEach(push); return; }
+    if(value && typeof value === "object"){
+      for(const key of ["url","src","image","imageUrl","downloadUrl","original","originalUrl","thumb","thumbnail"]){ if(value[key]) push(value[key]); }
+      return;
+    }
+    const s=omOrderImageValue(value); if(!s || seen.has(s)) return; seen.add(s); out.push(s);
+  };
+  const selected=it?.selectedOptions||it?.externalOptions||it?.chinaOptions||{};
+  const catalog=p?.externalCatalog||p?.externalMarket?.customerCatalog||p?.china1688Catalog||p?.china1688?.customerCatalog||null;
+  if(catalog && typeof catalog === "object"){
+    for(const group of (Array.isArray(catalog.optionGroups)?catalog.optionGroups:[])){
+      const val=selected?.[group?.id];
+      const opt=(Array.isArray(group?.options)?group.options:[]).find(x=>String(x?.name||x?.value||"")===String(val||""));
+      push(opt?.image||opt?.imageUrl||opt?.img);
+    }
+  }
+  const vars=Array.isArray(p?.variants)?p.variants:[];
+  const sku=String(it?.sku||it?.skuId||it?.article||"");
+  const variant=vars.find(x=>sku && String(x?.sku||x?.skuId||x?.id||"")===sku)||vars.find(x=>String(x?.color||"")===String(it?.color||"")&&String(x?.size||"")===String(it?.size||""))||null;
+  const by=p?.imagesByColor&&typeof p.imagesByColor==="object"?p.imagesByColor:{};
+  push(it?.image); push(it?.imageUrl); push(it?.img); push(it?.photo); push(it?.photoUrl); push(it?.productImage); push(it?.thumbnail); push(it?.thumb); push(it?.variantImage); push(it?.images); push(it?.galleryImages);
+  push(it?.productSnapshot); push(it?.snapshot); push(it?.product); push(variant?.image); push(variant?.imageUrl); push(by?.[it?.color]); push(p?.images); push(p?.image); push(p?.imageUrl); push(p?.thumbnail);
+  return out.slice(0,14);
+}
+function omOrderItemImage(it){ return omOrderItemImageCandidates(it)[0]||""; }
+function omOrderItemImageMarkup(it){
+  const rows=omOrderItemImageCandidates(it),first=rows[0]||"";
+  if(!first) return `<i class="fa-solid fa-image orderImageFallback"></i>`;
+  return `<img src="${escapeHtml(first)}" alt="" loading="lazy" decoding="async" data-order-image-candidates="${escapeHtml(JSON.stringify(rows))}"><i class="fa-solid fa-image orderImageFallback"></i>`;
+}
+function omArmOrderHistoryImages(root=document){
+  try{ root.querySelectorAll?.('img[data-order-image-candidates]').forEach(img=>{
+    if(img.dataset.orderImageReady==='1') return; img.dataset.orderImageReady='1';
+    let rows=[]; try{rows=JSON.parse(img.dataset.orderImageCandidates||'[]')}catch(_e){}
+    let index=Math.max(0,rows.indexOf(img.getAttribute('src')||img.src));
+    img.addEventListener('load',()=>img.parentElement?.classList.remove('isMissing'));
+    img.addEventListener('error',()=>{ index+=1; if(rows[index]){img.src=rows[index];return;} img.hidden=true; img.parentElement?.classList.add('isMissing'); });
+  }); }catch(_e){}
+}
+const omOrderHistoryHydratedOrders=new Set();
+let omOrderHistoryHydrateTimer=0;
+function omScheduleOrderHistoryHydration(orders=[]){
+  const orderIds=[...new Set((Array.isArray(orders)?orders:[]).map(o=>String(o?.id||o?.orderId||'').trim()).filter(Boolean))];
+  const fresh=orderIds.filter(id=>!omOrderHistoryHydratedOrders.has(id)); if(!fresh.length||!currentUser) return;
+  fresh.forEach(id=>omOrderHistoryHydratedOrders.add(id)); clearTimeout(omOrderHistoryHydrateTimer);
+  omOrderHistoryHydrateTimer=setTimeout(async()=>{try{const out=await omCxApi('order_history_products',{orderIds:fresh},{authRequired:true});omCxMergeProducts(out.products||[]);renderOrders(ordersCache||[]);}catch(_e){fresh.forEach(id=>omOrderHistoryHydratedOrders.delete(id));}},80);
 }
 function omOrderItemVariantText(it){
   return String(it?.variantText||[it?.color,it?.size,it?.variant].filter(Boolean).join(" / ")||Object.values(it?.selectedOptions||it?.externalOptions||{}).join(" / ")||"").trim();
@@ -3512,7 +3569,7 @@ function omOrderHistoryItemsHtml(order){
     const chips=variant?variant.split(/\s*\/\s*|\s*•\s*/).filter(Boolean).slice(0,5):[];
     return `<article class="orderHistoryProduct">
       <div class="orderHistoryProductMain">
-        <div class="orderHistoryProductMedia">${image?`<img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async">`:`<i class="fa-solid fa-image"></i>`}<span>${qty}×</span></div>
+        <div class="orderHistoryProductMedia">${omOrderItemImageMarkup(it)}<span>${qty}×</span></div>
         <div class="orderHistoryProductBody">
           <b>${escapeHtml(receiptItemName(it))}</b>
           ${chips.length?`<div class="orderHistoryVariantChips">${chips.map(x=>`<span>${escapeHtml(x)}</span>`).join("")}</div>`:""}
@@ -3589,10 +3646,12 @@ function openOrderActionModal(type, orderId, itemIndex=-1){
     reason.oninput=syncCount;
     syncCount();
   }
+  document.querySelectorAll('[data-review-quick]').forEach(btn=>btn.classList.remove('isActive'));
   if(cancelReasonSelect) cancelReasonSelect.value='';
   if(cancelReasonOther) cancelReasonOther.value='';
   if(cancelReasonOtherWrap) cancelReasonOtherWrap.hidden=true;
-  if(summary) summary.innerHTML=type==='item_review' ? `<div class="orderReviewProductPick">${omOrderItemImage(item)?`<img src="${escapeHtml(omOrderItemImage(item))}" alt="">`:`<span class="orderReviewProductFallback"><i class="fa-solid fa-image"></i></span>`}<div><small>Yetkazilgan mahsulot</small><b>${escapeHtml(receiptItemName(item))}</b><span>${escapeHtml(omOrderItemVariantText(item)||'Variant tanlanmagan')}</span></div></div>` : `<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
+  if(summary) summary.innerHTML=type==='item_review' ? `<div class="orderReviewProductPick"><div class="orderReviewProductMedia">${omOrderItemImageMarkup(item)}</div><div><small><i class="fa-solid fa-circle-check"></i> Tasdiqlangan xarid</small><b>${escapeHtml(receiptItemName(item))}</b><span>${escapeHtml(omOrderItemVariantText(item)||'Variant tanlanmagan')}</span></div></div>` : `<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
+  if(summary) omArmOrderHistoryImages(summary);
   if(starsWrap) starsWrap.hidden = type !== 'item_review';
   if(cancelReasonWrap) cancelReasonWrap.hidden = type !== 'cancel';
   const reasonWrap=document.getElementById('orderActionReasonWrap');
@@ -3719,6 +3778,8 @@ function renderOrders(orders){
     `;
     els.ordersList.appendChild(row);
   }
+  omArmOrderHistoryImages(els.ordersList);
+  omScheduleOrderHistoryHydration(arr);
 }
 
 
@@ -9065,6 +9126,8 @@ document.addEventListener("click", (e)=>{
   }
   const star=e.target?.closest?.("#orderReviewStars [data-review-star]");
   if(star){ e.preventDefault(); setReviewStars(Number(star.getAttribute("data-review-star")||0)); return; }
+  const quick=e.target?.closest?.('[data-review-quick]');
+  if(quick){ e.preventDefault(); quick.classList.toggle('isActive'); const reason=document.getElementById('orderActionReason'); if(reason){ const tags=[...document.querySelectorAll('[data-review-quick].isActive')].map(x=>x.getAttribute('data-review-quick')).filter(Boolean); reason.value=tags.length?`${tags.join('. ')}.`:''; reason.dispatchEvent(new Event('input',{bubbles:true})); } return; }
   if(e.target?.closest?.("#orderActionClose,#orderActionCancel")){ e.preventDefault(); closeOrderActionModal(); return; }
   if(e.target?.closest?.("#orderActionSubmit")){ e.preventDefault(); submitOrderAction(); return; }
   const overlay=e.target?.closest?.("#orderActionModal");

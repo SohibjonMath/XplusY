@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.79.0",
-  "description": "OrzuMall v179: fast batch review statistics, materialized product ratings and edge-to-edge mobile product experience",
+  "version": "1.82.0",
+  "description": "OrzuMall v182: reliable order-history product images and premium verified-purchase review sheet",
   "engines": {
     "node": "22.x"
   },
