@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>OrzuMall Admin — Foydalanuvchilar</title>
+  <link rel="icon" href="/favicon.webp">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./users-v175.css?v=20260608_v175">
+  <script src="/om-error-report.js?v=20260606_v139" defer></script>
+</head>
+<body>
+  <div class="login" id="login">
+    <div class="login-card">
+      <img src="/logo-256.webp" alt="OrzuMall">
+      <span>ADMIN USER CENTER</span>
+      <h1>Foydalanuvchilar markazi</h1>
+      <p>Faqat OrzuMall admin akkaunti kira oladi.</p>
+      <button class="btn primary wide" id="loginBtn"><i class="fa-brands fa-google"></i> Google orqali kirish</button>
+      <div class="error" id="loginError"></div>
+    </div>
+  </div>
+
+  <div class="app" id="app" hidden>
+    <header class="topbar">
+      <div class="brand"><a href="./panel.html" class="back"><i class="fa-solid fa-arrow-left"></i></a><img src="/favicon.webp" alt=""><div><b>Foydalanuvchilar</b><span>OrzuMall Admin Center</span></div></div>
+      <div class="top-actions"><button class="btn soft" id="refreshBtn"><i class="fa-solid fa-rotate"></i> Yangilash</button><button class="btn soft" id="exportBtn"><i class="fa-solid fa-file-csv"></i> CSV eksport</button><button class="btn soft" id="createBtn"><i class="fa-solid fa-user-plus"></i> Yangi foydalanuvchi</button><button class="btn danger" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Chiqish</button></div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero">
+        <div><span class="eyebrow"><i class="fa-solid fa-users-gear"></i> MIJOZLAR TAHLILI</span><h1>Foydalanuvchilar boshqaruvi</h1><p>Oxirgi tashrif, online holat, balans, buyurtmalar va profil ma’lumotlarini bitta oynada kuzating.</p></div>
+        <div class="hero-note"><i class="fa-solid fa-shield-halved"></i><div><b>Parollar xavfsizligi</b><span>Eski parolni ko‘rib bo‘lmaydi. Admin faqat yangi vaqtinchalik parol o‘rnatadi.</span></div></div>
+      </section>
+
+      <section class="stats" id="stats"></section>
+
+      <section class="workbench">
+        <div class="toolbar">
+          <label class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="search" placeholder="Ism, telefon, ID, UID yoki izoh bo‘yicha qidirish"></label>
+          <select id="filter"><option value="all">Barcha foydalanuvchilar</option><option value="online">Hozir online</option><option value="active24">24 soatda faol</option><option value="disabled">Bloklanganlar</option><option value="balance">Balansi borlar</option></select>
+          <select id="sort"><option value="recent">Oxirgi tashrif</option><option value="online">Online birinchi</option><option value="balance">Balans bo‘yicha</option><option value="spent">Xarid bo‘yicha</option><option value="orders">Buyurtmalar bo‘yicha</option></select>
+        </div>
+        <div class="state" id="state">Yuklanmoqda…</div>
+        <div class="user-grid" id="list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-root" id="modal"></div>
+  <div class="toast" id="toast"></div>
+  <script type="module" src="./users-v175.js?v=20260608_v175"></script>
+</body>
+</html>

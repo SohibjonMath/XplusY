@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.71.0",
-  "description": "OrzuMall v171: strict Sahiy variant extraction, customer-facing origin labels, authoritative admin source links and address-aware Uzbekistan delivery ETA",
+  "version": "1.75.0",
+  "description": "OrzuMall v175: secure admin users center, customer presence heartbeat, last-visit analytics, balance control, safe temporary password reset and audit logs",
   "engines": {
     "node": "22.x"
   },
