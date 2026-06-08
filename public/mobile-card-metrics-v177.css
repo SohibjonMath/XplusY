@@ -1,0 +1,27 @@
+/* OrzuMall v177 — compact mobile product-card metrics
+   Always show rating/reviews, views and popularity on narrow screens. */
+#view-home .omCardMetricsRow{
+  display:flex!important;align-items:center!important;flex-wrap:nowrap!important;
+  gap:8px!important;min-width:0!important;margin-top:7px!important;
+  color:#64748b!important;font-size:10px!important;font-weight:900!important;line-height:1!important;
+}
+#view-home .omCardMetric{display:inline-flex!important;align-items:center!important;gap:3px!important;min-width:0!important;white-space:nowrap!important}
+#view-home .omCardMetric i{font-size:10px!important}
+#view-home .omCardMetric b{font:inherit!important;color:inherit!important}
+#view-home .omCardMetric em{font-style:normal!important;color:#94a3b8!important;font-size:.92em!important;font-weight:850!important}
+#view-home .omCardMetric.rating i{color:#f59e0b!important}
+#view-home .omCardMetric.views i{color:#3b82f6!important}
+#view-home .omCardMetric.popularity i{color:#f97316!important}
+@media(max-width:768px){
+  #view-home .omCardMetricsRow{gap:6px!important;margin-top:6px!important;font-size:9px!important}
+  #view-home .omCardMetric i{font-size:9px!important}
+}
+@media(max-width:390px){
+  #view-home .omCardMetricsRow{gap:5px!important;margin-top:5px!important;font-size:8.4px!important}
+  #view-home .omCardMetric{gap:2px!important}
+  #view-home .omCardMetric i{font-size:8.5px!important}
+}
+@media(max-width:340px){
+  #view-home .omCardMetricsRow{gap:4px!important;font-size:7.8px!important}
+  #view-home .omCardMetric i{font-size:8px!important}
+}

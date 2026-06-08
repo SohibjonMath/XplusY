@@ -869,7 +869,22 @@ async function refreshStats(productId, force=false){
     statsCache.set(productId, out);
     return { avg: out.avg, count: out.count };
   }catch(e){
-    return getStats(productId);
+    // Some Firestore projects reject browser-side aggregate queries. In that
+    // case, read the approved review rows and calculate the compact card stats
+    // locally instead of hiding the rating on mobile cards.
+    try{
+      const snap = await getDocs(baseRef);
+      let total = 0, rows = 0;
+      snap.forEach((docu)=>{
+        const stars = Math.max(0, Math.min(5, Number((docu.data()||{}).stars)||0));
+        if(stars > 0){ total += stars; rows += 1; }
+      });
+      const out = { avg: rows ? total / rows : 0, count: rows, ts: now };
+      statsCache.set(productId, out);
+      return { avg: out.avg, count: out.count };
+    }catch(_fallbackError){
+      return getStats(productId);
+    }
   }
 }
 
@@ -2712,6 +2727,36 @@ function omProductPowerMiniHtml(p){
   return `<span title="Ko‘rishlar"><i class="fa-regular fa-eye"></i> ${views}</span><span title="Popular ball"><i class="fa-solid fa-fire"></i> ${score}</span>`;
 }
 
+function omProductCardReviewStats(p, cached = getStats(p?.id)){
+  const productCount = Math.max(
+    Number(p?.reviewsCount)||0,
+    Number(p?.reviewCount)||0,
+    Number(p?.ratingsCount)||0,
+    Number(p?.ratingCount)||0,
+    Number(p?.reviewStats?.count)||0
+  );
+  const cachedCount = Number(cached?.count)||0;
+  const count = Math.max(0, Math.round(Math.max(cachedCount, productCount)));
+  const productAvg = Math.max(
+    Number(p?.rating)||0,
+    Number(p?.avgRating)||0,
+    Number(p?.ratingAvg)||0,
+    Number(p?.reviewStats?.avg)||0
+  );
+  const rawAvg = cachedCount > 0 ? Number(cached?.avg)||0 : productAvg;
+  return { avg: Math.max(0, Math.min(5, rawAvg)), count };
+}
+
+function omProductCardMetricsHtml(p, cached){
+  const m = omGetProductMetrics(p);
+  const r = omProductCardReviewStats(p, cached);
+  return `<div class="omCardMetricsRow" aria-label="Mahsulot statistikasi">
+    <span class="omCardMetric rating" title="${r.count} ta sharh"><i class="fa-solid fa-star" aria-hidden="true"></i><b>${r.avg.toFixed(1)}</b><em>(${omCompactMetric(r.count)})</em></span>
+    <span class="omCardMetric views" title="Ko‘rishlar"><i class="fa-regular fa-eye" aria-hidden="true"></i><b>${omCompactMetric(m.views||0)}</b></span>
+    <span class="omCardMetric popularity" title="Popularlik"><i class="fa-solid fa-fire" aria-hidden="true"></i><b>${omCompactMetric(m.score||0)}</b></span>
+  </div>`;
+}
+
 function render(arr){
   els.grid.innerHTML = "";
   if (els.productsCount) {
@@ -2780,8 +2825,7 @@ const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i cla
         <div class="pname clamp2">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
         ${sellerMiniHTML}
         ${chinaCardMeta}
-        ${showCount ? `<div class="pratingInline compact"><i class="fa-solid fa-star" aria-hidden="true"></i> ${Number(showAvg).toFixed(1)} <span>(${showCount})</span></div>` : ""}
-        <div class="omPowerRow">${omProductPowerMiniHtml(p)}</div>
+        ${omProductCardMetricsHtml(p, st)}
 
         <div class="pcardFoot">
           <div class="pship compact">${renderDeliveryBadge(p)}</div>
