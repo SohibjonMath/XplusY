@@ -2517,9 +2517,49 @@ function renderCategoriesPage(){
   omI18nRefresh(80);
 }
 
+const OM_HOME_ORIGIN_FILTER_KEY = "om_home_origin_filter_v184";
+let omHomeOriginFilter = (()=>{
+  try{
+    const saved=String(localStorage.getItem(OM_HOME_ORIGIN_FILTER_KEY)||"all").toLowerCase();
+    return ["all","uzbekistan","china"].includes(saved)?saved:"all";
+  }catch(_e){ return "all"; }
+})();
+function omNormalizeHomeOriginFilter(v){
+  const x=String(v||"all").toLowerCase();
+  return ["all","uzbekistan","china"].includes(x)?x:"all";
+}
+function omHomeOriginCounts(){
+  const rows=Array.isArray(products)?products:[];
+  const china=rows.filter(p=>omExternalOrigin(p)==="china").length;
+  return {all:rows.length,uzbekistan:Math.max(0,rows.length-china),china};
+}
+function omUpdateHomeOriginFilterUI(){
+  const counts=omHomeOriginCounts();
+  document.querySelectorAll("[data-home-origin-filter]").forEach(btn=>{
+    const key=omNormalizeHomeOriginFilter(btn.getAttribute("data-home-origin-filter"));
+    const active=key===omHomeOriginFilter;
+    btn.classList.toggle("isActive",active);
+    btn.setAttribute("aria-pressed",active?"true":"false");
+  });
+  document.querySelectorAll("[data-home-origin-count]").forEach(el=>{
+    const key=omNormalizeHomeOriginFilter(el.getAttribute("data-home-origin-count"));
+    el.textContent=String(counts[key]||0);
+  });
+}
+function omFilterProductsByOrigin(rows=[]){
+  if(omHomeOriginFilter==="all") return rows;
+  return rows.filter(p=>omExternalOrigin(p)===omHomeOriginFilter);
+}
+function omSetHomeOriginFilter(next){
+  omHomeOriginFilter=omNormalizeHomeOriginFilter(next);
+  try{localStorage.setItem(OM_HOME_ORIGIN_FILTER_KEY,omHomeOriginFilter)}catch(_e){}
+  omUpdateHomeOriginFilterUI();
+  applyFilterSort();
+}
+
 function applyFilterSort(){
   const query = norm(els.q.value);
-  let arr = [...products];
+  let arr = omFilterProductsByOrigin([...products]);
 
   if(viewMode === "fav"){
     arr = arr.filter(p=>favs.has(p.id));
@@ -2800,6 +2840,7 @@ function omProductCardMetricsHtml(p, cached){
 }
 
 function render(arr){
+  omUpdateHomeOriginFilterUI();
   els.grid.innerHTML = "";
   if (els.productsCount) {
     const n = Array.isArray(arr) ? arr.length : 0;
@@ -7615,6 +7656,12 @@ els.profileLogout?.addEventListener("click", async ()=>{ await signOut(auth); })
 
 els.q.addEventListener("input", applyFilterSort);
 els.sort.addEventListener("change", applyFilterSort);
+document.getElementById("homeOriginFilter")?.addEventListener("click", (event)=>{
+  const btn=event.target.closest("[data-home-origin-filter]");
+  if(!btn) return;
+  omSetHomeOriginFilter(btn.getAttribute("data-home-origin-filter"));
+});
+omUpdateHomeOriginFilterUI();
 
 
 
