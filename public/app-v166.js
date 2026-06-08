@@ -2947,13 +2947,23 @@ function renderChina1688VariantModal(p){
       const active=String(sel.chinaOptions?.[group.id]||"")===String(opt.name||"");
       return `<button type="button" class="v1688Option ${active?"active":""} ${opt.image?"hasImage":""}" data-v1688-group="${escapeHtml(group.id)}" data-v1688-value="${escapeHtml(opt.name)}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<span>${escapeHtml(opt.name||"Variant")}</span></button>`;
     }).join("")}</div><small class="v1688Required" data-v1688-hint="${escapeHtml(group.id)}" hidden>Iltimos, variantni tanlang</small></div>`).join("");
-    els.v1688Groups.querySelectorAll("[data-v1688-group]").forEach(btn=>btn.addEventListener("click",()=>{
-      const groupId=btn.getAttribute("data-v1688-group")||"";
-      const value=btn.getAttribute("data-v1688-value")||"";
-      vState.sel=om1688SelectionFor(p,om1688SetOption(vState.sel,groupId,value),{defaultFirst:false});
-      selected.set(p.id,{...vState.sel});
-      renderVariantModal();
-    }));
+    // v173: the option buttons are recreated on every render. Bind once on the
+    // stable group container so the user can switch variants repeatedly.
+    if(els.v1688Groups.dataset.externalVariantDelegate !== "1"){
+      els.v1688Groups.dataset.externalVariantDelegate = "1";
+      els.v1688Groups.addEventListener("click",(e)=>{
+        const btn=e.target?.closest?.("[data-v1688-group]");
+        if(!btn || !els.v1688Groups.contains(btn)) return;
+        e.preventDefault(); e.stopPropagation();
+        const current=vState.product;
+        if(!current) return;
+        const groupId=btn.getAttribute("data-v1688-group")||"";
+        const value=btn.getAttribute("data-v1688-value")||"";
+        vState.sel=om1688SelectionFor(current,om1688SetOption(vState.sel,groupId,value),{defaultFirst:false});
+        selected.set(current.id,{...vState.sel});
+        renderVariantModal();
+      });
+    }
   }
   if(els.vColors) els.vColors.hidden=true;
   if(els.vSizes) els.vSizes.hidden=true;
@@ -4522,13 +4532,23 @@ function bindProductPage(p){
   root.querySelectorAll("[data-store-id]").forEach(btn=>btn.addEventListener("click",(e)=>{
     e.preventDefault();e.stopPropagation();openStorePage(btn.getAttribute("data-store-id"));
   }));
-  root.querySelectorAll("[data-pp-1688-group]").forEach(btn=>btn.addEventListener("click",(e)=>{
-    e.preventDefault(); e.stopPropagation();
-    const groupId=btn.getAttribute("data-pp-1688-group")||"";
-    const value=btn.getAttribute("data-pp-1688-value")||"";
-    const now=om1688SelectionFor(p,om1688SetOption(getSel(p),groupId,value),{defaultFirst:true});
-    selected.set(p.id,now); renderProductPage();
-  }));
+  // v173: product-page content is re-rendered after every selection. Listen on
+  // the persistent root instead of binding only the current button instances.
+  if(root.dataset.externalVariantDelegate !== "1"){
+    root.dataset.externalVariantDelegate = "1";
+    root.addEventListener("click",(e)=>{
+      const btn=e.target?.closest?.("[data-pp-1688-group]");
+      if(!btn || !root.contains(btn)) return;
+      e.preventDefault(); e.stopPropagation();
+      const current=findProductById(String(activeProductId||"")) || p;
+      if(!current) return;
+      const groupId=btn.getAttribute("data-pp-1688-group")||"";
+      const value=btn.getAttribute("data-pp-1688-value")||"";
+      const now=om1688SelectionFor(current,om1688SetOption(getSel(current),groupId,value),{defaultFirst:true});
+      selected.set(current.id,now);
+      renderProductPage();
+    });
+  }
   root.querySelectorAll("[data-pp-color]").forEach(btn=>btn.addEventListener("click",(e)=>{
     e.preventDefault(); e.stopPropagation();
     const now=getSel(p); now.color=btn.getAttribute("data-pp-color")||null; now.imgIdx=0; selected.set(p.id,now); renderProductPage();
