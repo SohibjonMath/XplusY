@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.69.0",
-  "description": "OrzuMall v169: multi-market external catalog for Sahiy, Uzum Market, 1688 and Pinduoduo with dedicated storefront, dynamic SKU groups and authoritative source links in orders",
+  "version": "1.71.0",
+  "description": "OrzuMall v171: strict Sahiy variant extraction, customer-facing origin labels, authoritative admin source links and address-aware Uzbekistan delivery ETA",
   "engines": {
     "node": "22.x"
   },

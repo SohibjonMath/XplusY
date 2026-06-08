@@ -44,8 +44,8 @@ function omCompactMetric(v){
   return String(Math.round(n));
 }
 function omProductText(p, field, fallback=""){
-  try{ return window.OM_I18N?.productText?.(p, field, fallback) || String(fallback || ""); }
-  catch(_e){ return String(fallback || ""); }
+  try{ return omCustomerSafeExternalText(p,window.OM_I18N?.productText?.(p, field, fallback) || String(fallback || "")); }
+  catch(_e){ return omCustomerSafeExternalText(p,String(fallback || "")); }
 }
 function omProductTags(p){
   try{ return window.OM_I18N?.productTags?.(p) || (Array.isArray(p?.tags) ? p.tags : []); }
@@ -1011,10 +1011,31 @@ function omCleanVariantLabel(value){
 const omNoisyVariantLabel = /(?:主面料|面料|材质|成分|品牌|货号|运费|评价|参数|商品属性|包装|详情|登录|登錄|查看全部|好评|已购|起批|¥|￥|库存|庫存|stock|qoldiq|material|fabric|brand|price|delivery)/i;
 function omUsableVariantLabel(value){ const v=omCleanVariantLabel(value); return !!v && v.length<=90 && !omNoisyVariantLabel.test(v); }
 
+function omExternalOrigin(p={}){
+  const raw=String(p?.originCountry || p?.externalMarket?.originCountry || p?.sourcePlatform || p?.externalMarket?.platform || p?.china1688?.platform || "").toLowerCase();
+  if(raw==="uz" || raw.includes("uzbek") || raw.includes("uzum")) return "uzbekistan";
+  if(raw==="cn" || raw.includes("china") || raw.includes("xitoy") || raw.includes("sahiy") || raw.includes("1688") || raw.includes("pindu") || raw.includes("yangkeduo")) return "china";
+  const fulfillment=String(p?.fulfillmentType || p?.fulfillment || p?.deliveryType || "").toLowerCase();
+  return fulfillment.includes("cargo") || fulfillment.includes("order") || fulfillment.includes("buyurt") ? "china" : "uzbekistan";
+}
+function omIsChinaOriginProduct(p={}){ return omExternalOrigin(p)==="china"; }
+function omCustomerSafeExternalText(p={},value=""){
+  const raw=String(value==null?"":value);
+  if(!omIsExternalMarketProduct(p)) return raw;
+  const replacement=omIsChinaOriginProduct(p)?"Xitoy":"O‘zbekiston";
+  return raw.replace(/(?:Sahiy(?: Market)?|Uzum(?: Market)?|Pinduoduo|1688)/gi,replacement);
+}
+function omCustomerSafeTags(p={}){
+  const raw=omProductTags(p).map(t=>omCustomerSafeExternalText(p,t).trim()).filter(Boolean);
+  return [...new Map(raw.map(t=>[t.toLowerCase(),t])).values()];
+}
 function omExternalPlatformSpec(p={}){
   const raw=String(p?.sourcePlatform || p?.externalMarket?.platform || p?.china1688?.platform || "").toLowerCase();
   const key=raw.includes("sahiy")?"sahiy":raw.includes("uzum")?"uzum":raw.includes("pindu")||raw.includes("yangkeduo")?"pinduoduo":raw.includes("1688")?"1688":"external";
-  return ({sahiy:{key,label:"Sahiy Market",short:"Sahiy",icon:"fa-store",delivery:"Buyurtma asosida"},uzum:{key,label:"Uzum Market",short:"Uzum",icon:"fa-bag-shopping",delivery:"Marketdan buyurtma"},"1688":{key,label:"1688",short:"1688",icon:"fa-plane-arrival",delivery:"Xitoydan buyurtma"},pinduoduo:{key,label:"Pinduoduo",short:"Pinduoduo",icon:"fa-boxes-stacked",delivery:"Xitoydan buyurtma"},external:{key,label:"Tashqi market",short:"Market",icon:"fa-store",delivery:"Buyurtma asosida"}})[key];
+  const origin=omExternalOrigin(p);
+  return origin==="china"
+    ? {key,styleKey:"china",origin,label:"Xitoydan",short:"Xitoydan",icon:"fa-plane-arrival",delivery:"Xitoydan buyurtma",etaText:"Taxminan 20 kun"}
+    : {key,styleKey:"uzbekistan",origin,label:"O‘zbekiston",short:"O‘zbekistondan",icon:"fa-location-dot",delivery:"O‘zbekistondan",etaText:"Manzil tanlangandan keyin"};
 }
 function omExternalCatalog(p){
   const raw = p?.externalCatalog || p?.externalMarket?.customerCatalog || p?.china1688Catalog || p?.china1688?.customerCatalog || null;
@@ -1079,13 +1100,14 @@ function om1688VariantHtml(p, interactive=false){
 function om1688ProductIntroHtml(p){
   if(!omIsChina1688Product(p)) return "";
   const groups=om1688Groups(p), skus=om1688Skus(p), spec=omExternalPlatformSpec(p);
-  const min=Math.max(1,Number(p?.deliveryMinDays||15)||15), max=Math.max(min,Number(p?.deliveryMaxDays||30)||30);
-  return `<section class="pp1688Intro ppExternalIntro external-${escapeHtml(spec.key)}"><div class="pp1688IntroIcon"><i class="fa-solid ${escapeHtml(spec.icon)}"></i></div><div><span>${escapeHtml(spec.label)} katalogi</span><b>Buyurtma asosida olib kelinadi</b><small>Oddiy ombor mahsulotidan alohida tizim · ${min}–${max} kun · ${groups.length} guruh · ${skus.length} SKU</small></div><em><i class="fa-solid fa-shield-halved"></i> Oldindan to‘lov</em></section>`;
+  const isChina=spec.origin==="china";
+  const eta=isChina?"Taxminan 20 kun":"Yetkazish manzil tanlangandan keyin hisoblanadi";
+  return `<section class="pp1688Intro ppExternalIntro external-${escapeHtml(spec.styleKey)}"><div class="pp1688IntroIcon"><i class="fa-solid ${escapeHtml(spec.icon)}"></i></div><div><span>${escapeHtml(spec.short)}</span><b>${isChina?"Buyurtma asosida olib kelinadi":"O‘zbekiston ichidan yetkaziladi"}</b><small>Oddiy ombor mahsulotidan alohida tizim · ${escapeHtml(eta)} · ${groups.length} guruh · ${skus.length} SKU</small></div>${isChina?`<em><i class="fa-solid fa-shield-halved"></i> Oldindan to‘lov</em>`:""}</section>`;
 }
 function om1688ProductGuideHtml(p){
   if(!omIsChina1688Product(p)) return "";
-  const spec=omExternalPlatformSpec(p);
-  return `<section class="pp1688Guide"><div><i class="fa-solid fa-sliders"></i><b>Variantni aniq tanlang</b><span>Rang, model, o‘lcham yoki komplekt alohida SKU sifatida hisoblanadi.</span></div><div><i class="fa-solid ${escapeHtml(spec.icon)}"></i><b>${escapeHtml(spec.label)} manbasi</b><span>Mahsulot buyurtmangiz uchun tashqi marketdan olinadi.</span></div><div><i class="fa-solid fa-wallet"></i><b>Oldindan to‘lov</b><span>Buyurtma tasdiqlangach xarid jarayoni boshlanadi.</span></div></section>`;
+  const spec=omExternalPlatformSpec(p),isChina=spec.origin==="china";
+  return `<section class="pp1688Guide"><div><i class="fa-solid fa-sliders"></i><b>Variantni aniq tanlang</b><span>Rang, model, o‘lcham yoki komplekt alohida SKU sifatida hisoblanadi.</span></div><div><i class="fa-solid ${escapeHtml(spec.icon)}"></i><b>${isChina?"Xitoydan":"O‘zbekistondan"}</b><span>${isChina?"Mahsulot siz uchun Xitoydan olib kelinadi.":"Yetkazish muddati manzil tanlangandan keyin hisoblanadi."}</span></div>${isChina?`<div><i class="fa-solid fa-wallet"></i><b>Oldindan to‘lov</b><span>Buyurtma tasdiqlangach xarid jarayoni boshlanadi.</span></div>`:""}</section>`;
 }
 function omVariantRows(p){
   const rows=[];
@@ -1908,7 +1930,8 @@ function omRenderCartDeliverySummary(){
     : (method === "pickup_point"
       ? "Tanlangan topshirish punkti tarifi hisoblandi"
       : (free ? (free.reached ? `${free.service} bepul yetkazish limiti bajarildi${freeDetail}` : `${free.service} bepul yetkazishgacha ${moneyUZS(free.remaining)} qoldi${freeDetail}`) : "Yetkazib berish narxi hisoblandi"));
-  const smallText = method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : (method === "pickup_point" ? `${data.pickupPoint?.name || "Topshirish punkti"} • ${data.pickupPoint?.etaText || "muddat ko‘rsatilmagan"}` : `${data.serviceLabel || rec?.label || "Yetkazib berish"}${rec?.etaText ? ` • ${rec.etaText}` : ""}`);
+  const etaText=data.deliveryEtaText||"";
+  const smallText = method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : (method === "pickup_point" ? `${data.pickupPoint?.name || "Topshirish punkti"}${etaText?` • ${etaText}`:""}` : `${data.serviceLabel || rec?.label || "Yetkazib berish"}${etaText?` • ${etaText}`:(rec?.etaText ? ` • ${rec.etaText}` : "")}`);
 
   el.innerHTML = `
     <div class="cartDeliveryCompact isReady">
@@ -1982,6 +2005,7 @@ function omRenderDeliveryEstimate(){
   const freeInfo = omFreeDeliveryInfo(built.totalUZS, omDeliveryQuote, weightKg);
   const freeDetail = freeInfo ? (freeInfo.source === "courier" && freeInfo.distanceKm != null ? ` (${Number(freeInfo.distanceKm).toFixed(1)} km zona)` : (freeInfo.source === "uzpost" ? ` (${freeInfo.billedKg || 1} kg UzPost)` : "")) : "";
   const freeText = freeInfo ? (freeInfo.reached ? `${freeInfo.service} bepul yetkazish limiti bajarildi${freeDetail}.` : `${freeInfo.service} bepul yetkazishgacha ${moneyUZS(freeInfo.remaining)} qoldi${freeDetail}.`) : "Bepul limit yo‘q.";
+  const deliveryEtaText=omCheckoutEtaText(built,{method:"delivery",distanceKm:dist,lat:omDeliveryLocation?.lat,lng:omDeliveryLocation?.lng,location:omDeliveryLocation});
   content.innerHTML = `
     <div class="omDeliveryCalcGrid">
       <div class="omDeliveryCalcCell"><div class="k">Do‘kondan masofa</div><div class="v">${dist == null ? "—" : dist.toFixed(1) + " km"}</div></div>
@@ -1990,7 +2014,7 @@ function omRenderDeliveryEstimate(){
       <div class="omDeliveryCalcCell"><div class="k">Yetkazish bilan</div><div class="v">${moneyUZS(omDeliveryQuote.totalWithDeliveryUZS)}</div></div>
       ${optHtml}
     </div>
-    <div class="omDeliveryRecommend">Tavsiya: ${rec ? rec.label : "Operator bilan kelishiladi"} — ${rec ? (rec.isFree ? "Bepul" : moneyUZS(rec.feeUZS)) : "—"}<small>${rec ? `${rec.etaText}. ${freeText}` : "Manzilni aniqlang."}</small></div>
+    <div class="omDeliveryRecommend">Tavsiya: ${rec ? rec.label : "Operator bilan kelishiladi"} — ${rec ? (rec.isFree ? "Bepul" : moneyUZS(rec.feeUZS)) : "—"}<small>${rec ? `${deliveryEtaText || rec.etaText}. ${freeText}` : "Manzilni aniqlang."}</small></div>
   `;
 }
 
@@ -2474,25 +2498,21 @@ function _normPType(p){
   return String(t).toLowerCase() === "cargo" ? "cargo" : "stock";
 }
 function getDeliveryInfo(p){
-  const type = _normPType(p);
-  const min = (p?.deliveryMinDays ?? p?.deliveryMin ?? (type==="cargo" ? 7 : 1));
-  const max = (p?.deliveryMaxDays ?? p?.deliveryMax ?? (type==="cargo" ? 14 : 7));
-  return { type, min, max };
+  if(omIsChinaOriginProduct(p)) return { type:"cargo", min:20, max:20, etaText:"Taxminan 20 kun" };
+  return { type:"stock", min:0, max:0, etaText:"" };
 }
 function omDeliveryDateRange(p){
-  const d=getDeliveryInfo(p),today=new Date(),min=Math.max(0,Number(d.min)||0),max=Math.max(min,Number(d.max)||min);
+  const d=getDeliveryInfo(p);
+  if(d.type!=="cargo") return "Manzil tanlangandan keyin";
+  const today=new Date(),min=Math.max(0,Number(d.min)||0),max=Math.max(min,Number(d.max)||min);
   const add=n=>{const x=new Date(today);x.setDate(x.getDate()+n);return x};
   const fmt=x=>{try{return new Intl.DateTimeFormat(omLang()==="ru"?"ru-RU":"uz-UZ",{day:"numeric",month:"short"}).format(x)}catch(_){return `${x.getDate()}.${x.getMonth()+1}`}};
   const a=fmt(add(min)),b=fmt(add(max));
   return min===max?a:`${a} – ${b}`;
 }
 function renderDeliveryBadge(p){
-  const d = getDeliveryInfo(p);
-  const cls = d.type === "cargo" ? "shipBadge cargo" : "shipBadge stock";
-  const flagSrc = d.type === "cargo" ? "assets/flags/cn-48.webp" : "assets/flags/uz-48.webp";
-  const flagAlt = d.type === "cargo" ? "CN" : "UZ";
-  const dayWord = omLang()==="ru" ? "дн." : (omLang()==="en" ? "days" : "kun");
-  return `<span class="${cls}"><img class="omFlag" src="${flagSrc}" alt="${flagAlt}" loading="lazy" decoding="async"><span class="omTruck">🚚</span><span class="cxDeliveryDate">${escapeHtml(omDeliveryDateRange(p))}</span><small>${d.min}–${d.max} ${dayWord}</small></span>`;
+  if(!omIsChinaOriginProduct(p)) return "";
+  return `<span class="shipBadge cargo"><img class="omFlag" src="assets/flags/cn-48.webp" alt="CN" loading="lazy" decoding="async"><span class="omTruck">🚚</span><span class="cxDeliveryDate">Xitoydan</span><small>Taxminan 20 kun</small></span>`;
 }
 
 function getProductType(p){
@@ -2670,7 +2690,7 @@ function render(arr){
     const card = document.createElement("div");
     const isChinaCard = omIsChina1688Product(p);
     const externalSpec=omExternalPlatformSpec(p);
-    card.className = `pcard ${isChinaCard ? `china1688Card externalMarketCard external-${externalSpec.key}` : "stockCard"}`;
+    card.className = `pcard ${isChinaCard ? `china1688Card externalMarketCard external-${externalSpec.styleKey}` : "stockCard"}`;
     card.setAttribute("data-product-kind", isChinaCard ? "china1688" : "stock");
 
     const isFav = favs.has(p.id);
@@ -2697,8 +2717,8 @@ for(const b of adminBadges.slice(0,3)){
 const badgeHTML = badgeHtmlParts.length ? `<div class="pbadgeStack">${badgeHtmlParts.join("")}</div>` : "";
 const authHTML = renderProductTypeBadge(p);
 const sellerMiniHTML = isChinaCard ? "" : renderSellerMiniLine(p);
-const chinaCardHead = isChinaCard ? `<div class="china1688Ribbon"><i class="fa-solid ${escapeHtml(externalSpec.icon)}"></i><span>${escapeHtml(externalSpec.short)} katalog</span></div>` : "";
-const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i class="fa-solid ${escapeHtml(externalSpec.icon)}"></i> ${escapeHtml(externalSpec.delivery)}</span><small>${Math.max(1,Number(p?.deliveryMinDays||15)||15)}–${Math.max(1,Number(p?.deliveryMaxDays||30)||30)} kun</small></div>` : "";
+const chinaCardHead = isChinaCard ? `<div class="china1688Ribbon"><i class="fa-solid ${escapeHtml(externalSpec.icon)}"></i><span>${escapeHtml(externalSpec.short)}</span></div>` : "";
+const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i class="fa-solid ${escapeHtml(externalSpec.icon)}"></i> ${escapeHtml(externalSpec.delivery)}</span><small>${escapeHtml(externalSpec.etaText)}</small></div>` : "";
 
     const st = getStats(p.id);
     const showAvg = st.count ? st.avg : 0;
@@ -2906,7 +2926,11 @@ function renderChina1688VariantModal(p){
   const groups=om1688Groups(p);
   const sel=om1688SelectionFor(p,vState.sel||{}, {defaultFirst:false});
   vState.sel=sel;
-  if(els.v1688Notice) els.v1688Notice.hidden=false;
+  if(els.v1688Notice){
+    const isChina=omIsChinaOriginProduct(p);
+    els.v1688Notice.hidden=false;
+    els.v1688Notice.innerHTML=`<i class="fa-solid ${isChina?"fa-plane-arrival":"fa-location-dot"}"></i><div><b>${isChina?"Xitoydan buyurtma mahsuloti":"O‘zbekiston mahsuloti"}</b><span>${isChina?"Kerakli variantlarni aniq tanlang. Mahsulot taxminan 20 kunda olib kelinadi.":"Kerakli variantlarni aniq tanlang. Yetkazish muddati savatda manzil tanlangandan keyin hisoblanadi."}</span></div>`;
+  }
   if(els.v1688Groups){
     els.v1688Groups.hidden=false;
     els.v1688Groups.innerHTML=groups.map(group=>`<div class="v1688Group"><div class="v1688GroupLabel"><b>${escapeHtml(group.name||"Variant")}</b><span>${(group.options||[]).length} ta</span></div><div class="v1688OptionRow">${(group.options||[]).map(opt=>{
@@ -4154,7 +4178,7 @@ async function omFetchProductForPage(id){
 }
 
 function omProductPageTagsHtml(p){
-  const raw = omProductTags(p).map(t=>String(t||"").trim()).filter(Boolean);
+  const raw = omCustomerSafeTags(p).map(t=>String(t||"").trim()).filter(Boolean);
   const tags = [...new Map(raw.map(t=>[t.toLowerCase(), t])).values()].slice(0,6);
   if(!tags.length) return "";
   return tags.map(t=>{
@@ -4207,14 +4231,12 @@ function omIsCargoProduct(p){
 
 function omProductPageCargoHtml(p){
   if(!omIsChina1688Product(p) && !omIsCargoProduct(p)) return "";
-  const min = Math.max(1, Number(p?.deliveryMinDays || p?.pMinDays || 15) || 15);
-  const max = Math.max(min, Number(p?.deliveryMaxDays || p?.pMaxDays || 30) || 30);
-  const prepay = p?.prepayRequired !== false;
-  const spec=omExternalPlatformSpec(p);
+  const spec=omExternalPlatformSpec(p),isChina=omIsChinaOriginProduct(p);
+  const prepay = isChina && p?.prepayRequired !== false;
   return `<section class="ppCargoCard" aria-label="Buyurtma asosidagi mahsulot ma’lumoti">
     <div class="ppCargoIcon"><i class="fa-solid ${escapeHtml(spec.icon)}"></i></div>
-    <div class="ppCargoCopy"><b>${omIsExternalMarketProduct(p)?escapeHtml(spec.label)+" katalogi":"Buyurtma asosida"}</b><span>Mahsulot siz uchun olib kelinadi</span></div>
-    <div class="ppCargoFacts"><em><i class="fa-regular fa-clock"></i>${min}–${max} kun</em>${prepay?`<em><i class="fa-solid fa-shield-halved"></i>Oldindan to‘lov</em>`:""}</div>
+    <div class="ppCargoCopy"><b>${isChina?"Xitoydan olib kelinadi":"O‘zbekiston ichidan yetkaziladi"}</b><span>${isChina?"Mahsulot siz uchun buyurtma asosida olib kelinadi":"Aniq muddat savatda manzil tanlangandan keyin hisoblanadi"}</span></div>
+    <div class="ppCargoFacts">${isChina?`<em><i class="fa-regular fa-clock"></i>Taxminan 20 kun</em>`:""}${prepay?`<em><i class="fa-solid fa-shield-halved"></i>Oldindan to‘lov</em>`:""}</div>
   </section>`;
 }
 
@@ -4420,7 +4442,7 @@ function renderProductPage(){
   const sel = getSel(p);
   const imgs = getImagesFor(p, sel);
   const pricing = getVariantPricing(p, sel);
-  const desc = omProductText(p, "description", p.description || p.desc || "");
+  const desc = omCustomerSafeExternalText(p,omProductText(p, "description", p.description || p.desc || ""));
   const favOn = favs.has(p.id);
   const catTrail = omQVCatTrailHtml(p);
   const catCard = omQVCatCardHtml(p);
@@ -4647,7 +4669,7 @@ function bindProductPage(p){
       pricing: getVariantPricing(p, getSel(p)),
       rating: Number(p?.rating || 0),
       reviewsCount: Number(p?.reviewsCount || p?.reviews || 0),
-      tags: omProductTags(p),
+      tags: omCustomerSafeTags(p),
       images: galleryImages,
       startIndex: galleryIndex,
       onSelect: (i)=>syncGallery(i, {scroll:false}),
@@ -4767,14 +4789,12 @@ function omQVVariantHtml(p, interactive=false){
   return parts.length ? parts.join("") : `<div class="qvVarEmpty"><i class="fa-solid fa-check"></i> Variant tanlash shart emas</div>`;
 }
 function omQVTrustHtml(p){
-  const t = String(p?.fulfillmentType || p?.pType || p?.deliveryType || "stock").toLowerCase();
+  const isChina=omIsChinaOriginProduct(p);
   const weight = Number(p?.weightKg ?? p?.weight ?? p?.massKg ?? 0) || 0;
-  const min = Number(p?.deliveryMinDays || p?.pMinDays || 0) || 0;
-  const max = Number(p?.deliveryMaxDays || p?.pMaxDays || 0) || 0;
-  const eta = max ? `${omDeliveryDateRange(p)} • ${min||1}–${max} kun` : (t.includes("cargo") ? omDeliveryDateRange({...p,deliveryMinDays:15,deliveryMaxDays:30}) : "Tez yetkazish");
+  const eta = isChina ? "Taxminan 20 kun" : "Manzil tanlangandan keyin";
   return `
     <div class="qvTrustItem"><i class="fa-solid fa-truck-fast"></i><span>Yetkazish</span><b>${eta}</b></div>
-    <div class="qvTrustItem"><i class="fa-solid fa-box"></i><span>Holati</span><b>${t.includes("cargo") ? "Keltirib beramiz" : "O‘zimizda"}</b></div>
+    <div class="qvTrustItem"><i class="fa-solid fa-box"></i><span>Holati</span><b>${isChina ? "Xitoydan olib kelamiz" : "O‘zbekistonda"}</b></div>
     <div class="qvTrustItem"><i class="fa-solid fa-weight-hanging"></i><span>Vazn</span><b>${weight ? `${weight} kg` : "—"}</b></div>`;
 }
 function omQVMetricHtml(p){
@@ -5035,7 +5055,7 @@ async function openMini(kind, productId){
 
   // content
   if(kind === "info"){
-    const desc = omProductText(p, "description", p.description || p.desc || "").toString().trim();
+    const desc = omCustomerSafeExternalText(p,omProductText(p, "description", p.description || p.desc || "")).toString().trim();
     els.miniBody.innerHTML = `
       <div class="miniDesc">${desc ? escapeHtml(desc) : `<span class="muted">Tavsif kiritilmagan.</span>`}</div>
     `;
@@ -5654,9 +5674,13 @@ function omPickupPointDistance(point,loc=omPickupUserLocation){
   return omHaversineKm(lat,lng,Number(point.lat),Number(point.lng));
 }
 function omPickupMapUrl(p){return omPickupHasCoords(p)?`https://maps.google.com/?q=${encodeURIComponent(`${Number(p.lat)},${Number(p.lng)}`)}`:"";}
+function omPickupCustomerEta(point={}){
+  const built=(typeof buildSelectedItems==="function")?buildSelectedItems():null;
+  return omCheckoutEtaText(built,{method:"pickup_point",distanceKm:omPickupPointDistance(point),pickupPoint:point,lat:point?.lat,lng:point?.lng});
+}
 function omPickupPointSnapshot(point,weightKg){
   const quote=omPickupPointQuote(point,weightKg);const distanceKm=omPickupPointDistance(point);const mapUrl=omPickupMapUrl(point);
-  return {id:point.id,name:point.name,address:point.address,postalCode:point.postalCode||"",workingHours:point.workingHours||"",lat:point.lat,lng:point.lng,pointType:point.pointType,sourceType:point.sourceType||"",region:point.region||"",district:point.district||"",firstKgFeeUZS:quote.firstKgFeeUZS,extraKgFeeUZS:quote.extraKgFeeUZS,billedKg:quote.billedKg,feeUZS:quote.feeUZS,minDays:point.minDays,maxDays:point.maxDays,etaText:point.etaText,distanceKm:Number.isFinite(Number(distanceKm))?Number(distanceKm):null,mapUrl};
+  return {id:point.id,name:point.name,address:point.address,postalCode:point.postalCode||"",workingHours:point.workingHours||"",lat:point.lat,lng:point.lng,pointType:point.pointType,sourceType:point.sourceType||"",region:point.region||"",district:point.district||"",firstKgFeeUZS:quote.firstKgFeeUZS,extraKgFeeUZS:quote.extraKgFeeUZS,billedKg:quote.billedKg,feeUZS:quote.feeUZS,minDays:point.minDays,maxDays:point.maxDays,etaText:omPickupCustomerEta(point)||"",distanceKm:Number.isFinite(Number(distanceKm))?Number(distanceKm):null,mapUrl};
 }
 async function omLoadPickupPoints(){
   let cached=[];try{const raw=localStorage.getItem(OM_PICKUP_POINTS_CACHE_KEY);if(raw)cached=omNormalizePickupPoints(JSON.parse(raw));}catch(_e){}
@@ -5721,7 +5745,7 @@ function omPickupBuildCard(p,selectedId){
   const quote=omPickupPointQuote(p,((typeof buildSelectedItems==="function"&&buildSelectedItems()?.totalWeightKg)||0));
   const dist=omPickupPointDistance(p),distText=Number.isFinite(dist)?`${dist.toFixed(dist>=10?0:1)} km`:"";
   const checked=String(p.id)===String(selectedId),isBq=p.pointType==="bir_qadam";
-  return `<label class="pickupPointCard ${checked?'isSelected':''} ${isBq?'isBirQadam':'isOrzuMall'}" data-pickup-point-card="${omPickupEsc(p.id)}"><input class="pickupPointRadio" type="radio" name="pickupPointRadio" value="${omPickupEsc(p.id)}" ${checked?'checked':''}><div class="pickupPointCardMain"><div class="pickupPointCardTitleRow"><b>${omPickupEsc(p.name)}</b><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i>${isBq?'Bir Qadam':'OrzuMall'}</span></div><span class="pickupPointAddress">${omPickupEsc(p.address||'Manzil ko‘rsatilmagan')}</span><div class="pickupPointMeta"><span><i class="fa-solid fa-envelopes-bulk"></i>${omPickupEsc(p.postalCode||'Indeks yo‘q')}</span><span><i class="fa-solid fa-truck-fast"></i>${omPickupEsc(p.etaText||'Muddat yo‘q')}</span>${distText?`<span><i class="fa-solid fa-route"></i>${omPickupEsc(distText)}</span>`:''}</div></div><div class="pickupPointCardPrice"><small>Yetkazish</small><b>${moneyUZS(quote.feeUZS)}</b><span>${checked?'Tanlandi':'Tanlash'}</span></div></label>`;
+  return `<label class="pickupPointCard ${checked?'isSelected':''} ${isBq?'isBirQadam':'isOrzuMall'}" data-pickup-point-card="${omPickupEsc(p.id)}"><input class="pickupPointRadio" type="radio" name="pickupPointRadio" value="${omPickupEsc(p.id)}" ${checked?'checked':''}><div class="pickupPointCardMain"><div class="pickupPointCardTitleRow"><b>${omPickupEsc(p.name)}</b><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i>${isBq?'Bir Qadam':'OrzuMall'}</span></div><span class="pickupPointAddress">${omPickupEsc(p.address||'Manzil ko‘rsatilmagan')}</span><div class="pickupPointMeta"><span><i class="fa-solid fa-envelopes-bulk"></i>${omPickupEsc(p.postalCode||'Indeks yo‘q')}</span>${distText?`<span><i class="fa-solid fa-route"></i>${omPickupEsc(distText)}</span>`:''}</div></div><div class="pickupPointCardPrice"><small>Yetkazish</small><b>${moneyUZS(quote.feeUZS)}</b><span>${checked?'Tanlandi':'Tanlash'}</span></div></label>`;
 }
 function omPickupBuildGroupedCards(points,selectedId){
   if(!points.length) return '<div class="pickupPointEmpty"><i class="fa-solid fa-magnifying-glass-location"></i><b>Mos topshirish punkti topilmadi</b><span>Qidiruvni tozalang yoki boshqa filtrni tanlang.</span></div>';
@@ -5825,9 +5849,10 @@ function omRenderPickupHeroPreview(points){
   const isBq=point.pointType==="bir_qadam";
   const quote=omPickupPointQuote(point,((typeof buildSelectedItems==="function"&&buildSelectedItems()?.totalWeightKg)||0));
   const dist=omPickupPointDistance(point),distText=Number.isFinite(dist)?`${dist.toFixed(dist>=10?0:1)} km`:"GPS orqali aniqlanadi";
+  const pickupEta=omReadSelectedPickupPointId()?omPickupCustomerEta(point):"";
   const mapUrl=omPickupMapUrl(point);
   const recs=omPickupRecommendedPoints(points,3,point.id);
-  hero.innerHTML=`<div class="pickupHeroCard ${isBq?'isBirQadam':'isOrzuMall'}"><div class="pickupHeroInfo"><div class="pickupHeroIcon"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i></div><div class="pickupHeroText"><div class="pickupHeroBadges"><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(point))}</span>${isBq?'<span class="pickupPointOfficialBadge">UzPost</span>':'<span class="pickupPointOfficialBadge pickupPointOfficialBadgeOrzu">OrzuMall</span>'}<span class="pickupPointOfficialBadge pickupPointRegionBadge">${omPickupEsc(omPickupRegionLabel(point))}</span></div><b>${omPickupEsc(point.name)}</b><span>${omPickupEsc(point.address||'Manzil ko‘rsatilmagan')}</span><div class="pickupHeroChipRow"><span><i class="fa-solid fa-route"></i> ${omPickupEsc(distText)}</span><span><i class="fa-solid fa-truck-fast"></i> ${omPickupEsc(point.etaText||'Muddat ko‘rsatilmagan')}</span><span><i class="fa-solid fa-wallet"></i> ${moneyUZS(quote.feeUZS)}</span></div></div></div><div class="pickupHeroMapWrap"><div class="pickupHeroMap" id="pickupPointPreviewMap"></div></div><div class="pickupHeroFooter"><div class="pickupHeroStats"><div><small>1 kg</small><strong>${moneyUZS(point.firstKgFeeUZS)}</strong></div><div><small>+1 kg</small><strong>${moneyUZS(point.extraKgFeeUZS)}</strong></div><div><small>Pochta indeksi</small><strong>${omPickupEsc(point.postalCode||'—')}</strong></div></div><div class="pickupHeroActions">${mapUrl?`<a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada</a>`:''}<button type="button" class="pickupHeroOpenBtn" id="pickupExplorerOpenBtnInline"><i class="fa-solid fa-expand"></i> To‘liq ekran</button></div></div>${recs.length?`<div class="pickupRecommendBlock"><div class="pickupRecommendHead"><b><i class="fa-solid fa-star"></i> Tavsiya etilgan eng yaqin 3 ta punkt</b><span>${omPickupUserLocation?'Sizga yaqin punktlar bo‘yicha saralandi.':'Lokatsiya berilganda yanada aniq tavsiya qiladi.'}</span></div><div class="pickupRecommendGrid">${recs.map(p=>{const d=omPickupPointDistance(p),dt=Number.isFinite(d)?`${d.toFixed(d>=10?0:1)} km`:'GPS';const q=omPickupPointQuote(p,((typeof buildSelectedItems==='function'&&buildSelectedItems()?.totalWeightKg)||0));return `<button type="button" class="pickupRecommendCard ${p.pointType==='bir_qadam'?'isBirQadam':'isOrzuMall'}" data-pickup-recommend="${omPickupEsc(p.id)}"><div class="pickupRecommendTop"><b>${omPickupEsc(p.name)}</b><span>${omPickupEsc(omPickupRegionLabel(p))}</span></div><div class="pickupRecommendMeta"><span><i class="fa-solid ${p.pointType==='bir_qadam'?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(p))}</span><span><i class="fa-solid fa-route"></i> ${omPickupEsc(dt)}</span></div><strong>${moneyUZS(q.feeUZS)}</strong></button>`;}).join('')}</div></div>`:''}</div>`;
+  hero.innerHTML=`<div class="pickupHeroCard ${isBq?'isBirQadam':'isOrzuMall'}"><div class="pickupHeroInfo"><div class="pickupHeroIcon"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i></div><div class="pickupHeroText"><div class="pickupHeroBadges"><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(point))}</span>${isBq?'<span class="pickupPointOfficialBadge">UzPost</span>':'<span class="pickupPointOfficialBadge pickupPointOfficialBadgeOrzu">OrzuMall</span>'}<span class="pickupPointOfficialBadge pickupPointRegionBadge">${omPickupEsc(omPickupRegionLabel(point))}</span></div><b>${omPickupEsc(point.name)}</b><span>${omPickupEsc(point.address||'Manzil ko‘rsatilmagan')}</span><div class="pickupHeroChipRow"><span><i class="fa-solid fa-route"></i> ${omPickupEsc(distText)}</span>${pickupEta?`<span><i class="fa-solid fa-truck-fast"></i> ${omPickupEsc(pickupEta)}</span>`:''}<span><i class="fa-solid fa-wallet"></i> ${moneyUZS(quote.feeUZS)}</span></div></div></div><div class="pickupHeroMapWrap"><div class="pickupHeroMap" id="pickupPointPreviewMap"></div></div><div class="pickupHeroFooter"><div class="pickupHeroStats"><div><small>1 kg</small><strong>${moneyUZS(point.firstKgFeeUZS)}</strong></div><div><small>+1 kg</small><strong>${moneyUZS(point.extraKgFeeUZS)}</strong></div><div><small>Pochta indeksi</small><strong>${omPickupEsc(point.postalCode||'—')}</strong></div></div><div class="pickupHeroActions">${mapUrl?`<a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada</a>`:''}<button type="button" class="pickupHeroOpenBtn" id="pickupExplorerOpenBtnInline"><i class="fa-solid fa-expand"></i> To‘liq ekran</button></div></div>${recs.length?`<div class="pickupRecommendBlock"><div class="pickupRecommendHead"><b><i class="fa-solid fa-star"></i> Tavsiya etilgan eng yaqin 3 ta punkt</b><span>${omPickupUserLocation?'Sizga yaqin punktlar bo‘yicha saralandi.':'Lokatsiya berilganda yanada aniq tavsiya qiladi.'}</span></div><div class="pickupRecommendGrid">${recs.map(p=>{const d=omPickupPointDistance(p),dt=Number.isFinite(d)?`${d.toFixed(d>=10?0:1)} km`:'GPS';const q=omPickupPointQuote(p,((typeof buildSelectedItems==='function'&&buildSelectedItems()?.totalWeightKg)||0));return `<button type="button" class="pickupRecommendCard ${p.pointType==='bir_qadam'?'isBirQadam':'isOrzuMall'}" data-pickup-recommend="${omPickupEsc(p.id)}"><div class="pickupRecommendTop"><b>${omPickupEsc(p.name)}</b><span>${omPickupEsc(omPickupRegionLabel(p))}</span></div><div class="pickupRecommendMeta"><span><i class="fa-solid ${p.pointType==='bir_qadam'?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(p))}</span><span><i class="fa-solid fa-route"></i> ${omPickupEsc(dt)}</span></div><strong>${moneyUZS(q.feeUZS)}</strong></button>`;}).join('')}</div></div>`:''}</div>`;
   omPickupRenderMap("pickupPointPreviewMap",point,"preview");
   document.getElementById("pickupExplorerOpenBtnInline")?.addEventListener("click",openPickupExplorerModal,{once:true});
   hero.querySelectorAll('[data-pickup-recommend]').forEach(btn=>btn.addEventListener('click',()=>omSelectPickupPoint(btn.getAttribute('data-pickup-recommend'))));
@@ -5841,9 +5866,10 @@ function omRenderPickupExplorerPreview(points){
   const isBq=point.pointType==="bir_qadam";
   const quote=omPickupPointQuote(point,((typeof buildSelectedItems==="function"&&buildSelectedItems()?.totalWeightKg)||0));
   const dist=omPickupPointDistance(point),distText=Number.isFinite(dist)?`${dist.toFixed(dist>=10?0:1)} km`:"GPS bilan aniqlanadi";
+  const pickupEta=omReadSelectedPickupPointId()?omPickupCustomerEta(point):"";
   const mapUrl=omPickupMapUrl(point);
   const recs=omPickupRecommendedPoints(points,3,point.id);
-  infoEl.innerHTML=`<div class="pickupExplorerFeatureCard ${isBq?'isBirQadam':'isOrzuMall'}"><div class="pickupExplorerFeatureTop"><div><div class="pickupHeroBadges"><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(point))}</span>${isBq?'<span class="pickupPointOfficialBadge">UzPost</span>':'<span class="pickupPointOfficialBadge pickupPointOfficialBadgeOrzu">OrzuMall</span>'}<span class="pickupPointOfficialBadge pickupPointRegionBadge">${omPickupEsc(omPickupRegionLabel(point))}</span></div><b>${omPickupEsc(point.name)}</b><span>${omPickupEsc(point.address||'Manzil ko‘rsatilmagan')}</span></div><div class="pickupExplorerMiniPrice"><small>Hozir</small><strong>${moneyUZS(quote.feeUZS)}</strong></div></div><div class="pickupExplorerFeatureMeta"><span><i class="fa-solid fa-route"></i> ${omPickupEsc(distText)}</span><span><i class="fa-regular fa-clock"></i> ${omPickupEsc(point.workingHours||'Ish vaqti ko‘rsatilmagan')}</span><span><i class="fa-solid fa-truck-fast"></i> ${omPickupEsc(point.etaText||'Muddat ko‘rsatilmagan')}</span></div><div class="pickupExplorerMarkerLegend"><span class="isBirQadam"><i></i> Bir Qadam marker</span><span class="isOrzu"><i></i> OrzuMall marker</span><span class="isSelected"><i></i> Tanlangan punkt</span></div></div>`;
+  infoEl.innerHTML=`<div class="pickupExplorerFeatureCard ${isBq?'isBirQadam':'isOrzuMall'}"><div class="pickupExplorerFeatureTop"><div><div class="pickupHeroBadges"><span class="pickupPointTypeBadge ${isBq?'birQadam':'orzuMall'}"><i class="fa-solid ${isBq?'fa-bolt':'fa-store'}"></i> ${omPickupEsc(omPickupTypeLabel(point))}</span>${isBq?'<span class="pickupPointOfficialBadge">UzPost</span>':'<span class="pickupPointOfficialBadge pickupPointOfficialBadgeOrzu">OrzuMall</span>'}<span class="pickupPointOfficialBadge pickupPointRegionBadge">${omPickupEsc(omPickupRegionLabel(point))}</span></div><b>${omPickupEsc(point.name)}</b><span>${omPickupEsc(point.address||'Manzil ko‘rsatilmagan')}</span></div><div class="pickupExplorerMiniPrice"><small>Hozir</small><strong>${moneyUZS(quote.feeUZS)}</strong></div></div><div class="pickupExplorerFeatureMeta"><span><i class="fa-solid fa-route"></i> ${omPickupEsc(distText)}</span><span><i class="fa-regular fa-clock"></i> ${omPickupEsc(point.workingHours||'Ish vaqti ko‘rsatilmagan')}</span>${pickupEta?`<span><i class="fa-solid fa-truck-fast"></i> ${omPickupEsc(pickupEta)}</span>`:''}</div><div class="pickupExplorerMarkerLegend"><span class="isBirQadam"><i></i> Bir Qadam marker</span><span class="isOrzu"><i></i> OrzuMall marker</span><span class="isSelected"><i></i> Tanlangan punkt</span></div></div>`;
   selectedEl.innerHTML=`<div class="pickupExplorerSelectedGrid"><div><small>1 kg</small><strong>${moneyUZS(point.firstKgFeeUZS)}</strong></div><div><small>+1 kg</small><strong>${moneyUZS(point.extraKgFeeUZS)}</strong></div><div><small>Indeks</small><strong>${omPickupEsc(point.postalCode||'—')}</strong></div><div><small>Hisoblangan vazn</small><strong>${quote.billedKg} kg</strong></div></div>${recs.length?`<div class="pickupExplorerRecommend"><div class="pickupExplorerRecommendHead">Tavsiya etilgan yaqin punktlar</div><div class="pickupExplorerRecommendGrid">${recs.map(p=>{const d=omPickupPointDistance(p),dt=Number.isFinite(d)?`${d.toFixed(d>=10?0:1)} km`:'GPS';return `<button type="button" class="pickupExplorerRecommendCard" data-pickup-recommend="${omPickupEsc(p.id)}"><b>${omPickupEsc(p.name)}</b><span>${omPickupEsc(omPickupRegionLabel(p))}</span><small>${omPickupEsc(dt)}</small></button>`;}).join('')}</div></div>`:''}${mapUrl?`<div class="pickupExplorerMapActions"><a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Xaritada ochish</a></div>`:''}`;
   selectedEl.querySelectorAll('[data-pickup-recommend]').forEach(btn=>btn.addEventListener('click',()=>omSelectPickupPoint(btn.getAttribute('data-pickup-recommend'))));
   omPickupRenderMap("pickupExplorerMap",point,"explorer",points);
@@ -5864,9 +5890,9 @@ function omRenderPickupPointsUI(){
   const selected=omGetPickupPointById(selectedId);
   if(!selected){selectedEl.hidden=true;return;}
   const built=(typeof buildSelectedItems==="function")?buildSelectedItems():null;
-  const quote=omPickupPointQuote(selected,built?.totalWeightKg||0),dist=omPickupPointDistance(selected),mapUrl=omPickupMapUrl(selected);
+  const quote=omPickupPointQuote(selected,built?.totalWeightKg||0),dist=omPickupPointDistance(selected),mapUrl=omPickupMapUrl(selected),pickupEta=omPickupCustomerEta(selected);
   selectedEl.hidden=false;
-  selectedEl.innerHTML=`<div class="pickupSelectedIcon"><i class="fa-solid fa-circle-check"></i></div><div class="pickupSelectedContent"><div class="pickupSelectedTop"><b>${omPickupEsc(selected.name)}</b><span>${omPickupEsc(omPickupTypeLabel(selected))}</span></div><p>${omPickupEsc(selected.address||'Manzil ko‘rsatilmagan')}</p><div class="pickupSelectedMeta"><span><i class="fa-solid fa-envelopes-bulk"></i>${omPickupEsc(selected.postalCode||'Indeks yo‘q')}</span><span><i class="fa-solid fa-wallet"></i>${moneyUZS(quote.feeUZS)}</span><span><i class="fa-solid fa-truck-fast"></i>${omPickupEsc(selected.etaText||'Muddat yo‘q')}</span>${Number.isFinite(dist)?`<span><i class="fa-solid fa-route"></i>${dist.toFixed(dist>=10?0:1)} km</span>`:''}${mapUrl?`<a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i>Xaritada</a>`:''}</div></div>`;
+  selectedEl.innerHTML=`<div class="pickupSelectedIcon"><i class="fa-solid fa-circle-check"></i></div><div class="pickupSelectedContent"><div class="pickupSelectedTop"><b>${omPickupEsc(selected.name)}</b><span>${omPickupEsc(omPickupTypeLabel(selected))}</span></div><p>${omPickupEsc(selected.address||'Manzil ko‘rsatilmagan')}</p><div class="pickupSelectedMeta"><span><i class="fa-solid fa-envelopes-bulk"></i>${omPickupEsc(selected.postalCode||'Indeks yo‘q')}</span><span><i class="fa-solid fa-wallet"></i>${moneyUZS(quote.feeUZS)}</span>${pickupEta?`<span><i class="fa-solid fa-truck-fast"></i>${omPickupEsc(pickupEta)}</span>`:''}${Number.isFinite(dist)?`<span><i class="fa-solid fa-route"></i>${dist.toFixed(dist>=10?0:1)} km</span>`:''}${mapUrl?`<a href="${omPickupEsc(mapUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i>Xaritada</a>`:''}</div></div>`;
 }
 function omSelectPickupPoint(id){const point=omGetPickupPointById(id);if(!point)return;omWriteSelectedPickupPointId(point.id);omRenderPickupPointsUI();try{updateCheckoutCompactSummary();updateCheckoutSubmitVisibility();omRenderCartDeliverySummary();updateCartPrimaryCTA();}catch(_e){}}
 async function omDetectPickupNearest(){
@@ -6027,7 +6053,9 @@ function updatePaymentModalSummary(){
   totalEl.textContent = moneyUZS(total);
   productsEl.textContent = `${qty} ta mahsulot: ${moneyUZS(built.totalUZS)} + yetkazish: ${deliveryFee ? moneyUZS(deliveryFee) : "Bepul"}${discount ? ` − promokod: ${moneyUZS(discount)}` : ''}.`;
   const methodText = info.data?.method === "pickup" ? "Do‘kondan olib ketish" : (info.data?.method === "pickup_point" ? "Topshirish punktidan olib ketish" : (info.data?.serviceLabel || "Yetkazib berish"));
-  const addrText = info.data?.method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : (info.data?.addressText || "Lokatsiya saqlandi.");
+  const etaText=info.data?.deliveryEtaText||'';
+  const addrBase = info.data?.method === "pickup" ? "Mahsulotni do‘kondan o‘zingiz olib ketasiz." : (info.data?.addressText || "Lokatsiya saqlandi.");
+  const addrText = etaText ? `${addrBase} • ${etaText}` : addrBase;
   deliveryEl.innerHTML = `
     <div class="paymentDeliveryIcon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></div>
     <div class="paymentDeliveryText"><b>${escapeHtml(methodText)}</b><span>${escapeHtml(addrText)}</span></div>
@@ -6165,7 +6193,8 @@ function updateCheckoutFinalSummary(prebuilt=null, preinfo=null){
       : (info.data?.method === 'pickup_point'
         ? `Topshirish punkti • ${qty} ta mahsulot`
         : `${info.data?.serviceLabel || 'Yetkazib berish'} • ${qty} ta mahsulot`);
-    subEl.textContent = `${methodText}. Mahsulotlar ${moneyUZS(productsTotal)} + yetkazish ${deliveryFee ? moneyUZS(deliveryFee) : 'Bepul'}.`;
+    const etaText=info.data?.deliveryEtaText||'';
+    subEl.textContent = `${methodText}${etaText?` • ${etaText}`:''}. Mahsulotlar ${moneyUZS(productsTotal)} + yetkazish ${deliveryFee ? moneyUZS(deliveryFee) : 'Bepul'}.`;
     return;
   }
   labelEl.textContent = 'Mahsulotlar summasi';
@@ -6501,9 +6530,40 @@ async function detectDeliveryLocation(){
   }
 }
 
+function omPointInPolygon(lat,lng,polygon=[]){
+  let inside=false;
+  for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
+    const yi=Number(polygon[i][0]),xi=Number(polygon[i][1]),yj=Number(polygon[j][0]),xj=Number(polygon[j][1]);
+    const cross=((yi>lat)!==(yj>lat)) && (lng < (xj-xi)*(lat-yi)/((yj-yi)||1e-9)+xi);
+    if(cross) inside=!inside;
+  }
+  return inside;
+}
+const OM_NAMANGAN_REGION_POLYGON=[[40.68,70.42],[41.28,70.35],[42.20,70.68],[42.24,71.76],[41.58,72.24],[40.72,72.18]];
+function omNamanganDeliveryArea(data={}){
+  const text=[data.region,data.district,data.addressText,data.pickupPoint?.region,data.pickupPoint?.district,data.pickupPoint?.address,data.location?.region,data.location?.district,data.location?.address].filter(Boolean).join(' ').toLowerCase();
+  if(text.includes('namangan')) return true;
+  const lat=Number(data.lat??data.pickupPoint?.lat??data.location?.lat),lng=Number(data.lng??data.pickupPoint?.lng??data.location?.lng);
+  return Number.isFinite(lat)&&Number.isFinite(lng)&&omPointInPolygon(lat,lng,OM_NAMANGAN_REGION_POLYGON);
+}
+function omCheckoutEtaText(built,data={}){
+  const items=Array.isArray(built?.items)?built.items:[];
+  if(items.some(item=>String(item?.originCountry||'').toUpperCase()==='CN')) return 'Xitoydan: taxminan 20 kun';
+  if(data.method==='pickup') return '';
+  const km=Number(data.distanceKm);
+  if(Number.isFinite(km)&&km<=30) return 'Ertaga';
+  if(omNamanganDeliveryArea(data)) return '2 kun ichida';
+  return '3 kun ichida';
+}
+function omWithCheckoutEta(built,data={}){
+  const deliveryEtaText=omCheckoutEtaText(built,data);
+  return {...data,deliveryEtaText,etaText:deliveryEtaText||data.etaText||''};
+}
+
 function getCheckoutDeliveryInfo(){
   const method = getDeliveryMethod();
   const built = (typeof buildSelectedItems === "function") ? buildSelectedItems() : null;
+  const withEta = data => omWithCheckoutEta(built, data);
   if(method !== 'pickup' && method !== 'pickup_point' && method !== 'delivery'){
     return { ok:false, reason:'Yetkazish usulini tanlang.' };
   }
@@ -6511,14 +6571,14 @@ function getCheckoutDeliveryInfo(){
     omDeliveryQuote = null;
     return {
       ok: true,
-      data: {
+      data: withEta({
         method: 'pickup',
         methodLabel: 'Do‘kondan olib ketish',
         addressText: 'Do‘kondan olib ketish',
         deliveryFeeUZS: 0,
         service: 'pickup',
         totalWithDeliveryUZS: built?.totalUZS || 0
-      }
+      })
     };
   }
   if(method === 'pickup_point'){
@@ -6528,7 +6588,7 @@ function getCheckoutDeliveryInfo(){
     if(!point) return {ok:false,reason:'Davom etish uchun topshirish punktini tanlang.'};
     const quote=omPickupPointQuote(point,Number(built.totalWeightKg||0));
     const snap=omPickupPointSnapshot(point,Number(built.totalWeightKg||0));
-    return {ok:true,data:{
+    return {ok:true,data:withEta({
       method:'pickup_point',methodLabel:'Topshirish punktidan olib ketish',
       service:'pickup_point',serviceLabel:`Topshirish punkti — ${point.name}`,
       addressText:`${point.name}${point.address?' — '+point.address:''}${point.postalCode?' • Indeks: '+point.postalCode:''}${point.workingHours?' • Ish vaqti: '+point.workingHours:''}`,
@@ -6537,7 +6597,7 @@ function getCheckoutDeliveryInfo(){
       distanceKm:snap.distanceKm,totalWeightKg:Number(built.totalWeightKg||0),billedKg:quote.billedKg,
       deliveryFeeUZS:quote.feeUZS,deliveryRawFeeUZS:quote.rawFeeUZS,
       productsTotalUZS:built.totalUZS,totalWithDeliveryUZS:Number(built.totalUZS||0)+quote.feeUZS
-    }};
+    })};
   }
   if(!omDeliveryLocation){
     const saved = omBestSavedAddress();
@@ -6560,7 +6620,7 @@ function getCheckoutDeliveryInfo(){
   const addressText = coordText ? `${savedTitle ? savedTitle + ": " : "Avto lokatsiya: "}${coordText}` : (savedTitle || "");
   return {
     ok: true,
-    data: {
+    data: withEta({
       method: 'delivery',
       methodLabel: omQuoteLabel(quote),
       service: rec?.service || 'uzpost',
@@ -6587,7 +6647,7 @@ function getCheckoutDeliveryInfo(){
       productsTotalUZS: built.totalUZS,
       totalWithDeliveryUZS: quote.totalWithDeliveryUZS,
       deliveryQuote: quote
-    }
+    })
   };
 }
 
@@ -7498,9 +7558,10 @@ function buildSelectedItems(){
       weightKg,
       lineWeightKg,
       fulfillmentType: (p?.fulfillmentType || "stock"),
-      deliveryMinDays: Number(p?.deliveryMinDays ?? (p?.fulfillmentType==="cargo"?15:1)),
-      deliveryMaxDays: Number(p?.deliveryMaxDays ?? (p?.fulfillmentType==="cargo"?30:7)),
-      prepayRequired: !!(p?.prepayRequired ?? (p?.fulfillmentType==="cargo")),
+      originCountry: omIsChinaOriginProduct(p) ? "CN" : "UZ",
+      deliveryMinDays: omIsChinaOriginProduct(p) ? 20 : Number(p?.deliveryMinDays ?? 1),
+      deliveryMaxDays: omIsChinaOriginProduct(p) ? 20 : Number(p?.deliveryMaxDays ?? 3),
+      prepayRequired: !!(p?.prepayRequired ?? omIsChinaOriginProduct(p)),
     };
   });
   const totalUZS = items.reduce((s,it)=> s + (it.priceUZS||0) * (it.qty||0), 0);
@@ -9035,8 +9096,8 @@ function omCxMergeProducts(list=[]){let changed=false;for(const raw of Array.isA
 function omCxSearchStatus(message='',done=false){const el=document.getElementById('cxSearchStatus');if(!el)return;el.hidden=!message;el.classList.toggle('isDone',!!done);el.innerHTML=message?`<i class="fa-solid ${done?'fa-circle-check':'fa-magnifying-glass'}"></i><span>${escapeHtml(message)}</span>`:''}
 async function omCxRunProductSearch(q,seq){try{let rows=omCxSearchState.cache.get(q);if(!rows){const out=await omCxApi('search_products',{query:q,limit:28});rows=Array.isArray(out.products)?out.products:[];omCxSearchState.cache.set(q,rows)}if(seq!==omCxSearchState.seq||q!==omCxSearchState.query)return;omCxMergeProducts(rows);omCxSearchStatus(`${rows.length} ta mos mahsulot katalog bo‘yicha tekshirildi.`,true);applyFilterSort()}catch(_){if(seq===omCxSearchState.seq)omCxSearchStatus('Katalog qidiruvini yakunlab bo‘lmadi.',false)}finally{if(seq===omCxSearchState.seq){omCxSearchState.loading=false;setTimeout(()=>{if(omCxSearchState.query===q)omCxSearchStatus('',false)},2200)}}}
 function omScheduleProductSearch(raw){const q=norm(raw);if(q===omCxSearchState.query)return;omCxSearchState.query=q;omCxSearchState.seq+=1;clearTimeout(omCxSearchState.timer);if(q.length<2){omCxSearchState.loading=false;omCxSearchStatus('',false);return}omCxSearchState.loading=true;omCxSearchStatus('Butun katalog bo‘yicha qidirilmoqda...');const seq=omCxSearchState.seq;omCxSearchState.timer=setTimeout(()=>omCxRunProductSearch(q,seq),220)}
-function omRememberViewedProduct(p){if(!p?.id)return;const sel=getSel(p),pricing=getVariantPricing(p,sel);const snap={id:String(p.id),name:omProductText(p,'name',p.name||'Mahsulot'),image:getCurrentImage(p,sel)||p.images?.[0]||p.image||'',price:Number(pricing.price||p.price||0),deliveryMinDays:Number(p.deliveryMinDays||1),deliveryMaxDays:Number(p.deliveryMaxDays||7),fulfillmentType:String(p.fulfillmentType||'stock'),viewedAt:Date.now()};const next=[snap,...omCxReadRecent().filter(x=>String(x.id)!==snap.id)].slice(0,18);omCxWriteRecent(next);setTimeout(()=>omRenderRecentShelf(),0);omCxRecommendations=[];setTimeout(()=>omRefreshRecommendations(true),250)}
-function omCxDeliveryText(p={}){try{return omDeliveryDateRange(p)}catch(_){return `${Number(p.deliveryMinDays||1)}–${Number(p.deliveryMaxDays||7)} kun`}}
+function omRememberViewedProduct(p){if(!p?.id)return;const sel=getSel(p),pricing=getVariantPricing(p,sel);const snap={id:String(p.id),name:omProductText(p,'name',p.name||'Mahsulot'),image:getCurrentImage(p,sel)||p.images?.[0]||p.image||'',price:Number(pricing.price||p.price||0),deliveryMinDays:omIsChinaOriginProduct(p)?20:Number(p.deliveryMinDays||1),deliveryMaxDays:omIsChinaOriginProduct(p)?20:Number(p.deliveryMaxDays||3),fulfillmentType:String(p.fulfillmentType||'stock'),originCountry:omIsChinaOriginProduct(p)?'CN':'UZ',sourcePlatform:String(p.sourcePlatform||p.externalMarket?.platform||''),viewedAt:Date.now()};const next=[snap,...omCxReadRecent().filter(x=>String(x.id)!==snap.id)].slice(0,18);omCxWriteRecent(next);setTimeout(()=>omRenderRecentShelf(),0);omCxRecommendations=[];setTimeout(()=>omRefreshRecommendations(true),250)}
+function omCxDeliveryText(p={}){return omIsChinaOriginProduct(p)?'Taxminan 20 kun':'Manzil tanlangandan keyin'}
 function omCxMiniCardHtml(p={},badge=''){const id=String(p.id||''),name=omProductText(p,'name',p.name||'Mahsulot'),sel=getSel(p),price=Number(getVariantPricing(p,sel)?.price||p.price||0),img=getCurrentImage(p,sel)||p.images?.[0]||p.image||'./logo-256.webp';return `<article class="cxMiniCard" data-cx-product="${escapeHtml(id)}"><div class="cxMiniImg"><img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">${badge?`<span class="cxMiniBadge">${escapeHtml(badge)}</span>`:''}</div><div class="cxMiniBody"><div class="cxMiniName">${escapeHtml(name)}</div><div class="cxMiniPrice">${moneyUZS(price)}</div><div class="cxMiniDelivery"><i class="fa-solid fa-truck-fast"></i> ${escapeHtml(omCxDeliveryText(p))}</div></div></article>`}
 function omCxBindShelf(root){root?.querySelectorAll('[data-cx-product]').forEach(card=>card.addEventListener('click',()=>openProductPage(card.getAttribute('data-cx-product'))))}
 function omRenderRecentShelf(){const section=document.getElementById('cxRecentSection'),rail=document.getElementById('cxRecentRail');if(!section||!rail)return;const rows=omCxReadRecent();section.hidden=!rows.length;rail.innerHTML=rows.map(x=>omCxMiniCardHtml(x,'Ko‘rilgan')).join('');omCxBindShelf(rail)}
