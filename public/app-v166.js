@@ -3492,27 +3492,36 @@ function omOrderItemReviewStateHtml(order,it,index=0){
   if(review){
     const stars=Math.max(0,Math.min(5,Number(review.stars)||0));
     const pending=String(review.moderationStatus||"pending")!=="approved";
-    return `<div class="orderLineReviewSaved"><b>${"★".repeat(stars)}${"☆".repeat(5-stars)}</b><span>${pending?"Admin tasdig‘i kutilmoqda":"Sharhingiz namoyishda"}</span>${review.text?`<p>${escapeHtml(review.text)}</p>`:""}</div>`;
+    return `<div class="orderLineReviewSaved">
+      <div class="orderLineReviewSavedTop"><span class="orderLineReviewStars">${"★".repeat(stars)}${"☆".repeat(5-stars)}</span><b>${pending?"Tekshiruvda":"E’lon qilingan"}</b></div>
+      ${review.text?`<p>${escapeHtml(review.text)}</p>`:""}
+    </div>`;
   }
   if(delivered){
-    return `<button class="orderLineReviewBtn" type="button" data-order-action="item_review" data-order-id="${escapeHtml(String(order?.id||order?.orderId||""))}" data-order-item-index="${idx}"><i class="fa-solid fa-star"></i> Baho va sharh yozish</button>`;
+    return `<button class="orderLineReviewBtn" type="button" data-order-action="item_review" data-order-id="${escapeHtml(String(order?.id||order?.orderId||""))}" data-order-item-index="${idx}"><span class="orderLineReviewBtnIcon"><i class="fa-solid fa-star"></i></span><span><b>Baho bering</b><small>Mahsulot haqida fikringizni yozing</small></span><i class="fa-solid fa-chevron-right"></i></button>`;
   }
-  return `<div class="orderLineReviewLocked"><i class="fa-solid fa-lock"></i><span>Yetkazilgandan keyin baholash mumkin</span></div>`;
+  return `<div class="orderLineReviewLocked"><span class="orderLineReviewLockedIcon"><i class="fa-solid fa-lock"></i></span><span><b>Baholash hali yopiq</b><small>Buyurtma yetkazilgandan keyin ochiladi</small></span></div>`;
 }
 function omOrderHistoryItemsHtml(order){
   const items=Array.isArray(order?.items)?order.items:[];
   if(!items.length) return `<div class="orderHistoryEmptyItems">Mahsulotlar topilmadi.</div>`;
-  return `<div class="orderHistoryProducts">${items.map((it,index)=>{
+  return `<section class="orderHistoryProducts"><div class="orderHistoryProductsHead"><span><i class="fa-solid fa-bag-shopping"></i> Mahsulotlar</span><b>${items.length} xil</b></div>${items.map((it,index)=>{
     const image=omOrderItemImage(it),variant=omOrderItemVariantText(it),qty=Math.max(1,Number(it?.qty||1)||1);
+    const price=Number(it?.priceUZS||it?.price||0)||0;
+    const line=Number(it?.lineTotalUZS||it?.subtotalUZS||0)||(price*qty);
+    const chips=variant?variant.split(/\s*\/\s*|\s*•\s*/).filter(Boolean).slice(0,5):[];
     return `<article class="orderHistoryProduct">
-      <div class="orderHistoryProductMedia">${image?`<img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async">`:`<i class="fa-solid fa-image"></i>`}</div>
-      <div class="orderHistoryProductBody">
-        <b>${escapeHtml(receiptItemName(it))}</b>
-        <span>${escapeHtml([variant,`${qty} ta`].filter(Boolean).join(" • "))}</span>
-        ${omOrderItemReviewStateHtml(order,it,index)}
+      <div class="orderHistoryProductMain">
+        <div class="orderHistoryProductMedia">${image?`<img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async">`:`<i class="fa-solid fa-image"></i>`}<span>${qty}×</span></div>
+        <div class="orderHistoryProductBody">
+          <b>${escapeHtml(receiptItemName(it))}</b>
+          ${chips.length?`<div class="orderHistoryVariantChips">${chips.map(x=>`<span>${escapeHtml(x)}</span>`).join("")}</div>`:""}
+          <div class="orderHistoryProductFoot"><span>${qty} dona</span><strong>${escapeHtml(moneyUZS(line))}</strong></div>
+        </div>
       </div>
+      <div class="orderHistoryProductReview">${omOrderItemReviewStateHtml(order,it,index)}</div>
     </article>`;
-  }).join("")}</div>`;
+  }).join("")}</section>`;
 }
 
 function orderCustomerActionButtonsHTML(order){
@@ -3533,16 +3542,19 @@ function getOrderFromCache(orderId){
 }
 function setReviewStars(stars){
   const n=Math.max(0,Math.min(5,Number(stars)||0));
+  const labels={0:'Bahoni tanlang',1:'Yoqmadi',2:'Qoniqarsiz',3:'Yaxshi',4:'Juda yaxshi',5:'A’lo'};
   omOrderActionState.stars=n;
   document.querySelectorAll('#orderReviewStars [data-review-star]').forEach(btn=>{
-    btn.classList.toggle('isActive', Number(btn.getAttribute('data-review-star')||0)<=n);
+    const active=Number(btn.getAttribute('data-review-star')||0)<=n;
+    btn.classList.toggle('isActive', active);
+    btn.setAttribute('aria-checked', Number(btn.getAttribute('data-review-star')||0)===n ? 'true' : 'false');
   });
   const hint=document.getElementById('orderReviewStarsHint');
-  if(hint) hint.textContent=n ? `${n} yulduz tanlandi.` : 'Bahoni tanlang.';
+  if(hint) hint.innerHTML=n ? `<b>${n}/5</b><span>${labels[n]}</span>` : `<b>0/5</b><span>${labels[0]}</span>`;
 }
 function closeOrderActionModal(){
   const modal=document.getElementById('orderActionModal');
-  if(modal){ modal.classList.remove('isOpen'); modal.hidden=true; }
+  if(modal){ modal.classList.remove('isOpen','isReviewMode','isCancelMode'); modal.hidden=true; }
   try{ document.body.classList.remove('modalOpen'); }catch(_e){}
   try{ omReconcileBodyScrollLock(); }catch(_e){}
   omOrderActionState={type:"",orderId:"",stars:0,itemIndex:-1,productId:""};
@@ -3553,6 +3565,8 @@ function openOrderActionModal(type, orderId, itemIndex=-1){
   if(!order){ toast('Buyurtma topilmadi.','error'); return; }
   const modal=document.getElementById('orderActionModal');
   if(!modal) return;
+  modal.classList.toggle('isReviewMode', type==='item_review');
+  modal.classList.toggle('isCancelMode', type==='cancel');
   const title=document.getElementById('orderActionTitle');
   const help=document.getElementById('orderActionHelp');
   const summary=document.getElementById('orderActionSummary');
@@ -3569,11 +3583,16 @@ function openOrderActionModal(type, orderId, itemIndex=-1){
   const item=Number.isInteger(idx)&&idx>=0 ? (Array.isArray(order.items)?order.items[idx]:null) : null;
   if(type==="item_review" && !item){ toast("Mahsulot topilmadi.","error"); return; }
   omOrderActionState={type,orderId:oid,stars:0,itemIndex:type==="item_review"?idx:-1,productId:type==="item_review"?String(item?.productId||item?.id||""):""};
-  if(reason) reason.value='';
+  if(reason){
+    reason.value='';
+    const syncCount=()=>{ const c=document.getElementById('orderReviewCharCount'); if(c) c.textContent=`${String(reason.value||'').length}/1000`; };
+    reason.oninput=syncCount;
+    syncCount();
+  }
   if(cancelReasonSelect) cancelReasonSelect.value='';
   if(cancelReasonOther) cancelReasonOther.value='';
   if(cancelReasonOtherWrap) cancelReasonOtherWrap.hidden=true;
-  if(summary) summary.innerHTML=type==='item_review' ? `<div class="orderReviewProductPick">${omOrderItemImage(item)?`<img src="${escapeHtml(omOrderItemImage(item))}" alt="">`:''}<div><b>${escapeHtml(receiptItemName(item))}</b><span>${escapeHtml(omOrderItemVariantText(item)||'Mahsulot')}</span></div></div>` : `<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
+  if(summary) summary.innerHTML=type==='item_review' ? `<div class="orderReviewProductPick">${omOrderItemImage(item)?`<img src="${escapeHtml(omOrderItemImage(item))}" alt="">`:`<span class="orderReviewProductFallback"><i class="fa-solid fa-image"></i></span>`}<div><small>Yetkazilgan mahsulot</small><b>${escapeHtml(receiptItemName(item))}</b><span>${escapeHtml(omOrderItemVariantText(item)||'Variant tanlanmagan')}</span></div></div>` : `<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
   if(starsWrap) starsWrap.hidden = type !== 'item_review';
   if(cancelReasonWrap) cancelReasonWrap.hidden = type !== 'cancel';
   const reasonWrap=document.getElementById('orderActionReasonWrap');

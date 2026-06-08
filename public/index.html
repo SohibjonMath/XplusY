@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="./mobile-card-metrics-v177.css?v=20260608_v177_mobile_card_metrics" />
 <link rel="stylesheet" href="./review-experience-v179.css?v=20260608_v179_batch_reviews_edge_detail" />
 <link rel="stylesheet" href="./review-purchase-only-v180.css?v=20260608_v180_delivered_item_reviews" />
+<link rel="stylesheet" href="./order-review-premium-v181.css?v=20260608_v181_order_review_premium" />
 
   
   
@@ -757,21 +758,22 @@
                     <textarea id="orderCancelReasonOther" rows="3" maxlength="1000" placeholder="Sababni qisqacha yozing..."></textarea>
                   </label>
                 </div>
+                <div class="orderReviewStarsWrap" id="orderReviewStarsWrap" hidden>
+                  <div class="orderReviewStarsTitle"><span>Mahsulot sizga yoqdimi?</span><small>1 dan 5 gacha baholang</small></div>
+                  <div class="orderReviewStars" id="orderReviewStars" role="radiogroup" aria-label="Baholash">
+                    <button type="button" data-review-star="1" aria-label="1 yulduz" aria-checked="false">★</button>
+                    <button type="button" data-review-star="2" aria-label="2 yulduz" aria-checked="false">★</button>
+                    <button type="button" data-review-star="3" aria-label="3 yulduz" aria-checked="false">★</button>
+                    <button type="button" data-review-star="4" aria-label="4 yulduz" aria-checked="false">★</button>
+                    <button type="button" data-review-star="5" aria-label="5 yulduz" aria-checked="false">★</button>
+                  </div>
+                  <div class="orderReviewStarsHint" id="orderReviewStarsHint"><b>0/5</b><span>Bahoni tanlang</span></div>
+                </div>
                 <label class="field" id="orderActionReasonWrap">
                   <span id="orderActionReasonLabel">Sabab yoki izoh</span>
                   <textarea id="orderActionReason" rows="4" maxlength="1000" placeholder="Batafsil yozing..."></textarea>
+                  <small class="orderReviewTextCounter" id="orderReviewCharCount">0/1000</small>
                 </label>
-                <div class="orderReviewStarsWrap" id="orderReviewStarsWrap" hidden>
-                  <div class="orderReviewStarsTitle">Mahsulotlarni baholang</div>
-                  <div class="orderReviewStars" id="orderReviewStars" role="radiogroup" aria-label="Baholash">
-                    <button type="button" data-review-star="1" aria-label="1 yulduz">★</button>
-                    <button type="button" data-review-star="2" aria-label="2 yulduz">★</button>
-                    <button type="button" data-review-star="3" aria-label="3 yulduz">★</button>
-                    <button type="button" data-review-star="4" aria-label="4 yulduz">★</button>
-                    <button type="button" data-review-star="5" aria-label="5 yulduz">★</button>
-                  </div>
-                  <div class="orderReviewStarsHint" id="orderReviewStarsHint">Bahoni tanlang.</div>
-                </div>
               </div>
               <div class="modalBottom orderLifecycleActionBottom">
                 <button class="ghostBtn" id="orderActionCancel" type="button">Yopish</button>
@@ -808,7 +810,7 @@
   <script type="module" src="./cardpay-config.js?v=20260606_v139"></script>
   <script src="./telegram-config.js?v=20260606_v139"></script>
 <script src="./i18n.js?v=20260530_v49_mobile_select"></script>
-<script type="module" src="./app-v166.js?v=20260608_v180_delivered_item_reviews"></script>
+<script type="module" src="./app-v166.js?v=20260608_v181_order_review_premium"></script>
 <script type="module" src="./customer-presence.js?v=20260608_v175"></script>
 <script type="module" src="./customer-center.js?v=20260606_v140"></script>
 
