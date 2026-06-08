@@ -42,6 +42,7 @@ async function resolveTopupUid(db,r){
 }
 async function relatedReviewRefs(db,reviewId,review={}){
   const refs=[];
+  if(review?.itemKey||review?.source==="delivered_order_item") return refs;
   const seen=new Set();
   function push(ref){const path=ref.path;if(!seen.has(path)){seen.add(path);refs.push(ref)}}
   const uid=safeId(review.uid||reviewId);
@@ -70,7 +71,16 @@ async function setReviewAndOrder(db,productId,reviewId,review,patch){
     batch.set(ref,patch,{merge:true});
   }
   const orderId=safeId(review.orderId);
-  if(orderId) batch.set(db.doc(`orders/${orderId}`),{orderReview:{...(review||{}),...patch},updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  if(orderId){
+    const orderRef=db.doc(`orders/${orderId}`);
+    if(review?.itemKey){
+      const snap=await orderRef.get();
+      const order=snap.exists?(snap.data()||{}):{};
+      const itemReviews={...(order.itemReviews&&typeof order.itemReviews==="object"?order.itemReviews:{})};
+      itemReviews[String(review.itemKey)]={...(itemReviews[String(review.itemKey)]||review||{}),...patch};
+      batch.set(orderRef,{itemReviews,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }else batch.set(orderRef,{orderReview:{...(review||{}),...patch},updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }
   await batch.commit();
 }
 async function deleteReviewAndOrder(db,productId,reviewId,review={},adminEmail="orzumall"){
@@ -88,13 +98,14 @@ async function deleteReviewAndOrder(db,productId,reviewId,review={},adminEmail="
   }
   const orderId=safeId(review.orderId);
   if(orderId){
-    batch.set(db.doc(`orders/${orderId}`),{
-      orderReview:admin.firestore.FieldValue.delete(),
-      reviewedAt:admin.firestore.FieldValue.delete(),
-      reviewDeletedAt:admin.firestore.FieldValue.serverTimestamp(),
-      reviewDeletedBy:safeText(adminEmail,160),
-      updatedAt:admin.firestore.FieldValue.serverTimestamp()
-    },{merge:true});
+    const orderRef=db.doc(`orders/${orderId}`);
+    if(review?.itemKey){
+      const snap=await orderRef.get();
+      const order=snap.exists?(snap.data()||{}):{};
+      const itemReviews={...(order.itemReviews&&typeof order.itemReviews==="object"?order.itemReviews:{})};
+      delete itemReviews[String(review.itemKey)];
+      batch.set(orderRef,{itemReviews,reviewedItemCount:Object.keys(itemReviews).length,reviewDeletedAt:admin.firestore.FieldValue.serverTimestamp(),reviewDeletedBy:safeText(adminEmail,160),updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }else batch.set(orderRef,{orderReview:admin.firestore.FieldValue.delete(),reviewedAt:admin.firestore.FieldValue.delete(),reviewDeletedAt:admin.firestore.FieldValue.serverTimestamp(),reviewDeletedBy:safeText(adminEmail,160),updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
   }
   await batch.commit();
   return {deletedReviews,orderReviewCleared:!!orderId};

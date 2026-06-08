@@ -1,5 +1,6 @@
 // OrzuMall v48 — strict chained lifecycle; customer guided cancel reasons; admin can mark returned during shipping
 const admin = require("firebase-admin");
+const crypto = require("node:crypto");
 const { pushOrderStateChanged } = require('./_adminPush');
 const { pushToCustomer } = require('./_customerPush');
 const { refreshSellerTrustStats, sellerIdsFromOrder } = require('./_sellerTrustCommon');
@@ -38,6 +39,15 @@ async function loadCustomerIdentity(db,uid,order={}){
     authorName:publicCustomerName(user,publicCustomerName(order,"Mijoz"))
   };
 }
+
+function reviewItemKey(item,index=0){
+  const clean=v=>safeText(v,90).replace(/[^a-zA-Z0-9_-]+/g,"-").replace(/^-+|-+$/g,"");
+  return `i${Number(index)+1}-${clean(item?.productId||item?.id||"product")}-${clean(item?.sku||item?.article||"sku")}`.slice(0,180);
+}
+function reviewDocId(uid,orderId,itemKey){
+  return crypto.createHash("sha256").update(`${uid}|${orderId}|${itemKey}`).digest("hex").slice(0,48);
+}
+
 function normalizeStatus(v){
   const s=String(v||"").trim().toLowerCase();
   const map={ pending:"new", pending_cash:"new", pending_payment:"new", shared_telegram:"new", telegram:"new", processing:"packing", shipped:"shipping", completed:"delivered", canceled:"cancelled", rejected:"cancelled", declined:"cancelled" };
@@ -185,40 +195,48 @@ exports.handler=async(event)=>{
     }
 
     if(action==="submit_review"){
-      const stars=Math.max(1,Math.min(5,Math.round(num(body.stars))));
-      const text=safeText(body.text,1000);
-      if(!stars || text.length<2) return json(400,{ok:false,error:"review_required"});
+      return json(409,{ok:false,error:"use_item_review"});
+    }
+
+    if(action==="submit_item_review"){
+      const starsRaw=Math.round(num(body.stars));
+      const stars=starsRaw;
+      const text=safeText(body.text||body.reason,1000);
+      const itemIndex=Number(body.itemIndex);
+      if(starsRaw<1 || starsRaw>5 || text.length<2) return json(400,{ok:false,error:"review_required"});
+      if(!Number.isInteger(itemIndex) || itemIndex<0 || itemIndex>200) return json(400,{ok:false,error:"item_index_required"});
       const orderRef=db.doc(`orders/${orderId}`);
       const snap=await orderRef.get();
       if(!snap.exists) return json(404,{ok:false,error:"order_not_found"});
       const order={id:orderId,...(snap.data()||{})};
       if(String(order.uid||"")!==uid) return json(403,{ok:false,error:"forbidden"});
       const st=normalizeStatus(order.status);
-      if(!["delivered","returned"].includes(st)) return json(409,{ok:false,error:"review_not_allowed"});
+      if(st!=="delivered") return json(409,{ok:false,error:"review_not_allowed"});
+      const items=Array.isArray(order.items)?order.items:[];
+      const item=items[itemIndex]||null;
+      if(!item) return json(404,{ok:false,error:"order_item_not_found"});
+      const productId=safeId(item.productId||item.id||"");
+      if(!productId || (body.productId && safeId(body.productId)!==productId)) return json(409,{ok:false,error:"order_item_mismatch"});
+      const itemKey=reviewItemKey(item,itemIndex);
+      const existing=order.itemReviews&&typeof order.itemReviews==="object"?order.itemReviews[itemKey]:null;
+      if(existing) return json(409,{ok:false,error:"review_already_submitted"});
       const now=admin.firestore.FieldValue.serverTimestamp();
       const identity=await loadCustomerIdentity(db,uid,order);
       const authorName=safeText(identity.authorName||"Mijoz",160);
       const review={
-        uid,orderId,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,
-        createdAt:now,updatedAt:now,submittedAt:now,verifiedPurchase:true,source:"order_feedback",
+        uid,orderId,itemKey,itemIndex,productId,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,
+        productName:safeText(item.name||item.title||"Mahsulot",180),image:safeText(item.image||item.imageUrl||"",900),variantText:safeText(item.variantText||[item.color,item.size,item.variant].filter(Boolean).join(" / "),300),
+        createdAt:now,updatedAt:now,submittedAt:now,verifiedPurchase:true,source:"delivered_order_item",
         moderationStatus:"pending",isPublic:false,moderationReason:"",moderationUpdatedAt:now
       };
+      const docId=reviewDocId(uid,orderId,itemKey);
+      const itemReviews={...(order.itemReviews&&typeof order.itemReviews==="object"?order.itemReviews:{})};
+      itemReviews[itemKey]={uid,orderId,itemKey,itemIndex,productId,authorName,stars,text,productName:review.productName,image:review.image,variantText:review.variantText,verifiedPurchase:true,source:"delivered_order_item",moderationStatus:"pending",isPublic:false,reviewId:docId,updatedAt:admin.firestore.Timestamp.now()};
       const batch=db.batch();
-      batch.set(orderRef,{
-        userName:authorName,firstName:identity.firstName,lastName:identity.lastName,
-        orderReview:{uid,authorName,firstName:identity.firstName,lastName:identity.lastName,stars,text,verifiedPurchase:true,source:"order_feedback",moderationStatus:"pending",isPublic:false,updatedAt:admin.firestore.Timestamp.now()},
-        reviewedAt:now,updatedAt:now
-      },{merge:true});
-      const items=Array.isArray(order.items)?order.items:[];
-      const used=new Set();
-      for(const it of items){
-        const pid=safeId(it.productId||it.id||"");
-        if(!pid || used.has(pid)) continue;
-        used.add(pid);
-        batch.set(db.doc(`products/${pid}/reviews/${uid}`),{...review,productId:pid},{merge:true});
-      }
+      batch.set(orderRef,{userName:authorName,firstName:identity.firstName,lastName:identity.lastName,itemReviews,reviewedItemCount:Object.keys(itemReviews).length,reviewedAt:now,updatedAt:now},{merge:true});
+      batch.set(db.doc(`products/${productId}/reviews/${docId}`),review,{merge:false});
       await batch.commit();
-      return json(200,{ok:true,status:"review_pending"});
+      return json(200,{ok:true,status:"review_pending",itemKey,reviewId:docId});
     }
 
     if(action==="admin_update_status"){

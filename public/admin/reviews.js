@@ -11,7 +11,7 @@ const clean=v=>{const s=String(v||"").trim().replace(/\s+/g," ");return !s||s.in
 const owner=r=>[clean(r.firstName),clean(r.lastName)].filter(Boolean).join(" ")||clean(r.authorName)||"Mijoz";
 const state={user:null,filter:"pending",reviews:[],products:new Map(),unsubs:[],reviewTimer:null};
 function status(r){const s=String(r?.moderationStatus||"").toLowerCase();return ["approved","rejected","pending"].includes(s)?s:"approved"}
-function source(r){return r?.orderId||r?.source==="order_feedback"?"Buyurtma fikri":"Mahsulot sharhi"}
+function source(r){return r?.source==="delivered_order_item"?"Yetkazilgan mahsulot fikri":(r?.orderId||r?.source==="order_feedback"?"Buyurtma fikri":"Mahsulot sharhi")}
 function productName(p){return String(p?.nameUz||p?.titleUz||p?.name||p?.title||"Mahsulot")}
 function stars(n){n=Math.max(0,Math.min(5,Math.round(num(n))));return "★".repeat(n)+"☆".repeat(5-n)}
 function filterMatch(r,k){if(k==="all")return true;if(k==="unanswered")return !r.adminReplyText&&!r.adminReply?.text;if(k==="order_feedback")return !!(r.orderId||r.source==="order_feedback");if(k==="negative")return num(r.stars)<=2;return status(r)===k}

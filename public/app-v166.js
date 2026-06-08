@@ -3376,7 +3376,8 @@ function buildOrderReceiptHTML(order){
     const variant = [it?.color, it?.size].filter(Boolean).join(' / ');
     return `
       <div class="orderReceiptItem">
-        <div>
+        <div class="orderReceiptItemMedia">${omOrderItemImage(it)?`<img src="${escapeHtml(omOrderItemImage(it))}" alt="">`:`<i class="fa-solid fa-image"></i>`}</div>
+        <div class="orderReceiptItemBody">
           <div class="orderReceiptItemName">${escapeHtml(receiptItemName(it))}</div>
           <div class="orderReceiptItemMeta">${escapeHtml([variant, `${qty} ta`].filter(Boolean).join(' • '))}</div>
         </div>
@@ -3465,22 +3466,67 @@ function printOrderReceipt(){
   w.document.close();
 }
 
+
+function omOrderItemReviewKey(it,index=0){
+  const clean=v=>String(v||"").trim().replace(/[^a-zA-Z0-9_-]+/g,"-").replace(/^-+|-+$/g,"").slice(0,90);
+  return `i${Number(index)+1}-${clean(it?.productId||it?.id||"product")}-${clean(it?.sku||it?.article||"sku")}`.slice(0,180);
+}
+function omOrderItemReview(order,it,index=0){
+  const map=order?.itemReviews && typeof order.itemReviews==="object" ? order.itemReviews : {};
+  return map[omOrderItemReviewKey(it,index)] || null;
+}
+function omOrderItemProduct(it){
+  try{return findProductById(String(it?.productId||it?.id||"")) || null;}catch(_e){return null;}
+}
+function omOrderItemImage(it){
+  const p=omOrderItemProduct(it);
+  return String(it?.image||it?.imageUrl||p?.images?.[0]||p?.image||p?.imageUrl||"").trim();
+}
+function omOrderItemVariantText(it){
+  return String(it?.variantText||[it?.color,it?.size,it?.variant].filter(Boolean).join(" / ")||Object.values(it?.selectedOptions||it?.externalOptions||{}).join(" / ")||"").trim();
+}
+function omOrderItemReviewStateHtml(order,it,index=0){
+  const review=omOrderItemReview(order,it,index);
+  const delivered=omOrderStatusKey(order?.status)==="delivered";
+  const idx=Number(index)||0;
+  if(review){
+    const stars=Math.max(0,Math.min(5,Number(review.stars)||0));
+    const pending=String(review.moderationStatus||"pending")!=="approved";
+    return `<div class="orderLineReviewSaved"><b>${"★".repeat(stars)}${"☆".repeat(5-stars)}</b><span>${pending?"Admin tasdig‘i kutilmoqda":"Sharhingiz namoyishda"}</span>${review.text?`<p>${escapeHtml(review.text)}</p>`:""}</div>`;
+  }
+  if(delivered){
+    return `<button class="orderLineReviewBtn" type="button" data-order-action="item_review" data-order-id="${escapeHtml(String(order?.id||order?.orderId||""))}" data-order-item-index="${idx}"><i class="fa-solid fa-star"></i> Baho va sharh yozish</button>`;
+  }
+  return `<div class="orderLineReviewLocked"><i class="fa-solid fa-lock"></i><span>Yetkazilgandan keyin baholash mumkin</span></div>`;
+}
+function omOrderHistoryItemsHtml(order){
+  const items=Array.isArray(order?.items)?order.items:[];
+  if(!items.length) return `<div class="orderHistoryEmptyItems">Mahsulotlar topilmadi.</div>`;
+  return `<div class="orderHistoryProducts">${items.map((it,index)=>{
+    const image=omOrderItemImage(it),variant=omOrderItemVariantText(it),qty=Math.max(1,Number(it?.qty||1)||1);
+    return `<article class="orderHistoryProduct">
+      <div class="orderHistoryProductMedia">${image?`<img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async">`:`<i class="fa-solid fa-image"></i>`}</div>
+      <div class="orderHistoryProductBody">
+        <b>${escapeHtml(receiptItemName(it))}</b>
+        <span>${escapeHtml([variant,`${qty} ta`].filter(Boolean).join(" • "))}</span>
+        ${omOrderItemReviewStateHtml(order,it,index)}
+      </div>
+    </article>`;
+  }).join("")}</div>`;
+}
+
 function orderCustomerActionButtonsHTML(order){
   const oid = escapeHtml(String(order?.id || order?.orderId || ""));
   const st = omOrderStatusKey(order?.status || "new");
-  const reviewed = !!order?.orderReview;
   const buttons = [`<button class="orderActionBtn" type="button" data-order-receipt="${oid}">🧾 Chek</button>`];
   if(Array.isArray(order?.items) && order.items.length){ buttons.push(`<button class="orderActionBtn cxRepeatBtn" type="button" data-order-repeat="${oid}"><i class="fa-solid fa-rotate-right"></i> Qayta buyurtma</button>`); }
   if(["new","paid","packing","shipping"].includes(st)){
     buttons.push(`<button class="orderActionBtn isDanger" type="button" data-order-action="cancel" data-order-id="${oid}"><i class="fa-solid fa-ban"></i> Bekor qilish</button>`);
   }
-  if(["delivered","returned"].includes(st) && !reviewed){
-    buttons.push(`<button class="orderActionBtn isReview" type="button" data-order-action="review" data-order-id="${oid}"><i class="fa-solid fa-star"></i> Fikr bildirish</button>`);
-  }
   return buttons.join("");
 }
 
-let omOrderActionState = { type:"", orderId:"", stars:0 };
+let omOrderActionState = { type:"", orderId:"", stars:0, itemIndex:-1, productId:"" };
 
 function getOrderFromCache(orderId){
   return (ordersCache || []).find(o=>String(o?.id || o?.orderId || "") === String(orderId || "")) || null;
@@ -3499,10 +3545,10 @@ function closeOrderActionModal(){
   if(modal){ modal.classList.remove('isOpen'); modal.hidden=true; }
   try{ document.body.classList.remove('modalOpen'); }catch(_e){}
   try{ omReconcileBodyScrollLock(); }catch(_e){}
-  omOrderActionState={type:"",orderId:"",stars:0};
+  omOrderActionState={type:"",orderId:"",stars:0,itemIndex:-1,productId:""};
 }
-function openOrderActionModal(type, orderId){
-  if(!["cancel","review"].includes(String(type||""))) return;
+function openOrderActionModal(type, orderId, itemIndex=-1){
+  if(!["cancel","item_review"].includes(String(type||""))) return;
   const order=getOrderFromCache(orderId);
   if(!order){ toast('Buyurtma topilmadi.','error'); return; }
   const modal=document.getElementById('orderActionModal');
@@ -3519,13 +3565,16 @@ function openOrderActionModal(type, orderId){
   const starsWrap=document.getElementById('orderReviewStarsWrap');
   const submit=document.getElementById('orderActionSubmit');
   const oid=String(order.id||order.orderId||'');
-  omOrderActionState={type,orderId:oid,stars:0};
+  const idx=Number(itemIndex);
+  const item=Number.isInteger(idx)&&idx>=0 ? (Array.isArray(order.items)?order.items[idx]:null) : null;
+  if(type==="item_review" && !item){ toast("Mahsulot topilmadi.","error"); return; }
+  omOrderActionState={type,orderId:oid,stars:0,itemIndex:type==="item_review"?idx:-1,productId:type==="item_review"?String(item?.productId||item?.id||""):""};
   if(reason) reason.value='';
   if(cancelReasonSelect) cancelReasonSelect.value='';
   if(cancelReasonOther) cancelReasonOther.value='';
   if(cancelReasonOtherWrap) cancelReasonOtherWrap.hidden=true;
-  if(summary) summary.innerHTML=`<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
-  if(starsWrap) starsWrap.hidden = type !== 'review';
+  if(summary) summary.innerHTML=type==='item_review' ? `<div class="orderReviewProductPick">${omOrderItemImage(item)?`<img src="${escapeHtml(omOrderItemImage(item))}" alt="">`:''}<div><b>${escapeHtml(receiptItemName(item))}</b><span>${escapeHtml(omOrderItemVariantText(item)||'Mahsulot')}</span></div></div>` : `<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
+  if(starsWrap) starsWrap.hidden = type !== 'item_review';
   if(cancelReasonWrap) cancelReasonWrap.hidden = type !== 'cancel';
   const reasonWrap=document.getElementById('orderActionReasonWrap');
   if(reasonWrap) reasonWrap.hidden = type === 'cancel';
@@ -3537,8 +3586,8 @@ function openOrderActionModal(type, orderId){
     if(reason) reason.placeholder='Masalan: adashib buyurtma berdim';
     if(submit) submit.innerHTML='<i class="fa-solid fa-ban"></i> Bekor qilish';
   }else{
-    if(title) title.textContent='Buyurtmaga fikr bildirish';
-    if(help) help.textContent='Fikringiz admin tekshiruvidan keyin mahsulot sahifasida ko‘rinadi. OrzuMall javob qaytarishi mumkin.';
+    if(title) title.textContent='Mahsulotni baholash';
+    if(help) help.textContent='Faqat yetkazib berilgan ushbu mahsulot uchun baho va sharh yozing. Fikringiz admin tekshiruvidan keyin mahsulot sahifasida ko‘rinadi.';
     if(reasonLabel) reasonLabel.textContent='Fikringiz';
     if(reason) reason.placeholder='Mahsulot va xizmat haqida fikringizni yozing';
     if(submit) submit.innerHTML='<i class="fa-solid fa-star"></i> Fikrni saqlash';
@@ -3549,7 +3598,7 @@ function openOrderActionModal(type, orderId){
   document.body.style.overflow='hidden';
 }
 async function submitOrderAction(){
-  const {type,orderId,stars}=omOrderActionState;
+  const {type,orderId,stars,itemIndex,productId}=omOrderActionState;
   if(!type || !orderId || !currentUser){ toast('Avval tizimga kiring.','error'); return; }
   let reason='';
   if(type==='cancel'){
@@ -3564,17 +3613,17 @@ async function submitOrderAction(){
   }else{
     reason=String(document.getElementById('orderActionReason')?.value||'').trim();
   }
-  if(reason.length<2){ toast(type==='review'?'Fikringizni yozing.':'Sababni batafsil yozing.','error'); return; }
-  if(type==='review' && !(Number(stars)>=1 && Number(stars)<=5)){ toast('Bahoni tanlang.','error'); return; }
+  if(reason.length<2){ toast(type==='item_review'?'Fikringizni yozing.':'Sababni batafsil yozing.','error'); return; }
+  if(type==='item_review' && !(Number(stars)>=1 && Number(stars)<=5)){ toast('Bahoni tanlang.','error'); return; }
   const btn=document.getElementById('orderActionSubmit');
   const old=btn?.innerHTML||'';
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="omBtnSpinner" aria-hidden="true"></span> Yuborilmoqda...'; }
   try{
     const token=await currentUser.getIdToken();
-    const action=type==='cancel'?'cancel_order':'submit_review';
+    const action=type==='cancel'?'cancel_order':'submit_item_review';
     const resp=await fetch('/.netlify/functions/order-lifecycle',{
       method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},
-      body:JSON.stringify({action,orderId,reason,text:reason,stars:Number(stars)||0})
+      body:JSON.stringify({action,orderId,itemIndex:Number(itemIndex),productId:String(productId||''),reason,text:reason,stars:Number(stars)||0})
     });
     const out=await resp.json().catch(()=>({}));
     if(!resp.ok || !out.ok) throw new Error(out.error||'action_failed');
@@ -3583,7 +3632,7 @@ async function submitOrderAction(){
     else toast('Fikringiz yuborildi. Admin tasdiqlagach namoyish qilinadi.','success');
   }catch(e){
     const code=String(e?.message||'');
-    const map={cancel_not_allowed:'Yetkazib berilgan buyurtmani bekor qilib bo‘lmaydi. Operatorga yozing.',review_not_allowed:'Fikr faqat yetkazib berilgan buyurtmaga yoziladi.'};
+    const map={cancel_not_allowed:'Yetkazib berilgan buyurtmani bekor qilib bo‘lmaydi. Operatorga yozing.',review_not_allowed:'Sharh faqat yetkazib berilgan buyurtmadagi mahsulotga yoziladi.',review_already_submitted:'Bu mahsulotga fikr yuborilgan.'};
     toast(map[code]||'Amal bajarilmadi. Qayta urinib ko‘ring.','error');
   }finally{
     if(btn){ btn.disabled=false; btn.innerHTML=old; }
@@ -3645,7 +3694,8 @@ function renderOrders(orders){
         ${when ? `<span class="orderPill">${escapeHtml(when)}</span>` : ""}
       </div>
       ${orderStatusNote(o) ? `<div class="orderStatusReason"><b>${escapeHtml(orderStatusReasonTitle(o))}:</b> ${escapeHtml(orderStatusNote(o))}</div>` : ""}
-      ${o.orderReview ? `<div class="orderReviewSaved"><b>Fikr bildirildi${String(o.orderReview.moderationStatus||"pending")==="approved" ? "" : " • admin tasdig‘i kutilmoqda"}:</b> ${'★'.repeat(Number(o.orderReview.stars||0))}${'☆'.repeat(Math.max(0,5-Number(o.orderReview.stars||0)))}<br>${escapeHtml(o.orderReview.text||'')}${o.orderReview.adminReply?.text ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(o.orderReview.adminReply.text)}</span></div>` : ""}</div>` : ''}
+      ${omOrderHistoryItemsHtml(o)}
+      ${o.orderReview ? `<div class="orderReviewSaved legacyOrderReview"><b>Avvalgi buyurtma fikri${String(o.orderReview.moderationStatus||"pending")==="approved" ? "" : " • admin tasdig‘i kutilmoqda"}:</b> ${'★'.repeat(Number(o.orderReview.stars||0))}${'☆'.repeat(Math.max(0,5-Number(o.orderReview.stars||0)))}<br>${escapeHtml(o.orderReview.text||'')}${o.orderReview.adminReply?.text ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(o.orderReview.adminReply.text)}</span></div>` : ""}</div>` : ''}
       <div class="orderActions">${orderCustomerActionButtonsHTML(o)}</div>
     `;
     els.ordersList.appendChild(row);
@@ -4412,25 +4462,15 @@ function omProductPageReviewsSectionHtml(){
     <section class="ppReviewsCard" id="ppReviewsCard" aria-label="Mahsulot sharhlari">
       <div class="ppReviewsHead">
         <div>
-          <span class="ppReviewsEyebrow"><i class="fa-solid fa-star"></i> Baholar va fikrlar</span>
+          <span class="ppReviewsEyebrow"><i class="fa-solid fa-star"></i> Tasdiqlangan xaridorlar bahosi</span>
           <h2>Xaridorlar sharhlari</h2>
-          <p>Mahsulotdan foydalanganlar fikri va baholari.</p>
+          <p>Faqat yetkazib berilgan buyurtmalar asosidagi haqiqiy fikrlar.</p>
         </div>
         <div class="ppReviewSummary" id="ppReviewStats">${omReviewSummaryHtml({avg:0,count:0})}</div>
       </div>
-      <div class="ppReviewComposer">
-        <div class="ppReviewComposerTop">
-          <div>
-            <b>Fikr qoldiring</b>
-            <span>Baholang va tajribangizni yozing</span>
-          </div>
-          <div class="ppReviewStars" id="ppReviewStars">${omPageReviewStarsHtml()}</div>
-        </div>
-        <textarea id="ppReviewText" maxlength="400" rows="3" placeholder="Fikringizni qisqa va aniq yozing..."></textarea>
-        <div class="ppReviewComposerBottom">
-          <span id="ppReviewChar">0/400 • admin tekshiruvi</span>
-          <button type="button" id="ppReviewSend"><i class="fa-solid fa-paper-plane"></i> Sharh yuborish</button>
-        </div>
+      <div class="ppVerifiedReviewNotice">
+        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+        <div><b>Sharh faqat xariddan keyin yoziladi</b><span>Buyurtma yetkazilgach, Profil → Buyurtmalar bo‘limidagi mahsulot qatoridan alohida baho va fikr qoldirishingiz mumkin.</span></div>
       </div>
       <div class="ppReviewsList" id="ppReviewsList">
         <div class="ppReviewsLoading"><i class="fa-solid fa-spinner fa-spin"></i> Sharhlar yuklanmoqda...</div>
@@ -4440,7 +4480,7 @@ function omProductPageReviewsSectionHtml(){
 
 function omProductPageReviewListHtml(list){
   if(!Array.isArray(list) || !list.length){
-    return `<div class="ppReviewEmpty"><i class="fa-regular fa-message"></i><b>Hozircha sharh yo‘q</b><span>Birinchi bo‘lib fikr qoldiring.</span></div>`;
+    return `<div class="ppReviewEmpty"><i class="fa-regular fa-message"></i><b>Hozircha tasdiqlangan sharh yo‘q</b><span>Sharhlar faqat yetkazilgan buyurtmalardagi mahsulotlardan yoziladi.</span></div>`;
   }
   return list.map((r)=>{
     const score = Math.max(0, Math.min(5, Number(r.stars)||0));
@@ -4548,22 +4588,7 @@ async function omSubmitProductPageReview(p){
 }
 
 function omBindProductPageReviews(p){
-  const root = els.productPageContent;
-  if(!root || !p) return;
-  omProductPageReviews.stars = 5;
-  omProductPageReviews.hover = 0;
-  root.querySelector("#ppReviewStars")?.addEventListener("click", (e)=>{
-    const btn=e.target.closest("[data-pp-review-star]");
-    if(!btn) return;
-    omProductPageReviews.stars=Math.max(1,Math.min(5,Number(btn.dataset.ppReviewStar)||5));
-    omProductPageReviews.hover=0;
-    omSyncPageReviewStars();
-  });
-  root.querySelector("#ppReviewText")?.addEventListener("input", (e)=>{
-    const out=root.querySelector("#ppReviewChar");
-    if(out) out.textContent=`${Math.min(400,String(e.target.value||"").length)}/400`;
-  });
-  root.querySelector("#ppReviewSend")?.addEventListener("click", ()=>omSubmitProductPageReview(p));
+  if(!els.productPageContent || !p) return;
   omLoadProductPageReviews(p.id);
 }
 
@@ -9016,7 +9041,7 @@ document.addEventListener("click", (e)=>{
   const actionBtn=e.target?.closest?.("[data-order-action][data-order-id]");
   if(actionBtn){
     e.preventDefault();
-    openOrderActionModal(actionBtn.getAttribute("data-order-action")||"",actionBtn.getAttribute("data-order-id")||"");
+    openOrderActionModal(actionBtn.getAttribute("data-order-action")||"",actionBtn.getAttribute("data-order-id")||"",Number(actionBtn.getAttribute("data-order-item-index")||-1));
     return;
   }
   const star=e.target?.closest?.("#orderReviewStars [data-review-star]");
