@@ -1,0 +1,230 @@
+/* OrzuMall v183 — premium storefront product cards
+   Image/media rendering is intentionally untouched. */
+
+:root{
+  --om183-ink:#0f172a;
+  --om183-muted:#64748b;
+  --om183-soft:#f8fafc;
+  --om183-line:#e8edf4;
+  --om183-red:#ef3340;
+  --om183-red-dark:#dc2434;
+}
+
+/* Equal-height cards: the body carries the hierarchy, the media stays intact. */
+#view-home .pcard{
+  display:flex!important;
+  flex-direction:column!important;
+  background:#fff!important;
+  border:1px solid #e9edf3!important;
+  border-radius:18px!important;
+  box-shadow:0 7px 20px rgba(15,23,42,.055)!important;
+  overflow:hidden!important;
+}
+#view-home .pcard:hover{
+  border-color:#f4bec6!important;
+  box-shadow:0 14px 30px rgba(15,23,42,.09)!important;
+}
+#view-home .pcard .pbody{
+  display:flex!important;
+  flex:1 1 auto!important;
+  flex-direction:column!important;
+  min-width:0!important;
+  padding:10px 10px 9px!important;
+  background:#fff!important;
+}
+
+/* Price: compact, clear and aligned. */
+#view-home .pcard .ppriceRow{
+  display:flex!important;
+  align-items:baseline!important;
+  justify-content:flex-start!important;
+  flex-wrap:wrap!important;
+  column-gap:7px!important;
+  row-gap:2px!important;
+  min-height:19px!important;
+}
+#view-home .pcard .ppriceNow{
+  color:var(--om183-red)!important;
+  font-size:16px!important;
+  line-height:1.05!important;
+  font-weight:1000!important;
+  letter-spacing:-.035em!important;
+  white-space:nowrap!important;
+}
+#view-home .pcard .ppriceOld{
+  color:#a1a9b6!important;
+  font-size:10px!important;
+  line-height:1!important;
+  font-weight:800!important;
+  text-decoration-thickness:1px!important;
+  text-decoration-color:#f0a1aa!important;
+  white-space:nowrap!important;
+}
+
+/* Product name: two stable lines, readable but not dominant. */
+#view-home .pcard .pname{
+  margin-top:7px!important;
+  min-height:35px!important;
+  color:var(--om183-ink)!important;
+  font-size:12.2px!important;
+  line-height:1.38!important;
+  font-weight:780!important;
+  letter-spacing:-.012em!important;
+}
+#view-home .pcard .clamp2{min-height:35px!important}
+
+/* Seller line is secondary and does not compete with the product name. */
+#view-home .pcard .pcardSellerLine{
+  margin-top:6px!important;
+  gap:4px!important;
+  color:#778397!important;
+  font-size:9.5px!important;
+  font-weight:850!important;
+}
+#view-home .pcard .pcardSellerLine img,
+#view-home .pcard .pcardSellerLine>i{width:15px!important;height:15px!important;min-width:15px!important;border-radius:5px!important}
+#view-home .pcard .pcardSellerLine em{font-size:8.5px!important}
+
+/* One calm data rail: rating, views, popularity. */
+#view-home .pcard .omCardMetricsRow{
+  display:grid!important;
+  grid-template-columns:auto 1fr 1fr!important;
+  align-items:center!important;
+  gap:0!important;
+  min-width:0!important;
+  margin-top:8px!important;
+  padding:7px 7px!important;
+  border:1px solid #edf1f5!important;
+  border-radius:11px!important;
+  background:#f8fafc!important;
+  color:#667085!important;
+  font-size:9px!important;
+  font-weight:900!important;
+  line-height:1!important;
+}
+#view-home .pcard .omCardMetric{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:3px!important;
+  min-width:0!important;
+  padding:0 6px!important;
+  white-space:nowrap!important;
+}
+#view-home .pcard .omCardMetric:first-child{justify-content:flex-start!important;padding-left:0!important}
+#view-home .pcard .omCardMetric+ .omCardMetric{border-left:1px solid #e4e9ef!important}
+#view-home .pcard .omCardMetric i{font-size:9.5px!important}
+#view-home .pcard .omCardMetric b{color:#344054!important;font-size:9.5px!important;font-weight:1000!important}
+#view-home .pcard .omCardMetric em{color:#98a2b3!important;font-size:8.5px!important;font-style:normal!important;font-weight:900!important}
+#view-home .pcard .omCardMetric small{display:none!important;color:#98a2b3!important;font-size:8px!important;font-weight:850!important}
+#view-home .pcard .omCardMetric.rating i{color:#f59e0b!important}
+#view-home .pcard .omCardMetric.views i{color:#3b82f6!important}
+#view-home .pcard .omCardMetric.popularity i{color:#f97316!important}
+
+/* External origin helper: smaller and less noisy. */
+#view-home .pcard .china1688MiniMeta{
+  margin-top:6px!important;
+  padding:5px 6px!important;
+  border-radius:9px!important;
+  font-size:8px!important;
+  line-height:1.15!important;
+}
+#view-home .pcard .china1688MiniMeta small{font-size:7.5px!important}
+
+/* Footer is anchored to the bottom so cards align cleanly across rows. */
+#view-home .pcard .pcardFoot{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:7px!important;
+  margin-top:auto!important;
+  padding-top:8px!important;
+}
+#view-home .pcard .pship.compact{
+  min-width:0!important;
+  margin:0!important;
+  overflow:hidden!important;
+}
+#view-home .pcard .shipBadge,
+#view-home .pcard .delivery-badge{
+  max-width:100%!important;
+  min-height:24px!important;
+  padding:0 7px!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  color:#667085!important;
+  background:#fff!important;
+  border:1px solid #e7ebf0!important;
+  font-size:8.5px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+#view-home .pcard .shipBadge.stock{color:#18794e!important;background:#f2fbf6!important;border-color:#d3efdf!important}
+#view-home .pcard .shipBadge.cargo{color:#9a510d!important;background:#fff8ed!important;border-color:#f8dfbd!important}
+
+/* Cart action becomes a small integrated pill, not a detached floating square. */
+#view-home .pcard .iconPill.primary.cartOnly[data-act="cart"]{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:66px!important;
+  height:34px!important;
+  padding:0 10px!important;
+  border:1px solid #ef3340!important;
+  border-radius:11px!important;
+  background:var(--om183-red)!important;
+  color:#fff!important;
+  box-shadow:0 7px 15px rgba(225,29,72,.17)!important;
+  font-size:10px!important;
+  font-weight:1000!important;
+  letter-spacing:-.01em!important;
+}
+#view-home .pcard .iconPill.primary.cartOnly[data-act="cart"] svg{width:15px!important;height:15px!important;flex:0 0 15px!important}
+#view-home .pcard .iconPill.primary.cartOnly[data-act="cart"] span{display:inline!important;color:#fff!important;font-size:10px!important;font-weight:1000!important}
+#view-home .pcard .iconPill.primary.cartOnly[data-act="cart"]:hover{background:var(--om183-red-dark)!important;border-color:var(--om183-red-dark)!important;transform:translateY(-1px)!important}
+#view-home .pcard .iconPill.primary.cartOnly[data-act="cart"]:active{transform:scale(.97)!important}
+
+/* A calmer grid gives the content breathing room without shrinking products. */
+#view-home .grid{gap:10px!important}
+
+@media(min-width:769px){
+  #view-home .pcard .pbody{padding:11px 11px 10px!important}
+  #view-home .pcard .ppriceNow{font-size:17px!important}
+  #view-home .pcard .pname{font-size:12.8px!important;min-height:36px!important}
+  #view-home .pcard .clamp2{min-height:36px!important}
+  #view-home .pcard .omCardMetricsRow{padding:7px 8px!important;font-size:9.5px!important}
+  #view-home .pcard .omCardMetric small{display:inline!important}
+  #view-home .pcard .iconPill.primary.cartOnly[data-act="cart"]{min-width:74px!important;height:36px!important;padding:0 11px!important;font-size:10.5px!important}
+  #view-home .pcard .iconPill.primary.cartOnly[data-act="cart"] span{font-size:10.5px!important}
+}
+
+@media(max-width:390px){
+  #view-home .grid{gap:8px!important}
+  #view-home .pcard{border-radius:15px!important}
+  #view-home .pcard .pbody{padding:8px 8px 8px!important}
+  #view-home .pcard .ppriceNow{font-size:14.5px!important}
+  #view-home .pcard .ppriceOld{font-size:9px!important}
+  #view-home .pcard .pname{margin-top:6px!important;min-height:33px!important;font-size:11.5px!important;line-height:1.4!important}
+  #view-home .pcard .clamp2{min-height:33px!important}
+  #view-home .pcard .omCardMetricsRow{margin-top:7px!important;padding:6px 5px!important;border-radius:10px!important;font-size:8.4px!important}
+  #view-home .pcard .omCardMetric{gap:2px!important;padding:0 4px!important}
+  #view-home .pcard .omCardMetric i{font-size:8.5px!important}
+  #view-home .pcard .omCardMetric b{font-size:8.8px!important}
+  #view-home .pcard .omCardMetric em{font-size:7.8px!important}
+  #view-home .pcard .shipBadge,#view-home .pcard .delivery-badge{min-height:22px!important;padding:0 6px!important;font-size:7.8px!important}
+  #view-home .pcard .iconPill.primary.cartOnly[data-act="cart"]{min-width:61px!important;height:32px!important;padding:0 8px!important;border-radius:10px!important;gap:4px!important}
+  #view-home .pcard .iconPill.primary.cartOnly[data-act="cart"] svg{width:14px!important;height:14px!important;flex-basis:14px!important}
+  #view-home .pcard .iconPill.primary.cartOnly[data-act="cart"] span{font-size:9.5px!important}
+}
+
+@media(max-width:335px){
+  #view-home .pcard .omCardMetric{padding:0 3px!important}
+  #view-home .pcard .omCardMetricsRow{padding-left:4px!important;padding-right:4px!important}
+  #view-home .pcard .iconPill.primary.cartOnly[data-act="cart"]{min-width:34px!important;width:34px!important;padding:0!important}
+  #view-home .pcard .iconPill.primary.cartOnly[data-act="cart"] span{display:none!important}
+}

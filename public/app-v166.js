@@ -2793,9 +2793,9 @@ function omProductCardMetricsHtml(p, cached){
   const m = omGetProductMetrics(p);
   const r = omProductCardReviewStats(p, cached);
   return `<div class="omCardMetricsRow" data-review-product-id="${escapeHtml(String(p?.id||""))}" aria-label="Mahsulot statistikasi">
-    <span class="omCardMetric rating" title="${r.count} ta sharh"><i class="fa-solid fa-star" aria-hidden="true"></i><b>${r.avg.toFixed(1)}</b><em>(${omCompactMetric(r.count)})</em></span>
-    <span class="omCardMetric views" title="Ko‘rishlar"><i class="fa-regular fa-eye" aria-hidden="true"></i><b>${omCompactMetric(m.views||0)}</b></span>
-    <span class="omCardMetric popularity" title="Popularlik"><i class="fa-solid fa-fire" aria-hidden="true"></i><b>${omCompactMetric(m.score||0)}</b></span>
+    <span class="omCardMetric rating" title="${r.count} ta sharh"><i class="fa-solid fa-star" aria-hidden="true"></i><b>${r.avg.toFixed(1)}</b><em>(${omCompactMetric(r.count)})</em><small>sharh</small></span>
+    <span class="omCardMetric views" title="Ko‘rishlar"><i class="fa-regular fa-eye" aria-hidden="true"></i><b>${omCompactMetric(m.views||0)}</b><small>ko‘rish</small></span>
+    <span class="omCardMetric popularity" title="Popularlik"><i class="fa-solid fa-fire" aria-hidden="true"></i><b>${omCompactMetric(m.score||0)}</b><small>popular</small></span>
   </div>`;
 }
 
@@ -2875,6 +2875,7 @@ const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i cla
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path fill="currentColor" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2Zm10 0c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2ZM7.17 14h9.66c.75 0 1.4-.41 1.74-1.03L21 6H6.21L5.27 4H2v2h2l3.6 7.59-1.35 2.44C5.52 17.37 6.48 19 8 19h12v-2H8l1.17-3Z"/>
             </svg>
+            <span>Savat</span>
           </button>
         </div>
       </div>
