@@ -1,0 +1,79 @@
+/* OrzuMall v179 — fast review cards + lighter edge-to-edge product detail */
+#view-home .omCardMetricsRow{
+  display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:7px!important;
+  margin-top:7px!important;padding:0!important;min-height:16px!important;
+  color:#64748b!important;font-size:9.5px!important;font-weight:900!important;line-height:1!important;
+}
+#view-home .omCardMetric{display:inline-flex!important;align-items:center!important;gap:3px!important;white-space:nowrap!important}
+#view-home .omCardMetric.rating{color:#9a6700!important}
+#view-home .omCardMetric.rating i{color:#f59e0b!important}
+#view-home .omCardMetric.views i{color:#3b82f6!important}
+#view-home .omCardMetric.popularity i{color:#f97316!important}
+#view-home .omCardMetric em{font-style:normal!important;font-size:.9em!important;color:#94a3b8!important}
+
+/* Product review block: calmer and easier to scan */
+#view-product .ppReviewsCard{
+  margin-top:12px!important;padding:15px!important;border:1px solid #e8edf4!important;border-radius:20px!important;
+  background:#fff!important;box-shadow:none!important;display:grid!important;gap:12px!important;
+}
+#view-product .ppReviewsHead{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:0 0 11px!important;border-bottom:1px solid #eef2f7!important}
+#view-product .ppReviewsEyebrow{display:inline-flex!important;align-items:center!important;gap:6px!important;color:#e11d48!important;font-size:10px!important;font-weight:1000!important;letter-spacing:.07em!important;text-transform:uppercase!important}
+#view-product .ppReviewsHead h2{margin:4px 0 2px!important;color:#111827!important;font-size:20px!important;font-weight:1000!important;letter-spacing:-.04em!important}
+#view-product .ppReviewsHead p{margin:0!important;color:#94a3b8!important;font-size:11px!important;font-weight:700!important;line-height:1.35!important}
+#view-product .ppReviewSummary{min-width:94px!important;padding:9px 10px!important;border:1px solid #fde0b4!important;border-radius:15px!important;background:#fffaf0!important;text-align:center!important;display:grid!important;gap:2px!important}
+#view-product .ppReviewSummary strong{display:flex!important;justify-content:center!important;align-items:center!important;gap:5px!important;color:#c2410c!important;font-size:18px!important;font-weight:1000!important;line-height:1!important}
+#view-product .ppReviewSummary strong i{color:#f59e0b!important;font-size:14px!important}
+#view-product .ppReviewSummary span{color:#9a6700!important;font-size:9px!important;font-weight:950!important}
+#view-product .ppReviewSummary small{color:#f59e0b!important;font-size:10px!important;letter-spacing:1px!important;line-height:1!important;white-space:nowrap!important}
+#view-product .ppReviewComposer{display:grid!important;gap:9px!important;padding:11px!important;border:1px solid #eef2f7!important;border-radius:15px!important;background:#f8fafc!important}
+#view-product .ppReviewComposerTop,#view-product .ppReviewComposerBottom{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important}
+#view-product .ppReviewComposerTop>div:first-child{display:grid!important;gap:2px!important}
+#view-product .ppReviewComposerTop b{color:#111827!important;font-size:12px!important;font-weight:1000!important}
+#view-product .ppReviewComposerTop span{color:#94a3b8!important;font-size:10px!important;font-weight:750!important}
+#view-product .ppReviewStars{display:flex!important;align-items:center!important;gap:0!important}
+#view-product .ppReviewStar{border:0!important;background:transparent!important;padding:0 2px!important;color:#d8dee8!important;font-size:25px!important;line-height:1!important;cursor:pointer!important}
+#view-product .ppReviewStar.active{color:#f59e0b!important}
+#view-product #ppReviewText{width:100%!important;min-height:68px!important;resize:vertical!important;box-sizing:border-box!important;padding:10px 11px!important;border:1px solid #e1e7ef!important;border-radius:12px!important;background:#fff!important;color:#111827!important;font-size:12px!important;line-height:1.45!important;outline:none!important}
+#view-product #ppReviewText:focus{border-color:#f43f5e!important;box-shadow:0 0 0 3px rgba(244,63,94,.10)!important}
+#view-product #ppReviewChar{color:#94a3b8!important;font-size:10px!important;font-weight:850!important}
+#view-product #ppReviewSend{min-height:37px!important;padding:0 12px!important;border-radius:11px!important;font-size:11px!important;box-shadow:none!important}
+#view-product .ppReviewsList{display:grid!important;gap:7px!important}
+#view-product .ppReviewItem{padding:10px 11px!important;border:1px solid #eef2f7!important;border-radius:14px!important;background:#fff!important;box-shadow:none!important}
+#view-product .ppReviewAvatar{width:31px!important;height:31px!important;min-width:31px!important;border-radius:10px!important;font-size:11px!important}
+#view-product .ppReviewAuthor b{font-size:12px!important}.ppReviewAuthor span{font-size:9px!important}
+#view-product .ppReviewItemStars{font-size:12px!important}.ppReviewItem p{margin-top:7px!important;font-size:12px!important;line-height:1.45!important}
+
+@media(max-width:768px){
+  /* Edge-to-edge product layout: remove wasted side gutters and outer frames */
+  #view-product.product-detail-view{padding:0 0 calc(174px + env(safe-area-inset-bottom))!important;background:#fff!important}
+  #view-product .productPage{width:100%!important;max-width:none!important;margin:0!important}
+  #view-product .productPageTop{top:0!important;margin:0!important;padding:7px 8px!important;border-left:0!important;border-right:0!important;border-top:0!important;border-radius:0!important;box-shadow:0 5px 16px rgba(15,23,42,.05)!important}
+  #view-product .ppGrid{gap:0!important}
+  #view-product .ppGallery{padding:0 0 7px!important;border-left:0!important;border-right:0!important;border-top:0!important;border-radius:0!important;box-shadow:none!important}
+  #view-product .ppGalleryShell{gap:6px!important}
+  #view-product .ppMainImage,#view-product .ppMainImage.ppMainImageBtn{height:min(100vw,390px)!important;border-radius:0!important;border-left:0!important;border-right:0!important}
+  #view-product .ppThumbRail{padding:0 8px!important}
+  #view-product .ppInfo{gap:0!important;background:#fff!important}
+  #view-product .ppHeadCard,#view-product .ppCargoCard,#view-product .ppVariantCard,#view-product .ppCategoryCard,#view-product .ppDesc,#view-product .cxAlertPanel{
+    margin:0!important;border-left:0!important;border-right:0!important;border-radius:0!important;box-shadow:none!important;border-bottom:1px solid #eef2f7!important;
+  }
+  #view-product .ppHeadCard{padding:12px 11px!important}
+  #view-product .ppCargoCard{padding:10px 11px!important}
+  #view-product .ppVariantCard{padding:10px 11px!important}
+  #view-product .ppTrustGrid,#view-product .ppMetrics,#view-product .ppActionGrid{padding:8px 10px!important;margin:0!important;border-bottom:1px solid #eef2f7!important}
+  #view-product .ppReviewsCard{margin:0!important;padding:13px 11px calc(15px + env(safe-area-inset-bottom))!important;border-left:0!important;border-right:0!important;border-bottom:0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important}
+  #view-product .ppReviewsHead{align-items:center!important;gap:8px!important;padding-bottom:9px!important}
+  #view-product .ppReviewsHead h2{font-size:18px!important}.ppReviewsHead p{font-size:10px!important}
+  #view-product .ppReviewSummary{min-width:82px!important;padding:8px 6px!important;border-radius:13px!important}
+  #view-product .ppReviewSummary strong{font-size:16px!important}.ppReviewSummary small{font-size:9px!important}
+  #view-product .ppReviewComposer{padding:9px!important;border-radius:13px!important}
+  #view-product .ppReviewComposerTop{align-items:center!important;flex-direction:row!important;gap:6px!important}
+  #view-product .ppReviewStar{font-size:23px!important}
+  #view-product #ppReviewText{min-height:62px!important;font-size:11.5px!important}
+  #view-product .ppReviewItem{padding:9px 10px!important;border-left:0!important;border-right:0!important;border-radius:0!important}
+  #view-home .omCardMetricsRow{gap:5px!important;margin-top:5px!important;font-size:8.5px!important}
+}
+@media(max-width:390px){
+  #view-product .ppMainImage,#view-product .ppMainImage.ppMainImageBtn{height:min(100vw,360px)!important;max-height:360px!important}
+  #view-home .omCardMetricsRow{gap:4px!important;font-size:8px!important}
+}

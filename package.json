@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.75.0",
-  "description": "OrzuMall v175: secure admin users center, customer presence heartbeat, last-visit analytics, balance control, safe temporary password reset and audit logs",
+  "version": "1.79.0",
+  "description": "OrzuMall v179: fast batch review statistics, materialized product ratings and edge-to-edge mobile product experience",
   "engines": {
     "node": "22.x"
   },

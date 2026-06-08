@@ -870,6 +870,7 @@ async function refreshStats(productId, force=false){
     ));
     const out = omReviewStatsFromSnapshot(snap, now);
     statsCache.set(id, out);
+    try{ omPatchCardReviewMetrics([id]); }catch(_e){}
     return { avg: out.avg, count: out.count };
   }catch(_error){
     return getStats(id);
@@ -890,8 +891,61 @@ async function omSubmitReviewSecure(productId, stars, text){
   return out;
 }
 
+const omCardReviewBatch = { pending:new Set(), timer:null, inFlight:false, rerun:false };
+function omPatchCardReviewMetrics(productIds=[]){
+  const wanted = new Set((productIds||[]).map(x=>String(x||"")));
+  document.querySelectorAll(".omCardMetricsRow[data-review-product-id]").forEach(row=>{
+    const id=String(row.dataset.reviewProductId||"");
+    if(wanted.size && !wanted.has(id)) return;
+    const p=findProductById(id);
+    if(!p) return;
+    row.outerHTML=omProductCardMetricsHtml(p,getStats(id));
+  });
+}
+async function omFetchCardReviewStats(productIds=[]){
+  const ids=[...new Set((productIds||[]).map(x=>String(x||"").trim()).filter(Boolean))];
+  if(!ids.length) return [];
+  const changed=[];
+  for(let i=0;i<ids.length;i+=70){
+    const part=ids.slice(i,i+70);
+    try{
+      const resp=await fetch("/.netlify/functions/product-review-stats",{
+        method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({productIds:part})
+      });
+      const out=await resp.json().catch(()=>({}));
+      if(!resp.ok||!out.ok) continue;
+      (Array.isArray(out.stats)?out.stats:[]).forEach(row=>{
+        const id=String(row?.productId||"").trim(); if(!id) return;
+        statsCache.set(id,{avg:Number(row.avg)||0,count:Math.max(0,Number(row.count)||0),ts:Date.now()});
+        changed.push(id);
+      });
+    }catch(_e){}
+  }
+  if(changed.length) omPatchCardReviewMetrics(changed);
+  return changed;
+}
+async function omFlushCardReviewStats(){
+  if(omCardReviewBatch.inFlight){omCardReviewBatch.rerun=true;return;}
+  const now=Date.now();
+  const ids=[...omCardReviewBatch.pending].filter(id=>{
+    const cached=statsCache.get(id);
+    return !cached || now-(Number(cached.ts)||0)>120000;
+  });
+  omCardReviewBatch.pending.clear();
+  if(!ids.length) return;
+  omCardReviewBatch.inFlight=true;
+  try{await omFetchCardReviewStats(ids);}finally{
+    omCardReviewBatch.inFlight=false;
+    if(omCardReviewBatch.rerun||omCardReviewBatch.pending.size){omCardReviewBatch.rerun=false;setTimeout(()=>omFlushCardReviewStats(),80);}
+  }
+}
+function omQueueCardReviewStats(productIds=[]){
+  (productIds||[]).forEach(id=>{id=String(id||"").trim();if(id)omCardReviewBatch.pending.add(id);});
+  clearTimeout(omCardReviewBatch.timer);
+  omCardReviewBatch.timer=setTimeout(()=>omFlushCardReviewStats(),90);
+}
 async function preloadStats(productIds){
-  await Promise.all((productIds||[]).map(id => refreshStats(id, false)));
+  return omFetchCardReviewStats(productIds||[]);
 }
 
 function subscribeReviews(productId){
@@ -2738,7 +2792,7 @@ function omProductCardReviewStats(p, cached = getStats(p?.id)){
 function omProductCardMetricsHtml(p, cached){
   const m = omGetProductMetrics(p);
   const r = omProductCardReviewStats(p, cached);
-  return `<div class="omCardMetricsRow" aria-label="Mahsulot statistikasi">
+  return `<div class="omCardMetricsRow" data-review-product-id="${escapeHtml(String(p?.id||""))}" aria-label="Mahsulot statistikasi">
     <span class="omCardMetric rating" title="${r.count} ta sharh"><i class="fa-solid fa-star" aria-hidden="true"></i><b>${r.avg.toFixed(1)}</b><em>(${omCompactMetric(r.count)})</em></span>
     <span class="omCardMetric views" title="Ko‘rishlar"><i class="fa-regular fa-eye" aria-hidden="true"></i><b>${omCompactMetric(m.views||0)}</b></span>
     <span class="omCardMetric popularity" title="Popularlik"><i class="fa-solid fa-fire" aria-hidden="true"></i><b>${omCompactMetric(m.score||0)}</b></span>
@@ -2912,6 +2966,7 @@ try{
   }
 }catch(e){}
 
+  omQueueCardReviewStats((Array.isArray(arr)?arr:[]).map(p=>p?.id));
   omI18nProductsReady();
   omI18nRefresh(80);
   omI18nRefresh(650);
@@ -4344,24 +4399,30 @@ function omPageReviewStarsHtml(){
   }).join("");
 }
 
+function omReviewSummaryHtml(st={}){
+  const avg=Math.max(0,Math.min(5,Number(st?.avg)||0));
+  const count=Math.max(0,Math.round(Number(st?.count)||0));
+  const rounded=Math.round(avg);
+  const stars="★".repeat(rounded)+"☆".repeat(Math.max(0,5-rounded));
+  return `<strong><i class="fa-solid fa-star"></i> ${avg.toFixed(1)}</strong><span>${count} ta sharh</span><small aria-hidden="true">${stars}</small>`;
+}
+
 function omProductPageReviewsSectionHtml(){
   return `
     <section class="ppReviewsCard" id="ppReviewsCard" aria-label="Mahsulot sharhlari">
       <div class="ppReviewsHead">
         <div>
-          <span class="ppReviewsEyebrow"><i class="fa-solid fa-comments"></i> Xaridorlar fikri</span>
-          <h2>Sharhlar</h2>
-          <p>Faqat admin tasdiqlagan sharhlar ko‘rinadi. Fikringiz tekshiruvdan keyin chiqadi.</p>
+          <span class="ppReviewsEyebrow"><i class="fa-solid fa-star"></i> Baholar va fikrlar</span>
+          <h2>Xaridorlar sharhlari</h2>
+          <p>Mahsulotdan foydalanganlar fikri va baholari.</p>
         </div>
-        <div class="ppReviewSummary" id="ppReviewStats">
-          <strong>—</strong><span>Yuklanmoqda...</span>
-        </div>
+        <div class="ppReviewSummary" id="ppReviewStats">${omReviewSummaryHtml({avg:0,count:0})}</div>
       </div>
       <div class="ppReviewComposer">
         <div class="ppReviewComposerTop">
           <div>
-            <b>Mahsulotni baholang</b>
-            <span>1 dan 5 gacha yulduz tanlang</span>
+            <b>Fikr qoldiring</b>
+            <span>Baholang va tajribangizni yozing</span>
           </div>
           <div class="ppReviewStars" id="ppReviewStars">${omPageReviewStarsHtml()}</div>
         </div>
@@ -4413,7 +4474,7 @@ async function omLoadProductPageReviews(productId, {force=false}={}){
 
   const cached = getStats(id);
   if(cached.count){
-    statsEl.innerHTML = `<strong><i class="fa-solid fa-star"></i> ${Number(cached.avg||0).toFixed(1)}</strong><span>${cached.count} ta sharh</span>`;
+    statsEl.innerHTML = omReviewSummaryHtml(cached);
   }
 
   try{
@@ -4446,7 +4507,8 @@ async function omLoadProductPageReviews(productId, {force=false}={}){
     const currentStats = currentRoot?.querySelector("#ppReviewStats");
     const enrichedList=await omEnrichReviewAuthors(list.slice(0,30));
     if(currentList) currentList.innerHTML = omProductPageReviewListHtml(enrichedList);
-    if(currentStats) currentStats.innerHTML = `<strong><i class="fa-solid fa-star"></i> ${Number(st.avg||0).toFixed(1)}</strong><span>${Number(st.count||0)} ta sharh</span>`;
+    if(currentStats) currentStats.innerHTML = omReviewSummaryHtml(st);
+    try{omPatchCardReviewMetrics([id]);}catch(_e){}
   }catch(_e){
     if(token !== omProductPageReviews.token) return;
     const currentList = els.productPageContent?.querySelector("#ppReviewsList");

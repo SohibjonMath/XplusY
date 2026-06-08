@@ -1,6 +1,7 @@
 // OrzuMall v50 — secure actions for the mobile admin application
 const admin = require("firebase-admin");
 const { pushToCustomer, pushToAllCustomers } = require("./_customerPush");
+const { refreshReviewStatsForProducts } = require("./_reviewStatsCommon");
 
 function initAdmin(){
   if(admin.apps.length) return;
@@ -234,6 +235,7 @@ exports.handler=async(event)=>{
         approvedAt:status==="approved"?now:null,rejectedAt:status==="rejected"?now:null
       };
       await setReviewAndOrder(db,productId,reviewId,review,patch);
+      await refreshReviewStatsForProducts(db,[productId]).catch(()=>{});
       const title=status==="approved"?"Sharhingiz tasdiqlandi":"Sharhingiz tasdiqlanmadi";
       const msg=status==="approved"?"Fikringiz OrzuMall sahifasida namoyish qilindi.":(reason||"Sharhingiz moderatsiyadan o‘tmadi.");
       await notify(db,review.uid||reviewId,title,msg,"review").catch(()=>{});
@@ -257,6 +259,7 @@ exports.handler=async(event)=>{
       if(!snap.exists)return json(404,{ok:false,error:"review_not_found"});
       const review=snap.data()||{};
       const result=await deleteReviewAndOrder(db,productId,reviewId,review,adminEmail);
+      await refreshReviewStatsForProducts(db,[productId]).catch(()=>{});
       return json(200,{ok:true,...result});
     }
 
