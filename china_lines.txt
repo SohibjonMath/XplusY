@@ -1,0 +1,795 @@
+     1	/*
+     2	 * OrzuMall admin-only hybrid 1688 trend importer.
+     3	 * RapidAPI link import is the recommended path for structured SKU variants.
+     4	 * Chrome extension and manual form remain fallback modes.
+     5	 */
+     6	const {
+     7	  admin, cleanText, json, parseBody, safe1688Url, itemIdFromUrl,
+     8	  calculatePrice, pricingConfig, requireAdmin, rateLimit,
+     9	  rapidApi1688Ready, rapidApi1688Host, fetch1688DetailByUrl, normalizeDetailResponse,
+    10	} = require('./_china1688Common');
+    11	const { MAX_IMAGES_PER_BATCH, IMAGE_STANDARD, copyImages, normalizeMarketplaceImageUrl } = require('./_china1688ImageStore');
+    12	
+    13	function safeNumber(v, min = 0, max = 1e12, fallback = 0) {
+    14	  const n = Number(v);
+    15	  return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+    16	}
+    17	function safeInt(v, min = 0, max = 1e9, fallback = 0) {
+    18	  return Math.round(safeNumber(v, min, max, fallback));
+    19	}
+    20	function safeUrl(v, max = 2200) {
+    21	  return normalizeMarketplaceImageUrl(v, max);
+    22	}
+    23	function uniq(list, max = 30) {
+    24	  return [...new Set((Array.isArray(list) ? list : []).filter(Boolean))].slice(0, max);
+    25	}
+    26	function sanitizeImages(list) {
+    27	  return uniq((Array.isArray(list) ? list : []).map(v => safeUrl(v, 2200)).filter(Boolean), 18);
+    28	}
+    29	function sanitizeTags(list) {
+    30	  const src = Array.isArray(list) ? list : String(list || '').split(',');
+    31	  return uniq(src.map(v => cleanText(v, 48)).filter(Boolean), 16);
+    32	}
+    33	function sanitizeProps(list) {
+    34	  return (Array.isArray(list) ? list : []).slice(0, 30).map(row => ({
+    35	    name: cleanText(row?.name, 90), value: cleanText(row?.value, 300),
+    36	  })).filter(x => x.name || x.value);
+    37	}
+    38	function sanitizeSourceVariants(list) {
+    39	  return (Array.isArray(list) ? list : []).slice(0, 160).map(row => ({
+    40	    id: cleanText(row?.id, 140),
+    41	    name: cleanText(row?.name, 260),
+    42	    image: safeUrl(row?.image, 2200),
+    43	    stock: safeInt(row?.stock, 0, 1e9, 0),
+    44	    priceCny: safeNumber(row?.priceCny, 0, 1e8, 0),
+    45	    priceUzs: safeInt(row?.priceUzs, 0, 1e12, 0),
+    46	  })).filter(x => x.name || x.id);
+    47	}
+    48	
+    49	function sanitizeVariantOptions(list) {
+    50	  return (Array.isArray(list) ? list : []).slice(0, 64).map((row, idx) => ({
+    51	    id: cleanText(row?.id || `o${idx + 1}`, 140),
+    52	    name: cleanText(row?.name || row?.label || row?.value, 160),
+    53	    image: safeUrl(row?.image, 2200),
+    54	    disabled: row?.disabled === true,
+    55	  })).filter(x => x.name);
+    56	}
+    57	function sanitizeVariantGroups(list) {
+    58	  return (Array.isArray(list) ? list : []).slice(0, 10).map((row, idx) => ({
+    59	    id: cleanText(row?.id || `g${idx + 1}`, 140),
+    60	    name: cleanText(row?.name || `Variant ${idx + 1}`, 160),
+    61	    type: ['color', 'size', 'spec', 'other'].includes(cleanText(row?.type, 20).toLowerCase()) ? cleanText(row?.type, 20).toLowerCase() : 'other',
+    62	    options: sanitizeVariantOptions(row?.options),
+    63	  })).filter(x => x.options.length);
+    64	}
+    65	function sanitizeSkuVariants(list) {
+    66	  return (Array.isArray(list) ? list : []).slice(0, 220).map((row, idx) => ({
+    67	    id: cleanText(row?.id || `sku${idx + 1}`, 160),
+    68	    name: cleanText(row?.name, 300),
+    69	    color: cleanText(row?.color, 160),
+    70	    size: cleanText(row?.size, 160),
+    71	    attributes: Object.fromEntries(Object.entries(row?.attributes || {}).slice(0, 12).map(([k, v]) => [cleanText(k, 120), cleanText(v, 160)]).filter(([k, v]) => k && v)),
+    72	    image: safeUrl(row?.image, 2200),
+    73	    stock: safeInt(row?.stock, 0, 1e9, 0),
+    74	    priceCny: safeNumber(row?.priceCny, 0, 1e8, 0),
+    75	    priceUzs: safeInt(row?.priceUzs, 0, 1e12, 0),
+    76	  })).filter(x => x.name || x.color || x.size || x.id);
+    77	}
+    78	function sanitizeImagesByColor(value) {
+    79	  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    80	  const out = {};
+    81	  Object.entries(value).slice(0, 64).forEach(([key, rows]) => {
+    82	    const name = cleanText(key, 160);
+    83	    const images = sanitizeImages(Array.isArray(rows) ? rows : [rows]);
+    84	    if (name && images.length) out[name] = images;
+    85	  });
+    86	  return out;
+    87	}
+    88	function cleanVariantValue(value) {
+    89	  return cleanText(value, 180)
+    90	    .replace(/(?:库存|庫存|stock|qoldiq|остаток)\s*[:：]?\s*\d+[\s\S]*$/i, '')
+    91	    .replace(/(?:¥|￥)\s*\d+(?:[.,]\d+)?[\s\S]*$/i, '')
+    92	    .replace(/^[\s:：/_-]+|[\s:：/_-]+$/g, '')
+    93	    .replace(/\s+/g, ' ')
+    94	    .trim();
+    95	}
+    96	const noisyVariantValue = /(?:主面料|面料|材质|成分|品牌|货号|运费|评价|参数|商品属性|包装|详情|登录|登錄|查看全部|好评|已购|起批|¥|￥|库存|庫存|stock|qoldiq|material|fabric|brand|price|delivery)/i;
+    97	function usableVariantValue(value) { const v=cleanVariantValue(value); return !!v && v.length<=90 && !noisyVariantValue.test(v); }
+    98	function attributeByKind(attributes = {}, kind = '') {
+    99	  const re = kind === 'color'
+   100	    ? /(?:颜色|顏色|色彩|color|colour|rang)/i
+   101	    : /(?:尺码|尺寸|大小|规格|規格|型号|型號|款式|specification|variant|size|razmer|o['‘’]?lcham)/i;
+   102	  const hit = Object.entries(attributes || {}).find(([key]) => re.test(cleanText(key, 160)));
+   103	  return cleanVariantValue(hit?.[1] || '');
+   104	}
+   105	function sourceColors(source = {}) {
+   106	  const explicit = sanitizeVariantOptions(source.colorOptions);
+   107	  const group = sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'color');
+   108	  const skuRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants);
+   109	  const rows = [...explicit, ...(group?.options || [])];
+   110	  skuRows.forEach(row => {
+   111	    const name = cleanVariantValue(row.color || attributeByKind(row.attributes, 'color'));
+   112	    if (usableVariantValue(name)) rows.push({ id: row.id, name, image: row.image || '' });
+   113	  });
+   114	  const map = new Map();
+   115	  rows.forEach(row => {
+   116	    const name = cleanVariantValue(row.name);
+   117	    if (!usableVariantValue(name)) return;
+   118	    const prev = map.get(name) || {};
+   119	    map.set(name, { name, ...((row.image || prev.image) ? { image: row.image || prev.image } : {}) });
+   120	  });
+   121	  return [...map.values()].slice(0, 64);
+   122	}
+   123	function sourceSizes(source = {}) {
+   124	  const explicit = sanitizeVariantOptions(source.sizeOptions);
+   125	  const group = sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'size') || sanitizeVariantGroups(source.variantGroups).find(x => x.type === 'spec');
+   126	  const skuRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants);
+   127	  const rows = [...explicit, ...(group?.options || [])].map(row => row.name);
+   128	  skuRows.forEach(row => rows.push(row.size || attributeByKind(row.attributes, 'size')));
+   129	  return [...new Set(rows.map(cleanVariantValue).filter(usableVariantValue))].slice(0, 80);
+   130	}
+   131	function marketplaceVariants(source = {}, fallbackPrice = 0) {
+   132	  const toMarketplace = row => {
+   133	    const stockQty = safeInt(row.stock, 0, 1e9, 0);
+   134	    const colorRaw = row.color || attributeByKind(row.attributes, 'color');
+   135	    const sizeRaw = row.size || attributeByKind(row.attributes, 'size');
+   136	    return {
+   137	      color: usableVariantValue(colorRaw) ? cleanVariantValue(colorRaw) : null,
+   138	      size: usableVariantValue(sizeRaw) ? cleanVariantValue(sizeRaw) : null,
+   139	      price: row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0),
+   140	      stock: stockQty,
+   141	      stockQty,
+   142	      sku: row.id,
+   143	      skuId: row.id,
+   144	      attributes: row.attributes,
+   145	      ...(row.image ? { image: row.image } : {}),
+   146	    };
+   147	  };
+   148	  const cleanRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants).map(toMarketplace).filter(row => row.color || row.size);
+   149	  if (cleanRows.length) return cleanRows.slice(0, 220);
+   150	  // Kengaytma strukturali SKU topa olmagan holatda admin tasdiqlagan variantlardan xavfsiz SKU yaratiladi.
+   151	  const colors=sourceColors(source), sizes=sourceSizes(source);
+   152	  let rows=[];
+   153	  if(colors.length && sizes.length) rows=colors.flatMap(c=>sizes.map((z,i)=>({id:`generated-${c.name}-${i+1}`,name:`${c.name} / ${z}`,color:c.name,size:z,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name,规格:z}})));
+   154	  else if(colors.length) rows=colors.map((c,i)=>({id:`generated-color-${i+1}`,name:c.name,color:c.name,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name}}));
+   155	  else if(sizes.length) rows=sizes.map((z,i)=>({id:`generated-spec-${i+1}`,name:z,size:z,stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{规格:z}}));
+   156	  return rows.map(toMarketplace).filter(row=>row.color || row.size).slice(0,220);
+   157	}
+   158	
+   159	
+   160	function customerGroupType(name = '', hint = '') {
+   161	  const raw = `${hint} ${name}`.toLowerCase();
+   162	  if (/(?:color|colour|rang|颜色|顏色|色彩)/i.test(raw)) return 'color';
+   163	  if (/(?:size|razmer|o['‘’]?lcham|尺码|尺寸|大小)/i.test(raw)) return 'size';
+   164	  if (/(?:规格|規格|型号|型號|款式|model|variant|spec)/i.test(raw)) return 'spec';
+   165	  return 'other';
+   166	}
+   167	function customerSlug(value = '', fallback = 'g') {
+   168	  const out = cleanText(value, 140).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-+|-+$/g, '');
+   169	  return out || fallback;
+   170	}
+   171	function customerOption(value = {}, index = 0) {
+   172	  const row = typeof value === 'string' ? { name: value } : (value || {});
+   173	  const name = cleanVariantValue(row.name || row.label || row.value || row.text || '');
+   174	  if (!usableVariantValue(name)) return null;
+   175	  return {
+   176	    id: cleanText(row.id || `o${index + 1}`, 140),
+   177	    name,
+   178	    image: safeUrl(row.image || row.img || row.imageUrl || '', 2200),
+   179	    disabled: row.disabled === true,
+   180	  };
+   181	}
+   182	function dedupeCustomerOptions(rows = []) {
+   183	  const map = new Map();
+   184	  rows.forEach((row, index) => {
+   185	    const opt = customerOption(row, index);
+   186	    if (!opt) return;
+   187	    const key = opt.name.toLowerCase();
+   188	    const prev = map.get(key) || {};
+   189	    map.set(key, { ...prev, ...opt, image: opt.image || prev.image || '' });
+   190	  });
+   191	  return [...map.values()].slice(0, 96);
+   192	}
+   193	function customerGroup(value = {}, index = 0) {
+   194	  const row = value || {};
+   195	  const name = cleanText(row.name || row.label || `Variant ${index + 1}`, 160);
+   196	  const type = customerGroupType(name, row.type);
+   197	  const options = dedupeCustomerOptions(row.options || row.values || []);
+   198	  if (!options.length) return null;
+   199	  return {
+   200	    id: cleanText(row.id || customerSlug(name, `g${index + 1}`), 140),
+   201	    name,
+   202	    type,
+   203	    required: row.required !== false,
+   204	    options,
+   205	  };
+   206	}
+   207	function customerAttrValue(attributes = {}, group = {}) {
+   208	  const entries = Object.entries(attributes || {});
+   209	  const exact = entries.find(([key]) => cleanText(key, 160).toLowerCase() === cleanText(group.name, 160).toLowerCase());
+   210	  if (exact) return cleanVariantValue(exact[1]);
+   211	  const re = group.type === 'color'
+   212	    ? /(?:颜色|顏色|色彩|color|colour|rang)/i
+   213	    : group.type === 'size'
+   214	      ? /(?:尺码|尺寸|大小|size|razmer|o['‘’]?lcham)/i
+   215	      : group.type === 'spec'
+   216	        ? /(?:规格|規格|型号|型號|款式|model|variant|spec)/i
+   217	        : null;
+   218	  const hit = re ? entries.find(([key]) => re.test(cleanText(key, 160))) : null;
+   219	  return cleanVariantValue(hit?.[1] || '');
+   220	}
+   221	function upsertCustomerGroup(groupMap, raw = {}, fallbackIndex = 0) {
+   222	  const group = customerGroup(raw, fallbackIndex);
+   223	  if (!group) return;
+   224	  const key = `${group.type}::${group.name.toLowerCase()}`;
+   225	  const byType = [...groupMap.values()].find(x => ['color', 'size'].includes(group.type) && x.type === group.type);
+   226	  const existing = groupMap.get(key) || byType;
+   227	  if (existing) {
+   228	    existing.options = dedupeCustomerOptions([...(existing.options || []), ...(group.options || [])]);
+   229	    return;
+   230	  }
+   231	  groupMap.set(key, group);
+   232	}
+   233	function buildChina1688CustomerCatalog(source = {}, fallbackPrice = 0) {
+   234	  const sourceGroups = sanitizeVariantGroups(source.variantGroups);
+   235	  const skuRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants);
+   236	  const groupMap = new Map();
+   237	  sourceGroups.forEach((group, idx) => upsertCustomerGroup(groupMap, group, idx));
+   238	
+   239	  const colors = sourceColors(source);
+   240	  if (colors.length) upsertCustomerGroup(groupMap, { id: 'color', name: 'Rang', type: 'color', options: colors }, groupMap.size);
+   241	  const sizes = sourceSizes(source);
+   242	  if (sizes.length) upsertCustomerGroup(groupMap, { id: 'size', name: source.genericSpecName || 'O‘lcham / model', type: 'size', options: sizes.map(name => ({ name })) }, groupMap.size);
+   243	
+   244	  skuRows.forEach(row => {
+   245	    Object.entries(row.attributes || {}).forEach(([name, value]) => {
+   246	      const option = customerOption({ name: value }, 0);
+   247	      if (!option) return;
+   248	      upsertCustomerGroup(groupMap, { id: customerSlug(name, `g${groupMap.size + 1}`), name, type: customerGroupType(name), options: [option] }, groupMap.size);
+   249	    });
+   250	    if (row.color) upsertCustomerGroup(groupMap, { id: 'color', name: 'Rang', type: 'color', options: [{ name: row.color, image: row.image }] }, groupMap.size);
+   251	    if (row.size) upsertCustomerGroup(groupMap, { id: 'size', name: source.genericSpecName || 'O‘lcham / model', type: 'size', options: [{ name: row.size }] }, groupMap.size);
+   252	  });
+   253	
+   254	  let optionGroups = [...groupMap.values()].map((group, idx) => ({ ...group, id: cleanText(group.id || `g${idx + 1}`, 140) })).filter(group => group.options.length).slice(0, 8);
+   255	
+   256	  if (!optionGroups.length && skuRows.length) {
+   257	    const fallbackRows = dedupeCustomerOptions(skuRows.map(row => ({ name: row.name || row.id, image: row.image })));
+   258	    if (fallbackRows.length) optionGroups = [{ id: 'variant', name: 'Variant', type: 'spec', required: true, options: fallbackRows }];
+   259	  }
+   260	
+   261	  const ensureGroupOption = (group, value, image = '') => {
+   262	    const name = cleanVariantValue(value);
+   263	    if (!usableVariantValue(name)) return '';
+   264	    const hit = group.options.find(opt => opt.name.toLowerCase() === name.toLowerCase());
+   265	    if (hit) {
+   266	      if (!hit.image && image) hit.image = safeUrl(image, 2200);
+   267	      return hit.name;
+   268	    }
+   269	    group.options.push({ id: `o${group.options.length + 1}`, name, image: safeUrl(image, 2200), disabled: false });
+   270	    return name;
+   271	  };
+   272	
+   273	  const rows = [];
+   274	  skuRows.forEach((row, idx) => {
+   275	    const selections = {};
+   276	    optionGroups.forEach(group => {
+   277	      let value = customerAttrValue(row.attributes, group);
+   278	      if (!value && group.type === 'color') value = row.color;
+   279	      if (!value && ['size', 'spec'].includes(group.type)) value = row.size;
+   280	      if (!value && optionGroups.length === 1) value = row.name;
+   281	      const normalized = ensureGroupOption(group, value, row.image);
+   282	      if (normalized) selections[group.id] = normalized;
+   283	    });
+   284	    if (!Object.keys(selections).length) return;
+   285	    const price = row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0);
+   286	    rows.push({
+   287	      id: cleanText(row.id || `sku${idx + 1}`, 160),
+   288	      skuId: cleanText(row.id || `sku${idx + 1}`, 160),
+   289	      name: cleanText(row.name || Object.values(selections).join(' / '), 300),
+   290	      selections,
+   291	      price,
+   292	      priceCny: safeNumber(row.priceCny, 0, 1e8, 0),
+   293	      stock: safeInt(row.stock, 0, 1e9, 0),
+   294	      image: safeUrl(row.image, 2200),
+   295	      disabled: false,
+   296	    });
+   297	  });
+   298	
+   299	  const maxGenerated = 240;
+   300	  if (rows.length && optionGroups.length && rows.some(row => optionGroups.some(group => !row.selections?.[group.id]))) {
+   301	    const expanded = [];
+   302	    rows.forEach((row, rowIndex) => {
+   303	      let partial = [{ ...row, selections: { ...(row.selections || {}) } }];
+   304	      optionGroups.forEach(group => {
+   305	        if (partial.every(item => item.selections?.[group.id])) return;
+   306	        const next = [];
+   307	        partial.forEach(item => {
+   308	          if (item.selections?.[group.id]) { next.push(item); return; }
+   309	          group.options.forEach(option => {
+   310	            if (next.length + expanded.length >= maxGenerated) return;
+   311	            next.push({ ...item, id: `${item.id || `sku${rowIndex + 1}`}-${group.id}-${option.id}`, skuId: `${item.skuId || item.id || `sku${rowIndex + 1}`}-${group.id}-${option.id}`, name: cleanText(`${item.name || ''} / ${option.name}`, 300), selections: { ...(item.selections || {}), [group.id]: option.name }, image: item.image || option.image || '' });
+   312	          });
+   313	        });
+   314	        partial = next;
+   315	      });
+   316	      expanded.push(...partial.slice(0, Math.max(0, maxGenerated - expanded.length)));
+   317	    });
+   318	    rows.splice(0, rows.length, ...expanded.slice(0, maxGenerated));
+   319	  }
+   320	  if (!rows.length && optionGroups.length) {
+   321	    let combos = [{}];
+   322	    optionGroups.forEach(group => {
+   323	      const next = [];
+   324	      combos.forEach(combo => group.options.forEach(opt => {
+   325	        if (next.length < maxGenerated) next.push({ ...combo, [group.id]: opt.name });
+   326	      }));
+   327	      combos = next;
+   328	    });
+   329	    combos.slice(0, maxGenerated).forEach((selections, idx) => {
+   330	      const colorGroup = optionGroups.find(g => g.type === 'color');
+   331	      const colorValue = colorGroup ? selections[colorGroup.id] : '';
+   332	      const image = colorGroup?.options.find(opt => opt.name === colorValue)?.image || '';
+   333	      rows.push({
+   334	        id: `generated-${idx + 1}`,
+   335	        skuId: `generated-${idx + 1}`,
+   336	        name: Object.values(selections).join(' / '),
+   337	        selections,
+   338	        price: safeInt(fallbackPrice, 0, 1e12, 0),
+   339	        priceCny: safeNumber(source.priceCny, 0, 1e8, 0),
+   340	        stock: safeInt(source.stock, 0, 1e9, 0),
+   341	        image,
+   342	        disabled: false,
+   343	      });
+   344	    });
+   345	  }
+   346	
+   347	  optionGroups = optionGroups.map(group => ({ ...group, options: dedupeCustomerOptions(group.options) }));
+   348	  const skuMap = new Map();
+   349	  rows.forEach(row => {
+   350	    const key = optionGroups.map(group => `${group.id}:${row.selections?.[group.id] || ''}`).join('|') || row.id;
+   351	    if (!skuMap.has(key)) skuMap.set(key, row);
+   352	  });
+   353	  const skus = [...skuMap.values()].slice(0, maxGenerated);
+   354	  return {
+   355	    version: 1,
+   356	    kind: 'china1688-catalog',
+   357	    optionGroups,
+   358	    skus,
+   359	    optionGroupCount: optionGroups.length,
+   360	    skuCount: skus.length,
+   361	    hasVariants: optionGroups.length > 0,
+   362	    sourceMode: source?.diagnostics?.mode || (skuRows.length ? 'source-sku' : 'admin-generated'),
+   363	  };
+   364	}
+   365	function catalogToLegacyVariants(catalog = {}) {
+   366	  const groups = Array.isArray(catalog.optionGroups) ? catalog.optionGroups : [];
+   367	  const colorGroup = groups.find(g => g.type === 'color');
+   368	  const sizeGroup = groups.find(g => ['size', 'spec'].includes(g.type));
+   369	  return (Array.isArray(catalog.skus) ? catalog.skus : []).map(row => ({
+   370	    color: colorGroup ? row.selections?.[colorGroup.id] || null : null,
+   371	    size: sizeGroup ? row.selections?.[sizeGroup.id] || null : null,
+   372	    price: safeInt(row.price, 0, 1e12, 0),
+   373	    stock: safeInt(row.stock, 0, 1e9, 0),
+   374	    stockQty: safeInt(row.stock, 0, 1e9, 0),
+   375	    sku: cleanText(row.skuId || row.id, 160),
+   376	    skuId: cleanText(row.skuId || row.id, 160),
+   377	    image: safeUrl(row.image, 2200),
+   378	    attributes: row.selections || {},
+   379	    chinaOptions: row.selections || {},
+   380	  }));
+   381	}
+   382	
+   383	function nowIso() { return new Date().toISOString(); }
+   384	function isStorageUrl(v) { return /^https:\/\/firebasestorage\.googleapis\.com\//i.test(String(v || '')); }
+   385	function isNormalizedStorageUrl(v) { return isStorageUrl(v) && /square-1200/i.test(String(v || '')); }
+   386	
+   387	async function generateAdminProductId(db) {
+   388	  const counterRef = db.doc('meta/counters');
+   389	  return db.runTransaction(async tx => {
+   390	    const snap = await tx.get(counterRef);
+   391	    const data = snap.exists ? (snap.data() || {}) : {};
+   392	    let n = safeInt(data.aa, 0, 999999999, 0);
+   393	    for (let guard = 0; guard < 100; guard += 1) {
+   394	      n += 1;
+   395	      const id = `aa${String(n).padStart(3, '0')}`.toLowerCase();
+   396	      const productRef = db.doc(`products/${id}`);
+   397	      const productSnap = await tx.get(productRef);
+   398	      if (!productSnap.exists) {
+   399	        tx.set(counterRef, { aa: n }, { merge: true });
+   400	        return id;
+   401	      }
+   402	    }
+   403	    throw new Error('PRODUCT_ID_GENERATION_FAILED');
+   404	  });
+   405	}
+   406	async function findExistingByItemId(db, itemId) {
+   407	  const id = cleanText(itemId, 100).replace(/[^0-9]/g, '');
+   408	  if (!id) return '';
+   409	  const snap = await db.collection('products').where('sourceItemId', '==', id).limit(8).get();
+   410	  const hit = snap.docs.find(doc => (doc.data() || {}).sourcePlatform === '1688');
+   411	  return hit?.id || '';
+   412	}
+   413	function sourceSummary(item = {}) {
+   414	  const images = sanitizeImages(item.images);
+   415	  return {
+   416	    id: cleanText(item.id, 100).replace(/[^0-9]/g, ''),
+   417	    url: safe1688Url(item.url),
+   418	    title: cleanText(item.title || item.originalTitle, 520),
+   419	    image: safeUrl(item.image || images[0], 2200),
+   420	    images,
+   421	    priceCny: safeNumber(item.priceCny, 0, 1e8, 0),
+   422	    priceCnyMax: safeNumber(item.priceCnyMax, 0, 1e8, 0),
+   423	    priceUzs: safeInt(item.priceUzs, 0, 1e12, 0),
+   424	    pricing: item.pricing || calculatePrice(item.priceCny),
+   425	    moq: safeInt(item.moq, 1, 1e8, 1),
+   426	    stock: safeInt(item.stock, 0, 1e9, 0),
+   427	    unit: cleanText(item.unit, 32) || 'dona',
+   428	    sellerName: cleanText(item.sellerName, 220),
+   429	    sellerLocation: cleanText(item.sellerLocation, 220),
+   430	    deliveryFeeCny: safeNumber(item.deliveryFeeCny, 0, 1e8, 0),
+   431	    serviceTags: sanitizeTags(item.serviceTags),
+   432	    props: sanitizeProps(item.props),
+   433	    variants: sanitizeSourceVariants(item.variants),
+   434	    galleryImages: sanitizeImages(item.galleryImages?.length ? item.galleryImages : images),
+   435	    variantImages: sanitizeImages(item.variantImages),
+   436	    colorOptions: sanitizeVariantOptions(item.colorOptions),
+   437	    sizeOptions: sanitizeVariantOptions(item.sizeOptions),
+   438	    variantGroups: sanitizeVariantGroups(item.variantGroups),
+   439	    skuVariants: sanitizeSkuVariants(item.skuVariants?.length ? item.skuVariants : item.variants),
+   440	    imagesByColor: sanitizeImagesByColor(item.imagesByColor),
+   441	    genericSpecName: cleanText(item.genericSpecName, 120),
+   442	    diagnostics: {
+   443	      galleryCount: safeInt(item?.diagnostics?.galleryCount, 0, 1000, images.length),
+   444	      variantImageCount: safeInt(item?.diagnostics?.variantImageCount, 0, 1000, 0),
+   445	      groupCount: safeInt(item?.diagnostics?.groupCount, 0, 100, 0),
+   446	      skuCount: safeInt(item?.diagnostics?.skuCount, 0, 1000, 0),
+   447	      mode: cleanText(item?.diagnostics?.mode, 50),
+   448	      loginRequired: item?.diagnostics?.loginRequired === true,
+   449	      variantsMayBePartial: item?.diagnostics?.variantsMayBePartial === true,
+   450	      bridgeRootCount: safeInt(item?.diagnostics?.bridgeRootCount, 0, 100, 0),
+   451	      visibleVariantLabelCount: safeInt(item?.diagnostics?.visibleVariantLabelCount, 0, 500, 0),
+   452	      groupNames: (Array.isArray(item?.diagnostics?.groupNames) ? item.diagnostics.groupNames : []).slice(0, 12).map(v => cleanText(v, 120)).filter(Boolean),
+   453	    },
+   454	    extractedAt: cleanText(item.extractedAt, 80),
+   455	    extractorVersion: cleanText(item.extractorVersion, 40),
+   456	  };
+   457	}
+   458	function buildDescription(source = {}) {
+   459	  const lines = ['Xitoydan buyurtma qilinadigan mahsulot. Yetkazib berish muddati taxminiy.'];
+   460	  (source.props || []).slice(0, 12).forEach(p => {
+   461	    if (p.name && p.value) lines.push(`${p.name}: ${p.value}`);
+   462	  });
+   463	  return lines.join('\n');
+   464	}
+   465	function sanitizeDraft(raw = {}) {
+   466	  const sourceUrl = safe1688Url(raw.sourceUrl || raw?.source?.url);
+   467	  if (!sourceUrl) throw Object.assign(new Error('1688 mahsulot havolasini kiriting.'), { statusCode: 400 });
+   468	  const itemId = cleanText(raw.itemId || raw?.source?.id || itemIdFromUrl(sourceUrl), 100).replace(/[^0-9]/g, '');
+   469	  const priceCny = safeNumber(raw.priceCny ?? raw?.source?.priceCny, 0, 1e8, 0);
+   470	  const source = sourceSummary({ ...(raw.source || {}), id: itemId, url: sourceUrl, priceCny });
+   471	  const images = sanitizeImages(raw.images?.length ? raw.images : source.images);
+   472	  const externalImages = sanitizeImages(raw.externalImages?.length ? raw.externalImages : source.images);
+   473	  const name = cleanText(raw.name || source.title, 360);
+   474	  if (!name) throw Object.assign(new Error('Mahsulot nomini kiriting.'), { statusCode: 400 });
+   475	  const autoPrice = calculatePrice(priceCny).priceUzs;
+   476	  const price = safeInt(raw.price, 0, 1e12, autoPrice);
+   477	  if (!price) throw Object.assign(new Error('Mahsulot narxini kiriting.'), { statusCode: 400 });
+   478	  return {
+   479	    productId: cleanText(raw.productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, ''),
+   480	    sourceUrl, itemId, source, images, externalImages, name,
+   481	    name_ru: cleanText(raw.name_ru || '', 360),
+   482	    name_en: cleanText(raw.name_en || '', 360),
+   483	    description: cleanText(raw.description || buildDescription(source), 7000),
+   484	    description_ru: cleanText(raw.description_ru || '', 7000),
+   485	    description_en: cleanText(raw.description_en || '', 7000),
+   486	    price, oldPrice: safeInt(raw.oldPrice, 0, 1e12, 0),
+   487	    weightKg: safeNumber(raw.weightKg, 0, 100000, 0),
+   488	    popularScore: safeInt(raw.popularScore, 0, 1e12, 50),
+   489	    tags: sanitizeTags(raw.tags?.length ? raw.tags : ['1688', 'Xitoydan buyurtma', 'trend']),
+   490	    deliveryMinDays: safeInt(raw.deliveryMinDays, 1, 365, 15),
+   491	    deliveryMaxDays: safeInt(raw.deliveryMaxDays, 1, 365, 30),
+   492	    moq: safeInt(raw.moq ?? source.moq, 1, 1e8, 1),
+   493	    stock: safeInt(raw.stock ?? source.stock, 0, 1e9, 0),
+   494	  };
+   495	}
+   496	async function saveProduct(db, raw, actor) {
+   497	  const draft = sanitizeDraft(raw);
+   498	  let productId = draft.productId || await findExistingByItemId(db, draft.itemId);
+   499	  if (!productId) productId = await generateAdminProductId(db);
+   500	  const ref = db.doc(`products/${productId}`);
+   501	  const existing = await ref.get();
+   502	  if (existing.exists) {
+   503	    const before = existing.data() || {};
+   504	    if (before.sourcePlatform && before.sourcePlatform !== '1688') {
+   505	      throw Object.assign(new Error('Bu mahsulot 1688 import mahsuloti emas.'), { statusCode: 409 });
+   506	    }
+   507	  }
+   508	  const ts = admin.firestore.FieldValue.serverTimestamp();
+   509	  const source = draft.source;
+   510	  const customerCatalog = buildChina1688CustomerCatalog(source, draft.price);
+   511	  const storedCount = draft.images.filter(isStorageUrl).length;
+   512	  const normalizedCount = draft.images.filter(isNormalizedStorageUrl).length;
+   513	  const payload = {
+   514	    name: draft.name,
+   515	    name_ru: draft.name_ru,
+   516	    name_en: draft.name_en,
+   517	    description: draft.description,
+   518	    description_ru: draft.description_ru,
+   519	    description_en: draft.description_en,
+   520	    price: draft.price,
+   521	    oldPrice: draft.oldPrice,
+   522	    weightKg: draft.weightKg,
+   523	    popularScore: draft.popularScore,
+   524	    currency: 'UZS',
+   525	    images: draft.images,
+   526	    colors: sourceColors(source),
+   527	    sizes: sourceSizes(source),
+   528	    imagesByColor: sanitizeImagesByColor(source.imagesByColor),
+   529	    variants: catalogToLegacyVariants(customerCatalog).length ? catalogToLegacyVariants(customerCatalog) : marketplaceVariants(source, draft.price),
+   530	    china1688Catalog: customerCatalog,
+   531	    tags: draft.tags,
+   532	    fulfillmentType: 'cargo',
+   533	    deliveryMinDays: Math.min(draft.deliveryMinDays, draft.deliveryMaxDays),
+   534	    deliveryMaxDays: Math.max(draft.deliveryMinDays, draft.deliveryMaxDays),
+   535	    prepayRequired: true,
+   536	    status: 'approved',
+   537	    isActive: true,
+   538	    ownerType: 'orzumall',
+   539	    createdByRole: 'admin',
+   540	    isOrzuMallVerified: true,
+   541	    sellerId: 'orzumall',
+   542	    sellerName: 'OrzuMall',
+   543	    sourceType: 'china1688-extension',
+   544	    sourcePlatform: '1688',
+   545	    sourceUrl: draft.sourceUrl,
+   546	    sourceItemId: draft.itemId,
+   547	    china1688: {
+   548	      itemId: draft.itemId,
+   549	      url: draft.sourceUrl,
+   550	      originalTitle: source.title,
+   551	      priceCny: safeNumber(source.priceCny, 0, 1e8, 0),
+   552	      priceCnyMax: safeNumber(source.priceCnyMax, 0, 1e8, 0),
+   553	      moq: draft.moq,
+   554	      stock: draft.stock,
+   555	      unit: cleanText(source.unit, 32),
+   556	      sellerName: cleanText(source.sellerName, 220),
+   557	      sellerLocation: cleanText(source.sellerLocation, 220),
+   558	      deliveryFeeCny: safeNumber(source.deliveryFeeCny, 0, 1e8, 0),
+   559	      serviceTags: sanitizeTags(source.serviceTags),
+   560	      props: sanitizeProps(source.props),
+   561	      variants: sanitizeSourceVariants(source.variants),
+   562	      galleryImages: sanitizeImages(source.galleryImages?.length ? source.galleryImages : draft.externalImages),
+   563	      variantImages: sanitizeImages(source.variantImages),
+   564	      colorOptions: sanitizeVariantOptions(source.colorOptions),
+   565	      sizeOptions: sanitizeVariantOptions(source.sizeOptions),
+   566	      variantGroups: sanitizeVariantGroups(source.variantGroups),
+   567	      skuVariants: sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants),
+   568	      imagesByColor: sanitizeImagesByColor(source.imagesByColor),
+   569	      genericSpecName: cleanText(source.genericSpecName, 120),
+   570	      diagnostics: source.diagnostics || {},
+   571	      customerCatalog,
+   572	      externalImages: draft.externalImages,
+   573	      localImageCount: storedCount,
+   574	      imageStandard: draft.images.length && normalizedCount === draft.images.length ? IMAGE_STANDARD : cleanText(source.imageStandard, 80),
+   575	      normalizedImageCount: normalizedCount,
+   576	      importer: 'chrome-extension',
+   577	      extractorVersion: cleanText(source.extractorVersion, 40),
+   578	      importedBy: actor.email,
+   579	      lastSyncedAt: ts,
+   580	    },
+   581	    updatedAt: ts,
+   582	  };
+   583	  if (!existing.exists) payload.createdAt = nowIso();
+   584	  await ref.set(payload, { merge: true });
+   585	  return { id: productId, created: !existing.exists, localImageCount: storedCount };
+   586	}
+   587	function stampMs(v) {
+   588	  try {
+   589	    if (!v) return 0;
+   590	    if (typeof v.toMillis === 'function') return v.toMillis();
+   591	    if (typeof v.toDate === 'function') return v.toDate().getTime();
+   592	    if (Number.isFinite(Number(v))) return Number(v);
+   593	    return Number(v.seconds || v._seconds || 0) * 1000;
+   594	  } catch (_e) { return 0; }
+   595	}
+   596	function publicRow(doc) {
+   597	  const p = doc.data() || {};
+   598	  const src = p.china1688 || {};
+   599	  const images = sanitizeImages(p.images);
+   600	  return {
+   601	    id: doc.id, name: cleanText(p.name, 360), name_ru: cleanText(p.name_ru, 360), name_en: cleanText(p.name_en, 360),
+   602	    description: cleanText(p.description, 7000), description_ru: cleanText(p.description_ru, 7000), description_en: cleanText(p.description_en, 7000),
+   603	    price: safeInt(p.price, 0, 1e12, 0), oldPrice: safeInt(p.oldPrice, 0, 1e12, 0),
+   604	    image: images[0] || '', images,
+   605	    sourceUrl: safe1688Url(p.sourceUrl || src.url), itemId: cleanText(p.sourceItemId || src.itemId, 100),
+   606	    priceCny: safeNumber(src.priceCny, 0, 1e8, 0), moq: safeInt(src.moq, 1, 1e8, 1),
+   607	    fulfillmentType: cleanText(p.fulfillmentType, 32), isActive: p.isActive !== false,
+   608	    deliveryMinDays: safeInt(p.deliveryMinDays, 1, 365, 15), deliveryMaxDays: safeInt(p.deliveryMaxDays, 1, 365, 30),
+   609	    tags: sanitizeTags(p.tags), weightKg: safeNumber(p.weightKg, 0, 100000, 0),
+   610	    popularScore: safeInt(p.popularScore, 0, 1e12, 0), colors: Array.isArray(p.colors) ? p.colors : [], sizes: Array.isArray(p.sizes) ? p.sizes : [], variants: Array.isArray(p.variants) ? p.variants : [], imagesByColor: p.imagesByColor || {}, china1688Catalog: p.china1688Catalog || src.customerCatalog || {}, updatedAtMs: stampMs(p.updatedAt),
+   611	    localImageCount: safeInt(src.localImageCount, 0, 1000, images.filter(isStorageUrl).length),
+   612	    imageStandard: cleanText(src.imageStandard, 80), normalizedImageCount: safeInt(src.normalizedImageCount, 0, 1000, images.filter(isNormalizedStorageUrl).length),
+   613	    source: sourceSummary({ ...src, id: p.sourceItemId || src.itemId, url: p.sourceUrl || src.url, images: src.externalImages?.length ? src.externalImages : p.images }),
+   614	  };
+   615	}
+   616	
+   617	
+   618	async function applyNormalizedImages(db, raw = {}, actor) {
+   619	  const id = cleanText(raw.productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+   620	  if (!id) throw Object.assign(new Error('PRODUCT_ID_REQUIRED'), { statusCode: 400 });
+   621	  const ref = db.doc(`products/${id}`);
+   622	  const snap = await ref.get();
+   623	  if (!snap.exists) throw Object.assign(new Error('PRODUCT_NOT_FOUND'), { statusCode: 404 });
+   624	  const before = snap.data() || {};
+   625	  if (before.sourcePlatform !== '1688') throw Object.assign(new Error('NOT_1688_PRODUCT'), { statusCode: 409 });
+   626	  const images = sanitizeImages(raw.images);
+   627	  if (!images.length) throw Object.assign(new Error('PRODUCT_IMAGES_NOT_FOUND'), { statusCode: 400 });
+   628	  const externalImages = sanitizeImages(raw.externalImages?.length ? raw.externalImages : (before.china1688 || {}).externalImages);
+   629	  const storedCount = images.filter(isStorageUrl).length;
+   630	  const normalizedCount = images.filter(isNormalizedStorageUrl).length;
+   631	  const ts = admin.firestore.FieldValue.serverTimestamp();
+   632	  await ref.set({
+   633	    images,
+   634	    china1688: {
+   635	      externalImages,
+   636	      localImageCount: storedCount,
+   637	      normalizedImageCount: normalizedCount,
+   638	      imageStandard: normalizedCount ? IMAGE_STANDARD : '',
+   639	      imageNormalizedBy: actor.email,
+   640	      imageNormalizedAt: ts,
+   641	    },
+   642	    updatedAt: ts,
+   643	  }, { merge: true });
+   644	  return { id, images, copied: storedCount, normalized: normalizedCount, failed: Math.max(0, images.length - storedCount), standard: normalizedCount ? IMAGE_STANDARD : '' };
+   645	}
+   646	
+   647	async function normalizeStoredProductImages(db, productId, actor) {
+   648	  const id = cleanText(productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+   649	  if (!id) throw Object.assign(new Error('PRODUCT_ID_REQUIRED'), { statusCode: 400 });
+   650	  const ref = db.doc(`products/${id}`);
+   651	  const snap = await ref.get();
+   652	  if (!snap.exists) throw Object.assign(new Error('PRODUCT_NOT_FOUND'), { statusCode: 404 });
+   653	  const before = snap.data() || {};
+   654	  if (before.sourcePlatform !== '1688') throw Object.assign(new Error('NOT_1688_PRODUCT'), { statusCode: 409 });
+   655	  const src = before.china1688 || {};
+   656	  const rawUrls = sanitizeImages(src.externalImages?.length ? src.externalImages : before.images);
+   657	  if (!rawUrls.length) throw Object.assign(new Error('PRODUCT_IMAGES_NOT_FOUND'), { statusCode: 400 });
+   658	  const copied = [], failed = [];
+   659	  for (let i = 0; i < rawUrls.length; i += MAX_IMAGES_PER_BATCH) {
+   660	    const part = rawUrls.slice(i, i + MAX_IMAGES_PER_BATCH);
+   661	    const result = await copyImages(part, `${id}-normalized`, { normalize: true });
+   662	    copied.push(...(result.copied || []));
+   663	    failed.push(...(result.failed || []));
+   664	  }
+   665	  if (!copied.length) throw Object.assign(new Error('IMAGE_NORMALIZATION_FAILED'), { statusCode: 502 });
+   666	  const finalImages = [...copied.map(x => x.url), ...failed.map(x => x.sourceUrl)].slice(0, 18);
+   667	  const ts = admin.firestore.FieldValue.serverTimestamp();
+   668	  await ref.set({
+   669	    images: finalImages,
+   670	    china1688: {
+   671	      externalImages: rawUrls,
+   672	      localImageCount: copied.length,
+   673	      normalizedImageCount: copied.filter(x => x.normalized).length,
+   674	      imageStandard: IMAGE_STANDARD,
+   675	      imageNormalizedBy: actor.email,
+   676	      imageNormalizedAt: ts,
+   677	    },
+   678	    updatedAt: ts,
+   679	  }, { merge: true });
+   680	  return {
+   681	    id,
+   682	    images: finalImages,
+   683	    copied: copied.length,
+   684	    normalized: copied.filter(x => x.normalized).length,
+   685	    failed: failed.length,
+   686	    standard: IMAGE_STANDARD,
+   687	  };
+   688	}
+   689	
+   690	async function rebuildStoredCustomerCatalog(db, productId, actor) {
+   691	  const id = cleanText(productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+   692	  if (!id) throw Object.assign(new Error('PRODUCT_ID_REQUIRED'), { statusCode: 400 });
+   693	  const ref = db.doc(`products/${id}`);
+   694	  const snap = await ref.get();
+   695	  if (!snap.exists) throw Object.assign(new Error('PRODUCT_NOT_FOUND'), { statusCode: 404 });
+   696	  const before = snap.data() || {};
+   697	  if (before.sourcePlatform !== '1688') throw Object.assign(new Error('NOT_1688_PRODUCT'), { statusCode: 409 });
+   698	  const src = before.china1688 || {};
+   699	  const source = sourceSummary({
+   700	    ...src,
+   701	    id: before.sourceItemId || src.itemId,
+   702	    url: before.sourceUrl || src.url,
+   703	    title: src.originalTitle || before.name,
+   704	    images: src.externalImages?.length ? src.externalImages : before.images,
+   705	    galleryImages: src.galleryImages?.length ? src.galleryImages : (src.externalImages?.length ? src.externalImages : before.images),
+   706	    variantGroups: src.variantGroups?.length ? src.variantGroups : before.variantGroups,
+   707	    skuVariants: src.skuVariants?.length ? src.skuVariants : (src.variants?.length ? src.variants : before.variants),
+   708	    variants: src.variants?.length ? src.variants : before.variants,
+   709	    colorOptions: src.colorOptions?.length ? src.colorOptions : before.colors,
+   710	    sizeOptions: src.sizeOptions?.length ? src.sizeOptions : before.sizes,
+   711	    imagesByColor: (src.imagesByColor && Object.keys(src.imagesByColor).length) ? src.imagesByColor : before.imagesByColor,
+   712	    priceCny: src.priceCny,
+   713	    stock: src.stock,
+   714	    moq: src.moq,
+   715	    diagnostics: src.diagnostics,
+   716	  });
+   717	  const catalog = buildChina1688CustomerCatalog(source, safeInt(before.price, 0, 1e12, 0));
+   718	  const legacyVariants = catalogToLegacyVariants(catalog);
+   719	  const ts = admin.firestore.FieldValue.serverTimestamp();
+   720	  await ref.set({
+   721	    china1688Catalog: catalog,
+   722	    colors: sourceColors(source),
+   723	    sizes: sourceSizes(source),
+   724	    ...(legacyVariants.length ? { variants: legacyVariants } : {}),
+   725	    china1688: {
+   726	      customerCatalog: catalog,
+   727	      catalogRebuiltBy: actor.email,
+   728	      catalogRebuiltAt: ts,
+   729	    },
+   730	    updatedAt: ts,
+   731	  }, { merge: true });
+   732	  return { id, optionGroupCount: catalog.optionGroupCount || 0, skuCount: catalog.skuCount || 0, hasVariants: catalog.hasVariants === true };
+   733	}
+   734	
+   735	exports.handler = async function handler(event) {
+   736	  if (event.httpMethod === 'OPTIONS') return json(204, {});
+   737	  if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' });
+   738	  const body = parseBody(event);
+   739	  if (body == null) return json(400, { error: 'INVALID_JSON' });
+   740	  const limited = rateLimit(event, 'china1688-admin', 90, 10 * 60 * 1000);
+   741	  if (!limited.ok) return json(429, { error: 'TOO_MANY_REQUESTS', retryAfterSec: limited.retryAfterSec });
+   742	  const actor = await requireAdmin(event);
+   743	  if (!actor.ok) return json(actor.statusCode, { error: actor.error });
+   744	  const db = admin.firestore();
+   745	  const action = cleanText(body.action || '', 50).toLowerCase();
+   746	  try {
+   747	    if (action === 'apipreview') {
+   748	      const sourceUrl = safe1688Url(body.sourceUrl || body.url);
+   749	      if (!sourceUrl) return json(400, { error: 'SOURCE_URL_REQUIRED', message: 'Haqiqiy 1688 mahsulot havolasini kiriting.' });
+   750	      const fetched = await fetch1688DetailByUrl(sourceUrl, { force: body.force === true });
+   751	      const item = normalizeDetailResponse(fetched.raw);
+   752	      item.url = sourceUrl; item.id = item.id || itemIdFromUrl(sourceUrl);
+   753	      item.diagnostics = { ...(item.diagnostics || {}), provider: fetched.provider, cached: fetched.cached === true };
+   754	      return json(200, { item, provider: fetched.provider, cached: fetched.cached === true, pricing: pricingConfig() });
+   755	    }
+   756	    if (action === 'copyimages') {
+   757	      const itemId = cleanText(body.itemId || 'draft', 100).replace(/[^a-z0-9_-]/gi, '') || 'draft';
+   758	      const result = await copyImages(body.urls, itemId, { normalize: body.normalize !== false, strictNormalize: body.strictNormalize === true });
+   759	      return json(200, { ...result, maxPerBatch: MAX_IMAGES_PER_BATCH, imageStandard: IMAGE_STANDARD });
+   760	    }
+   761	    if (action === 'save') {
+   762	      const result = await saveProduct(db, body.product || {}, actor);
+   763	      return json(200, result);
+   764	    }
+   765	    if (action === 'list') {
+   766	      const snap = await db.collection('products').where('sourcePlatform', '==', '1688').limit(200).get();
+   767	      const products = snap.docs.map(publicRow).sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+   768	      return json(200, { products, pricing: pricingConfig(), importerMode: rapidApi1688Ready() ? 'rapidapi-hybrid' : 'extension-fallback', rapidApiReady: rapidApi1688Ready(), rapidApiHost: rapidApi1688Ready() ? rapidApi1688Host() : '' });
+   769	    }
+   770	    if (action === 'applynormalizedimages') {
+   771	      const result = await applyNormalizedImages(db, body, actor);
+   772	      return json(200, result);
+   773	    }
+   774	    if (action === 'normalizeproductimages') {
+   775	      const result = await normalizeStoredProductImages(db, body.productId, actor);
+   776	      return json(200, result);
+   777	    }
+   778	    if (action === 'rebuildcustomercatalog') {
+   779	      const result = await rebuildStoredCustomerCatalog(db, body.productId, actor);
+   780	      return json(200, result);
+   781	    }
+   782	    if (action === 'archive') {
+   783	      const id = cleanText(body.productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+   784	      if (!id) return json(400, { error: 'PRODUCT_ID_REQUIRED' });
+   785	      const ref = db.doc(`products/${id}`); const snap = await ref.get();
+   786	      if (!snap.exists) return json(404, { error: 'PRODUCT_NOT_FOUND' });
+   787	      if ((snap.data() || {}).sourcePlatform !== '1688') return json(409, { error: 'NOT_1688_PRODUCT' });
+   788	      await ref.set({ isActive: false, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+   789	      return json(200, { ok: true });
+   790	    }
+   791	    return json(400, { error: 'UNKNOWN_ACTION' });
+   792	  } catch (e) {
+   793	    return json(e.statusCode || 500, { error: e.code || e.message || 'IMPORT_FAILED', message: e.message || 'IMPORT_FAILED' });
+   794	  }
+   795	};

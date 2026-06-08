@@ -26,7 +26,8 @@
   const qty=(it)=>Math.max(1,Math.round(num(it?.qty??it?.quantity??it?.count??1)||1));
   const itemTitle=(it)=>String(it?.title||it?.name||it?.productTitle||it?.productName||it?.productId||it?.id||'Mahsulot');
   const itemSku=(it)=>String(it?.sku||it?.article||it?.barcode||it?.productId||it?.id||'—');
-  const variant=(it)=>[it?.color,it?.size,it?.variant].filter(Boolean).join(' / ')||'—';
+  const variant=(it)=>{const o=it?.externalOptions||it?.selectedOptions||it?.chinaOptions||{};return String(it?.variantText||Object.values(o).filter(Boolean).join(' / ')||[it?.color,it?.size,it?.variant].filter(Boolean).join(' / ')||'—')};
+  const source=(it)=>String(it?.sourceLabel||it?.externalMarket?.label||it?.sourcePlatform||it?.externalMarket?.platform||'').trim();
   const items=(o)=>Array.isArray(o?.items)?o.items:[];
   const itemCount=(o)=>items(o).reduce((s,it)=>s+qty(it),0);
   const subtotal=(o)=>{const direct=num(o?.productsTotalUZS||o?.pricing?.subtotalUZS||o?.subtotalUZS);return direct>0?direct:items(o).reduce((s,it)=>s+qty(it)*num(it?.unitPriceUZS||it?.priceUZS||it?.price),0)};
@@ -93,7 +94,7 @@
     return printShell({title:'58x40 etiketka',css,body:list.map(label58).join('')});
   }
   function orderPickBlock(o,index){
-    const rows=items(o).map((it,i)=>`<tr><td>${index}.${i+1}</td><td><b>${esc(itemSku(it))}</b></td><td>${esc(itemTitle(it))}<small>${esc(variant(it))}</small></td><td class="qty">${qty(it)}</td><td class="check">□</td><td class="check">□</td></tr>`).join('');
+    const rows=items(o).map((it,i)=>`<tr><td>${index}.${i+1}</td><td><b>${esc(itemSku(it))}</b></td><td>${esc(itemTitle(it))}<small>${esc(variant(it))}${source(it)?' • Manba: '+esc(source(it)):''}</small></td><td class="qty">${qty(it)}</td><td class="check">□</td><td class="check">□</td></tr>`).join('');
     return `<section class="order"><div class="order-head"><div><h2>#${esc(id(o)||'—')}</h2><p>${esc(owner(o))} • ${esc(phone(o))}</p></div><div class="right"><b>${esc(statusLabel(o))}</b><span>${esc(dateTime(o?.createdAt))}</span></div></div><div class="meta"><div><small>Yetkazish</small><b>${esc(delivery(o))}</b></div><div><small>Manzil</small><b>${esc(address(o))}</b></div><div><small>To‘lov</small><b>${esc(provider(o))}</b></div><div><small>Jami</small><b>${esc(money(total(o)))}</b></div></div><table><thead><tr><th>№</th><th>SKU / ID</th><th>Mahsulot va variant</th><th>Soni</th><th>Oldim</th><th>Qadoq</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Mahsulot ma’lumoti yo‘q</td></tr>'}</tbody></table><div class="sign"><span>Yig‘uvchi: __________________</span><span>Tekshiruvchi: __________________</span><span>Vaqt: ______ : ______</span></div></section>`;
   }
   function pickSheetHtml(orders,meta={}){

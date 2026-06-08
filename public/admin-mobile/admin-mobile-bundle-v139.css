@@ -427,3 +427,6 @@ body{padding-bottom:80px!important}
 .productPageLoading,.storePageLoading,.storeSearchLoading{
   display:none!important;
 }
+
+/* v169 external market links in order details */
+.external-order-items{display:grid;gap:7px;margin-top:8px}.external-order-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid #e5e9f0;border-radius:13px;background:#f8fafc}.external-order-item div{min-width:0}.external-order-item b,.external-order-item span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.external-order-item b{font-size:11px}.external-order-item span{margin-top:3px;color:#64748b;font-size:10px}.external-order-item a{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border:1px solid #c7d2fe;border-radius:10px;background:#eef2ff;color:#4338ca;font-size:9px;font-weight:900;white-space:nowrap}

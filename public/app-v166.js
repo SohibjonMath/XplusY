@@ -1011,16 +1011,22 @@ function omCleanVariantLabel(value){
 const omNoisyVariantLabel = /(?:主面料|面料|材质|成分|品牌|货号|运费|评价|参数|商品属性|包装|详情|登录|登錄|查看全部|好评|已购|起批|¥|￥|库存|庫存|stock|qoldiq|material|fabric|brand|price|delivery)/i;
 function omUsableVariantLabel(value){ const v=omCleanVariantLabel(value); return !!v && v.length<=90 && !omNoisyVariantLabel.test(v); }
 
-function omChina1688Catalog(p){
-  const raw = p?.china1688Catalog || p?.china1688?.customerCatalog || null;
+function omExternalPlatformSpec(p={}){
+  const raw=String(p?.sourcePlatform || p?.externalMarket?.platform || p?.china1688?.platform || "").toLowerCase();
+  const key=raw.includes("sahiy")?"sahiy":raw.includes("uzum")?"uzum":raw.includes("pindu")||raw.includes("yangkeduo")?"pinduoduo":raw.includes("1688")?"1688":"external";
+  return ({sahiy:{key,label:"Sahiy Market",short:"Sahiy",icon:"fa-store",delivery:"Buyurtma asosida"},uzum:{key,label:"Uzum Market",short:"Uzum",icon:"fa-bag-shopping",delivery:"Marketdan buyurtma"},"1688":{key,label:"1688",short:"1688",icon:"fa-plane-arrival",delivery:"Xitoydan buyurtma"},pinduoduo:{key,label:"Pinduoduo",short:"Pinduoduo",icon:"fa-boxes-stacked",delivery:"Xitoydan buyurtma"},external:{key,label:"Tashqi market",short:"Market",icon:"fa-store",delivery:"Buyurtma asosida"}})[key];
+}
+function omExternalCatalog(p){
+  const raw = p?.externalCatalog || p?.externalMarket?.customerCatalog || p?.china1688Catalog || p?.china1688?.customerCatalog || null;
   if(!raw || typeof raw !== "object") return null;
   const groups = Array.isArray(raw.optionGroups) ? raw.optionGroups.filter(g=>g && Array.isArray(g.options) && g.options.length) : [];
   const skus = Array.isArray(raw.skus) ? raw.skus.filter(x=>x && typeof x === "object") : [];
   return { ...raw, optionGroups:groups, skus };
 }
-function om1688Groups(p){ return omChina1688Catalog(p)?.optionGroups || []; }
-function om1688Skus(p){ return omChina1688Catalog(p)?.skus || []; }
-function om1688OptionMap(sel){ return { ...((sel?.chinaOptions && typeof sel.chinaOptions === "object") ? sel.chinaOptions : {}) }; }
+function omChina1688Catalog(p){ return omExternalCatalog(p); }
+function om1688Groups(p){ return omExternalCatalog(p)?.optionGroups || []; }
+function om1688Skus(p){ return omExternalCatalog(p)?.skus || []; }
+function om1688OptionMap(sel){ const raw=sel?.externalOptions || sel?.chinaOptions; return { ...((raw && typeof raw === "object") ? raw : {}) }; }
 function om1688GroupValue(sel, group){
   const opts=om1688OptionMap(sel);
   if(opts[group?.id]) return opts[group.id];
@@ -1039,21 +1045,21 @@ function om1688SelectionFor(p, baseSel={}, {defaultFirst=true}={}){
     if(group.type==="color" && value) color=value;
     if(["size","spec"].includes(String(group.type||"").toLowerCase()) && value && !size) size=value;
   });
-  return { ...baseSel, color, size, chinaOptions, imgIdx:Number(baseSel?.imgIdx||0) };
+  return { ...baseSel, color, size, chinaOptions, externalOptions:{...chinaOptions}, imgIdx:Number(baseSel?.imgIdx||0) };
 }
 function om1688SkuMatches(p, sel, row){
   const groups=om1688Groups(p); if(!groups.length) return false;
   const options=om1688OptionMap(om1688SelectionFor(p,sel,{defaultFirst:false}));
   return groups.every(group=>{
     const selected=options[group.id] || null;
-    const actual=row?.selections?.[group.id] || row?.chinaOptions?.[group.id] || null;
+    const actual=row?.selections?.[group.id] || row?.externalOptions?.[group.id] || row?.chinaOptions?.[group.id] || null;
     return !selected || !actual || String(selected)===String(actual);
   });
 }
 function om1688SelectedSku(p, sel){
   const rows=om1688Skus(p); if(!rows.length) return null;
   const groups=om1688Groups(p), safe=om1688SelectionFor(p,sel||{}, {defaultFirst:true});
-  const exact=rows.find(row=>groups.every(group=>String(row?.selections?.[group.id]||row?.chinaOptions?.[group.id]||"")===String(safe.chinaOptions?.[group.id]||"")));
+  const exact=rows.find(row=>groups.every(group=>String(row?.selections?.[group.id]||row?.externalOptions?.[group.id]||row?.chinaOptions?.[group.id]||"")===String(safe.chinaOptions?.[group.id]||"")));
   return exact || rows.find(row=>om1688SkuMatches(p,safe,row)) || rows[0] || null;
 }
 function om1688SelectionText(p, sel){
@@ -1063,7 +1069,7 @@ function om1688SelectionText(p, sel){
 function om1688VariantHtml(p, interactive=false){
   const groups=om1688Groups(p); const sel=om1688SelectionFor(p,getSel(p),{defaultFirst:true});
   if(!groups.length) return `<div class="qvVarEmpty china"><i class="fa-solid fa-circle-info"></i> Variant ma’lumoti hozircha kiritilmagan</div>`;
-  return `<div class="qv1688VariantHead"><span><i class="fa-solid fa-layer-group"></i> 1688 variantlari</span><small>${om1688Skus(p).length || 0} SKU</small></div>${groups.map(group=>`<div class="qvVarGroup qv1688Group"><span>${escapeHtml(group.name||"Variant")}</span><div class="qv1688Options">${(group.options||[]).slice(0,48).map(opt=>{
+  return `<div class="qv1688VariantHead"><span><i class="fa-solid fa-layer-group"></i> Tashqi katalog variantlari</span><small>${om1688Skus(p).length || 0} SKU</small></div>${groups.map(group=>`<div class="qvVarGroup qv1688Group"><span>${escapeHtml(group.name||"Variant")}</span><div class="qv1688Options">${(group.options||[]).slice(0,48).map(opt=>{
     const active=String(sel.chinaOptions?.[group.id]||"")===String(opt.name||"");
     const attrs=interactive?` type="button" data-pp-1688-group="${escapeHtml(group.id)}" data-pp-1688-value="${escapeHtml(opt.name)}" aria-pressed="${active?"true":"false"}"`:"";
     const tag=interactive?"button":"i";
@@ -1072,13 +1078,14 @@ function om1688VariantHtml(p, interactive=false){
 }
 function om1688ProductIntroHtml(p){
   if(!omIsChina1688Product(p)) return "";
-  const groups=om1688Groups(p), skus=om1688Skus(p);
+  const groups=om1688Groups(p), skus=om1688Skus(p), spec=omExternalPlatformSpec(p);
   const min=Math.max(1,Number(p?.deliveryMinDays||15)||15), max=Math.max(min,Number(p?.deliveryMaxDays||30)||30);
-  return `<section class="pp1688Intro"><div class="pp1688IntroIcon"><img src="assets/flags/cn-48.webp" alt="CN"></div><div><span>1688 Xitoy katalogi</span><b>Buyurtma asosida olib kelinadi</b><small>Oddiy ombor mahsulotidan alohida tizim · ${min}–${max} kun · ${groups.length} guruh · ${skus.length} SKU</small></div><em><i class="fa-solid fa-shield-halved"></i> Oldindan to‘lov</em></section>`;
+  return `<section class="pp1688Intro ppExternalIntro external-${escapeHtml(spec.key)}"><div class="pp1688IntroIcon"><i class="fa-solid ${escapeHtml(spec.icon)}"></i></div><div><span>${escapeHtml(spec.label)} katalogi</span><b>Buyurtma asosida olib kelinadi</b><small>Oddiy ombor mahsulotidan alohida tizim · ${min}–${max} kun · ${groups.length} guruh · ${skus.length} SKU</small></div><em><i class="fa-solid fa-shield-halved"></i> Oldindan to‘lov</em></section>`;
 }
 function om1688ProductGuideHtml(p){
   if(!omIsChina1688Product(p)) return "";
-  return `<section class="pp1688Guide"><div><i class="fa-solid fa-sliders"></i><b>Variantni aniq tanlang</b><span>Rang, model, o‘lcham yoki komplekt alohida SKU sifatida hisoblanadi.</span></div><div><i class="fa-solid fa-plane-arrival"></i><b>Xitoydan yetkaziladi</b><span>Mahsulot buyurtmangiz uchun olib kelinadi.</span></div><div><i class="fa-solid fa-wallet"></i><b>Oldindan to‘lov</b><span>Buyurtma tasdiqlangach xarid jarayoni boshlanadi.</span></div></section>`;
+  const spec=omExternalPlatformSpec(p);
+  return `<section class="pp1688Guide"><div><i class="fa-solid fa-sliders"></i><b>Variantni aniq tanlang</b><span>Rang, model, o‘lcham yoki komplekt alohida SKU sifatida hisoblanadi.</span></div><div><i class="fa-solid ${escapeHtml(spec.icon)}"></i><b>${escapeHtml(spec.label)} manbasi</b><span>Mahsulot buyurtmangiz uchun tashqi marketdan olinadi.</span></div><div><i class="fa-solid fa-wallet"></i><b>Oldindan to‘lov</b><span>Buyurtma tasdiqlangach xarid jarayoni boshlanadi.</span></div></section>`;
 }
 function omVariantRows(p){
   const rows=[];
@@ -1201,8 +1208,9 @@ function setImageIndex(p, idx){
   selected.set(p.id, sel);
 }
 function variantKey(id, sel){
-  const china=sel?.chinaOptions && typeof sel.chinaOptions === "object" ? Object.entries(sel.chinaOptions).sort(([a],[b])=>String(a).localeCompare(String(b))).map(([k,v])=>`${k}=${v}`).join("|") : "";
-  if(china) return `${id}::1688::${china}`;
+  const optionMap=(sel?.externalOptions && typeof sel.externalOptions === "object")?sel.externalOptions:((sel?.chinaOptions && typeof sel.chinaOptions === "object")?sel.chinaOptions:null);
+  const china=optionMap ? Object.entries(optionMap).sort(([a],[b])=>String(a).localeCompare(String(b))).map(([k,v])=>`${k}=${v}`).join("|") : "";
+  if(china) return `${id}::external::${china}`;
   const c = sel?.color || "";
   const s = sel?.size || "";
   return `${id}::${c}::${s}`;
@@ -1329,7 +1337,9 @@ function omNormalizeCart(arr){
   (Array.isArray(arr) ? arr : []).forEach(x=>{
     if(!x || !x.id) return;
     const item = {...x};
-    item.key = item.key || variantKey(item.id, {color:item.color||null, size:item.size||null, chinaOptions:item.chinaOptions||null});
+    item.externalOptions = item.externalOptions || item.chinaOptions || null;
+    item.chinaOptions = item.chinaOptions || item.externalOptions || null;
+    item.key = item.key || variantKey(item.id, {color:item.color||null, size:item.size||null, externalOptions:item.externalOptions||null, chinaOptions:item.chinaOptions||null});
     item.qty = Math.max(1, Number(item.qty||1));
     const old = map.get(item.key);
     if(old){
@@ -2659,7 +2669,8 @@ function render(arr){
   for(const p of arr){
     const card = document.createElement("div");
     const isChinaCard = omIsChina1688Product(p);
-    card.className = `pcard ${isChinaCard ? "china1688Card" : "stockCard"}`;
+    const externalSpec=omExternalPlatformSpec(p);
+    card.className = `pcard ${isChinaCard ? `china1688Card externalMarketCard external-${externalSpec.key}` : "stockCard"}`;
     card.setAttribute("data-product-kind", isChinaCard ? "china1688" : "stock");
 
     const isFav = favs.has(p.id);
@@ -2686,8 +2697,8 @@ for(const b of adminBadges.slice(0,3)){
 const badgeHTML = badgeHtmlParts.length ? `<div class="pbadgeStack">${badgeHtmlParts.join("")}</div>` : "";
 const authHTML = renderProductTypeBadge(p);
 const sellerMiniHTML = isChinaCard ? "" : renderSellerMiniLine(p);
-const chinaCardHead = isChinaCard ? `<div class="china1688Ribbon"><img src="assets/flags/cn-48.webp" alt="CN" loading="lazy" decoding="async"><span>1688 katalog</span></div>` : "";
-const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i class="fa-solid fa-plane-arrival"></i> Xitoydan buyurtma</span><small>${Math.max(1,Number(p?.deliveryMinDays||15)||15)}–${Math.max(1,Number(p?.deliveryMaxDays||30)||30)} kun</small></div>` : "";
+const chinaCardHead = isChinaCard ? `<div class="china1688Ribbon"><i class="fa-solid ${escapeHtml(externalSpec.icon)}"></i><span>${escapeHtml(externalSpec.short)} katalog</span></div>` : "";
+const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i class="fa-solid ${escapeHtml(externalSpec.icon)}"></i> ${escapeHtml(externalSpec.delivery)}</span><small>${Math.max(1,Number(p?.deliveryMinDays||15)||15)}–${Math.max(1,Number(p?.deliveryMaxDays||30)||30)} kun</small></div>` : "";
 
     const st = getStats(p.id);
     const showAvg = st.count ? st.avg : 0;
@@ -2830,7 +2841,8 @@ function addToCart(id, qty, sel){
     // keep latest selected image for this variant
     if(img) item.image = img;
   } else {
-    cart.push({key, id, color: sel?.color || null, size: sel?.size || null, chinaOptions: sel?.chinaOptions && typeof sel.chinaOptions === "object" ? { ...sel.chinaOptions } : null, variantText: p && omIsChina1688Product(p) ? om1688SelectionText(p,sel) : "", qty, image: img || null});
+    const extOpts=om1688OptionMap(sel);
+    cart.push({key, id, color: sel?.color || null, size: sel?.size || null, externalOptions:Object.keys(extOpts).length?{...extOpts}:null, chinaOptions:Object.keys(extOpts).length?{...extOpts}:null, variantText: p && omIsChina1688Product(p) ? om1688SelectionText(p,sel) : "", qty, image: img || null});
   }
   cart = cart.filter(x=>x.qty>0);
   saveLS(LS.cart, cart);
@@ -4180,12 +4192,13 @@ function omProductPageGalleryHtml(p, imgs){
   </section>`;
 }
 
-function omIsChina1688Product(p){
-  const source = String(p?.sourcePlatform || p?.source || p?.marketplace || "").toLowerCase();
+function omIsExternalMarketProduct(p){
+  const source = String(p?.sourcePlatform || p?.externalMarket?.platform || p?.source || p?.marketplace || "").toLowerCase();
   const sourceType = String(p?.sourceType || "").toLowerCase();
-  const sourceUrl = String(p?.sourceUrl || p?.source1688Url || p?.sourceUrl1688 || p?.china1688?.url || "").toLowerCase();
-  return source.includes("1688") || sourceType.includes("china1688") || !!p?.china1688 || !!p?.china1688Catalog || /(?:^|\.)1688\.com\//i.test(sourceUrl);
+  const sourceUrl = String(p?.sourceUrl || p?.externalMarket?.url || p?.source1688Url || p?.sourceUrl1688 || p?.china1688?.url || "").toLowerCase();
+  return ["sahiy","uzum","1688","pinduoduo","yangkeduo"].some(x=>source.includes(x)||sourceUrl.includes(x)) || sourceType.includes("external-market") || sourceType.includes("china1688") || !!p?.externalMarket || !!p?.externalCatalog || !!p?.china1688 || !!p?.china1688Catalog || String(p?.fulfillmentType||"").toLowerCase()==="external_catalog";
 }
+function omIsChina1688Product(p){ return omIsExternalMarketProduct(p); }
 
 function omIsCargoProduct(p){
   const fulfillment=String(p?.fulfillmentType || p?.fulfillment || p?.deliveryType || "").toLowerCase();
@@ -4197,9 +4210,10 @@ function omProductPageCargoHtml(p){
   const min = Math.max(1, Number(p?.deliveryMinDays || p?.pMinDays || 15) || 15);
   const max = Math.max(min, Number(p?.deliveryMaxDays || p?.pMaxDays || 30) || 30);
   const prepay = p?.prepayRequired !== false;
-  return `<section class="ppCargoCard" aria-label="Xitoydan buyurtma ma’lumoti">
-    <div class="ppCargoIcon"><i class="fa-solid fa-plane-arrival"></i></div>
-    <div class="ppCargoCopy"><b>Xitoydan buyurtma</b><span>Mahsulot siz uchun olib kelinadi</span></div>
+  const spec=omExternalPlatformSpec(p);
+  return `<section class="ppCargoCard" aria-label="Buyurtma asosidagi mahsulot ma’lumoti">
+    <div class="ppCargoIcon"><i class="fa-solid ${escapeHtml(spec.icon)}"></i></div>
+    <div class="ppCargoCopy"><b>${omIsExternalMarketProduct(p)?escapeHtml(spec.label)+" katalogi":"Buyurtma asosida"}</b><span>Mahsulot siz uchun olib kelinadi</span></div>
     <div class="ppCargoFacts"><em><i class="fa-regular fa-clock"></i>${min}–${max} kun</em>${prepay?`<em><i class="fa-solid fa-shield-halved"></i>Oldindan to‘lov</em>`:""}</div>
   </section>`;
 }
@@ -5219,7 +5233,7 @@ function renderReviewsUI(productId){
 }
 
 
-function omCartSelection(ci){ return { color:ci?.color||null, size:ci?.size||null, chinaOptions:ci?.chinaOptions||null, imgIdx:0 }; }
+function omCartSelection(ci){ const opts=ci?.externalOptions||ci?.chinaOptions||null; return { color:ci?.color||null, size:ci?.size||null, externalOptions:opts, chinaOptions:opts, imgIdx:0 }; }
 function renderVariantLine(ci){
   if(!ci) return "";
   const parts = [];
@@ -5227,7 +5241,7 @@ function renderVariantLine(ci){
   else {
     if(ci.color) parts.push(ci.color);
     if(ci.size) parts.push(ci.size);
-    if(ci.chinaOptions && typeof ci.chinaOptions === "object") parts.push(...Object.values(ci.chinaOptions).filter(Boolean));
+    const extOptions=ci.externalOptions||ci.chinaOptions; if(extOptions && typeof extOptions === "object") parts.push(...Object.values(extOptions).filter(Boolean));
   }
   const rows=[...new Set(parts.map(x=>String(x||"").trim()).filter(Boolean))];
   if(rows.length===0) return "";
@@ -7476,7 +7490,8 @@ function buildSelectedItems(){
       name: p?.name || "",
       color: ci.color || null,
       size: ci.size || null,
-      chinaOptions: ci.chinaOptions && typeof ci.chinaOptions === "object" ? { ...ci.chinaOptions } : null,
+      externalOptions: (ci.externalOptions||ci.chinaOptions) && typeof (ci.externalOptions||ci.chinaOptions) === "object" ? { ...(ci.externalOptions||ci.chinaOptions) } : null,
+      chinaOptions: (ci.externalOptions||ci.chinaOptions) && typeof (ci.externalOptions||ci.chinaOptions) === "object" ? { ...(ci.externalOptions||ci.chinaOptions) } : null,
       variantText: ci.variantText || (p && omIsChina1688Product(p) ? om1688SelectionText(p,omCartSelection(ci)) : ""),
       qty,
       priceUZS: Number(pr.price||0),
@@ -9031,7 +9046,7 @@ function omRenderRecommendationShelf(){const section=document.getElementById('cx
 function omRefreshCustomerExperience(){omRenderRecentShelf();omRefreshRecommendations().catch(()=>{})}
 async function omRefreshProductAlertButtons(productId){const id=String(productId||'');if(!id||activeTab!=='product')return;let state=omCxAlertState.get(id);if(!state&&currentUser){try{const out=await omCxApi('alert_status',{productId:id},{authRequired:true});state=out.alert||{};omCxAlertState.set(id,state)}catch(_){state={}}}document.querySelectorAll('[data-cx-alert]').forEach(btn=>{const type=btn.getAttribute('data-cx-alert'),on=type==='price_drop'?state?.priceDrop===true:state?.backInStock===true;btn.classList.toggle('active',!!on);btn.setAttribute('aria-pressed',on?'true':'false');const label=btn.querySelector('span');if(label){const base=type==='price_drop'?'Narx tushganda xabar':'Omborga qaytganda xabar';label.textContent=on?`${base} • yoqilgan`:base}})}
 async function omToggleProductAlert(productId,type){if(!currentUser){toast('Xabar olish uchun akkauntga kiring.');goTab('profile');return}const id=String(productId||''),old=omCxAlertState.get(id)||{},key=type==='price_drop'?'priceDrop':'backInStock',enabled=old[key]!==true;try{await omCxApi('toggle_alert',{productId:id,type,enabled},{authRequired:true});omCxAlertState.set(id,{...old,[key]:enabled});omRefreshProductAlertButtons(id);toast(enabled?'Xabarnoma yoqildi.':'Xabarnoma o‘chirildi.')}catch(_){toast('Xabarnomani o‘zgartirib bo‘lmadi.','error')}}
-async function omRepeatOrder(orderId){const order=getOrderFromCache(orderId);if(!order||!Array.isArray(order.items)||!order.items.length){toast('Buyurtma mahsulotlari topilmadi.','error');return}const ids=[...new Set(order.items.map(x=>String(x.productId||x.id||'')).filter(Boolean))];try{const out=await omCxApi('products_by_ids',{ids});omCxMergeProducts(out.products||[])}catch(_){}let added=0,missing=0;for(const it of order.items){const id=String(it.productId||it.id||''),p=findProductById(id);if(!p||p.isActive===false||p.sellerActive===false){missing++;continue}addToCart(id,Math.max(1,Number(it.qty||1)),{color:it.color||null,size:it.size||null});added+=Math.max(1,Number(it.qty||1))}updateBadges();if(added){toast(`${added} ta mahsulot savatga qayta qo‘shildi.${missing?` ${missing} ta mahsulot hozir mavjud emas.`:''}`);goTab('cart')}else toast('Mahsulotlar hozir sotuvda mavjud emas.','error')}
+async function omRepeatOrder(orderId){const order=getOrderFromCache(orderId);if(!order||!Array.isArray(order.items)||!order.items.length){toast('Buyurtma mahsulotlari topilmadi.','error');return}const ids=[...new Set(order.items.map(x=>String(x.productId||x.id||'')).filter(Boolean))];try{const out=await omCxApi('products_by_ids',{ids});omCxMergeProducts(out.products||[])}catch(_){}let added=0,missing=0;for(const it of order.items){const id=String(it.productId||it.id||''),p=findProductById(id);if(!p||p.isActive===false||p.sellerActive===false){missing++;continue}addToCart(id,Math.max(1,Number(it.qty||1)),{color:it.color||null,size:it.size||null,externalOptions:it.externalOptions||it.selectedOptions||it.chinaOptions||null,chinaOptions:it.externalOptions||it.selectedOptions||it.chinaOptions||null});added+=Math.max(1,Number(it.qty||1))}updateBadges();if(added){toast(`${added} ta mahsulot savatga qayta qo‘shildi.${missing?` ${missing} ta mahsulot hozir mavjud emas.`:''}`);goTab('cart')}else toast('Mahsulotlar hozir sotuvda mavjud emas.','error')}
 document.addEventListener('click',e=>{const btn=e.target?.closest?.('[data-order-repeat]');if(btn){e.preventDefault();omRepeatOrder(btn.getAttribute('data-order-repeat')||'')}});
 document.getElementById('cxRecentClear')?.addEventListener('click',()=>{omCxWriteRecent([]);omRenderRecentShelf();toast('Ko‘rilganlar tarixi tozalandi.')});
 document.getElementById('cxRecommendRefresh')?.addEventListener('click',()=>{omCxRecommendations=[];omRefreshRecommendations(true)});

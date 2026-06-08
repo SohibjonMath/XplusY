@@ -30,8 +30,10 @@ function aggregateLines(lines=[]){
   return [...out.values()];
 }
 function reservationStatus(order={}){return String(order?.inventory?.status||order?.inventoryStatus||'').toLowerCase()}
+function isExternalCatalogProduct(product={}){return String(product?.fulfillmentType||'').toLowerCase()==='external_catalog'||!!product?.externalMarket||!!product?.externalCatalog||String(product?.sourceType||'').toLowerCase().includes('external-market')}
 function shouldTrack(product={},line={},variantIndex=-1){
   const variants=asArray(product.variants),variant=variantIndex>=0?variants[variantIndex]:null;
+  if(isExternalCatalogProduct(product)&&product?.stockKnown!==true&&product?.externalMarket?.stockKnown!==true&&variant?.stockKnown!==true)return false;
   return numberOrNull(variant?.stockQty)!==null || numberOrNull(product.stockQty??product.stock)!==null;
 }
 async function reserveInventory(tx,db,lines,orderId){

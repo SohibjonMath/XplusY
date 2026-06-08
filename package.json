@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.68.0",
-  "description": "OrzuMall v168: dedicated 1688 catalog system with separate storefront, arbitrary variant groups, SKU combinations and normalized original images",
+  "version": "1.69.0",
+  "description": "OrzuMall v169: multi-market external catalog for Sahiy, Uzum Market, 1688 and Pinduoduo with dedicated storefront, dynamic SKU groups and authoritative source links in orders",
   "engines": {
     "node": "22.x"
   },

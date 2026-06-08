@@ -6,8 +6,13 @@ function clampInt(v,min=1,max=999){const n=Number(v);return Number.isInteger(n)&
 function parsePrice(v){if(typeof v==='number'&&Number.isFinite(v))return Math.max(0,Math.round(v));const d=String(v==null?'':v).replace(/[^0-9]/g,'');return d?Math.max(0,parseInt(d.slice(0,12),10)||0):0}
 function firstPrice(...vals){for(const v of vals){const n=parsePrice(v);if(n>0)return n}return 0}
 function asArray(v){return Array.isArray(v)?v:[]}
-function pickVariant(product,item){const vs=asArray(product?.variants);if(!vs.length)return null;const color=cleanText(item?.color,100)||null,size=cleanText(item?.size,100)||null;const same=(a,b)=>(a??null)===(b??null);return vs.find(v=>same(v?.color,color)&&same(v?.size,size))||vs.find(v=>same(v?.color,color))||vs.find(v=>same(v?.size,size))||vs[0]||null}
-function productImage(product,item,variant){const color=cleanText(item?.color,100);const by=product?.imagesByColor&&typeof product.imagesByColor==='object'?product.imagesByColor:{};const imgs=color&&Array.isArray(by[color])?by[color]:[];return cleanText(item?.image||variant?.image||imgs[0]||product?.images?.[0]||product?.image||product?.imageUrl,900)||null}
+function safeOptions(v){if(!v||typeof v!=='object'||Array.isArray(v))return{};return Object.fromEntries(Object.entries(v).slice(0,16).map(([k,val])=>[cleanText(k,120),cleanText(val,160)]).filter(([k,val])=>k&&val))}
+function itemOptions(item){return safeOptions(item?.externalOptions||item?.selectedOptions||item?.chinaOptions)}
+function externalCatalog(product){const raw=product?.externalCatalog||product?.externalMarket?.customerCatalog||product?.china1688Catalog||product?.china1688?.customerCatalog||null;return raw&&typeof raw==='object'?raw:null}
+function externalInfo(product){const meta=product?.externalMarket&&typeof product.externalMarket==='object'?product.externalMarket:{};const source=product?.china1688&&typeof product.china1688==='object'?product.china1688:{};const platform=cleanText(product?.sourcePlatform||meta.platform||source.platform||'',40).toLowerCase();const label=cleanText(product?.sourceLabel||meta.label||source.label||(platform==='1688'?'1688':platform==='sahiy'?'Sahiy Market':platform==='uzum'?'Uzum Market':platform==='pinduoduo'?'Pinduoduo':''),80);const url=cleanText(product?.sourceUrl||meta.url||source.url||'',2200);const itemId=cleanText(product?.sourceItemId||meta.itemId||source.itemId||'',160);return{platform,label,url,itemId,isExternal:Boolean(url||platform||externalCatalog(product)||String(product?.fulfillmentType||'').toLowerCase()==='external_catalog')}}
+function pickExternalVariant(product,item){const catalog=externalCatalog(product),selected=itemOptions(item);if(!catalog||!Object.keys(selected).length)return null;const groups=asArray(catalog.optionGroups);const rows=asArray(catalog.skus);if(!rows.length)return null;const rowOptions=row=>safeOptions(row?.selections||row?.externalOptions||row?.chinaOptions||row?.attributes);const exact=rows.find(row=>groups.every(g=>String(rowOptions(row)[cleanText(g?.id,120)]||'')===String(selected[cleanText(g?.id,120)]||'')));return exact||rows.find(row=>{const opts=rowOptions(row);return Object.entries(selected).every(([k,v])=>!opts[k]||String(opts[k])===String(v))})||null}
+function pickVariant(product,item){const ext=pickExternalVariant(product,item);if(ext)return ext;const vs=asArray(product?.variants);if(!vs.length)return null;const color=cleanText(item?.color,100)||null,size=cleanText(item?.size,100)||null;const same=(a,b)=>(a??null)===(b??null);return vs.find(v=>same(v?.color,color)&&same(v?.size,size))||vs.find(v=>same(v?.color,color))||vs.find(v=>same(v?.size,size))||vs[0]||null}
+function productImage(product,item,variant){const selected=itemOptions(item),catalog=externalCatalog(product),groups=asArray(catalog?.optionGroups);for(const group of groups){const value=selected[cleanText(group?.id,120)];const image=asArray(group?.options).find(o=>String(o?.name||'')===String(value||''))?.image;if(image)return cleanText(image,900)}const color=cleanText(item?.color,100);const by=product?.imagesByColor&&typeof product.imagesByColor==='object'?product.imagesByColor:{};const imgs=color&&Array.isArray(by[color])?by[color]:[];return cleanText(item?.image||variant?.image||imgs[0]||product?.images?.[0]||product?.image||product?.imageUrl,900)||null}
 function roundMoney(n){return Math.max(0,Math.round(Number(n)||0))}
 async function sellerSnapshot(db,product,cache){
   const id=safeId(product?.sellerId||((product?.ownerType==='seller')?'':'orzumall'))||'orzumall';
@@ -33,17 +38,22 @@ async function loadCatalogLines(db,rawItems){
     const variant=pickVariant(product,raw);
     const unitPriceUZS=firstPrice(variant?.priceUZS,variant?.currentPriceUZS,variant?.price,variant?.salePrice,product.priceUZS,product.currentPriceUZS,product.price,product.salePrice,product.newPrice,product.basePrice,product.amount);
     if(!unitPriceUZS)throw new Error(`PRICE_NOT_FOUND:${productId}`);
-    const stockRaw=variant?.stockQty??product.stockQty??product.stock??null;const stockQty=stockRaw==null||stockRaw===''?null:Number(stockRaw);
+    const sourceInfo=externalInfo(product),selectedOptions=itemOptions(raw);
+    const stockRaw=variant?.stockQty??variant?.stock??product.stockQty??product.stock??null;let stockQty=stockRaw==null||stockRaw===''?null:Number(stockRaw);
+    const stockKnown=variant?.stockKnown===true||product?.stockKnown===true||product?.externalMarket?.stockKnown===true;
+    if(sourceInfo.isExternal&&!stockKnown&&Number(stockQty)===0)stockQty=null;
     if(Number.isFinite(stockQty)&&stockQty>=0&&qty>stockQty)throw new Error(`OUT_OF_STOCK:${productId}`);
     const seller=await sellerSnapshot(db,product,sellerCache);
     const gross=roundMoney(unitPriceUZS*qty),commission=roundMoney(gross*seller.commissionPercent/100),net=roundMoney(gross-commission);
     const weightKg=Math.max(0,Number(product.weightKg??product.weight??raw.weightKg??0)||0);
     const line={
-      productId,id:productId,sku:cleanText(variant?.sku||product.sku||product.article||productId,100),article:cleanText(product.article||product.sku||productId,100),
+      productId,id:productId,sku:cleanText(variant?.sku||variant?.skuId||variant?.id||product.sku||product.article||productId,100),article:cleanText(product.article||product.sku||productId,100),
       name:cleanText(product.name||product.title||'Mahsulot',180),title:cleanText(product.title||product.name||'Mahsulot',180),
-      color:cleanText(raw?.color,100)||null,size:cleanText(raw?.size,100)||null,variant:cleanText(raw?.variant,140)||null,qty,
+      color:cleanText(raw?.color,100)||null,size:cleanText(raw?.size,100)||null,variant:cleanText(raw?.variant,140)||null,variantText:cleanText(raw?.variantText||Object.values(selectedOptions).join(' / ')||raw?.variant,300)||null,qty,
+      selectedOptions,externalOptions:selectedOptions,chinaOptions:selectedOptions,
+      sourcePlatform:sourceInfo.platform||null,sourceLabel:sourceInfo.label||null,sourceUrl:sourceInfo.url||null,sourceItemId:sourceInfo.itemId||null,externalMarket:sourceInfo.isExternal?{platform:sourceInfo.platform,label:sourceInfo.label,url:sourceInfo.url,itemId:sourceInfo.itemId}:null,
       priceUZS:unitPriceUZS,unitPriceUZS,lineTotalUZS:gross,weightKg,lineWeightKg:weightKg*qty,image:productImage(product,raw,variant),
-      stockQty:Number.isFinite(stockQty)?stockQty:null,fulfillmentType:cleanText(product.fulfillmentType||raw?.fulfillmentType||'stock',30),
+      stockQty:Number.isFinite(stockQty)?stockQty:null,fulfillmentType:cleanText(product.fulfillmentType||raw?.fulfillmentType||(sourceInfo.isExternal?'external_catalog':'stock'),30),
       deliveryMinDays:Number(product.deliveryMinDays??raw?.deliveryMinDays??1)||1,deliveryMaxDays:Number(product.deliveryMaxDays??raw?.deliveryMaxDays??7)||7,prepayRequired:Boolean(product.prepayRequired??raw?.prepayRequired??false),
       sellerId:seller.id,sellerName:seller.name,sellerLogo:seller.logo,sellerPhone:seller.phone,sellerCommissionPercent:seller.commissionPercent,sellerGrossUZS:gross,sellerCommissionUZS:commission,sellerNetUZS:net
     };
