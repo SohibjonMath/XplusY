@@ -1047,7 +1047,17 @@ function omExternalCatalog(p){
 function omChina1688Catalog(p){ return omExternalCatalog(p); }
 function om1688Groups(p){ return omExternalCatalog(p)?.optionGroups || []; }
 function om1688Skus(p){ return omExternalCatalog(p)?.skus || []; }
-function om1688OptionMap(sel){ const raw=sel?.externalOptions || sel?.chinaOptions; return { ...((raw && typeof raw === "object") ? raw : {}) }; }
+function om1688OptionMap(sel){
+  const external=(sel?.externalOptions && typeof sel.externalOptions === "object") ? sel.externalOptions : {};
+  const china=(sel?.chinaOptions && typeof sel.chinaOptions === "object") ? sel.chinaOptions : {};
+  // chinaOptions is the freshest UI state. Merge it last so a newly clicked
+  // external-catalog option cannot be overwritten by a stale compatibility map.
+  return { ...external, ...china };
+}
+function om1688SetOption(sel, groupId, value){
+  const next={...om1688OptionMap(sel),[groupId]:value};
+  return { ...sel, externalOptions:{...next}, chinaOptions:{...next}, imgIdx:0 };
+}
 function om1688GroupValue(sel, group){
   const opts=om1688OptionMap(sel);
   if(opts[group?.id]) return opts[group.id];
@@ -2940,7 +2950,7 @@ function renderChina1688VariantModal(p){
     els.v1688Groups.querySelectorAll("[data-v1688-group]").forEach(btn=>btn.addEventListener("click",()=>{
       const groupId=btn.getAttribute("data-v1688-group")||"";
       const value=btn.getAttribute("data-v1688-value")||"";
-      vState.sel=om1688SelectionFor(p,{...vState.sel,chinaOptions:{...om1688OptionMap(vState.sel),[groupId]:value},imgIdx:0},{defaultFirst:false});
+      vState.sel=om1688SelectionFor(p,om1688SetOption(vState.sel,groupId,value),{defaultFirst:false});
       selected.set(p.id,{...vState.sel});
       renderVariantModal();
     }));
@@ -4516,7 +4526,7 @@ function bindProductPage(p){
     e.preventDefault(); e.stopPropagation();
     const groupId=btn.getAttribute("data-pp-1688-group")||"";
     const value=btn.getAttribute("data-pp-1688-value")||"";
-    const now=om1688SelectionFor(p,{...getSel(p),chinaOptions:{...om1688OptionMap(getSel(p)),[groupId]:value},imgIdx:0},{defaultFirst:true});
+    const now=om1688SelectionFor(p,om1688SetOption(getSel(p),groupId,value),{defaultFirst:true});
     selected.set(p.id,now); renderProductPage();
   }));
   root.querySelectorAll("[data-pp-color]").forEach(btn=>btn.addEventListener("click",(e)=>{
