@@ -169,9 +169,6 @@ import {
   startAfter,
   onSnapshot,
   serverTimestamp,
-  getAggregateFromServer,
-  average,
-  count,
   addDoc,
   increment
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
@@ -846,45 +843,36 @@ function getStats(productId){
   return { avg: Number(d.avg)||0, count: Number(d.count)||0 };
 }
 
-async function refreshStats(productId, force=false){
-  const now = Date.now();
-  const cached = statsCache.get(productId);
-  if(!force && cached && (now - (cached.ts||0) < 20000)) return getStats(productId);
+function omReviewStatsFromSnapshot(snap, ts=Date.now()){
+  let total = 0, rows = 0;
+  snap?.forEach?.((docu)=>{
+    const stars = Math.max(0, Math.min(5, Number((docu.data?.()||{}).stars)||0));
+    if(stars > 0){ total += stars; rows += 1; }
+  });
+  return { avg: rows ? total / rows : 0, count: rows, ts };
+}
 
+async function refreshStats(productId, force=false){
+  const id = String(productId||"").trim();
+  if(!id) return { avg:0, count:0 };
+  const now = Date.now();
+  const cached = statsCache.get(id);
+  if(!force && cached && (now - (cached.ts||0) < 20000)) return getStats(id);
+
+  // Browser-side Firestore aggregate queries are rejected in some projects.
+  // The approved rows are small and already required for the review UI, so
+  // calculate the exact public score directly from those visible documents.
   try{
-    const baseRef = query(
-      collection(db, "products", productId, "reviews"),
-      where("moderationStatus", "==", "approved")
-    );
-    const agg = await getAggregateFromServer(baseRef, {
-      count: count(),
-      avg: average("stars")
-    });
-    const data = agg.data() || {};
-    const out = {
-      avg: Number(data.avg)||0,
-      count: Number(data.count)||0,
-      ts: now
-    };
-    statsCache.set(productId, out);
+    const snap = await getDocs(query(
+      collection(db, "products", id, "reviews"),
+      where("moderationStatus", "==", "approved"),
+      limit(200)
+    ));
+    const out = omReviewStatsFromSnapshot(snap, now);
+    statsCache.set(id, out);
     return { avg: out.avg, count: out.count };
-  }catch(e){
-    // Some Firestore projects reject browser-side aggregate queries. In that
-    // case, read the approved review rows and calculate the compact card stats
-    // locally instead of hiding the rating on mobile cards.
-    try{
-      const snap = await getDocs(baseRef);
-      let total = 0, rows = 0;
-      snap.forEach((docu)=>{
-        const stars = Math.max(0, Math.min(5, Number((docu.data()||{}).stars)||0));
-        if(stars > 0){ total += stars; rows += 1; }
-      });
-      const out = { avg: rows ? total / rows : 0, count: rows, ts: now };
-      statsCache.set(productId, out);
-      return { avg: out.avg, count: out.count };
-    }catch(_fallbackError){
-      return getStats(productId);
-    }
+  }catch(_error){
+    return getStats(id);
   }
 }
 
@@ -4434,10 +4422,10 @@ async function omLoadProductPageReviews(productId, {force=false}={}){
       where("moderationStatus", "==", "approved"),
       limit(60)
     );
-    const [snap, st] = await Promise.all([
-      getDocs(reviewsQ),
-      refreshStats(id, !!force)
-    ]);
+    const snap = await getDocs(reviewsQ);
+    const exactStats = omReviewStatsFromSnapshot(snap);
+    statsCache.set(id, exactStats);
+    const st = { avg: exactStats.avg, count: exactStats.count };
     if(token !== omProductPageReviews.token || activeTab !== "product" || String(activeProductId||"") !== id) return;
 
     const list=[];
