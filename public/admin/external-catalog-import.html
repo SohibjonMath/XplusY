@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./external-catalog-import.css?v=20260609_v185_china_pricing">
+  <link rel="stylesheet" href="./external-catalog-import.css?v=20260609_v187_admin_pricing_policy">
 </head>
 <body>
   <header class="topbar">
@@ -38,7 +38,7 @@
         <p>ZIP faylni yuklab oling, arxivdan chiqaring va Chrome Extensions sahifasida <b>Load unpacked</b> orqali bir marta ulang. Keyin Sahiy, Uzum Market, 1688 va Pinduoduo mahsulot sahifalarida import tugmasi chiqadi.</p>
         <div class="extension-steps"><span>1. ZIPni oching</span><span>2. <code>chrome://extensions</code></span><span>3. Developer mode</span><span>4. Load unpacked</span></div>
       </div>
-      <a class="primary-btn download" href="/downloads/OrzuMall_Market_Importer_v3_3_CHINA_LANDED_PRICE.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
+      <a class="primary-btn download" href="/downloads/OrzuMall_Market_Importer_v3_4_SAHIY_DOMESTIC_FEE_FIX.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
     </section>
 
     <section class="login-box" id="loginBox">
@@ -59,6 +59,24 @@
       <div><b>Tashqi market mahsulotlari oddiy ombor katalogidan alohida ishlaydi</b><p>Karta dizayni, mahsulot oynasi, dinamik variant guruhlari, asl havola va manba nomi maxsus <code>externalCatalog</code> modelida saqlanadi.</p></div>
       <span><i class="fa-solid fa-layer-group"></i> Maxsus katalog</span>
     </section>
+
+    <details class="pricing-policy-admin" open>
+      <summary>
+        <div><i class="fa-solid fa-sliders"></i><span><b>Xitoy narx siyosati</b><small>Ustama foizlari va logistika tariflarini admin boshqaradi</small></span></div>
+        <i class="fa-solid fa-chevron-down"></i>
+      </summary>
+      <div class="pricing-policy-body">
+        <div class="policy-general-grid">
+          <label><span>Bepul vazn limiti</span><div class="policy-input-suffix"><input id="policyFreeWeightKg" type="number" min="0" step="0.1"><em>kg</em></div></label>
+          <label><span>Ortiqcha vazn narxi</span><div class="policy-input-suffix"><input id="policyExtraKgRateUzs" type="number" min="0" step="1"><em>so‘m</em></div></label>
+          <label><span>Hisoblash qadami</span><div class="policy-input-suffix"><input id="policyKgStep" type="number" min="0.01" step="0.01"><em>kg</em></div></label>
+          <label><span>Narxni yaxlitlash</span><div class="policy-input-suffix"><input id="policyRoundToUzs" type="number" min="1" step="100"><em>so‘m</em></div></label>
+        </div>
+        <div class="policy-tier-head"><div><b>Tannarx pog‘onalari</b><small>Arzon mahsulotlarda kichik minimal foyda himoyasi qoladi. Foizlarni xohlaganingizcha pasaytirishingiz mumkin.</small></div><span><i class="fa-solid fa-percent"></i> Admin nazorati</span></div>
+        <div class="policy-tier-rows" id="policyTierRows"></div>
+        <div class="policy-actions"><button class="primary-btn" id="savePricingPolicyBtn"><i class="fa-solid fa-floppy-disk"></i> Sozlamalarni saqlash</button><button class="ghost-btn" id="repriceChinaProductsBtn"><i class="fa-solid fa-arrows-rotate"></i> Barcha Xitoy narxlarini qayta hisoblash</button><small class="policy-status" id="policySaveStatus">Yangi importlar saqlangan siyosat bo‘yicha hisoblanadi.</small></div>
+      </div>
+    </details>
 
     <section class="editor" id="editor" hidden>
       <div class="source-panel card">
@@ -120,7 +138,7 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
             <div><span>Tannarx</span><b id="pricingLanded">0 so‘m</b></div>
             <div><span>OrzuMall foydasi</span><b id="pricingProfit">0 so‘m</b><small id="pricingTier">—</small></div>
           </div>
-          <div class="china-pricing-note"><i class="fa-solid fa-circle-info"></i><span>7 kg gacha qo‘shimcha xalqaro yuk haqi olinmaydi. 7 kg dan oshgan har boshlangan 1 kg uchun 77 777 so‘m qo‘shiladi. Arzon mahsulotlarda minimal foyda himoyasi ishlaydi.</span></div>
+          <div class="china-pricing-note"><i class="fa-solid fa-circle-info"></i><span id="chinaPricingNoteText">7 kg gacha qo‘shimcha xalqaro yuk haqi olinmaydi. Tariflar admin paneldagi narx siyosatidan olinadi.</span></div>
         </section>
         <label class="storage-toggle"><input id="copyImages" type="checkbox" checked><span><b>Rasmlarni Storage’ga saqlash va bir xil 1:1 formatga tayyorlash</b><small>Tavsiya etiladi: oq chetlar tozalanadi, har bir surat 1200×1200 px standartga keltiriladi va manba sahifasi o‘zgarsa ham OrzuMall’da qoladi.</small></span></label>
         <div class="copy-status" id="copyStatus" hidden></div>
@@ -136,6 +154,6 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
   </main>
 
   <div class="toast" id="toast"></div>
-  <script type="module" src="./external-catalog-import.js?v=20260609_v185_china_pricing"></script>
+  <script type="module" src="./external-catalog-import.js?v=20260609_v187_admin_pricing_policy"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ const {
   rapidApi1688Ready, rapidApi1688Host, fetch1688DetailByUrl, normalizeDetailResponse,
 } = require('./_china1688Common');
 const { MAX_IMAGES_PER_BATCH, IMAGE_STANDARD, copyImages, normalizeMarketplaceImageUrl } = require('./_china1688ImageStore');
-const { calculateChinaLandedPrice, publicPolicy: externalPricingPolicy } = require('./_externalCatalogPricing');
+const { calculateChinaLandedPrice, publicPolicy: externalPricingPolicy, loadPricingPolicy, savePricingPolicy } = require('./_externalCatalogPricing');
 
 function safeNumber(v, min = 0, max = 1e12, fallback = 0) {
   const n = Number(v);
@@ -531,7 +531,7 @@ function buildDescription(source = {}) {
   (source.props || []).slice(0, 12).forEach(p => { if (p.name && p.value) lines.push(`${p.name}: ${p.value}`); });
   return lines.join('\n');
 }
-function sanitizeDraft(raw = {}) {
+function sanitizeDraft(raw = {}, pricingPolicy = {}) {
   const sourceUrl = safeSourceUrl(raw.sourceUrl || raw?.source?.url); const detected = detectExternalSource(sourceUrl);
   if (!sourceUrl || !detected) throw Object.assign(new Error('Sahiy, Uzum Market, 1688 yoki Pinduoduo mahsulot havolasini kiriting.'), { statusCode: 400 });
   const itemId = cleanText(raw.itemId || raw?.source?.id || sourceItemIdFromUrl(sourceUrl, detected.key), 120);
@@ -544,7 +544,7 @@ function sanitizeDraft(raw = {}) {
   const isChina = detected.originCountry === 'CN';
   if (isChina && !sourcePriceUzs) throw Object.assign(new Error('Xitoy mahsuloti uchun manba narxini kiriting.'), { statusCode: 400 });
   if (isChina && !weightKg) throw Object.assign(new Error('Xitoy mahsuloti uchun taxminiy vaznni kg da kiriting.'), { statusCode: 400 });
-  const chinaPricing = isChina ? calculateChinaLandedPrice({ sourcePriceUzs, sourcePriceCny: source.priceCny, chinaDomesticFeeUzs, weightKg, cnyToUzs: pricingConfig().cnyToUzs }) : null;
+  const chinaPricing = isChina ? calculateChinaLandedPrice({ sourcePriceUzs, sourcePriceCny: source.priceCny, chinaDomesticFeeUzs, weightKg, cnyToUzs: pricingConfig().cnyToUzs }, pricingPolicy) : null;
   const localAuto = source.priceUzs || 0;
   const price = isChina ? chinaPricing.finalPriceUzs : safeInt(raw.price, 0, 1e12, localAuto);
   if (!price) throw Object.assign(new Error('OrzuMall sotuv narxini kiriting.'), { statusCode: 400 });
@@ -556,22 +556,22 @@ function sanitizeDraft(raw = {}) {
     prepayRequired: isChina ? raw.prepayRequired !== false : raw.prepayRequired === true,
   };
 }
-function applyExternalCatalogPricing(catalog = {}, draft = {}) {
+function applyExternalCatalogPricing(catalog = {}, draft = {}, pricingPolicy = {}) {
   if (!catalog || !Array.isArray(catalog.skus)) return catalog;
   const isChina = draft?.detected?.originCountry === 'CN';
   catalog.skus = catalog.skus.map(row => {
     if (!isChina) return { ...row, price: safeInt(row.price || draft.price, 0, 1e12, draft.price) };
     const sourcePriceUzs = row.priceCny ? Math.round(row.priceCny * pricingConfig().cnyToUzs) : draft.sourcePriceUzs;
-    const pricing = calculateChinaLandedPrice({ sourcePriceUzs, sourcePriceCny: row.priceCny || 0, chinaDomesticFeeUzs: draft.chinaDomesticFeeUzs, weightKg: draft.weightKg, cnyToUzs: pricingConfig().cnyToUzs });
+    const pricing = calculateChinaLandedPrice({ sourcePriceUzs, sourcePriceCny: row.priceCny || 0, chinaDomesticFeeUzs: draft.chinaDomesticFeeUzs, weightKg: draft.weightKg, cnyToUzs: pricingConfig().cnyToUzs }, pricingPolicy);
     return { ...row, price: pricing.finalPriceUzs, pricingSnapshot: pricing };
   });
   return catalog;
 }
-async function saveProduct(db, raw, actor) {
-  const draft = sanitizeDraft(raw); let productId = draft.productId || await findExistingExternal(db, draft.detected.key, draft.itemId, draft.sourceUrl); if (!productId) productId = await generateAdminProductId(db);
+async function saveProduct(db, raw, actor, pricingPolicy = {}) {
+  const draft = sanitizeDraft(raw, pricingPolicy); let productId = draft.productId || await findExistingExternal(db, draft.detected.key, draft.itemId, draft.sourceUrl); if (!productId) productId = await generateAdminProductId(db);
   const ref = db.doc(`products/${productId}`); const existing = await ref.get(); if (existing.exists && !isExternalProduct(existing.data() || {})) throw Object.assign(new Error('Bu ID oddiy OrzuMall mahsulotiga tegishli.'), { statusCode: 409 });
   const ts = admin.firestore.FieldValue.serverTimestamp(); const source = draft.source;
-  const catalog = applyExternalCatalogPricing({ ...buildExternalCustomerCatalog(source, draft.price), sourcePlatform: draft.detected.key, sourceLabel: draft.detected.label, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, sourceUrl: draft.sourceUrl, sourceUpstreamUrl: source.upstreamUrl || '', sourceItemId: draft.itemId }, draft);
+  const catalog = applyExternalCatalogPricing({ ...buildExternalCustomerCatalog(source, draft.price), sourcePlatform: draft.detected.key, sourceLabel: draft.detected.label, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, sourceUrl: draft.sourceUrl, sourceUpstreamUrl: source.upstreamUrl || '', sourceItemId: draft.itemId }, draft, pricingPolicy);
   const legacyVariants = catalogToLegacyVariants(catalog); const storedCount = draft.images.filter(isStorageUrl).length; const normalizedCount = draft.images.filter(isNormalizedStorageUrl).length;
   const externalMarket = {
     platform: draft.detected.key, sourceLabel: draft.detected.label, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, itemId: draft.itemId, url: draft.sourceUrl, upstreamUrl: source.upstreamUrl || '', originalTitle: source.title, priceCurrency: source.priceCurrency, priceValue: source.priceValue,
@@ -603,13 +603,65 @@ async function requireExternalProduct(db, productId) { const id = cleanText(prod
 async function applyNormalizedImages(db, raw = {}, actor) { const { id, ref, before, ext } = await requireExternalProduct(db, raw.productId); const images = sanitizeImages(raw.images); if (!images.length) throw Object.assign(new Error('PRODUCT_IMAGES_NOT_FOUND'), { statusCode: 400 }); const externalImages = sanitizeImages(raw.externalImages?.length ? raw.externalImages : ext.externalImages); const storedCount = images.filter(isStorageUrl).length; const normalizedCount = images.filter(isNormalizedStorageUrl).length; const ts = admin.firestore.FieldValue.serverTimestamp(); await ref.set({ images, externalMarket: { externalImages, localImageCount: storedCount, normalizedImageCount: normalizedCount, imageStandard: normalizedCount ? IMAGE_STANDARD : '', imageNormalizedBy: actor.email, imageNormalizedAt: ts }, updatedAt: ts }, { merge: true }); return { id, images, copied: storedCount, normalized: normalizedCount, failed: Math.max(0, images.length - storedCount), standard: normalizedCount ? IMAGE_STANDARD : '' }; }
 async function normalizeStoredProductImages(db, productId, actor) { const { id, ref, before, ext } = await requireExternalProduct(db, productId); const rawUrls = sanitizeImages(ext.externalImages?.length ? ext.externalImages : before.images); if (!rawUrls.length) throw Object.assign(new Error('PRODUCT_IMAGES_NOT_FOUND'), { statusCode: 400 }); const copied = [], failed = []; for (let i = 0; i < rawUrls.length; i += MAX_IMAGES_PER_BATCH) { const result = await copyImages(rawUrls.slice(i, i + MAX_IMAGES_PER_BATCH), `${id}-normalized`, { normalize: true }); copied.push(...(result.copied || [])); failed.push(...(result.failed || [])); } if (!copied.length) throw Object.assign(new Error('IMAGE_NORMALIZATION_FAILED'), { statusCode: 502 }); const finalImages = [...copied.map(x => x.url), ...failed.map(x => x.sourceUrl)].slice(0, 18); const ts = admin.firestore.FieldValue.serverTimestamp(); await ref.set({ images: finalImages, externalMarket: { externalImages: rawUrls, localImageCount: copied.length, normalizedImageCount: copied.filter(x => x.normalized).length, imageStandard: IMAGE_STANDARD, imageNormalizedBy: actor.email, imageNormalizedAt: ts }, updatedAt: ts }, { merge: true }); return { id, images: finalImages, copied: copied.length, normalized: copied.filter(x => x.normalized).length, failed: failed.length, standard: IMAGE_STANDARD }; }
 async function rebuildStoredCustomerCatalog(db, productId, actor) { const { id, ref, before, ext } = await requireExternalProduct(db, productId); const source = sourceSummary({ ...ext, id: ext.itemId, url: ext.url, title: ext.originalTitle || before.name, images: ext.externalImages?.length ? ext.externalImages : before.images, galleryImages: ext.galleryImages?.length ? ext.galleryImages : (ext.externalImages?.length ? ext.externalImages : before.images), variantGroups: ext.variantGroups?.length ? ext.variantGroups : before.variantGroups, skuVariants: ext.skuVariants?.length ? ext.skuVariants : before.variants, variants: ext.variants?.length ? ext.variants : before.variants, colorOptions: ext.colorOptions?.length ? ext.colorOptions : before.colors, sizeOptions: ext.sizeOptions?.length ? ext.sizeOptions : before.sizes, imagesByColor: ext.imagesByColor && Object.keys(ext.imagesByColor).length ? ext.imagesByColor : before.imagesByColor }); const catalog = { ...buildExternalCustomerCatalog(source, safeInt(before.price, 0, 1e12, 0)), sourcePlatform: ext.platform, sourceLabel: ext.sourceLabel, originCountry: ext.originCountry, customerOrigin: ext.customerOrigin, sourceUrl: ext.url, sourceUpstreamUrl: ext.upstreamUrl || source.upstreamUrl || '', sourceItemId: ext.itemId }; const variants = catalogToLegacyVariants(catalog); const ts = admin.firestore.FieldValue.serverTimestamp(); await ref.set({ externalCatalog: catalog, ...(ext.platform === '1688' ? { china1688Catalog: catalog } : {}), colors: sourceColors(source), sizes: sourceSizes(source), ...(variants.length ? { variants } : {}), externalMarket: { customerCatalog: catalog, catalogRebuiltBy: actor.email, catalogRebuiltAt: ts }, updatedAt: ts }, { merge: true }); return { id, optionGroupCount: catalog.optionGroupCount || 0, skuCount: catalog.skuCount || 0, hasVariants: catalog.hasVariants === true }; }
+
+async function repriceChinaProducts(db, actor, pricingPolicy = {}) {
+  const snap = await db.collection('products').limit(900).get();
+  const rate = pricingConfig().cnyToUzs;
+  const targets = snap.docs.filter(doc => {
+    const p = doc.data() || {};
+    if (!isExternalProduct(p)) return false;
+    const ext = externalMetaFromProduct(p);
+    return ext.originCountry === 'CN' && p.isActive !== false;
+  });
+  let updated = 0;
+  let skipped = 0;
+  for (let start = 0; start < targets.length; start += 300) {
+    const batch = db.batch(); let writes = 0;
+    targets.slice(start, start + 300).forEach(doc => {
+      const p = doc.data() || {};
+      const ext = externalMetaFromProduct(p);
+      const sourcePriceUzs = safeInt(p.sourcePriceUzs ?? ext.sourcePriceUzs ?? ext.priceUzs ?? (ext.priceCny ? ext.priceCny * rate : ext.priceValue), 0, 1e12, 0);
+      const chinaDomesticFeeUzs = safeInt(p.chinaDomesticFeeUzs ?? ext.chinaDomesticFeeUzs, 0, 1e12, 0);
+      const weightKg = safeNumber(p.weightKg, 0, 100000, 0);
+      if (!sourcePriceUzs || !weightKg) { skipped += 1; return; }
+      const chinaPricing = calculateChinaLandedPrice({ sourcePriceUzs, chinaDomesticFeeUzs, weightKg, cnyToUzs: rate }, pricingPolicy);
+      const catalog = p.externalCatalog || p.china1688Catalog || ext.customerCatalog || {};
+      const nextCatalog = { ...catalog };
+      if (Array.isArray(catalog.skus)) {
+        nextCatalog.skus = catalog.skus.map(row => {
+          const rowSourcePrice = row?.pricingSnapshot?.sourcePriceUzs || (row.priceCny ? Math.round(row.priceCny * rate) : sourcePriceUzs);
+          const pricingSnapshot = calculateChinaLandedPrice({ sourcePriceUzs: rowSourcePrice, sourcePriceCny: row.priceCny || 0, chinaDomesticFeeUzs, weightKg, cnyToUzs: rate }, pricingPolicy);
+          return { ...row, price: pricingSnapshot.finalPriceUzs, pricingSnapshot };
+        });
+      }
+      const variants = catalogToLegacyVariants(nextCatalog);
+      const ts = admin.firestore.FieldValue.serverTimestamp();
+      const patch = {
+        price: chinaPricing.finalPriceUzs,
+        chinaPricing,
+        externalCatalog: nextCatalog,
+        ...(variants.length ? { variants } : {}),
+        externalMarket: { chinaPricing, customerCatalog: nextCatalog, pricingPolicyUpdatedAt: ts, pricingPolicyUpdatedBy: actor.email },
+        updatedAt: ts,
+      };
+      if (ext.platform === '1688') { patch.china1688Catalog = nextCatalog; patch.china1688 = { chinaPricing, customerCatalog: nextCatalog }; }
+      batch.set(doc.ref, patch, { merge: true });
+      writes += 1; updated += 1;
+    });
+    if (writes) await batch.commit();
+  }
+  return { updated, skipped, totalMatched: targets.length };
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return json(204, {}); if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' }); const body = parseBody(event); if (body == null) return json(400, { error: 'INVALID_JSON' }); const limited = rateLimit(event, 'external-catalog-admin', 120, 10 * 60 * 1000); if (!limited.ok) return json(429, { error: 'TOO_MANY_REQUESTS', retryAfterSec: limited.retryAfterSec }); const actor = await requireAdmin(event); if (!actor.ok) return json(actor.statusCode, { error: actor.error }); const db = admin.firestore(); const action = cleanText(body.action || '', 50).toLowerCase();
   try {
     if (action === 'apipreview') { const detected = detectExternalSource(body.sourceUrl || body.url); if (!detected) return json(400, { error: 'SOURCE_URL_REQUIRED', message: 'Sahiy, Uzum Market, 1688 yoki Pinduoduo mahsulot havolasini kiriting.' }); if (detected.key !== '1688') return json(200, { item: sourceSummary({ url: detected.url, sourcePlatform: detected.key }), platform: detected.key, sourceLabel: detected.label, manualRequired: true, message: `${detected.label} uchun sahifani Chrome importer orqali yuboring yoki ma’lumotlarni qo‘lda to‘ldiring.` }); const fetched = await fetch1688DetailByUrl(detected.url, { force: body.force === true }); const item = normalizeDetailResponse(fetched.raw); item.url = detected.url; item.id = item.id || itemIdFromUrl(detected.url); item.sourcePlatform = '1688'; item.sourceLabel = '1688'; item.diagnostics = { ...(item.diagnostics || {}), provider: fetched.provider, cached: fetched.cached === true }; return json(200, { item, provider: fetched.provider, cached: fetched.cached === true, pricing: pricingConfig() }); }
     if (action === 'copyimages') { const itemId = cleanText(body.itemId || 'draft', 100).replace(/[^a-z0-9_-]/gi, '') || 'draft'; const result = await copyImages(body.urls, itemId, { normalize: body.normalize !== false, strictNormalize: body.strictNormalize === true }); return json(200, { ...result, maxPerBatch: MAX_IMAGES_PER_BATCH, imageStandard: IMAGE_STANDARD }); }
-    if (action === 'save') return json(200, await saveProduct(db, body.product || {}, actor));
-    if (action === 'list') { const snap = await db.collection('products').limit(600).get(); const products = snap.docs.filter(doc => isExternalProduct(doc.data() || {})).map(publicRow).sort((a, b) => b.updatedAtMs - a.updatedAtMs); return json(200, { products, pricing: pricingConfig(), chinaPricingPolicy: externalPricingPolicy(), supportedPlatforms: Object.values(EXTERNAL_SOURCES).map(x => ({ key: x.key, label: x.label })), rapidApiReady: rapidApi1688Ready(), rapidApiHost: rapidApi1688Ready() ? rapidApi1688Host() : '' }); }
+    if (action === 'save') { const pricingPolicy = await loadPricingPolicy(db); return json(200, await saveProduct(db, body.product || {}, actor, pricingPolicy)); }
+    if (action === 'list') { const pricingPolicy = await loadPricingPolicy(db); const snap = await db.collection('products').limit(600).get(); const products = snap.docs.filter(doc => isExternalProduct(doc.data() || {})).map(publicRow).sort((a, b) => b.updatedAtMs - a.updatedAtMs); return json(200, { products, pricing: pricingConfig(), chinaPricingPolicy: externalPricingPolicy(pricingPolicy), supportedPlatforms: Object.values(EXTERNAL_SOURCES).map(x => ({ key: x.key, label: x.label })), rapidApiReady: rapidApi1688Ready(), rapidApiHost: rapidApi1688Ready() ? rapidApi1688Host() : '' }); }
+    if (action === 'updatepricingpolicy') { const pricingPolicy = await savePricingPolicy(db, body.policy || {}, actor); return json(200, { ok: true, chinaPricingPolicy: externalPricingPolicy(pricingPolicy) }); }
+    if (action === 'repricechinaproducts') { const pricingPolicy = await loadPricingPolicy(db); return json(200, await repriceChinaProducts(db, actor, pricingPolicy)); }
     if (action === 'applynormalizedimages') return json(200, await applyNormalizedImages(db, body, actor));
     if (action === 'normalizeproductimages') return json(200, await normalizeStoredProductImages(db, body.productId, actor));
     if (action === 'rebuildcustomercatalog') return json(200, await rebuildStoredCustomerCatalog(db, body.productId, actor));
