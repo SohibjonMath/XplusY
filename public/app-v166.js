@@ -32,6 +32,12 @@ function omLang(){
 function omTrText(text){
   try{ return window.OM_I18N?.text?.(text) || String(text == null ? "" : text); }catch(_e){ return String(text == null ? "" : text); }
 }
+function omTrHtml(text){ return escapeHtml(omTrText(text)); }
+function omTrFormat(text, vars={}){
+  let out=omTrText(text);
+  Object.entries(vars||{}).forEach(([key,value])=>{ out=out.split(`{${key}}`).join(String(value==null?"":value)); });
+  return out;
+}
 function omCount(n){
   try{ return window.OM_I18N?.countText?.(n) || `${Number(n||0)} ta`; }catch(_e){ return `${Number(n||0)} ta`; }
 }
@@ -1035,7 +1041,7 @@ function renderReviewsList(list){
       </div>
       ${r.text ? `<div class="revItemText">${escapeHtml(r.text)}</div>` : ""}
       ${imgs}
-      ${r.adminReply ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
+      ${r.adminReply ? `<div class="revAdminReply"><b>${omTrHtml("OrzuMall javobi")}</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
     `;
     els.revList.appendChild(item);
   }
@@ -1105,7 +1111,7 @@ function omIsChinaOriginProduct(p={}){ return omExternalOrigin(p)==="china"; }
 function omCustomerSafeExternalText(p={},value=""){
   const raw=String(value==null?"":value);
   if(!omIsExternalMarketProduct(p)) return raw;
-  const replacement=omIsChinaOriginProduct(p)?"Xitoy":"O‘zbekiston";
+  const replacement=omTrText(omIsChinaOriginProduct(p)?"Xitoy":"O‘zbekiston");
   return raw.replace(/(?:Sahiy(?: Market)?|Uzum(?: Market)?|Pinduoduo|1688)/gi,replacement);
 }
 function omCustomerSafeTags(p={}){
@@ -1117,8 +1123,8 @@ function omExternalPlatformSpec(p={}){
   const key=raw.includes("sahiy")?"sahiy":raw.includes("uzum")?"uzum":raw.includes("pindu")||raw.includes("yangkeduo")?"pinduoduo":raw.includes("1688")?"1688":"external";
   const origin=omExternalOrigin(p);
   return origin==="china"
-    ? {key,styleKey:"china",origin,label:"Xitoydan",short:"Xitoydan",icon:"fa-plane-arrival",delivery:"Xitoydan buyurtma",etaText:"Taxminan 20 kun"}
-    : {key,styleKey:"uzbekistan",origin,label:"O‘zbekiston",short:"O‘zbekistondan",icon:"fa-location-dot",delivery:"O‘zbekistondan",etaText:"Manzil tanlangandan keyin"};
+    ? {key,styleKey:"china",origin,label:omTrText("Xitoydan"),short:omTrText("Xitoydan"),icon:"fa-plane-arrival",delivery:omTrText("Xitoydan buyurtma"),etaText:omTrText("Taxminan 20 kun")}
+    : {key,styleKey:"uzbekistan",origin,label:omTrText("O‘zbekiston"),short:omTrText("O‘zbekistondan"),icon:"fa-location-dot",delivery:omTrText("O‘zbekistondan"),etaText:omTrText("Manzil tanlangandan keyin")};
 }
 function omExternalCatalog(p){
   const raw = p?.externalCatalog || p?.externalMarket?.customerCatalog || p?.china1688Catalog || p?.china1688?.customerCatalog || null;
@@ -1182,25 +1188,25 @@ function om1688SelectionText(p, sel){
 }
 function om1688VariantHtml(p, interactive=false){
   const groups=om1688Groups(p); const sel=om1688SelectionFor(p,getSel(p),{defaultFirst:true});
-  if(!groups.length) return `<div class="qvVarEmpty china"><i class="fa-solid fa-circle-info"></i> Variant ma’lumoti hozircha kiritilmagan</div>`;
-  return `<div class="qv1688VariantHead"><span><i class="fa-solid fa-layer-group"></i> Tashqi katalog variantlari</span><small>${om1688Skus(p).length || 0} SKU</small></div>${groups.map(group=>`<div class="qvVarGroup qv1688Group"><span>${escapeHtml(group.name||"Variant")}</span><div class="qv1688Options">${(group.options||[]).slice(0,48).map(opt=>{
+  if(!groups.length) return `<div class="qvVarEmpty china"><i class="fa-solid fa-circle-info"></i> ${omTrHtml("Variant ma’lumoti hozircha kiritilmagan")}</div>`;
+  return `<div class="qv1688VariantHead"><span><i class="fa-solid fa-layer-group"></i> ${omTrHtml("Tashqi katalog variantlari")}</span><small>${om1688Skus(p).length || 0} SKU</small></div>${groups.map(group=>`<div class="qvVarGroup qv1688Group"><span>${escapeHtml(group.name||omTrText("Variant"))}</span><div class="qv1688Options">${(group.options||[]).slice(0,48).map(opt=>{
     const active=String(sel.chinaOptions?.[group.id]||"")===String(opt.name||"");
     const attrs=interactive?` type="button" data-pp-1688-group="${escapeHtml(group.id)}" data-pp-1688-value="${escapeHtml(opt.name)}" aria-pressed="${active?"true":"false"}"`:"";
     const tag=interactive?"button":"i";
-    return `<${tag}${attrs} class="qv1688Option ${opt.image?"hasImage":""} ${active?"active":""}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<b>${escapeHtml(opt.name||"Variant")}</b></${tag}>`;
+    return `<${tag}${attrs} class="qv1688Option ${opt.image?"hasImage":""} ${active?"active":""}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<b>${escapeHtml(opt.name||omTrText("Variant"))}</b></${tag}>`;
   }).join("")}</div></div>`).join("")}`;
 }
 function om1688ProductIntroHtml(p){
   if(!omIsChina1688Product(p)) return "";
   const groups=om1688Groups(p), skus=om1688Skus(p), spec=omExternalPlatformSpec(p);
   const isChina=spec.origin==="china";
-  const eta=isChina?"Taxminan 20 kun":"Yetkazish manzil tanlangandan keyin hisoblanadi";
-  return `<section class="pp1688Intro ppExternalIntro external-${escapeHtml(spec.styleKey)}"><div class="pp1688IntroIcon"><i class="fa-solid ${escapeHtml(spec.icon)}"></i></div><div><span>${escapeHtml(spec.short)}</span><b>${isChina?"Buyurtma asosida olib kelinadi":"O‘zbekiston ichidan yetkaziladi"}</b><small>Oddiy ombor mahsulotidan alohida tizim · ${escapeHtml(eta)} · ${groups.length} guruh · ${skus.length} SKU</small></div>${isChina?`<em><i class="fa-solid fa-shield-halved"></i> Oldindan to‘lov</em>`:""}</section>`;
+  const eta=omTrText(isChina?"Taxminan 20 kun":"Yetkazish manzil tanlangandan keyin hisoblanadi");
+  return `<section class="pp1688Intro ppExternalIntro external-${escapeHtml(spec.styleKey)}"><div class="pp1688IntroIcon"><i class="fa-solid ${escapeHtml(spec.icon)}"></i></div><div><span>${escapeHtml(spec.short)}</span><b>${omTrHtml(isChina?"Buyurtma asosida olib kelinadi":"O‘zbekiston ichidan yetkaziladi")}</b><small>${omTrHtml("Oddiy ombor mahsulotidan alohida tizim")} · ${escapeHtml(eta)} · ${groups.length} ${omTrHtml("guruh")} · ${skus.length} SKU</small></div>${isChina?`<em><i class="fa-solid fa-shield-halved"></i> ${omTrHtml("Oldindan to‘lov")}</em>`:""}</section>`;
 }
 function om1688ProductGuideHtml(p){
   if(!omIsChina1688Product(p)) return "";
   const spec=omExternalPlatformSpec(p),isChina=spec.origin==="china";
-  return `<section class="pp1688Guide"><div><i class="fa-solid fa-sliders"></i><b>Variantni aniq tanlang</b><span>Rang, model, o‘lcham yoki komplekt alohida SKU sifatida hisoblanadi.</span></div><div><i class="fa-solid ${escapeHtml(spec.icon)}"></i><b>${isChina?"Xitoydan":"O‘zbekistondan"}</b><span>${isChina?"Mahsulot siz uchun Xitoydan olib kelinadi.":"Yetkazish muddati manzil tanlangandan keyin hisoblanadi."}</span></div>${isChina?`<div><i class="fa-solid fa-wallet"></i><b>Oldindan to‘lov</b><span>Buyurtma tasdiqlangach xarid jarayoni boshlanadi.</span></div>`:""}</section>`;
+  return `<section class="pp1688Guide"><div><i class="fa-solid fa-sliders"></i><b>${omTrHtml("Variantni aniq tanlang")}</b><span>${omTrHtml("Rang, model, o‘lcham yoki komplekt alohida SKU sifatida hisoblanadi.")}</span></div><div><i class="fa-solid ${escapeHtml(spec.icon)}"></i><b>${omTrHtml(isChina?"Xitoydan":"O‘zbekistondan")}</b><span>${omTrHtml(isChina?"Mahsulot siz uchun Xitoydan olib kelinadi.":"Yetkazish muddati manzil tanlangandan keyin hisoblanadi.")}</span></div>${isChina?`<div><i class="fa-solid fa-wallet"></i><b>${omTrHtml("Oldindan to‘lov")}</b><span>${omTrHtml("Buyurtma tasdiqlangach xarid jarayoni boshlanadi.")}</span></div>`:""}</section>`;
 }
 function omVariantRows(p){
   const rows=[];
@@ -1213,7 +1219,7 @@ function omVariantGroups(p){
 }
 function omGroupByType(p,type){ return omVariantGroups(p).find(g=>String(g?.type||"").toLowerCase()===type); }
 function omSizeGroup(p){ return omGroupByType(p,"size") || omGroupByType(p,"spec"); }
-function omSizeLabel(p){ return (p?.china1688?.genericSpecName || omGroupByType(p,"spec")?.name) ? "Variantlar" : "O‘lchamlar"; }
+function omSizeLabel(p){ return omTrText((p?.china1688?.genericSpecName || omGroupByType(p,"spec")?.name) ? "Variantlar" : "O‘lchamlar"); }
 function normColors(p){
   const explicit=[];
   const add=(list)=>{ if(Array.isArray(list)) explicit.push(...list); };
@@ -2631,12 +2637,12 @@ function _normPType(p){
   return String(t).toLowerCase() === "cargo" ? "cargo" : "stock";
 }
 function getDeliveryInfo(p){
-  if(omIsChinaOriginProduct(p)) return { type:"cargo", min:20, max:20, etaText:"Taxminan 20 kun" };
+  if(omIsChinaOriginProduct(p)) return { type:"cargo", min:20, max:20, etaText:omTrText("Taxminan 20 kun") };
   return { type:"stock", min:0, max:0, etaText:"" };
 }
 function omDeliveryDateRange(p){
   const d=getDeliveryInfo(p);
-  if(d.type!=="cargo") return "Manzil tanlangandan keyin";
+  if(d.type!=="cargo") return omTrText("Manzil tanlangandan keyin");
   const today=new Date(),min=Math.max(0,Number(d.min)||0),max=Math.max(min,Number(d.max)||min);
   const add=n=>{const x=new Date(today);x.setDate(x.getDate()+n);return x};
   const fmt=x=>{try{return new Intl.DateTimeFormat(omLang()==="ru"?"ru-RU":"uz-UZ",{day:"numeric",month:"short"}).format(x)}catch(_){return `${x.getDate()}.${x.getMonth()+1}`}};
@@ -2645,7 +2651,7 @@ function omDeliveryDateRange(p){
 }
 function renderDeliveryBadge(p){
   if(!omIsChinaOriginProduct(p)) return "";
-  return `<span class="shipBadge cargo"><img class="omFlag" src="assets/flags/cn-48.webp" alt="CN" loading="lazy" decoding="async"><span class="omTruck">🚚</span><span class="cxDeliveryDate">Xitoydan</span><small>Taxminan 20 kun</small></span>`;
+  return `<span class="shipBadge cargo"><img class="omFlag" src="assets/flags/cn-48.webp" alt="CN" loading="lazy" decoding="async"><span class="omTruck">🚚</span><span class="cxDeliveryDate">${omTrHtml("Xitoydan")}</span><small>${omTrHtml("Taxminan 20 kun")}</small></span>`;
 }
 
 function getProductType(p){
@@ -2806,7 +2812,7 @@ function omProductPowerMiniHtml(p){
   const m = omGetProductMetrics(p);
   const views = omCompactMetric(m.views || 0);
   const score = omCompactMetric(m.score || 0);
-  return `<span title="Ko‘rishlar"><i class="fa-regular fa-eye"></i> ${views}</span><span title="Popular ball"><i class="fa-solid fa-fire"></i> ${score}</span>`;
+  return `<span title="${omTrHtml("Ko‘rishlar")}"><i class="fa-regular fa-eye"></i> ${views}</span><span title="${omTrHtml("Popular ball")}"><i class="fa-solid fa-fire"></i> ${score}</span>`;
 }
 
 function omProductCardReviewStats(p, cached = getStats(p?.id)){
@@ -2832,10 +2838,10 @@ function omProductCardReviewStats(p, cached = getStats(p?.id)){
 function omProductCardMetricsHtml(p, cached){
   const m = omGetProductMetrics(p);
   const r = omProductCardReviewStats(p, cached);
-  return `<div class="omCardMetricsRow" data-review-product-id="${escapeHtml(String(p?.id||""))}" aria-label="Mahsulot statistikasi">
-    <span class="omCardMetric rating" title="${r.count} ta sharh"><i class="fa-solid fa-star" aria-hidden="true"></i><b>${r.avg.toFixed(1)}</b><em>(${omCompactMetric(r.count)})</em><small>sharh</small></span>
-    <span class="omCardMetric views" title="Ko‘rishlar"><i class="fa-regular fa-eye" aria-hidden="true"></i><b>${omCompactMetric(m.views||0)}</b><small>ko‘rish</small></span>
-    <span class="omCardMetric popularity" title="Popularlik"><i class="fa-solid fa-fire" aria-hidden="true"></i><b>${omCompactMetric(m.score||0)}</b><small>popular</small></span>
+  return `<div class="omCardMetricsRow" data-review-product-id="${escapeHtml(String(p?.id||""))}" aria-label="${omTrHtml("Mahsulot statistikasi")}">
+    <span class="omCardMetric rating" title="${r.count} ${omTrHtml("ta sharh")}"><i class="fa-solid fa-star" aria-hidden="true"></i><b>${r.avg.toFixed(1)}</b><em>(${omCompactMetric(r.count)})</em><small>${omTrHtml("sharh")}</small></span>
+    <span class="omCardMetric views" title="${omTrHtml("Ko‘rishlar")}"><i class="fa-regular fa-eye" aria-hidden="true"></i><b>${omCompactMetric(m.views||0)}</b><small>${omTrHtml("ko‘rish")}</small></span>
+    <span class="omCardMetric popularity" title="${omTrHtml("Popularlik")}"><i class="fa-solid fa-fire" aria-hidden="true"></i><b>${omCompactMetric(m.score||0)}</b><small>${omTrHtml("popular")}</small></span>
   </div>`;
 }
 
@@ -2894,7 +2900,7 @@ const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i cla
         ${badgeHTML}
         ${chinaCardHead}
         ${authHTML && !isChinaCard?`<div class="authOnImg">${authHTML}</div>`:""}
-        <button class="favBtn ${isFav ? "active" : ""}" title="Sevimli" aria-label="Sevimli" aria-pressed="${isFav ? "true" : "false"}"><i class="fa-${isFav ? "solid" : "regular"} fa-heart" aria-hidden="true"></i></button>
+        <button class="favBtn ${isFav ? "active" : ""}" title="${omTrHtml("Sevimli")}" aria-label="${omTrHtml("Sevimli")}" aria-pressed="${isFav ? "true" : "false"}"><i class="fa-${isFav ? "solid" : "regular"} fa-heart" aria-hidden="true"></i></button>
       </div>
 
       <div class="pbody uz">
@@ -2912,11 +2918,11 @@ const chinaCardMeta = isChinaCard ? `<div class="china1688MiniMeta"><span><i cla
 
         <div class="pcardFoot">
           <div class="pship compact">${renderDeliveryBadge(p)}</div>
-          <button class="iconPill primary cartOnly" data-act="cart" title="Savatchaga" aria-label="Savatchaga">
+          <button class="iconPill primary cartOnly" data-act="cart" title="${omTrHtml("Savatchaga")}" aria-label="${omTrHtml("Savatchaga")}">
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path fill="currentColor" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2Zm10 0c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2ZM7.17 14h9.66c.75 0 1.4-.41 1.74-1.03L21 6H6.21L5.27 4H2v2h2l3.6 7.59-1.35 2.44C5.52 17.37 6.48 19 8 19h12v-2H8l1.17-3Z"/>
             </svg>
-            <span>Savat</span>
+            <span>${omTrHtml("Savat")}</span>
           </button>
         </div>
       </div>
@@ -3094,7 +3100,7 @@ function renderChina1688VariantModal(p){
   if(els.v1688Notice){
     const isChina=omIsChinaOriginProduct(p);
     els.v1688Notice.hidden=false;
-    els.v1688Notice.innerHTML=`<i class="fa-solid ${isChina?"fa-plane-arrival":"fa-location-dot"}"></i><div><b>${isChina?"Xitoydan buyurtma mahsuloti":"O‘zbekiston mahsuloti"}</b><span>${isChina?"Kerakli variantlarni aniq tanlang. Mahsulot taxminan 20 kunda olib kelinadi.":"Kerakli variantlarni aniq tanlang. Yetkazish muddati savatda manzil tanlangandan keyin hisoblanadi."}</span></div>`;
+    els.v1688Notice.innerHTML=`<i class="fa-solid ${isChina?"fa-plane-arrival":"fa-location-dot"}"></i><div><b>${omTrHtml(isChina?"Xitoydan buyurtma mahsuloti":"O‘zbekiston mahsuloti")}</b><span>${omTrHtml(isChina?"Kerakli variantlarni aniq tanlang. Mahsulot taxminan 20 kunda olib kelinadi.":"Kerakli variantlarni aniq tanlang. Yetkazish muddati savatda manzil tanlangandan keyin hisoblanadi.")}</span></div>`;
   }
   if(els.v1688Groups){
     els.v1688Groups.hidden=false;
@@ -3244,8 +3250,8 @@ function updateCartSelectUI(){
   if(els.selectAllLabel){
     const selCount = selectedCartItems().length;
     els.selectAllLabel.textContent = (selCount === cart.length)
-      ? `Hammasi tanlangan (${selCount})`
-      : `Tanlangan: ${selCount} / ${cart.length}`;
+      ? `${omTrText("Hammasi tanlangan")} (${selCount})`
+      : `${omTrText("Tanlangan:")} ${selCount} / ${cart.length}`;
   }
 }
 
@@ -3269,7 +3275,8 @@ function fmtDate(ts){
   try{
     const d = ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
     if(!d || Number.isNaN(+d)) return "";
-    return d.toLocaleString("uz-UZ", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+    const locale=omLang()==="ru"?"ru-RU":omLang()==="en"?"en-US":"uz-UZ";
+    return d.toLocaleString(locale, { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
   }catch(e){
     return "";
   }
@@ -3307,7 +3314,7 @@ function orderStatusLabel(s){
     "return_rejected":"Qaytarish rad etildi",
     "failed":"Muvaffaqiyatsiz"
   };
-  return m[v] || (v ? v : "");
+  return omTrText(m[v] || (v ? v : ""));
 }
 function orderStatusClass(s){
   const v = omOrderStatusKey(s);
@@ -3367,12 +3374,12 @@ function orderTimelineHTML(order){
     const tb = b?.at?.toDate ? +b.at.toDate() : (b?.at ? +new Date(b.at) : 0);
     return ta - tb;
   });
-  return `<div class="orderTimeline"><div class="orderTimelineTitle">Buyurtma harakati</div>${list.map(x=>{
+  return `<div class="orderTimeline"><div class="orderTimelineTitle">${omTrHtml("Buyurtma harakati")}</div>${list.map(x=>{
     const when=fmtDate(x?.at)||"";
     const actor=orderActorLabel(x?.actorType);
     const reason=customerVisibleOrderReason(x?.reason||"",x?.status);
     const timelineClass=orderStatusClass(x?.status||"");
-    return `<div class="orderTimelineItem ${timelineClass}"><span class="orderTimelineDot"><i class="fa-solid ${escapeHtml(orderStatusIcon(x?.status||''))}" aria-hidden="true"></i></span><div class="orderTimelineText"><b>${escapeHtml(orderStatusLabel(x?.status||""))}</b>${escapeHtml([actor,when].filter(Boolean).join(" • "))}${reason?`<br><span>${omOrderStatusKey(x?.status)==="returned"?"Sabab":"Izoh"}: ${escapeHtml(reason)}</span>`:""}</div></div>`;
+    return `<div class="orderTimelineItem ${timelineClass}"><span class="orderTimelineDot"><i class="fa-solid ${escapeHtml(orderStatusIcon(x?.status||''))}" aria-hidden="true"></i></span><div class="orderTimelineText"><b>${escapeHtml(orderStatusLabel(x?.status||""))}</b>${escapeHtml([actor,when].filter(Boolean).join(" • "))}${reason?`<br><span>${omTrHtml(omOrderStatusKey(x?.status)==="returned"?"Sabab":"Izoh")}: ${escapeHtml(reason)}</span>`:""}</div></div>`;
   }).join("")}</div>`;
 }
 
@@ -3386,7 +3393,7 @@ function providerLabel(p){
     "payme":"Payme",
     "click":"Click"
   };
-  return m[v] || (v ? v : "");
+  return omTrText(m[v] || (v ? v : ""));
 }
 
 
@@ -3421,7 +3428,7 @@ function buildOrderReceiptHTML(order){
         <div class="orderReceiptItemMedia">${omOrderItemImageMarkup(it)}</div>
         <div class="orderReceiptItemBody">
           <div class="orderReceiptItemName">${escapeHtml(receiptItemName(it))}</div>
-          <div class="orderReceiptItemMeta">${escapeHtml([variant, `${qty} ta`].filter(Boolean).join(' • '))}</div>
+          <div class="orderReceiptItemMeta">${escapeHtml([variant, omCount(qty)].filter(Boolean).join(' • '))}</div>
         </div>
         <div><b>${escapeHtml(moneyUZS(line))}</b></div>
       </div>`;
@@ -3432,7 +3439,7 @@ function buildOrderReceiptHTML(order){
       <div class="orderReceiptHead">
         <div>
           <div class="orderReceiptBrand">OrzuMall</div>
-          <div class="orderReceiptMuted">Buyurtma cheki</div>
+          <div class="orderReceiptMuted">${omTrHtml("Buyurtma cheki")}</div>
           <div class="orderReceiptStatus"><span class="orderPill ${orderStatusClass(order?.status || '')}">${escapeHtml(status)}</span></div>
         </div>
         <div style="text-align:right">
@@ -3442,30 +3449,30 @@ function buildOrderReceiptHTML(order){
       </div>
 
       <div class="orderReceiptGrid">
-        <div class="orderReceiptBox"><div class="k">Mijoz</div><div class="v">${escapeHtml(customer)}</div></div>
-        <div class="orderReceiptBox"><div class="k">Telefon</div><div class="v">${escapeHtml(phone)}</div></div>
-        <div class="orderReceiptBox"><div class="k">To‘lov turi</div><div class="v">${escapeHtml(provider)}</div></div>
-        <div class="orderReceiptBox"><div class="k">Yetkazish</div><div class="v">${escapeHtml(deliveryLabel)}</div></div>
-        <div class="orderReceiptBox"><div class="k">Manzil</div><div class="v">${escapeHtml(addr)}${mapUrl ? `<br><a href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">Xaritada ochish</a>` : ''}</div></div>
+        <div class="orderReceiptBox"><div class="k">${omTrHtml("Mijoz")}</div><div class="v">${escapeHtml(customer)}</div></div>
+        <div class="orderReceiptBox"><div class="k">${omTrHtml("Telefon")}</div><div class="v">${escapeHtml(phone)}</div></div>
+        <div class="orderReceiptBox"><div class="k">${omTrHtml("To‘lov turi")}</div><div class="v">${escapeHtml(provider)}</div></div>
+        <div class="orderReceiptBox"><div class="k">${omTrHtml("Yetkazish")}</div><div class="v">${escapeHtml(deliveryLabel)}</div></div>
+        <div class="orderReceiptBox"><div class="k">${omTrHtml("Manzil")}</div><div class="v">${escapeHtml(addr)}${mapUrl ? `<br><a href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">${omTrHtml("Xaritada ochish")}</a>` : ''}</div></div>
       </div>
 
       ${statusReason ? `<div class="orderStatusReason"><b>${escapeHtml(statusReasonTitle)}:</b> ${escapeHtml(statusReason)}</div>` : ''}
       ${orderTimelineHTML(order)}
-      ${review ? `<div class="orderReviewSaved"><b>Fikr bildirildi${String(review.moderationStatus||"pending")==="approved" ? "" : " • admin tasdig‘i kutilmoqda"}:</b> ${'★'.repeat(Number(review.stars||0))}${'☆'.repeat(Math.max(0,5-Number(review.stars||0)))}<br>${escapeHtml(review.text||'')}${review.adminReply?.text ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(review.adminReply.text)}</span></div>` : ""}</div>` : ''}
+      ${review ? `<div class="orderReviewSaved"><b>${omTrHtml("Fikr bildirildi")}${String(review.moderationStatus||"pending")==="approved" ? "" : ` • ${omTrHtml("admin tasdig‘i kutilmoqda")}`}:</b> ${'★'.repeat(Number(review.stars||0))}${'☆'.repeat(Math.max(0,5-Number(review.stars||0)))}<br>${escapeHtml(review.text||'')}${review.adminReply?.text ? `<div class="revAdminReply"><b>${omTrHtml("OrzuMall javobi")}</b><span>${escapeHtml(review.adminReply.text)}</span></div>` : ""}</div>` : ''}
 
       <div class="orderReceiptItems">${itemsHtml}</div>
 
       <div class="orderReceiptTotals">
-        <div class="row total"><span>Jami</span><span>${escapeHtml(moneyUZS(total))}</span></div>
+        <div class="row total"><span>${omTrHtml("Jami")}</span><span>${escapeHtml(moneyUZS(total))}</span></div>
       </div>
 
-      <div class="orderReceiptFooter">Savolingiz bo‘lsa buyurtma ID sini ko‘rsating: ${escapeHtml(oid || shortId)}</div>
+      <div class="orderReceiptFooter">${omTrHtml("Savolingiz bo‘lsa buyurtma ID sini ko‘rsating")}: ${escapeHtml(oid || shortId)}</div>
     </div>`;
 }
 
 function openOrderReceipt(orderId){
   const order = (ordersCache || []).find(o => String(o?.id || o?.orderId || '') === String(orderId || ''));
-  if(!order){ toast("Buyurtma topilmadi.", "error"); return; }
+  if(!order){ toast(omTrText("Buyurtma topilmadi."), "error"); return; }
   if(els.orderReceiptContent){ els.orderReceiptContent.innerHTML = buildOrderReceiptHTML(order); omArmOrderHistoryImages(els.orderReceiptContent); }
   if(els.orderReceiptModal){
     els.orderReceiptModal.hidden = false;
@@ -3486,7 +3493,7 @@ function closeOrderReceipt(){
 
 function printOrderReceipt(){
   const html = els.orderReceiptContent?.innerHTML || '';
-  if(!html.trim()){ toast("Chek topilmadi.", "error"); return; }
+  if(!html.trim()){ toast(omTrText("Chek topilmadi."), "error"); return; }
   const w = window.open('', '_blank');
   if(!w){ toast("Brauzer oynani blokladi.", 'error'); return; }
   w.document.open();
@@ -3592,19 +3599,19 @@ function omOrderItemReviewStateHtml(order,it,index=0){
     const stars=Math.max(0,Math.min(5,Number(review.stars)||0));
     const pending=String(review.moderationStatus||"pending")!=="approved";
     return `<div class="orderLineReviewSaved">
-      <div class="orderLineReviewSavedTop"><span class="orderLineReviewStars">${"★".repeat(stars)}${"☆".repeat(5-stars)}</span><b>${pending?"Tekshiruvda":"E’lon qilingan"}</b></div>
+      <div class="orderLineReviewSavedTop"><span class="orderLineReviewStars">${"★".repeat(stars)}${"☆".repeat(5-stars)}</span><b>${omTrHtml(pending?"Tekshiruvda":"E’lon qilingan")}</b></div>
       ${review.text?`<p>${escapeHtml(review.text)}</p>`:""}
     </div>`;
   }
   if(delivered){
-    return `<button class="orderLineReviewBtn" type="button" data-order-action="item_review" data-order-id="${escapeHtml(String(order?.id||order?.orderId||""))}" data-order-item-index="${idx}"><span class="orderLineReviewBtnIcon"><i class="fa-solid fa-star"></i></span><span><b>Baho bering</b><small>Mahsulot haqida fikringizni yozing</small></span><i class="fa-solid fa-chevron-right"></i></button>`;
+    return `<button class="orderLineReviewBtn" type="button" data-order-action="item_review" data-order-id="${escapeHtml(String(order?.id||order?.orderId||""))}" data-order-item-index="${idx}"><span class="orderLineReviewBtnIcon"><i class="fa-solid fa-star"></i></span><span><b>${omTrHtml("Baho bering")}</b><small>${omTrHtml("Mahsulot haqida fikringizni yozing")}</small></span><i class="fa-solid fa-chevron-right"></i></button>`;
   }
-  return `<div class="orderLineReviewLocked"><span class="orderLineReviewLockedIcon"><i class="fa-solid fa-lock"></i></span><span><b>Baholash hali yopiq</b><small>Buyurtma yetkazilgandan keyin ochiladi</small></span></div>`;
+  return `<div class="orderLineReviewLocked"><span class="orderLineReviewLockedIcon"><i class="fa-solid fa-lock"></i></span><span><b>${omTrHtml("Baholash hali yopiq")}</b><small>${omTrHtml("Buyurtma yetkazilgandan keyin ochiladi")}</small></span></div>`;
 }
 function omOrderHistoryItemsHtml(order){
   const items=Array.isArray(order?.items)?order.items:[];
-  if(!items.length) return `<div class="orderHistoryEmptyItems">Mahsulotlar topilmadi.</div>`;
-  return `<section class="orderHistoryProducts"><div class="orderHistoryProductsHead"><span><i class="fa-solid fa-bag-shopping"></i> Mahsulotlar</span><b>${items.length} xil</b></div>${items.map((it,index)=>{
+  if(!items.length) return `<div class="orderHistoryEmptyItems">${omTrHtml("Mahsulotlar topilmadi.")}</div>`;
+  return `<section class="orderHistoryProducts"><div class="orderHistoryProductsHead"><span><i class="fa-solid fa-bag-shopping"></i> ${omTrHtml("Mahsulotlar")}</span><b>${items.length} ${omTrHtml("xil")}</b></div>${items.map((it,index)=>{
     const image=omOrderItemImage(it),variant=omOrderItemVariantText(it),qty=Math.max(1,Number(it?.qty||1)||1);
     const price=Number(it?.priceUZS||it?.price||0)||0;
     const line=Number(it?.lineTotalUZS||it?.subtotalUZS||0)||(price*qty);
@@ -3615,7 +3622,7 @@ function omOrderHistoryItemsHtml(order){
         <div class="orderHistoryProductBody">
           <b>${escapeHtml(receiptItemName(it))}</b>
           ${chips.length?`<div class="orderHistoryVariantChips">${chips.map(x=>`<span>${escapeHtml(x)}</span>`).join("")}</div>`:""}
-          <div class="orderHistoryProductFoot"><span>${qty} dona</span><strong>${escapeHtml(moneyUZS(line))}</strong></div>
+          <div class="orderHistoryProductFoot"><span>${qty} ${omTrHtml("dona")}</span><strong>${escapeHtml(moneyUZS(line))}</strong></div>
         </div>
       </div>
       <div class="orderHistoryProductReview">${omOrderItemReviewStateHtml(order,it,index)}</div>
@@ -3626,10 +3633,10 @@ function omOrderHistoryItemsHtml(order){
 function orderCustomerActionButtonsHTML(order){
   const oid = escapeHtml(String(order?.id || order?.orderId || ""));
   const st = omOrderStatusKey(order?.status || "new");
-  const buttons = [`<button class="orderActionBtn" type="button" data-order-receipt="${oid}">🧾 Chek</button>`];
-  if(Array.isArray(order?.items) && order.items.length){ buttons.push(`<button class="orderActionBtn cxRepeatBtn" type="button" data-order-repeat="${oid}"><i class="fa-solid fa-rotate-right"></i> Qayta buyurtma</button>`); }
+  const buttons = [`<button class="orderActionBtn" type="button" data-order-receipt="${oid}">🧾 ${omTrHtml("Chek")}</button>`];
+  if(Array.isArray(order?.items) && order.items.length){ buttons.push(`<button class="orderActionBtn cxRepeatBtn" type="button" data-order-repeat="${oid}"><i class="fa-solid fa-rotate-right"></i> ${omTrHtml("Qayta buyurtma")}</button>`); }
   if(["new","paid","packing","shipping"].includes(st)){
-    buttons.push(`<button class="orderActionBtn isDanger" type="button" data-order-action="cancel" data-order-id="${oid}"><i class="fa-solid fa-ban"></i> Bekor qilish</button>`);
+    buttons.push(`<button class="orderActionBtn isDanger" type="button" data-order-action="cancel" data-order-id="${oid}"><i class="fa-solid fa-ban"></i> ${omTrHtml("Bekor qilish")}</button>`);
   }
   return buttons.join("");
 }
@@ -3641,7 +3648,7 @@ function getOrderFromCache(orderId){
 }
 function setReviewStars(stars){
   const n=Math.max(0,Math.min(5,Number(stars)||0));
-  const labels={0:'Bahoni tanlang',1:'Yoqmadi',2:'Qoniqarsiz',3:'Yaxshi',4:'Juda yaxshi',5:'A’lo'};
+  const labels={0:omTrText('Bahoni tanlang'),1:omTrText('Yoqmadi'),2:omTrText('Qoniqarsiz'),3:omTrText('Yaxshi'),4:omTrText('Juda yaxshi'),5:omTrText('A’lo')};
   omOrderActionState.stars=n;
   document.querySelectorAll('#orderReviewStars [data-review-star]').forEach(btn=>{
     const active=Number(btn.getAttribute('data-review-star')||0)<=n;
@@ -3661,7 +3668,7 @@ function closeOrderActionModal(){
 function openOrderActionModal(type, orderId, itemIndex=-1){
   if(!["cancel","item_review"].includes(String(type||""))) return;
   const order=getOrderFromCache(orderId);
-  if(!order){ toast('Buyurtma topilmadi.','error'); return; }
+  if(!order){ toast(omTrText('Buyurtma topilmadi.'),'error'); return; }
   const modal=document.getElementById('orderActionModal');
   if(!modal) return;
   modal.classList.toggle('isReviewMode', type==='item_review');
@@ -3680,7 +3687,7 @@ function openOrderActionModal(type, orderId, itemIndex=-1){
   const oid=String(order.id||order.orderId||'');
   const idx=Number(itemIndex);
   const item=Number.isInteger(idx)&&idx>=0 ? (Array.isArray(order.items)?order.items[idx]:null) : null;
-  if(type==="item_review" && !item){ toast("Mahsulot topilmadi.","error"); return; }
+  if(type==="item_review" && !item){ toast(omTrText("Mahsulot topilmadi."),"error"); return; }
   omOrderActionState={type,orderId:oid,stars:0,itemIndex:type==="item_review"?idx:-1,productId:type==="item_review"?String(item?.productId||item?.id||""):""};
   if(reason){
     reason.value='';
@@ -3692,7 +3699,7 @@ function openOrderActionModal(type, orderId, itemIndex=-1){
   if(cancelReasonSelect) cancelReasonSelect.value='';
   if(cancelReasonOther) cancelReasonOther.value='';
   if(cancelReasonOtherWrap) cancelReasonOtherWrap.hidden=true;
-  if(summary) summary.innerHTML=type==='item_review' ? `<div class="orderReviewProductPick"><div class="orderReviewProductMedia">${omOrderItemImageMarkup(item)}</div><div><small><i class="fa-solid fa-circle-check"></i> Tasdiqlangan xarid</small><b>${escapeHtml(receiptItemName(item))}</b><span>${escapeHtml(omOrderItemVariantText(item)||'Variant tanlanmagan')}</span></div></div>` : `<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
+  if(summary) summary.innerHTML=type==='item_review' ? `<div class="orderReviewProductPick"><div class="orderReviewProductMedia">${omOrderItemImageMarkup(item)}</div><div><small><i class="fa-solid fa-circle-check"></i> ${omTrHtml('Tasdiqlangan xarid')}</small><b>${escapeHtml(receiptItemName(item))}</b><span>${escapeHtml(omOrderItemVariantText(item)||omTrText('Variant tanlanmagan'))}</span></div></div>` : `<b>#${escapeHtml(oid.slice(-6))}</b> • ${escapeHtml(moneyUZS(Number(order.totalUZS||0)))}<br><span>${escapeHtml(orderStatusLabel(order.status||'new'))}</span>`;
   if(summary) omArmOrderHistoryImages(summary);
   if(starsWrap) starsWrap.hidden = type !== 'item_review';
   if(cancelReasonWrap) cancelReasonWrap.hidden = type !== 'cancel';
@@ -3700,17 +3707,17 @@ function openOrderActionModal(type, orderId, itemIndex=-1){
   if(reasonWrap) reasonWrap.hidden = type === 'cancel';
   setReviewStars(0);
   if(type==='cancel'){
-    if(title) title.textContent='Buyurtmani bekor qilish';
-    if(help) help.textContent='Eng mos sababni tanlang. Kerak bo‘lsa “Boshqa sabab” orqali o‘zingiz yozishingiz mumkin. Buyurtma balansdan to‘langan bo‘lsa mablag‘ avtomatik qaytariladi.';
-    if(reasonLabel) reasonLabel.textContent='Bekor qilish sababi';
-    if(reason) reason.placeholder='Masalan: adashib buyurtma berdim';
-    if(submit) submit.innerHTML='<i class="fa-solid fa-ban"></i> Bekor qilish';
+    if(title) title.textContent=omTrText('Buyurtmani bekor qilish');
+    if(help) help.textContent=omTrText('Eng mos sababni tanlang. Kerak bo‘lsa “Boshqa sabab” orqali o‘zingiz yozishingiz mumkin. Buyurtma balansdan to‘langan bo‘lsa mablag‘ avtomatik qaytariladi.');
+    if(reasonLabel) reasonLabel.textContent=omTrText('Bekor qilish sababi');
+    if(reason) reason.placeholder=omTrText('Masalan: adashib buyurtma berdim');
+    if(submit) submit.innerHTML='<i class="fa-solid fa-ban"></i> '+omTrHtml('Bekor qilish');
   }else{
-    if(title) title.textContent='Mahsulotni baholash';
-    if(help) help.textContent='Faqat yetkazib berilgan ushbu mahsulot uchun baho va sharh yozing. Fikringiz admin tekshiruvidan keyin mahsulot sahifasida ko‘rinadi.';
-    if(reasonLabel) reasonLabel.textContent='Fikringiz';
-    if(reason) reason.placeholder='Mahsulot va xizmat haqida fikringizni yozing';
-    if(submit) submit.innerHTML='<i class="fa-solid fa-star"></i> Fikrni saqlash';
+    if(title) title.textContent=omTrText('Mahsulotni baholash');
+    if(help) help.textContent=omTrText('Faqat yetkazib berilgan ushbu mahsulot uchun baho va sharh yozing. Fikringiz admin tekshiruvidan keyin mahsulot sahifasida ko‘rinadi.');
+    if(reasonLabel) reasonLabel.textContent=omTrText('Fikringiz');
+    if(reason) reason.placeholder=omTrText('Mahsulot va xizmat haqida fikringizni yozing');
+    if(submit) submit.innerHTML='<i class="fa-solid fa-star"></i> '+omTrHtml('Fikrni saqlash');
   }
   modal.hidden=false;
   requestAnimationFrame(()=>modal.classList.add('isOpen'));
@@ -3719,21 +3726,21 @@ function openOrderActionModal(type, orderId, itemIndex=-1){
 }
 async function submitOrderAction(){
   const {type,orderId,stars,itemIndex,productId}=omOrderActionState;
-  if(!type || !orderId || !currentUser){ toast('Avval tizimga kiring.','error'); return; }
+  if(!type || !orderId || !currentUser){ toast(omTrText('Avval tizimga kiring.'),'error'); return; }
   let reason='';
   if(type==='cancel'){
     const selected=String(document.getElementById('orderCancelReasonSelect')?.value||'').trim();
-    if(!selected){ toast('Bekor qilish sababini tanlang.','error'); return; }
+    if(!selected){ toast(omTrText('Bekor qilish sababini tanlang.'),'error'); return; }
     if(selected==='other'){
       reason=String(document.getElementById('orderCancelReasonOther')?.value||'').trim();
-      if(reason.length<4){ toast('Boshqa sababni qisqacha yozing.','error'); return; }
+      if(reason.length<4){ toast(omTrText('Boshqa sababni qisqacha yozing.'),'error'); return; }
     }else{
       reason=selected;
     }
   }else{
     reason=String(document.getElementById('orderActionReason')?.value||'').trim();
   }
-  if(reason.length<2){ toast(type==='item_review'?'Fikringizni yozing.':'Sababni batafsil yozing.','error'); return; }
+  if(reason.length<2){ toast(omTrText(type==='item_review'?'Fikringizni yozing.':'Sababni batafsil yozing.'),'error'); return; }
   if(type==='item_review' && !(Number(stars)>=1 && Number(stars)<=5)){ toast('Bahoni tanlang.','error'); return; }
   const btn=document.getElementById('orderActionSubmit');
   const old=btn?.innerHTML||'';
@@ -3749,7 +3756,7 @@ async function submitOrderAction(){
     if(!resp.ok || !out.ok) throw new Error(out.error||'action_failed');
     closeOrderActionModal();
     if(type==='cancel') toast(out.refund?.refunded?'Buyurtma bekor qilindi va mablag‘ balansga qaytarildi.':'Buyurtma bekor qilindi.','success');
-    else toast('Fikringiz yuborildi. Admin tasdiqlagach namoyish qilinadi.','success');
+    else toast(omTrText('Fikringiz yuborildi. Admin tasdiqlagach namoyish qilinadi.'),'success');
   }catch(e){
     const code=String(e?.message||'');
     const map={cancel_not_allowed:'Yetkazib berilgan buyurtmani bekor qilib bo‘lmaydi. Operatorga yozing.',review_not_allowed:'Sharh faqat yetkazib berilgan buyurtmadagi mahsulotga yoziladi.',review_already_submitted:'Bu mahsulotga fikr yuborilgan.'};
@@ -3789,7 +3796,7 @@ function renderOrders(orders){
   syncOrderFilterUI();
   els.ordersList.innerHTML = "";
   els.ordersEmpty.hidden = filtered.length !== 0;
-  if(els.ordersEmpty) els.ordersEmpty.textContent = filtered.length ? '' : 'Tanlangan filter bo‘yicha buyurtma topilmadi.';
+  if(els.ordersEmpty) els.ordersEmpty.textContent = filtered.length ? '' : omTrText('Tanlangan filter bo‘yicha buyurtma topilmadi.');
 
   for(const o of filtered){
     const id = String(o.id || "").slice(-6);
@@ -3802,7 +3809,7 @@ function renderOrders(orders){
     row.innerHTML = `
       <div class="customerOrderStatusHero ${orderStatusClass(status)}">
         <span class="customerOrderStatusIcon"><i class="fa-solid ${escapeHtml(orderStatusIcon(status))}" aria-hidden="true"></i></span>
-        <div><small>Buyurtma holati</small><b>${escapeHtml(orderStatusLabel(status))}</b></div>
+        <div><small>${omTrHtml("Buyurtma holati")}</small><b>${escapeHtml(orderStatusLabel(status))}</b></div>
       </div>
       <div class="orderTop">
         <div class="orderId">#${escapeHtml(id)}</div>
@@ -3815,7 +3822,7 @@ function renderOrders(orders){
       </div>
       ${orderStatusNote(o) ? `<div class="orderStatusReason"><b>${escapeHtml(orderStatusReasonTitle(o))}:</b> ${escapeHtml(orderStatusNote(o))}</div>` : ""}
       ${omOrderHistoryItemsHtml(o)}
-      ${o.orderReview ? `<div class="orderReviewSaved legacyOrderReview"><b>Avvalgi buyurtma fikri${String(o.orderReview.moderationStatus||"pending")==="approved" ? "" : " • admin tasdig‘i kutilmoqda"}:</b> ${'★'.repeat(Number(o.orderReview.stars||0))}${'☆'.repeat(Math.max(0,5-Number(o.orderReview.stars||0)))}<br>${escapeHtml(o.orderReview.text||'')}${o.orderReview.adminReply?.text ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(o.orderReview.adminReply.text)}</span></div>` : ""}</div>` : ''}
+      ${o.orderReview ? `<div class="orderReviewSaved legacyOrderReview"><b>${omTrHtml("Avvalgi buyurtma fikri")}${String(o.orderReview.moderationStatus||"pending")==="approved" ? "" : ` • ${omTrHtml("admin tasdig‘i kutilmoqda")}`}:</b> ${'★'.repeat(Number(o.orderReview.stars||0))}${'☆'.repeat(Math.max(0,5-Number(o.orderReview.stars||0)))}<br>${escapeHtml(o.orderReview.text||'')}${o.orderReview.adminReply?.text ? `<div class="revAdminReply"><b>${omTrHtml("OrzuMall javobi")}</b><span>${escapeHtml(o.orderReview.adminReply.text)}</span></div>` : ""}</div>` : ''}
       <div class="orderActions">${orderCustomerActionButtonsHTML(o)}</div>
     `;
     els.ordersList.appendChild(row);
@@ -4441,7 +4448,7 @@ function findProductById(id){
 
 function openProductPage(productId){
   const id = String(productId || "").trim();
-  if(!id){ toast("Mahsulot topilmadi."); return; }
+  if(!id){ toast(omTrText("Mahsulot topilmadi.")); return; }
   activeProductId = id;
   const target = "#product/" + encodeURIComponent(id);
   if(location.hash === target){ showView("product"); }
@@ -4544,15 +4551,15 @@ function omProductPageCargoHtml(p){
   const prepay = isChina && p?.prepayRequired !== false;
   return `<section class="ppCargoCard" aria-label="Buyurtma asosidagi mahsulot ma’lumoti">
     <div class="ppCargoIcon"><i class="fa-solid ${escapeHtml(spec.icon)}"></i></div>
-    <div class="ppCargoCopy"><b>${isChina?"Xitoydan olib kelinadi":"O‘zbekiston ichidan yetkaziladi"}</b><span>${isChina?"Mahsulot siz uchun buyurtma asosida olib kelinadi":"Aniq muddat savatda manzil tanlangandan keyin hisoblanadi"}</span></div>
-    <div class="ppCargoFacts">${isChina?`<em><i class="fa-regular fa-clock"></i>Taxminan 20 kun</em>`:""}${prepay?`<em><i class="fa-solid fa-shield-halved"></i>Oldindan to‘lov</em>`:""}</div>
+    <div class="ppCargoCopy"><b>${omTrHtml(isChina?"Xitoydan olib kelinadi":"O‘zbekiston ichidan yetkaziladi")}</b><span>${omTrHtml(isChina?"Mahsulot siz uchun buyurtma asosida olib kelinadi":"Aniq muddat savatda manzil tanlangandan keyin hisoblanadi")}</span></div>
+    <div class="ppCargoFacts">${isChina?`<em><i class="fa-regular fa-clock"></i>${omTrHtml("Taxminan 20 kun")}</em>`:""}${prepay?`<em><i class="fa-solid fa-shield-halved"></i>${omTrHtml("Oldindan to‘lov")}</em>`:""}</div>
   </section>`;
 }
 
 function omProductPageDesktopBuyHtml(pricing,p={}){
   const text=omIsChina1688Product(p)?"Variantni tanlab buyurtma":"Savatga qo‘shish";
-  return `<section class="ppDesktopBuy" aria-label="Xarid qilish">
-    <div><span>Jami narx</span><strong>${moneyUZS(pricing.price||0)}</strong></div>
+  return `<section class="ppDesktopBuy" aria-label="${omTrHtml("Xarid qilish")}">
+    <div><span>${omTrHtml("Jami narx")}</span><strong>${moneyUZS(pricing.price||0)}</strong></div>
     <button type="button" data-pp-cart><i class="fa-solid fa-cart-shopping"></i><span>${text}</span></button>
   </section>`;
 }
@@ -4567,7 +4574,7 @@ function omPageReviewStarsHtml(){
   const shown = omProductPageReviews.hover || omProductPageReviews.stars || 5;
   return Array.from({length:5}, (_,idx)=>{
     const n = idx + 1;
-    return `<button type="button" class="ppReviewStar ${n<=shown?"active":""}" data-pp-review-star="${n}" aria-label="${n} yulduz" title="${n} / 5">★</button>`;
+    return `<button type="button" class="ppReviewStar ${n<=shown?"active":""}" data-pp-review-star="${n}" aria-label="${n} ${omTrHtml("yulduz")}" title="${n} / 5">★</button>`;
   }).join("");
 }
 
@@ -4576,33 +4583,33 @@ function omReviewSummaryHtml(st={}){
   const count=Math.max(0,Math.round(Number(st?.count)||0));
   const rounded=Math.round(avg);
   const stars="★".repeat(rounded)+"☆".repeat(Math.max(0,5-rounded));
-  return `<strong><i class="fa-solid fa-star"></i> ${avg.toFixed(1)}</strong><span>${count} ta sharh</span><small aria-hidden="true">${stars}</small>`;
+  return `<strong><i class="fa-solid fa-star"></i> ${avg.toFixed(1)}</strong><span>${count} ${omTrHtml("ta sharh")}</span><small aria-hidden="true">${stars}</small>`;
 }
 
 function omProductPageReviewsSectionHtml(){
   return `
-    <section class="ppReviewsCard" id="ppReviewsCard" aria-label="Mahsulot sharhlari">
+    <section class="ppReviewsCard" id="ppReviewsCard" aria-label="${omTrHtml("Mahsulot sharhlari")}">
       <div class="ppReviewsHead">
         <div>
-          <span class="ppReviewsEyebrow"><i class="fa-solid fa-star"></i> Tasdiqlangan xaridorlar bahosi</span>
-          <h2>Xaridorlar sharhlari</h2>
-          <p>Faqat yetkazib berilgan buyurtmalar asosidagi haqiqiy fikrlar.</p>
+          <span class="ppReviewsEyebrow"><i class="fa-solid fa-star"></i> ${omTrHtml("Tasdiqlangan xaridorlar bahosi")}</span>
+          <h2>${omTrHtml("Xaridorlar sharhlari")}</h2>
+          <p>${omTrHtml("Faqat yetkazib berilgan buyurtmalar asosidagi haqiqiy fikrlar.")}</p>
         </div>
         <div class="ppReviewSummary" id="ppReviewStats">${omReviewSummaryHtml({avg:0,count:0})}</div>
       </div>
       <div class="ppVerifiedReviewNotice">
         <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
-        <div><b>Sharh faqat xariddan keyin yoziladi</b><span>Buyurtma yetkazilgach, Profil → Buyurtmalar bo‘limidagi mahsulot qatoridan alohida baho va fikr qoldirishingiz mumkin.</span></div>
+        <div><b>${omTrHtml("Sharh faqat xariddan keyin yoziladi")}</b><span>${omTrHtml("Buyurtma yetkazilgach, Profil → Buyurtmalar bo‘limidagi mahsulot qatoridan alohida baho va fikr qoldirishingiz mumkin.")}</span></div>
       </div>
       <div class="ppReviewsList" id="ppReviewsList">
-        <div class="ppReviewsLoading"><i class="fa-solid fa-spinner fa-spin"></i> Sharhlar yuklanmoqda...</div>
+        <div class="ppReviewsLoading"><i class="fa-solid fa-spinner fa-spin"></i> ${omTrHtml("Sharhlar yuklanmoqda...")}</div>
       </div>
     </section>`;
 }
 
 function omProductPageReviewListHtml(list){
   if(!Array.isArray(list) || !list.length){
-    return `<div class="ppReviewEmpty"><i class="fa-regular fa-message"></i><b>Hozircha tasdiqlangan sharh yo‘q</b><span>Sharhlar faqat yetkazilgan buyurtmalardagi mahsulotlardan yoziladi.</span></div>`;
+    return `<div class="ppReviewEmpty"><i class="fa-regular fa-message"></i><b>${omTrHtml("Hozircha tasdiqlangan sharh yo‘q")}</b><span>${omTrHtml("Sharhlar faqat yetkazilgan buyurtmalardagi mahsulotlardan yoziladi.")}</span></div>`;
   }
   return list.map((r)=>{
     const score = Math.max(0, Math.min(5, Number(r.stars)||0));
@@ -4610,11 +4617,11 @@ function omProductPageReviewListHtml(list){
     return `<article class="ppReviewItem">
       <div class="ppReviewItemTop">
         <div class="ppReviewAvatar"><i class="fa-solid fa-user"></i></div>
-        <div class="ppReviewAuthor"><b>${escapeHtml(r.author||"Foydalanuvchi")}</b><span>${escapeHtml(formatDate(r.ts)||"Yaqinda")}</span></div>
-        <div class="ppReviewItemStars" aria-label="${score} yulduz">${stars}</div>
+        <div class="ppReviewAuthor"><b>${escapeHtml(r.author||omTrText("Foydalanuvchi"))}</b><span>${escapeHtml(formatDate(r.ts)||omTrText("Yaqinda"))}</span></div>
+        <div class="ppReviewItemStars" aria-label="${score} ${omTrHtml("yulduz")}">${stars}</div>
       </div>
-      ${r.text ? `<p>${escapeHtml(r.text)}</p>` : `<p class="muted">Baho qoldirilgan.</p>`}
-      ${r.adminReply ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
+      ${r.text ? `<p>${escapeHtml(r.text)}</p>` : `<p class="muted">${omTrHtml("Baho qoldirilgan.")}</p>`}
+      ${r.adminReply ? `<div class="revAdminReply"><b>${omTrHtml("OrzuMall javobi")}</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
     </article>`;
   }).join("");
 }
@@ -5075,9 +5082,9 @@ function omQVVariantHtml(p, interactive=false){
   const sizes = normSizes(p||{});
   const sel = getSel(p||{});
   const parts=[];
-  if(colors.length || sizes.length) parts.push(`<div class="qvVarPrompt"><i class="fa-solid fa-sliders"></i><span>Kerakli variantni tanlang</span></div>`);
+  if(colors.length || sizes.length) parts.push(`<div class="qvVarPrompt"><i class="fa-solid fa-sliders"></i><span>${omTrHtml("Kerakli variantni tanlang")}</span></div>`);
   if(colors.length){
-    parts.push(`<div class="qvVarGroup"><span>Ranglar</span><div class="qvSwatches">${colors.slice(0,18).map(c=>{
+    parts.push(`<div class="qvVarGroup"><span>${omTrHtml("Ranglar")}</span><div class="qvSwatches">${colors.slice(0,18).map(c=>{
       const active=sel.color===c.name?" active":"";
       const attrs=interactive?` type="button" data-pp-color="${escapeHtml(c.name)}" aria-pressed="${active?"true":"false"}"`:"";
       const tag=interactive?"button":"i";
@@ -5087,29 +5094,29 @@ function omQVVariantHtml(p, interactive=false){
   if(sizes.length){
     parts.push(`<div class="qvVarGroup"><span>${escapeHtml(omSizeLabel(p))}</span><div class="qvSizeList">${sizes.slice(0,24).map(s=>interactive?`<button type="button" data-pp-size="${escapeHtml(s)}" class="${sel.size===s?"active":""}" aria-pressed="${sel.size===s?"true":"false"}">${escapeHtml(s)}</button>`:`<b>${escapeHtml(s)}</b>`).join("")}${sizes.length>24?`<b>+${sizes.length-24}</b>`:""}</div></div>`);
   }
-  return parts.length ? parts.join("") : `<div class="qvVarEmpty"><i class="fa-solid fa-check"></i> Variant tanlash shart emas</div>`;
+  return parts.length ? parts.join("") : `<div class="qvVarEmpty"><i class="fa-solid fa-check"></i> ${omTrHtml("Variant tanlash shart emas")}</div>`;
 }
 function omQVTrustHtml(p){
   const isChina=omIsChinaOriginProduct(p);
   const weight = Number(p?.weightKg ?? p?.weight ?? p?.massKg ?? 0) || 0;
-  const eta = isChina ? "Taxminan 20 kun" : "Manzil tanlangandan keyin";
+  const eta = omTrText(isChina ? "Taxminan 20 kun" : "Manzil tanlangandan keyin");
   return `
-    <div class="qvTrustItem"><i class="fa-solid fa-truck-fast"></i><span>Yetkazish</span><b>${eta}</b></div>
-    <div class="qvTrustItem"><i class="fa-solid fa-box"></i><span>Holati</span><b>${isChina ? "Xitoydan olib kelamiz" : "O‘zbekistonda"}</b></div>
-    <div class="qvTrustItem"><i class="fa-solid fa-weight-hanging"></i><span>Vazn</span><b>${weight ? `${weight} kg` : "—"}</b></div>`;
+    <div class="qvTrustItem"><i class="fa-solid fa-truck-fast"></i><span>${omTrHtml("Yetkazish")}</span><b>${escapeHtml(eta)}</b></div>
+    <div class="qvTrustItem"><i class="fa-solid fa-box"></i><span>${omTrHtml("Holati")}</span><b>${omTrHtml(isChina ? "Xitoydan olib kelamiz" : "O‘zbekistonda")}</b></div>
+    <div class="qvTrustItem"><i class="fa-solid fa-weight-hanging"></i><span>${omTrHtml("Vazn")}</span><b>${weight ? `${weight} kg` : "—"}</b></div>`;
 }
 function omQVMetricHtml(p){
   const type = String(p?.productType || p?.authType || "").trim();
   const id = String(p?.id || p?._docId || "").trim();
   const m = omGetProductMetrics(p);
   const arr=[];
-  if(type) arr.push(`<span class="qvMetricType"><i class="fa-solid fa-certificate"></i><b>${escapeHtml(type.toUpperCase())}</b><small>turi</small></span>`);
+  if(type) arr.push(`<span class="qvMetricType"><i class="fa-solid fa-certificate"></i><b>${escapeHtml(type.toUpperCase())}</b><small>${omTrHtml("turi")}</small></span>`);
   if(id) arr.push(`<span class="qvMetricId"><i class="fa-solid fa-barcode"></i><b>${escapeHtml(id)}</b><small>ID</small></span>`);
-  arr.push(`<span class="qvMetricViews"><i class="fa-regular fa-eye"></i><b>${omCount(m.views||0)}</b><small>ko‘rish</small></span>`);
-  arr.push(`<span class="qvMetricCart"><i class="fa-solid fa-cart-shopping"></i><b>${omCount(m.cartAdds||0)}</b><small>savat</small></span>`);
-  arr.push(`<span class="qvMetricFav"><i class="fa-solid fa-heart"></i><b>${omCount(m.favoriteAdds||0)}</b><small>sevimli</small></span>`);
-  arr.push(`<span class="qvMetricBuy"><i class="fa-solid fa-bag-shopping"></i><b>${omCount(m.purchases||0)}</b><small>sotuv</small></span>`);
-  arr.push(`<span class="qvMetricScore"><i class="fa-solid fa-fire"></i><b>${omCompactMetric(m.score||0)}</b><small>ball</small></span>`);
+  arr.push(`<span class="qvMetricViews"><i class="fa-regular fa-eye"></i><b>${omCount(m.views||0)}</b><small>${omTrHtml("ko‘rish")}</small></span>`);
+  arr.push(`<span class="qvMetricCart"><i class="fa-solid fa-cart-shopping"></i><b>${omCount(m.cartAdds||0)}</b><small>${omTrHtml("savat")}</small></span>`);
+  arr.push(`<span class="qvMetricFav"><i class="fa-solid fa-heart"></i><b>${omCount(m.favoriteAdds||0)}</b><small>${omTrHtml("sevimli")}</small></span>`);
+  arr.push(`<span class="qvMetricBuy"><i class="fa-solid fa-bag-shopping"></i><b>${omCount(m.purchases||0)}</b><small>${omTrHtml("sotuv")}</small></span>`);
+  arr.push(`<span class="qvMetricScore"><i class="fa-solid fa-fire"></i><b>${omCompactMetric(m.score||0)}</b><small>${omTrHtml("ball")}</small></span>`);
   return arr.join("");
 }
 function omRenderQuickViewPro(){
@@ -5332,7 +5339,7 @@ function renderMiniReviewsList(list){
         <div class="revItemStars">${omRenderStarIcons(s,'small')}</div>
       </div>
       <div class="revItemText">${escapeHtml(r.text||"")}</div>
-      ${r.adminReply ? `<div class="revAdminReply"><b>OrzuMall javobi</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
+      ${r.adminReply ? `<div class="revAdminReply"><b>${omTrHtml("OrzuMall javobi")}</b><span>${escapeHtml(r.adminReply)}</span></div>` : ""}
     `;
     wrap.appendChild(item);
   }
@@ -5341,7 +5348,7 @@ function renderMiniReviewsList(list){
 
 async function openMini(kind, productId){
   const p = (products || []).find(x=>String(x.id)===String(productId));
-  if(!p){ toast("Mahsulot topilmadi."); return; }
+  if(!p){ toast(omTrText("Mahsulot topilmadi.")); return; }
 
   cleanupMiniSubs();
   miniState.open = true;
@@ -5606,7 +5613,7 @@ function renderPanel(mode){
       <div class="cartMeta">
         ${mode==="cart" ? `<label class="cartPick"><input type="checkbox" class="cartPickBox" data-pick="${escapeHtml(row.ci.key)}" ${cartSelected.has(row.ci.key) ? "checked" : ""} /><span></span></label>` : ""}
         <div class="cartTitle">${escapeHtml(omProductText(p, "name", p.name || "Nomsiz"))}</div>
-        ${mode==="cart" ? (renderVariantLine(row.ci) + (((_normPType(p)==="cargo" || p.prepayRequired===true)) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Oldindan to‘lov</span></div>` : ``)) : ""}
+        ${mode==="cart" ? (renderVariantLine(row.ci) + (((_normPType(p)==="cargo" || p.prepayRequired===true)) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> ${omTrHtml("Oldindan to‘lov")}</span></div>` : ``)) : ""}
         <div class="cartRow">
           <div class="price">${moneyUZS(getVariantPricing(p, omCartSelection(row.ci)).price||0)}</div>
           <button class="removeBtn" title="O‘chirish"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
@@ -5809,7 +5816,7 @@ function renderCartPage(){
         <div class="cartWeightMini"><i class="fa-solid fa-weight-hanging" aria-hidden="true"></i> ${omFormatKg(omProductWeightKg(p))} × ${qty} = ${omFormatKg(omProductWeightKg(p) * qty)}</div>
         ${renderVariantLine(ci)}
         <div class="cartShip">${renderDeliveryBadge(p)}</div>
-        ${(_normPType(p)==="cargo" || p.prepayRequired===true) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Oldindan to‘lov</span></div>` : ``}
+        ${(_normPType(p)==="cargo" || p.prepayRequired===true) ? `<div class="cartPrepay"><span class="prepayPill"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> ${omTrHtml("Oldindan to‘lov")}</span></div>` : ``}
         <div class="cartBottomLine">
           <div class="cartPriceStack">
             <div class="price">${moneyUZS(vp.price||0)}</div>
@@ -6844,12 +6851,12 @@ function omNamanganDeliveryArea(data={}){
 }
 function omCheckoutEtaText(built,data={}){
   const items=Array.isArray(built?.items)?built.items:[];
-  if(items.some(item=>String(item?.originCountry||'').toUpperCase()==='CN')) return 'Xitoydan: taxminan 20 kun';
+  if(items.some(item=>String(item?.originCountry||'').toUpperCase()==='CN')) return omTrText('Xitoydan: taxminan 20 kun');
   if(data.method==='pickup') return '';
   const km=Number(data.distanceKm);
-  if(Number.isFinite(km)&&km<=30) return 'Ertaga';
-  if(omNamanganDeliveryArea(data)) return '2 kun ichida';
-  return '3 kun ichida';
+  if(Number.isFinite(km)&&km<=30) return omTrText('Ertaga');
+  if(omNamanganDeliveryArea(data)) return omTrText('2 kun ichida');
+  return omTrText('3 kun ichida');
 }
 function omWithCheckoutEta(built,data={}){
   const deliveryEtaText=omCheckoutEtaText(built,data);
@@ -8119,7 +8126,7 @@ async function fileToBase64(file){
 
 async function goTopupStep2(){
   const hint = document.getElementById('topupHint2');
-  if(hint) hint.textContent = "Chekni yuklang va yuboring.";
+  if(hint) hint.textContent = omTrText("Chekni yuklang va yuboring.");
 
   const card = normCard(document.getElementById('payerCard')?.value);
   const amt = Number(String(document.getElementById('payerAmount')?.value||'').replace(/[^0-9]/g,''));
@@ -8154,7 +8161,7 @@ async function submitTopupRequest(){
 
   const hint = document.getElementById('topupHint2');
   const file = document.getElementById('receiptFile')?.files?.[0] || null;
-  if(!file){ toast("Chek faylini yuklang."); return; }
+  if(!file){ toast(omTrText("Chek faylini yuklang.")); return; }
 
   const payerCard = normCard(document.getElementById('payerCard')?.value);
   const amountUZS = Number(String(document.getElementById('payerAmount')?.value||'').replace(/[^0-9]/g,''));
@@ -8186,7 +8193,7 @@ async function submitTopupRequest(){
   }
 
   try{
-    if(hint) hint.textContent = "Chek Telegram'ga yuborilmoqda...";
+    if(hint) hint.textContent = omTrText("Chek Telegram'ga yuborilmoqda...");
 
     const fileB64 = await fileToBase64(file);
     const idToken = await currentUser.getIdToken();
@@ -9175,7 +9182,7 @@ document.addEventListener("click", (e)=>{
   const star=e.target?.closest?.("#orderReviewStars [data-review-star]");
   if(star){ e.preventDefault(); setReviewStars(Number(star.getAttribute("data-review-star")||0)); return; }
   const quick=e.target?.closest?.('[data-review-quick]');
-  if(quick){ e.preventDefault(); quick.classList.toggle('isActive'); const reason=document.getElementById('orderActionReason'); if(reason){ const tags=[...document.querySelectorAll('[data-review-quick].isActive')].map(x=>x.getAttribute('data-review-quick')).filter(Boolean); reason.value=tags.length?`${tags.join('. ')}.`:''; reason.dispatchEvent(new Event('input',{bubbles:true})); } return; }
+  if(quick){ e.preventDefault(); quick.classList.toggle('isActive'); const reason=document.getElementById('orderActionReason'); if(reason){ const tags=[...document.querySelectorAll('[data-review-quick].isActive')].map(x=>omTrText(x.getAttribute('data-review-quick'))).filter(Boolean); reason.value=tags.length?`${tags.join('. ')}.`:''; reason.dispatchEvent(new Event('input',{bubbles:true})); } return; }
   if(e.target?.closest?.("#orderActionClose,#orderActionCancel")){ e.preventDefault(); closeOrderActionModal(); return; }
   if(e.target?.closest?.("#orderActionSubmit")){ e.preventDefault(); submitOrderAction(); return; }
   const overlay=e.target?.closest?.("#orderActionModal");
@@ -9474,7 +9481,7 @@ function omCxSearchStatus(message='',done=false){const el=document.getElementByI
 async function omCxRunProductSearch(q,seq){try{let rows=omCxSearchState.cache.get(q);if(!rows){const out=await omCxApi('search_products',{query:q,limit:28});rows=Array.isArray(out.products)?out.products:[];omCxSearchState.cache.set(q,rows)}if(seq!==omCxSearchState.seq||q!==omCxSearchState.query)return;omCxMergeProducts(rows);omCxSearchStatus(`${rows.length} ta mos mahsulot katalog bo‘yicha tekshirildi.`,true);applyFilterSort()}catch(_){if(seq===omCxSearchState.seq)omCxSearchStatus('Katalog qidiruvini yakunlab bo‘lmadi.',false)}finally{if(seq===omCxSearchState.seq){omCxSearchState.loading=false;setTimeout(()=>{if(omCxSearchState.query===q)omCxSearchStatus('',false)},2200)}}}
 function omScheduleProductSearch(raw){const q=norm(raw);if(q===omCxSearchState.query)return;omCxSearchState.query=q;omCxSearchState.seq+=1;clearTimeout(omCxSearchState.timer);if(q.length<2){omCxSearchState.loading=false;omCxSearchStatus('',false);return}omCxSearchState.loading=true;omCxSearchStatus('Butun katalog bo‘yicha qidirilmoqda...');const seq=omCxSearchState.seq;omCxSearchState.timer=setTimeout(()=>omCxRunProductSearch(q,seq),220)}
 function omRememberViewedProduct(p){if(!p?.id)return;const sel=getSel(p),pricing=getVariantPricing(p,sel);const snap={id:String(p.id),name:omProductText(p,'name',p.name||'Mahsulot'),image:getCurrentImage(p,sel)||p.images?.[0]||p.image||'',price:Number(pricing.price||p.price||0),deliveryMinDays:omIsChinaOriginProduct(p)?20:Number(p.deliveryMinDays||1),deliveryMaxDays:omIsChinaOriginProduct(p)?20:Number(p.deliveryMaxDays||3),fulfillmentType:String(p.fulfillmentType||'stock'),originCountry:omIsChinaOriginProduct(p)?'CN':'UZ',sourcePlatform:String(p.sourcePlatform||p.externalMarket?.platform||''),viewedAt:Date.now()};const next=[snap,...omCxReadRecent().filter(x=>String(x.id)!==snap.id)].slice(0,18);omCxWriteRecent(next);setTimeout(()=>omRenderRecentShelf(),0);omCxRecommendations=[];setTimeout(()=>omRefreshRecommendations(true),250)}
-function omCxDeliveryText(p={}){return omIsChinaOriginProduct(p)?'Taxminan 20 kun':'Manzil tanlangandan keyin'}
+function omCxDeliveryText(p={}){return omTrText(omIsChinaOriginProduct(p)?'Taxminan 20 kun':'Manzil tanlangandan keyin')}
 function omCxMiniCardHtml(p={},badge=''){const id=String(p.id||''),name=omProductText(p,'name',p.name||'Mahsulot'),sel=getSel(p),price=Number(getVariantPricing(p,sel)?.price||p.price||0),img=getCurrentImage(p,sel)||p.images?.[0]||p.image||'./logo-256.webp';return `<article class="cxMiniCard" data-cx-product="${escapeHtml(id)}"><div class="cxMiniImg"><img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">${badge?`<span class="cxMiniBadge">${escapeHtml(badge)}</span>`:''}</div><div class="cxMiniBody"><div class="cxMiniName">${escapeHtml(name)}</div><div class="cxMiniPrice">${moneyUZS(price)}</div><div class="cxMiniDelivery"><i class="fa-solid fa-truck-fast"></i> ${escapeHtml(omCxDeliveryText(p))}</div></div></article>`}
 function omCxBindShelf(root){root?.querySelectorAll('[data-cx-product]').forEach(card=>card.addEventListener('click',()=>openProductPage(card.getAttribute('data-cx-product'))))}
 function omRenderRecentShelf(){const section=document.getElementById('cxRecentSection'),rail=document.getElementById('cxRecentRail');if(!section||!rail)return;const rows=omCxReadRecent();section.hidden=!rows.length;rail.innerHTML=rows.map(x=>omCxMiniCardHtml(x,'Ko‘rilgan')).join('');omCxBindShelf(rail)}
