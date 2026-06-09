@@ -1,4 +1,21 @@
 (() => {
+  // v189: All admin pages share this visibility rule. Some legacy component
+  // styles set display:grid/flex on login blocks and accidentally override the
+  // browser's native [hidden] rule. Keep hidden authoritative everywhere.
+  const style = document.createElement('style');
+  style.id = 'orzumall-admin-hidden-contract-v189';
+  style.textContent = `
+    [hidden] { display: none !important; }
+    #login[hidden], #loginBox[hidden], #app[hidden],
+    .login[hidden], .login-screen[hidden], .login-box[hidden], .app[hidden] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+  `;
+  (document.head || document.documentElement).appendChild(style);
+
   const LOGIN_PATH = '/admin/login.html';
   const DEFAULT_PATH = '/admin/panel.html';
   const KEY = 'orzumall_admin_next_v188';
