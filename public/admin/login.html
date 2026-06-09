@@ -117,6 +117,7 @@
 <link rel="stylesheet" href="/theme-redwhite.css?v=20260606_v139">
 <link rel="stylesheet" href="/no-loading-guard-v139.css?v=20260606_v139">
 <script src="/om-error-report.js?v=20260606_v139" defer></script>
+  <script src="./admin-session-guard.js?v=20260609_v188"></script>
 </head>
 
 <body>
@@ -176,6 +177,7 @@
 
   const btn = document.getElementById("btn");
   const err = document.getElementById("err");
+  const adminNext = window.OrzuAdminSession?.afterLogin?.() || "./panel.html";
 
   function normEmail(e){ return String(e||"").toLowerCase().trim(); }
   function uniqEmails(arr){
@@ -217,7 +219,7 @@
     try{
       const r = await decideAndGo(user);
       if(r.ok){
-        location.replace("./panel.html");
+        location.replace(adminNext);
         return;
       }
       await signOut(auth);
@@ -247,7 +249,7 @@
         return;
       }
 
-      location.replace("./panel.html");
+      location.replace(adminNext);
     } catch (e) {
       console.error(e);
       showError("Kirishda xatolik: " + (e?.message || e));

@@ -2886,6 +2886,7 @@ button[data-x] i{
 
 
 <script src="/om-error-report.js?v=20260606_v139" defer></script>
+  <script src="./admin-session-guard.js?v=20260609_v188"></script>
 </head>
 <body style="display:none;">
   <div class="container">
@@ -6472,8 +6473,7 @@ $("currency").value=p.currency||"UZS";
 
 
     async function login(){
-      try{ await signInWithPopup(auth, provider); }
-      catch(e){ toast("Kirishda xatolik: "+e.message,"error"); }
+      window.OrzuAdminSession?.requireLogin?.();
     }
     async function logout(){
       try{ await signOut(auth); toast("Chiqildi"); }
@@ -6625,7 +6625,7 @@ if(e.target===$("jsonModal")) closeModal("jsonModal");
   // GUARD (faqat admin)
   if(!user){
     document.body.innerHTML = "";
-    location.replace("./login.html");
+    window.OrzuAdminSession?.requireLogin?.();
     return;
   }
 
@@ -6644,7 +6644,7 @@ if(e.target===$("jsonModal")) closeModal("jsonModal");
     try{ await signOut(auth); }catch(e){}
     document.body.innerHTML = "";
     alert("Ruxsat yo‘q! Bu panel faqat OrzuMall adminlari uchun. Seller kabineti: /seller/");
-    location.replace("./login.html");
+    window.OrzuAdminSession?.requireLogin?.();
     return;
   }
 
