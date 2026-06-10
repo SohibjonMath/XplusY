@@ -41,7 +41,6 @@ function sanitizeSourceVariants(list) {
     id: cleanText(row?.id, 140),
     name: cleanText(row?.name, 260),
     image: safeUrl(row?.image, 2200),
-    stock: safeInt(row?.stock, 0, 1e9, 0),
     priceCny: safeNumber(row?.priceCny, 0, 1e8, 0),
     priceUzs: safeInt(row?.priceUzs ?? row?.priceUZS, 0, 1e12, 0),
     priceValue: safeNumber(row?.priceValue ?? row?.sourcePrice ?? row?.priceCny, 0, 1e12, 0),
@@ -74,7 +73,6 @@ function sanitizeSkuVariants(list) {
     attributes: Object.fromEntries(Object.entries(row?.attributes || {}).slice(0, 12).map(([k, v]) => [cleanText(k, 120), cleanText(v, 160)]).filter(([k, v]) => k && v)),
     selections: Object.fromEntries(Object.entries(row?.selections || row?.externalOptions || row?.chinaOptions || {}).slice(0, 12).map(([k, v]) => [cleanText(k, 120), cleanText(v, 160)]).filter(([k, v]) => k && v)),
     image: safeUrl(row?.image, 2200),
-    stock: safeInt(row?.stock, 0, 1e9, 0),
     priceCny: safeNumber(row?.priceCny, 0, 1e8, 0),
     priceUzs: safeInt(row?.priceUzs ?? row?.priceUZS, 0, 1e12, 0),
     priceValue: safeNumber(row?.priceValue ?? row?.sourcePrice ?? row?.priceCny, 0, 1e12, 0),
@@ -136,15 +134,13 @@ function sourceSizes(source = {}) {
 }
 function marketplaceVariants(source = {}, fallbackPrice = 0) {
   const toMarketplace = row => {
-    const stockQty = safeInt(row.stock, 0, 1e9, 0);
     const colorRaw = row.color || attributeByKind(row.attributes, 'color');
     const sizeRaw = row.size || attributeByKind(row.attributes, 'size');
     return {
       color: usableVariantValue(colorRaw) ? cleanVariantValue(colorRaw) : null,
       size: usableVariantValue(sizeRaw) ? cleanVariantValue(sizeRaw) : null,
       price: row.priceUzs || calculatePrice(row.priceCny).priceUzs || safeInt(fallbackPrice, 0, 1e12, 0),
-      stock: stockQty,
-      stockQty,
+      stockKnown: false,
       sku: row.id,
       skuId: row.id,
       attributes: row.attributes,
@@ -156,9 +152,9 @@ function marketplaceVariants(source = {}, fallbackPrice = 0) {
   // Kengaytma strukturali SKU topa olmagan holatda admin tasdiqlagan variantlardan xavfsiz SKU yaratiladi.
   const colors=sourceColors(source), sizes=sourceSizes(source);
   let rows=[];
-  if(colors.length && sizes.length) rows=colors.flatMap(c=>sizes.map((z,i)=>({id:`generated-${c.name}-${i+1}`,name:`${c.name} / ${z}`,color:c.name,size:z,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name,规格:z}})));
-  else if(colors.length) rows=colors.map((c,i)=>({id:`generated-color-${i+1}`,name:c.name,color:c.name,image:c.image||'',stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name}}));
-  else if(sizes.length) rows=sizes.map((z,i)=>({id:`generated-spec-${i+1}`,name:z,size:z,stock:safeInt(source.stock,0,1e9,0),priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{规格:z}}));
+  if(colors.length && sizes.length) rows=colors.flatMap(c=>sizes.map((z,i)=>({id:`generated-${c.name}-${i+1}`,name:`${c.name} / ${z}`,color:c.name,size:z,image:c.image||'',priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name,规格:z}})));
+  else if(colors.length) rows=colors.map((c,i)=>({id:`generated-color-${i+1}`,name:c.name,color:c.name,image:c.image||'',priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name}}));
+  else if(sizes.length) rows=sizes.map((z,i)=>({id:`generated-spec-${i+1}`,name:z,size:z,priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{规格:z}}));
   return rows.map(toMarketplace).filter(row=>row.color || row.size).slice(0,220);
 }
 
@@ -296,7 +292,7 @@ function buildExternalCustomerCatalog(source = {}, fallbackPrice = 0) {
       selections,
       price,
       priceCny: safeNumber(row.priceCny, 0, 1e8, 0),
-      stock: safeInt(row.stock, 0, 1e9, 0),
+      stockKnown: false,
       image: safeUrl(row.image, 2200),
       disabled: false,
     });
@@ -343,7 +339,7 @@ function buildExternalCustomerCatalog(source = {}, fallbackPrice = 0) {
         selections,
         price: safeInt(fallbackPrice, 0, 1e12, 0),
         priceCny: safeNumber(source.priceCny, 0, 1e8, 0),
-        stock: safeInt(source.stock, 0, 1e9, 0),
+        stockKnown: false,
         image,
         disabled: false,
       });
@@ -376,8 +372,7 @@ function catalogToLegacyVariants(catalog = {}) {
     color: colorGroup ? row.selections?.[colorGroup.id] || null : null,
     size: sizeGroup ? row.selections?.[sizeGroup.id] || null : null,
     price: safeInt(row.price, 0, 1e12, 0),
-    stock: safeInt(row.stock, 0, 1e9, 0),
-    stockQty: safeInt(row.stock, 0, 1e9, 0),
+    stockKnown: false,
     sku: cleanText(row.skuId || row.id, 160),
     skuId: cleanText(row.skuId || row.id, 160),
     image: safeUrl(row.image, 2200),
@@ -510,7 +505,7 @@ function sourceSummary(item = {}) {
     priceCny: safeNumber(item.priceCny ?? (priceCurrency === 'CNY' ? priceValue : 0), 0, 1e8, 0),
     priceUzs: safeInt(item.priceUzs ?? item.priceUZS ?? (priceCurrency === 'UZS' ? priceValue : 0), 0, 1e12, 0),
     priceCnyMax: safeNumber(item.priceCnyMax, 0, 1e8, 0), pricing: item.pricing || calculatePrice(item.priceCny),
-    moq: safeInt(item.moq, 1, 1e8, 1), stock: safeInt(item.stock, 0, 1e9, 0), unit: cleanText(item.unit, 32) || 'dona',
+    moq: safeInt(item.moq, 1, 1e8, 1), stockKnown: false, unit: cleanText(item.unit, 32) || 'dona',
     sellerName: cleanText(item.sellerName, 220), sellerLocation: cleanText(item.sellerLocation, 220), deliveryFeeCny: safeNumber(item.deliveryFeeCny, 0, 1e8, 0),
     chinaDomesticFeeUzs: safeInt(item.chinaDomesticFeeUzs ?? item.domesticDeliveryFeeUzs ?? item.chinaDeliveryFeeUzs, 0, 1e12, 0),
     chinaFreeWeightKg: safeNumber(item.chinaFreeWeightKg ?? item.freeWeightKg, 0, 100000, 7),
@@ -552,7 +547,7 @@ function sanitizeDraft(raw = {}, pricingPolicy = {}) {
     productId: cleanText(raw.productId, 100).toLowerCase().replace(/[^a-z0-9_-]/g, ''), sourceUrl, itemId, detected, source, images, externalImages, name,
     name_ru: cleanText(raw.name_ru || '', 360), name_en: cleanText(raw.name_en || '', 360), description: cleanText(raw.description || buildDescription(source), 7000), description_ru: cleanText(raw.description_ru || '', 7000), description_en: cleanText(raw.description_en || '', 7000), price, oldPrice: safeInt(raw.oldPrice, 0, 1e12, 0),
     weightKg, sourcePriceUzs, chinaDomesticFeeUzs, chinaPricing, popularScore: safeInt(raw.popularScore, 0, 1e12, 50), tags: sanitizeTags(raw.tags?.length ? raw.tags : [detected.customerOrigin, 'Tashqi katalog', 'Buyurtma asosida']),
-    deliveryMinDays: safeInt(raw.deliveryMinDays, 1, 365, detected.minDays), deliveryMaxDays: safeInt(raw.deliveryMaxDays, 1, 365, detected.maxDays), moq: safeInt(raw.moq ?? source.moq, 1, 1e8, 1), stock: safeInt(raw.stock ?? source.stock, 0, 1e9, 0),
+    deliveryMinDays: safeInt(raw.deliveryMinDays, 1, 365, detected.minDays), deliveryMaxDays: safeInt(raw.deliveryMaxDays, 1, 365, detected.maxDays), moq: safeInt(raw.moq ?? source.moq, 1, 1e8, 1), stockKnown: !isChina && raw.stockKnown === true, stock: (!isChina && raw.stockKnown === true) ? safeInt(raw.stock, 0, 1e9, 0) : null,
     prepayRequired: isChina ? raw.prepayRequired !== false : raw.prepayRequired === true,
   };
 }
@@ -575,7 +570,7 @@ async function saveProduct(db, raw, actor, pricingPolicy = {}) {
   const legacyVariants = catalogToLegacyVariants(catalog); const storedCount = draft.images.filter(isStorageUrl).length; const normalizedCount = draft.images.filter(isNormalizedStorageUrl).length;
   const externalMarket = {
     platform: draft.detected.key, sourceLabel: draft.detected.label, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, itemId: draft.itemId, url: draft.sourceUrl, upstreamUrl: source.upstreamUrl || '', originalTitle: source.title, priceCurrency: source.priceCurrency, priceValue: source.priceValue,
-    priceCny: source.priceCny, priceUzs: source.priceUzs, sourcePriceUzs: draft.sourcePriceUzs, chinaDomesticFeeUzs: draft.chinaDomesticFeeUzs, chinaPricing: draft.chinaPricing, moq: draft.moq, stock: draft.stock, unit: source.unit, sellerName: source.sellerName, sellerLocation: source.sellerLocation,
+    priceCny: source.priceCny, priceUzs: source.priceUzs, sourcePriceUzs: draft.sourcePriceUzs, chinaDomesticFeeUzs: draft.chinaDomesticFeeUzs, chinaPricing: draft.chinaPricing, moq: draft.moq, stock: draft.stock, stockKnown: draft.stockKnown, unit: source.unit, sellerName: source.sellerName, sellerLocation: source.sellerLocation,
     props: source.props, galleryImages: sanitizeImages(source.galleryImages?.length ? source.galleryImages : draft.externalImages), variantImages: source.variantImages, colorOptions: source.colorOptions, sizeOptions: source.sizeOptions,
     variantGroups: source.variantGroups, skuVariants: source.skuVariants, imagesByColor: source.imagesByColor, diagnostics: source.diagnostics || {}, customerCatalog: catalog, externalImages: draft.externalImages,
     localImageCount: storedCount, normalizedImageCount: normalizedCount, imageStandard: draft.images.length && normalizedCount === draft.images.length ? IMAGE_STANDARD : '', importer: cleanText(source?.diagnostics?.importer || 'chrome-extension', 60), extractorVersion: source.extractorVersion, importedBy: actor.email, lastSyncedAt: ts,
@@ -583,7 +578,7 @@ async function saveProduct(db, raw, actor, pricingPolicy = {}) {
   const payload = {
     name: draft.name, name_ru: draft.name_ru, name_en: draft.name_en, description: draft.description, description_ru: draft.description_ru, description_en: draft.description_en, price: draft.price, oldPrice: draft.oldPrice, weightKg: draft.weightKg, sourcePriceUzs: draft.sourcePriceUzs, chinaDomesticFeeUzs: draft.chinaDomesticFeeUzs, chinaPricing: draft.chinaPricing, popularScore: draft.popularScore, currency: 'UZS', images: draft.images,
     colors: sourceColors(source), sizes: sourceSizes(source), imagesByColor: source.imagesByColor, variants: legacyVariants.length ? legacyVariants : marketplaceVariants(source, draft.price), externalCatalog: catalog, externalMarket,
-    tags: draft.tags, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, fulfillmentType: 'external_catalog', deliveryMinDays: Math.min(draft.deliveryMinDays, draft.deliveryMaxDays), deliveryMaxDays: Math.max(draft.deliveryMinDays, draft.deliveryMaxDays), prepayRequired: draft.prepayRequired,
+    tags: draft.tags, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, fulfillmentType: 'external_catalog', deliveryMinDays: Math.min(draft.deliveryMinDays, draft.deliveryMaxDays), deliveryMaxDays: Math.max(draft.deliveryMinDays, draft.deliveryMaxDays), prepayRequired: draft.prepayRequired, stock: draft.stock, stockQty: draft.stock, stockKnown: draft.stockKnown,
     status: 'approved', isActive: true, ownerType: 'orzumall', createdByRole: 'admin', isOrzuMallVerified: true, sellerId: 'orzumall', sellerName: 'OrzuMall', sourceType: 'external-market-import', sourcePlatform: draft.detected.key, sourceLabel: draft.detected.label, sourceUrl: draft.sourceUrl, sourceItemId: draft.itemId, updatedAt: ts,
   };
   if (draft.detected.key === '1688') { payload.china1688Catalog = catalog; payload.china1688 = externalMarket; }

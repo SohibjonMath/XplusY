@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./external-catalog-import.css?v=20260609_v187_admin_pricing_policy">
+  <link rel="stylesheet" href="./external-catalog-import.css?v=20260610_v192_stockless_catalog">
   <script src="./admin-session-guard.js?v=20260609_v189"></script>
 </head>
 <body>
@@ -83,7 +83,7 @@
       <div class="source-panel card">
         <div class="section-title compact"><div><span class="step">02</span><h2>Tashqi marketdan olingan ma’lumot</h2></div><a class="mini-link" id="open1688" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Manbada ochish</a></div>
         <div class="source-head"><div class="source-cover" id="sourceCover"><i class="fa-solid fa-image"></i></div><div><h3 id="sourceTitle">Mahsulot ma’lumoti</h3><p id="sourceMeta">—</p><div class="chips" id="sourceChips"></div></div></div>
-        <div class="price-grid"><div><span>Manba narxi</span><b id="cnyLabel">—</b></div><div><span>Avto hisob</span><b id="autoPriceLabel">—</b></div><div><span>MOQ</span><b id="moqLabel">—</b></div><div><span>Qoldiq</span><b id="stockLabel">—</b></div></div>
+        <div class="price-grid"><div><span>Manba narxi</span><b id="cnyLabel">—</b></div><div><span>Avto hisob</span><b id="autoPriceLabel">—</b></div><div><span>MOQ</span><b id="moqLabel">—</b></div><div><span>Sotuv holati</span><b id="stockLabel">Cheklanmagan</b></div></div>
         <div class="source-block"><h4><i class="fa-solid fa-images"></i> Import qilinadigan rasmlar</h4><p>Faqat chap tomondagi asosiy mahsulot galereyasi va uning miniatyuralari qabul qilinadi. Sharhlar, foydalanuvchi yuklagan rasmlar, hujjatlar va rang ikonkalari avtomatik rad etiladi. Saqlashdan oldin belgilangan rasmlarni ko‘zdan kechiring.</p><div class="images-grid" id="imagesGrid"></div></div>
         <div class="source-block"><h4><i class="fa-solid fa-layer-group"></i> Variant konstruktori</h4><p>Market sahifasidagi ko‘rinadigan tanlovlar avtomatik ajratiladi. Rang va razmer bilan cheklanmaydi: model, komplekt, uzunlik, quvvat yoki boshqa guruhlar ham mustaqil SKU tizimiga aylantiriladi. Noto‘g‘ri qiymat ko‘rinsa, saqlashdan oldin shu yerda tahrirlang.</p>
           <div class="variant-review">
@@ -123,7 +123,8 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
           <label><span>Yetkazish min. kun</span><input id="minDays" type="number" min="1" value="15"></label>
           <label><span>Yetkazish max. kun</span><input id="maxDays" type="number" min="1" value="30"></label>
           <label><span>MOQ</span><input id="moq" type="number" min="1" value="1"></label>
-          <label><span>Qoldiq</span><input id="stock" type="number" min="0" value="0"></label>
+          <div class="external-unlimited-stock-note" id="chinaUnlimitedStockNote"><i class="fa-solid fa-infinity"></i><span><b>Xitoy katalogida qoldiq cheklanmaydi</b><small>Mahsulot soni ombor qoldig‘i sifatida boshqarilmaydi. Variant mavjud bo‘lsa, xaridor buyurtma bera oladi.</small></span></div>
+          <label id="externalLocalStockField" hidden><span>Mahalliy qoldiq (UZB mahsulot)</span><input id="stock" type="number" min="0" placeholder="Bo‘sh qoldirilsa cheklanmaydi"><small class="field-hint">Faqat O‘zbekiston ichidagi tashqi market mahsulotlari uchun.</small></label>
           <label><span>Popularlik balli</span><input id="popularScore" type="number" min="0" value="50"></label>
           <label><span>Teglar</span><input id="tags" value="Tashqi katalog, Buyurtma asosida"></label>
           <label class="full"><span>Qo‘shimcha rasm URL’lari</span><textarea id="imagesText" rows="3" placeholder="Har qatorga bittadan rasm URL"></textarea></label>

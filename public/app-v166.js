@@ -4775,7 +4775,7 @@ function renderProductPage(){
             <div class="cxAlertHead"><div><b>Mahsulotni kuzatish</b><br><span>Muhim o‘zgarishlardan xabardor bo‘ling</span></div><i class="fa-regular fa-bell"></i></div>
             <div class="cxAlertGrid">
               <button type="button" class="cxAlertBtn" data-cx-alert="price_drop"><i class="fa-solid fa-tags"></i><span>Narx tushganda xabar</span></button>
-              <button type="button" class="cxAlertBtn" data-cx-alert="back_in_stock"><i class="fa-solid fa-box-open"></i><span>Omborga qaytganda xabar</span></button>
+              ${omIsChinaOriginProduct(p)?"":`<button type="button" class="cxAlertBtn" data-cx-alert="back_in_stock"><i class="fa-solid fa-box-open"></i><span>Omborga qaytganda xabar</span></button>`}
             </div>
           </div>
           ${catCard?`<div class="ppCategoryCard">${catCard}</div>`:""}
@@ -4879,11 +4879,10 @@ function bindProductPage(p){
         ? Number(galleryMainImg.naturalWidth) / Number(galleryMainImg.naturalHeight)
         : 1;
       const unusualRatio = nativeRatio > 1.38 || nativeRatio < 0.72;
-      const chinaScale = !isChinaGallery
-        ? "none"
-        : (isMobileGallery
-          ? (unusualRatio ? "scale(1.10)" : "scale(1.26)")
-          : (unusualRatio ? "scale(1.06)" : "scale(1.16)"));
+      // v192: external catalog photos must stay fully visible. Historical
+      // zooming cropped supplier images and made the large photo appear to
+      // slide when the thumbnail rail moved. Keep a strict contain layout.
+      const chinaScale = "none";
       galleryMainImg.style.setProperty("transform", chinaScale, "important");
       galleryMainImg.style.setProperty("transform-origin", "center center", "important");
       galleryMainImg.style.setProperty("filter", "none", "important");
@@ -4899,9 +4898,9 @@ function bindProductPage(p){
         galleryMainImg.style.setProperty("max-width", "100%", "important");
         galleryMainImg.style.setProperty("max-height", "100%", "important");
         galleryMainImg.style.setProperty("margin", isChinaGallery ? "0" : "auto", "important");
-        galleryMainImg.style.setProperty("padding", "0", "important");
+        galleryMainImg.style.setProperty("padding", isChinaGallery ? "5px" : "0", "important");
         galleryMainImg.style.setProperty("box-sizing", "border-box", "important");
-        galleryMainImg.style.setProperty("flex", isChinaGallery ? "0 0 auto" : "0 1 auto", "important");
+        galleryMainImg.style.setProperty("flex", "0 1 auto", "important");
       }else{
         galleryMainImg.style.removeProperty("position");
         galleryMainImg.style.removeProperty("inset");
@@ -4941,7 +4940,21 @@ function bindProductPage(p){
       thumb.classList.toggle("active", active);
       thumb.setAttribute("aria-current", active ? "true" : "false");
       if(active && opts.scroll !== false){
-        try{ thumb.scrollIntoView({ behavior:"smooth", block:"nearest", inline:"center" }); }catch(_e){}
+        // v192: scroll only the thumbnail rail. scrollIntoView() could move
+        // outer ancestors and visually push the main photo sideways.
+        try{
+          const rail = root.querySelector("#productPageThumbs");
+          if(rail){
+            const horizontal = rail.scrollWidth > rail.clientWidth + 2;
+            if(horizontal){
+              const left = Math.max(0, thumb.offsetLeft - Math.max(0, (rail.clientWidth - thumb.offsetWidth) / 2));
+              rail.scrollTo({ left, behavior:"smooth" });
+            }else{
+              const top = Math.max(0, thumb.offsetTop - Math.max(0, (rail.clientHeight - thumb.offsetHeight) / 2));
+              rail.scrollTo({ top, behavior:"smooth" });
+            }
+          }
+        }catch(_e){}
       }
     });
   };

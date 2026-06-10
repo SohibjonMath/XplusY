@@ -40,8 +40,9 @@ async function loadCatalogLines(db,rawItems){
     if(!unitPriceUZS)throw new Error(`PRICE_NOT_FOUND:${productId}`);
     const sourceInfo=externalInfo(product),selectedOptions=itemOptions(raw);
     const stockRaw=variant?.stockQty??variant?.stock??product.stockQty??product.stock??null;let stockQty=stockRaw==null||stockRaw===''?null:Number(stockRaw);
-    const stockKnown=variant?.stockKnown===true||product?.stockKnown===true||product?.externalMarket?.stockKnown===true;
-    if(sourceInfo.isExternal&&!stockKnown&&Number(stockQty)===0)stockQty=null;
+    // v192: external catalog products are purchased on demand. They must not
+    // inherit local warehouse inventory restrictions from supplier pages.
+    if(sourceInfo.isExternal&&sourceInfo.originCountry==='CN') stockQty=null;
     if(Number.isFinite(stockQty)&&stockQty>=0&&qty>stockQty)throw new Error(`OUT_OF_STOCK:${productId}`);
     const seller=await sellerSnapshot(db,product,sellerCache);
     const gross=roundMoney(unitPriceUZS*qty),commission=roundMoney(gross*seller.commissionPercent/100),net=roundMoney(gross-commission);
