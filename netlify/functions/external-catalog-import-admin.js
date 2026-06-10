@@ -36,10 +36,35 @@ function sanitizeProps(list) {
     name: cleanText(row?.name, 90), value: cleanText(row?.value, 300),
   })).filter(x => x.name || x.value);
 }
+function localizedText(row = {}, lang = 'ru', max = 180) {
+  const cap = lang === 'ru' ? 'Ru' : 'En';
+  return cleanText(row?.[`name_${lang}`] || row?.[`name${cap}`] || '', max);
+}
+function sanitizeLocalizedSelections(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).slice(0, 14).map(([k, v]) => [cleanText(k, 140), cleanText(v, 180)]).filter(([k, v]) => k && v));
+}
+function sanitizeVariantTranslations(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out = {};
+  for (const lang of ['ru', 'en']) {
+    const raw = value[lang]; if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+    const groups = {}, options = {};
+    Object.entries(raw.groups || {}).slice(0, 14).forEach(([groupId, text]) => { const id=cleanText(groupId, 140), label=cleanText(text, 180); if(id&&label)groups[id]=label; });
+    Object.entries(raw.options || {}).slice(0, 14).forEach(([groupId, rows]) => {
+      const id=cleanText(groupId, 140); if(!id || !rows || typeof rows!=='object' || Array.isArray(rows)) return;
+      const mapped={}; Object.entries(rows).slice(0, 120).forEach(([canonical, translated])=>{const key=cleanText(canonical,180),label=cleanText(translated,180);if(key&&label)mapped[key]=label;});
+      if(Object.keys(mapped).length)options[id]=mapped;
+    });
+    if(Object.keys(groups).length || Object.keys(options).length) out[lang]={ groups, options };
+  }
+  return out;
+}
 function sanitizeSourceVariants(list) {
   return (Array.isArray(list) ? list : []).slice(0, 160).map(row => ({
     id: cleanText(row?.id, 140),
     name: cleanText(row?.name, 260),
+    name_ru: localizedText(row, 'ru', 300), name_en: localizedText(row, 'en', 300),
     image: safeUrl(row?.image, 2200),
     priceCny: safeNumber(row?.priceCny, 0, 1e8, 0),
     priceUzs: safeInt(row?.priceUzs ?? row?.priceUZS, 0, 1e12, 0),
@@ -52,6 +77,7 @@ function sanitizeVariantOptions(list) {
   return (Array.isArray(list) ? list : []).slice(0, 64).map((row, idx) => ({
     id: cleanText(row?.id || `o${idx + 1}`, 140),
     name: cleanText(row?.name || row?.label || row?.value, 160),
+    name_ru: localizedText(row, 'ru', 180), name_en: localizedText(row, 'en', 180),
     image: safeUrl(row?.image, 2200),
     disabled: row?.disabled === true,
   })).filter(x => x.name);
@@ -60,6 +86,7 @@ function sanitizeVariantGroups(list) {
   return (Array.isArray(list) ? list : []).slice(0, 10).map((row, idx) => ({
     id: cleanText(row?.id || `g${idx + 1}`, 140),
     name: cleanText(row?.name || `Variant ${idx + 1}`, 160),
+    name_ru: localizedText(row, 'ru', 180), name_en: localizedText(row, 'en', 180),
     type: ['color', 'size', 'spec', 'other'].includes(cleanText(row?.type, 20).toLowerCase()) ? cleanText(row?.type, 20).toLowerCase() : 'other',
     options: sanitizeVariantOptions(row?.options),
   })).filter(x => x.options.length);
@@ -68,10 +95,12 @@ function sanitizeSkuVariants(list) {
   return (Array.isArray(list) ? list : []).slice(0, 220).map((row, idx) => ({
     id: cleanText(row?.id || `sku${idx + 1}`, 160),
     name: cleanText(row?.name, 300),
+    name_ru: localizedText(row, 'ru', 320), name_en: localizedText(row, 'en', 320),
     color: cleanText(row?.color, 160),
     size: cleanText(row?.size, 160),
     attributes: Object.fromEntries(Object.entries(row?.attributes || {}).slice(0, 12).map(([k, v]) => [cleanText(k, 120), cleanText(v, 160)]).filter(([k, v]) => k && v)),
     selections: Object.fromEntries(Object.entries(row?.selections || row?.externalOptions || row?.chinaOptions || {}).slice(0, 12).map(([k, v]) => [cleanText(k, 120), cleanText(v, 160)]).filter(([k, v]) => k && v)),
+    selections_ru: sanitizeLocalizedSelections(row?.selections_ru || row?.selectionsRu), selections_en: sanitizeLocalizedSelections(row?.selections_en || row?.selectionsEn),
     image: safeUrl(row?.image, 2200),
     priceCny: safeNumber(row?.priceCny, 0, 1e8, 0),
     priceUzs: safeInt(row?.priceUzs ?? row?.priceUZS, 0, 1e12, 0),
@@ -177,6 +206,7 @@ function customerOption(value = {}, index = 0) {
   return {
     id: cleanText(row.id || `o${index + 1}`, 140),
     name,
+    name_ru: localizedText(row, 'ru', 180), name_en: localizedText(row, 'en', 180),
     image: safeUrl(row.image || row.img || row.imageUrl || '', 2200),
     disabled: row.disabled === true,
   };
@@ -201,6 +231,7 @@ function customerGroup(value = {}, index = 0) {
   return {
     id: cleanText(row.id || customerSlug(name, `g${index + 1}`), 140),
     name,
+    name_ru: localizedText(row, 'ru', 180), name_en: localizedText(row, 'en', 180),
     type,
     required: row.required !== false,
     options,
@@ -228,9 +259,25 @@ function upsertCustomerGroup(groupMap, raw = {}, fallbackIndex = 0) {
   const existing = groupMap.get(key) || byType;
   if (existing) {
     existing.options = dedupeCustomerOptions([...(existing.options || []), ...(group.options || [])]);
+    existing.name_ru = existing.name_ru || group.name_ru || ''; existing.name_en = existing.name_en || group.name_en || '';
     return;
   }
   groupMap.set(key, group);
+}
+function decorateCustomerCatalogTranslations(optionGroups = [], rows = [], rawTranslations = {}) {
+  const translations=sanitizeVariantTranslations(rawTranslations);
+  for(const lang of ['ru','en']){
+    const bag=translations[lang]||{},prop=`name_${lang}`,selectionProp=`selections_${lang}`;
+    optionGroups.forEach(group=>{
+      group[prop]=cleanText(group[prop]||bag.groups?.[group.id]||'',180);
+      (group.options||[]).forEach(option=>{option[prop]=cleanText(option[prop]||bag.options?.[group.id]?.[option.name]||'',180);});
+    });
+    rows.forEach(row=>{
+      const localized={}; optionGroups.forEach(group=>{const canonical=row.selections?.[group.id];if(!canonical)return;const option=(group.options||[]).find(x=>x.name===canonical);localized[group.id]=cleanText(option?.[prop]||bag.options?.[group.id]?.[canonical]||canonical,180);});
+      row[selectionProp]=localized; row[prop]=cleanText(row[prop]||Object.values(localized).filter(Boolean).join(' / '),320);
+    });
+  }
+  return { optionGroups, rows, translations };
 }
 function buildExternalCustomerCatalog(source = {}, fallbackPrice = 0) {
   const sourceGroups = sanitizeVariantGroups(source.variantGroups);
@@ -347,6 +394,7 @@ function buildExternalCustomerCatalog(source = {}, fallbackPrice = 0) {
   }
 
   optionGroups = optionGroups.map(group => ({ ...group, options: dedupeCustomerOptions(group.options) }));
+  decorateCustomerCatalogTranslations(optionGroups, rows, source.variantTranslations);
   const skuMap = new Map();
   rows.forEach(row => {
     const key = optionGroups.map(group => `${group.id}:${row.selections?.[group.id] || ''}`).join('|') || row.id;
@@ -362,6 +410,7 @@ function buildExternalCustomerCatalog(source = {}, fallbackPrice = 0) {
     skuCount: skus.length,
     hasVariants: optionGroups.length > 0,
     sourceMode: source?.diagnostics?.mode || (skuRows.length ? 'source-sku' : 'admin-generated'),
+    variantTranslations: sanitizeVariantTranslations(source.variantTranslations),
   };
 }
 function catalogToLegacyVariants(catalog = {}) {
@@ -377,8 +426,8 @@ function catalogToLegacyVariants(catalog = {}) {
     skuId: cleanText(row.skuId || row.id, 160),
     image: safeUrl(row.image, 2200),
     attributes: row.selections || {},
-    chinaOptions: row.selections || {},
-    externalOptions: row.selections || {},
+    chinaOptions: row.selections || {}, externalOptions: row.selections || {},
+    selections_ru: row.selections_ru || {}, selections_en: row.selections_en || {}, name_ru: cleanText(row.name_ru, 320), name_en: cleanText(row.name_en, 320),
   }));
 }
 
@@ -513,7 +562,7 @@ function sourceSummary(item = {}) {
     serviceTags: sanitizeTags(item.serviceTags), props: sanitizeProps(item.props), variants: sanitizeSourceVariants(item.variants),
     galleryImages: sanitizeImages(item.galleryImages?.length ? item.galleryImages : images), variantImages: sanitizeImages(item.variantImages),
     colorOptions: sanitizeVariantOptions(item.colorOptions), sizeOptions: sanitizeVariantOptions(item.sizeOptions), variantGroups: sanitizeVariantGroups(item.variantGroups),
-    skuVariants: sanitizeSkuVariants(item.skuVariants?.length ? item.skuVariants : item.variants), imagesByColor: sanitizeImagesByColor(item.imagesByColor),
+    skuVariants: sanitizeSkuVariants(item.skuVariants?.length ? item.skuVariants : item.variants), imagesByColor: sanitizeImagesByColor(item.imagesByColor), variantTranslations: sanitizeVariantTranslations(item.variantTranslations),
     genericSpecName: cleanText(item.genericSpecName, 120),
     diagnostics: { ...(item.diagnostics || {}), mode: cleanText(item?.diagnostics?.mode, 50), sourcePlatform: detected.key },
     extractedAt: cleanText(item.extractedAt, 80), extractorVersion: cleanText(item.extractorVersion, 40),
@@ -572,7 +621,7 @@ async function saveProduct(db, raw, actor, pricingPolicy = {}) {
     platform: draft.detected.key, sourceLabel: draft.detected.label, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, itemId: draft.itemId, url: draft.sourceUrl, upstreamUrl: source.upstreamUrl || '', originalTitle: source.title, priceCurrency: source.priceCurrency, priceValue: source.priceValue,
     priceCny: source.priceCny, priceUzs: source.priceUzs, sourcePriceUzs: draft.sourcePriceUzs, chinaDomesticFeeUzs: draft.chinaDomesticFeeUzs, chinaPricing: draft.chinaPricing, moq: draft.moq, stock: draft.stock, stockKnown: draft.stockKnown, unit: source.unit, sellerName: source.sellerName, sellerLocation: source.sellerLocation,
     props: source.props, galleryImages: sanitizeImages(source.galleryImages?.length ? source.galleryImages : draft.externalImages), variantImages: source.variantImages, colorOptions: source.colorOptions, sizeOptions: source.sizeOptions,
-    variantGroups: source.variantGroups, skuVariants: source.skuVariants, imagesByColor: source.imagesByColor, diagnostics: source.diagnostics || {}, customerCatalog: catalog, externalImages: draft.externalImages,
+    variantGroups: source.variantGroups, skuVariants: source.skuVariants, imagesByColor: source.imagesByColor, variantTranslations: source.variantTranslations, diagnostics: source.diagnostics || {}, customerCatalog: catalog, externalImages: draft.externalImages,
     localImageCount: storedCount, normalizedImageCount: normalizedCount, imageStandard: draft.images.length && normalizedCount === draft.images.length ? IMAGE_STANDARD : '', importer: cleanText(source?.diagnostics?.importer || 'chrome-extension', 60), extractorVersion: source.extractorVersion, importedBy: actor.email, lastSyncedAt: ts,
   };
   const payload = {

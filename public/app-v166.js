@@ -71,6 +71,7 @@ window.addEventListener("om-i18n-updated", ()=>{
       if(activeTab === "fav") renderFavPage();
       if(activeTab === "cart") renderCartPage();
       if(activeTab === "product") renderProductPage();
+      if(typeof vState!=="undefined" && vState?.open) renderVariantModal();
     }catch(_e){}
   }, 90);
 });
@@ -1136,6 +1137,18 @@ function omExternalCatalog(p){
 function omChina1688Catalog(p){ return omExternalCatalog(p); }
 function om1688Groups(p){ return omExternalCatalog(p)?.optionGroups || []; }
 function om1688Skus(p){ return omExternalCatalog(p)?.skus || []; }
+function omExternalLocalizedName(row={},fallback=''){
+  const lang=omLang();
+  if(lang==='ru') return String(row?.name_ru||row?.nameRu||fallback||row?.name||'');
+  if(lang==='en') return String(row?.name_en||row?.nameEn||fallback||row?.name||'');
+  return String(row?.name||fallback||'');
+}
+function om1688GroupLabel(group={}){return omExternalLocalizedName(group,group?.name||omTrText('Variant'));}
+function om1688OptionLabel(group={},valueOrOption=''){
+  const canonical=typeof valueOrOption==='object'?String(valueOrOption?.name||''):String(valueOrOption||'');
+  const option=typeof valueOrOption==='object'?valueOrOption:(group?.options||[]).find(x=>String(x?.name||'')===canonical);
+  return omExternalLocalizedName(option||{},canonical||omTrText('Variant'));
+}
 function om1688OptionMap(sel){
   const external=(sel?.externalOptions && typeof sel.externalOptions === "object") ? sel.externalOptions : {};
   const china=(sel?.chinaOptions && typeof sel.chinaOptions === "object") ? sel.chinaOptions : {};
@@ -1184,16 +1197,16 @@ function om1688SelectedSku(p, sel){
 }
 function om1688SelectionText(p, sel){
   const safe=om1688SelectionFor(p,sel||{}, {defaultFirst:false});
-  return om1688Groups(p).map(group=>safe.chinaOptions?.[group.id]).filter(Boolean).join(" / ");
+  return om1688Groups(p).map(group=>{const value=safe.chinaOptions?.[group.id];return value?om1688OptionLabel(group,value):'';}).filter(Boolean).join(" / ");
 }
 function om1688VariantHtml(p, interactive=false){
   const groups=om1688Groups(p); const sel=om1688SelectionFor(p,getSel(p),{defaultFirst:true});
   if(!groups.length) return `<div class="qvVarEmpty china"><i class="fa-solid fa-circle-info"></i> ${omTrHtml("Variant ma’lumoti hozircha kiritilmagan")}</div>`;
-  return `<div class="qv1688VariantHead"><span><i class="fa-solid fa-layer-group"></i> ${omTrHtml("Tashqi katalog variantlari")}</span><small>${om1688Skus(p).length || 0} SKU</small></div>${groups.map(group=>`<div class="qvVarGroup qv1688Group"><span>${escapeHtml(group.name||omTrText("Variant"))}</span><div class="qv1688Options">${(group.options||[]).slice(0,48).map(opt=>{
+  return `<div class="qv1688VariantHead"><span><i class="fa-solid fa-layer-group"></i> ${omTrHtml("Tashqi katalog variantlari")}</span><small>${om1688Skus(p).length || 0} SKU</small></div>${groups.map(group=>`<div class="qvVarGroup qv1688Group"><span>${escapeHtml(om1688GroupLabel(group))}</span><div class="qv1688Options">${(group.options||[]).slice(0,48).map(opt=>{
     const active=String(sel.chinaOptions?.[group.id]||"")===String(opt.name||"");
     const attrs=interactive?` type="button" data-pp-1688-group="${escapeHtml(group.id)}" data-pp-1688-value="${escapeHtml(opt.name)}" aria-pressed="${active?"true":"false"}"`:"";
     const tag=interactive?"button":"i";
-    return `<${tag}${attrs} class="qv1688Option ${opt.image?"hasImage":""} ${active?"active":""}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<b>${escapeHtml(opt.name||omTrText("Variant"))}</b></${tag}>`;
+    return `<${tag}${attrs} class="qv1688Option ${opt.image?"hasImage":""} ${active?"active":""}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<b>${escapeHtml(om1688OptionLabel(group,opt))}</b></${tag}>`;
   }).join("")}</div></div>`).join("")}`;
 }
 function om1688ProductIntroHtml(p){
@@ -3104,10 +3117,10 @@ function renderChina1688VariantModal(p){
   }
   if(els.v1688Groups){
     els.v1688Groups.hidden=false;
-    els.v1688Groups.innerHTML=groups.map(group=>`<div class="v1688Group"><div class="v1688GroupLabel"><b>${escapeHtml(group.name||"Variant")}</b><span>${(group.options||[]).length} ta</span></div><div class="v1688OptionRow">${(group.options||[]).map(opt=>{
+    els.v1688Groups.innerHTML=groups.map(group=>`<div class="v1688Group"><div class="v1688GroupLabel"><b>${escapeHtml(om1688GroupLabel(group))}</b><span>${omCount((group.options||[]).length)}</span></div><div class="v1688OptionRow">${(group.options||[]).map(opt=>{
       const active=String(sel.chinaOptions?.[group.id]||"")===String(opt.name||"");
-      return `<button type="button" class="v1688Option ${active?"active":""} ${opt.image?"hasImage":""}" data-v1688-group="${escapeHtml(group.id)}" data-v1688-value="${escapeHtml(opt.name)}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<span>${escapeHtml(opt.name||"Variant")}</span></button>`;
-    }).join("")}</div><small class="v1688Required" data-v1688-hint="${escapeHtml(group.id)}" hidden>Iltimos, variantni tanlang</small></div>`).join("");
+      return `<button type="button" class="v1688Option ${active?"active":""} ${opt.image?"hasImage":""}" data-v1688-group="${escapeHtml(group.id)}" data-v1688-value="${escapeHtml(opt.name)}">${opt.image?`<img src="${escapeHtml(opt.image)}" alt="" loading="lazy" decoding="async">`:""}<span>${escapeHtml(om1688OptionLabel(group,opt))}</span></button>`;
+    }).join("")}</div><small class="v1688Required" data-v1688-hint="${escapeHtml(group.id)}" hidden>${omTrHtml('Iltimos, variantni tanlang')}</small></div>`).join("");
     // v173: the option buttons are recreated on every render. Bind once on the
     // stable group container so the user can switch variants repeatedly.
     if(els.v1688Groups.dataset.externalVariantDelegate !== "1"){
@@ -3589,7 +3602,9 @@ function omScheduleOrderHistoryHydration(orders=[]){
   omOrderHistoryHydrateTimer=setTimeout(async()=>{try{const out=await omCxApi('order_history_products',{orderIds:fresh},{authRequired:true});omCxMergeProducts(out.products||[]);renderOrders(ordersCache||[]);}catch(_e){fresh.forEach(id=>omOrderHistoryHydratedOrders.delete(id));}},80);
 }
 function omOrderItemVariantText(it){
-  return String(it?.variantText||[it?.color,it?.size,it?.variant].filter(Boolean).join(" / ")||Object.values(it?.selectedOptions||it?.externalOptions||{}).join(" / ")||"").trim();
+  const selected=it?.selectedOptions||it?.externalOptions||it?.chinaOptions||{},p=findProductById(String(it?.productId||it?.id||''));
+  if(p && omIsChina1688Product(p) && selected && typeof selected==='object' && Object.keys(selected).length) return om1688SelectionText(p,{externalOptions:selected,chinaOptions:selected});
+  return String(it?.variantText||[it?.color,it?.size,it?.variant].filter(Boolean).join(" / ")||Object.values(selected).join(" / ")||"").trim();
 }
 function omOrderItemReviewStateHtml(order,it,index=0){
   const review=omOrderItemReview(order,it,index);
@@ -5577,12 +5592,14 @@ function renderReviewsUI(productId){
 function omCartSelection(ci){ const opts=ci?.externalOptions||ci?.chinaOptions||null; return { color:ci?.color||null, size:ci?.size||null, externalOptions:opts, chinaOptions:opts, imgIdx:0 }; }
 function renderVariantLine(ci){
   if(!ci) return "";
-  const parts = [];
-  if(ci.variantText) parts.push(...String(ci.variantText).split(" / ").filter(Boolean));
+  const parts = [],p=products.find(x=>String(x.id)===String(ci.id));
+  const extOptions=ci.externalOptions||ci.chinaOptions;
+  if(p && omIsChina1688Product(p) && extOptions && typeof extOptions === 'object') parts.push(...om1688Groups(p).map(group=>extOptions[group.id]?om1688OptionLabel(group,extOptions[group.id]):'').filter(Boolean));
+  else if(ci.variantText) parts.push(...String(ci.variantText).split(" / ").filter(Boolean));
   else {
     if(ci.color) parts.push(ci.color);
     if(ci.size) parts.push(ci.size);
-    const extOptions=ci.externalOptions||ci.chinaOptions; if(extOptions && typeof extOptions === "object") parts.push(...Object.values(extOptions).filter(Boolean));
+    if(extOptions && typeof extOptions === "object") parts.push(...Object.values(extOptions).filter(Boolean));
   }
   const rows=[...new Set(parts.map(x=>String(x||"").trim()).filter(Boolean))];
   if(rows.length===0) return "";
