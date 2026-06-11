@@ -4761,6 +4761,7 @@ function renderProductPage(){
   const catCard = omQVCatCardHtml(p);
   const tagsHtml = omProductPageTagsHtml(p);
   const isChina1688 = omIsChina1688Product(p);
+  const hasProductVideo = !!omProductVideoUrl(p);
   root.innerHTML = `
     <div class="ppShell ${isChina1688?"ppShellChina":"ppShellStock"}">
       ${om1688ProductIntroHtml(p)}
@@ -4783,7 +4784,7 @@ function renderProductPage(){
           <div class="ppMetrics">${omQVMetricHtml(p)}</div>
           <div class="ppActionGrid">
             <button type="button" class="ppAction" data-pp-info><i class="fa-solid fa-circle-info"></i><span>Tavsif</span></button>
-            <button type="button" class="ppAction" data-pp-video><i class="fa-brands fa-youtube"></i><span>Video</span></button>
+            ${hasProductVideo?`<button type="button" class="ppAction" data-pp-video><i class="fa-solid fa-circle-play"></i><span>${omTrHtml("Video")}</span></button>`:""}
             <button type="button" class="ppAction ${favOn?"active":""}" data-pp-fav><i class="fa-${favOn?"solid":"regular"} fa-heart"></i><span>Sevimli</span></button>
           </div>
           <div class="cxAlertPanel" data-cx-alert-panel>
@@ -5323,6 +5324,10 @@ function cleanupMiniSubs(){
   miniState.unsub = null;
 }
 
+function omProductVideoUrl(p={}){return String(p.videoUrl||p.youtubeUrl||p.youtube||p.externalMarket?.videoUrl||p.externalCatalog?.videoUrl||'').trim();}
+function omProductVideoPoster(p={}){return String(p.videoPoster||p.externalMarket?.videoPoster||p.images?.[0]||p.image||'').trim();}
+function omDirectVideoUrl(url=''){return /\.(?:mp4|webm|m4v|mov)(?:[?#]|$)/i.test(String(url||''));}
+
 function parseYouTubeEmbed(url){
   const u = String(url||"").trim();
   if(!u) return "";
@@ -5396,14 +5401,20 @@ async function openMini(kind, productId){
       <div class="miniDesc">${desc ? escapeHtml(desc) : `<span class="muted">Tavsif kiritilmagan.</span>`}</div>
     `;
   } else if(kind === "video"){
-    const y = (p.youtubeUrl || p.videoUrl || p.youtube || "").toString().trim();
+    const y = omProductVideoUrl(p);
     if(!y){
-      els.miniBody.innerHTML = `<div class="muted">Bu mahsulot uchun video link qo‘shilmagan.</div>`;
+      els.miniBody.innerHTML = `<div class="muted">${omTrHtml("Bu mahsulot uchun video link qo‘shilmagan.")}</div>`;
+    } else if(omDirectVideoUrl(y)){
+      const poster=omProductVideoPoster(p);
+      els.miniBody.innerHTML = `
+        <div class="miniVideo direct"><video controls playsinline preload="metadata" ${poster?`poster="${escapeHtml(poster)}"`:""}><source src="${escapeHtml(y)}"></video></div>
+        <a class="miniVideoSource" href="${escapeHtml(y)}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> ${omTrHtml("Videoni manbada ochish")}</a>
+      `;
     } else {
       const emb = parseYouTubeEmbed(y);
       els.miniBody.innerHTML = `
-        <div class="miniVideo"><iframe src="${escapeHtml(emb)}" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>
-        <div class="muted" style="margin-top:10px; font-size:12px;">Agar video ochilmasa, link noto‘g‘ri bo‘lishi mumkin.</div>
+        <div class="miniVideo"><iframe src="${escapeHtml(emb)}" title="Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>
+        <a class="miniVideoSource" href="${escapeHtml(y)}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> ${omTrHtml("Videoni manbada ochish")}</a>
       `;
     }
   } else if(kind === "reviews"){

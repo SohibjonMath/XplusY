@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "OrzuMall Market Importer",
-  "version": "3.4.0",
-  "description": "Sahiy Market, Uzum Market, 1688 va Pinduoduo mahsulotlarini OrzuMall tashqi katalogiga qoralama sifatida yuboradi. Sahiy ichki yetkazish narxini label yonidagi blok, sahifa matni va page-state orqali aniqlaydi.",
+  "version": "3.5.0",
+  "description": "Sahiy Market, Uzum Market, 1688 va Pinduoduo mahsulotlarini OrzuMall tashqi katalogiga qoralama sifatida yuboradi. Sahiy ichki yetkazish narxini va mahsulot sahifasidagi ochiq videolarni aniqlaydi; rasmlar, variantlar va video URLlarni qoralamaga yuboradi.",
   "permissions": ["storage", "tabs"],
   "host_permissions": [
     "https://*.1688.com/*", "https://1688.com/*",

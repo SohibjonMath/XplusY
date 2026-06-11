@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '3.0.0';
+  const VERSION = '3.1.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
@@ -78,6 +78,8 @@
   const itemId = () => (location.href.match(/(?:offer\/|offerId=|itemId=|id=)(\d{6,})/i) || location.href.match(/\b(\d{8,})\b/))?.[1] || '';
   const isProductCdnUrl = url => /(?:\/img\/ibank\/|cbu\d*\.alicdn\.com\/img\/ibank\/|alicdn\.com\/imgextra\/)/i.test(url);
   const isImageUrl = url => /\.(?:jpe?g|png|webp|avif)(?:[?#]|$)/i.test(url) || isProductCdnUrl(url);
+  const isVideoUrl = url => /\.(?:mp4|webm|m4v|mov|m3u8)(?:[?#]|$)/i.test(String(url||'')) || /(?:youtube\.com|youtu\.be|vimeo\.com)/i.test(String(url||''));
+  const absVideoUrl = value => { const u=absUrl(value); return u&&isVideoUrl(u)?u:''; };
   const badImageHint = /(?:icon|logo|sprite|avatar|qrcode|qr-code|qr_|service|shield|truck|delivery|warranty|loading|placeholder|default|emoji|favicon|coupon|guarantee|protect|cart|chat|tip|blank|badge|security|safe|wangwang|ww-online|video-play|parameter)/i;
   const variantContextHint = /(?:sku|spec|variant|saleprop|sale-prop|color|colour|颜色|尺码|尺寸|规格|款式|型号|属性)/i;
   const galleryContextHint = /(?:gallery|detail-gallery|main-image|mainimage|main-img|preview|thumbnail|thumb|carousel|album|image-list|imagelist|pic-list|piclist)/i;
@@ -608,6 +610,15 @@
     return [...found.values()].sort((a,b)=>b.score-a.score || a.order-b.order).map(x=>x.url).slice(0,12);
   }
 
+  function productVideos() {
+    const rows=[]; const add=value=>{const u=absVideoUrl(value);if(u&&!rows.includes(u))rows.push(u)};
+    document.querySelectorAll('meta[property="og:video"],meta[property="og:video:url"],meta[property="og:video:secure_url"],meta[name="twitter:player:stream"],video,video source,[data-video],[data-video-url],[data-video-src],a[href*=".mp4"],a[href*=".webm"],a[href*=".m3u8"]').forEach(node=>{add(node.content);add(node.currentSrc);['src','data-src','data-video','data-video-url','data-video-src','data-url','href','content'].forEach(k=>add(node.getAttribute?.(k)));});
+    parsedScriptRoots().forEach(root=>walk(root,(value,path)=>{const key=String(path[path.length-1]||'');if(typeof value==='string' && (/video|media|play/i.test(key)||isVideoUrl(value)))add(value);}));
+    for(const raw of scriptTexts()){const normalized=String(raw).replace(/\\u002F/gi,'/').replace(/\\\//g,'/');for(const match of normalized.matchAll(/https?:\/\/[^"'\\\s<>]+?\.(?:mp4|webm|m4v|mov|m3u8)(?:\?[^"'\\\s<>]*)?/gi)) add(match[0]);}
+    return rows.slice(0,4);
+  }
+  function productVideoPoster() { const node=document.querySelector('video[poster],[data-video-poster],[data-poster]'); return absUrl(node?.poster||node?.getAttribute?.('poster')||node?.getAttribute?.('data-video-poster')||node?.getAttribute?.('data-poster')||document.querySelector('meta[property="og:image"]')?.content||''); }
+
   function readProps() {
     const rows = [];
     document.querySelectorAll('table tr, [class*="attribute"] li, [class*="property"] li, [class*="prop"] li, [class*="parameter"] li').forEach(node => {
@@ -684,6 +695,7 @@
     const sizeOptions = (sizeGroup?.options || []).slice(0, MAX_OPTIONS);
     const variantImages = compact(groups.flatMap(g => g.options.map(o => absUrl(o.image))).filter(Boolean), MAX_OPTIONS);
     const images = galleryImages(variantImages);
+    const videos = productVideos(); const videoUrl = videos[0] || ''; const videoPoster = productVideoPoster() || images[0] || '';
     const structuredSkuRows = readSkuRowsFromScripts().map((v, i) => skuRecord(v, i, groups));
     // Strukturali JSON ichida reklama yoki yordamchi yozuvlar uchrasa ishlatilmaydi.
     // Ko‘rinadigan variant guruhlaridan xavfsiz SKU kombinatsiyasi qayta yaratiladi.
@@ -693,14 +705,14 @@
     skuVariants.forEach(v => { if (v.color && v.image && !imagesByColor[v.color]) imagesByColor[v.color] = [v.image]; });
     return {
       id: itemId(), url: location.href, title: titleCandidate(),
-      image: images[0] || '', images, galleryImages: images,
+      image: images[0] || '', images, galleryImages: images, videoUrl, videos, videoPoster,
       priceCny: prices.min, priceCnyMax: prices.max,
       moq: readMoq(), stock: readStock(), unit: 'dona',
       sellerName: '', sellerLocation: '', props: readProps(), serviceTags: [],
       variantGroups: groups, colorOptions, sizeOptions, variantImages, imagesByColor,
       genericSpecName: sizeGroup?.type === 'spec' ? sizeGroup.name : '',
       skuVariants, variants: skuVariants,
-      diagnostics: { galleryCount: images.length, variantImageCount: variantImages.length, groupCount: groups.length, skuCount: skuVariants.length, mode: skuVariants.some(x => /^fallback/.test(x.id)) ? 'dom-fallback' : 'structured', ...variantDiagnostics(groups, skuVariants) },
+      diagnostics: { galleryCount: images.length, videoCount: videos.length, variantImageCount: variantImages.length, groupCount: groups.length, skuCount: skuVariants.length, mode: skuVariants.some(x => /^fallback/.test(x.id)) ? 'dom-fallback' : 'structured', ...variantDiagnostics(groups, skuVariants) },
       extractedAt: new Date().toISOString(), extractorVersion: VERSION,
     };
   }
@@ -720,7 +732,7 @@
       if (!payload.images.length) throw new Error('Asosiy galereya topilmadi. Sahifani to‘liq yuklab qayta urinib ko‘ring.');
       const response = await chrome.runtime.sendMessage({ type: 'IMPORT_TO_ORZUMALL', payload });
       if (!response?.ok) throw new Error(response?.error || 'Admin sahifasi ochilmadi');
-      feedback(`Tayyor: ${payload.images.length} rasm, ${payload.skuVariants.length} SKU`);
+      feedback(`Tayyor: ${payload.images.length} rasm, ${payload.videos?.length||0} video, ${payload.skuVariants.length} SKU`);
     } catch (error) { feedback(error.message || 'Import xatosi', false); throw error; }
   };
   function mountButton() {

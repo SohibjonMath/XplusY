@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./external-catalog-import.css?v=20260610_v192_stockless_catalog">
+  <link rel="stylesheet" href="./external-catalog-import.css?v=20260610_v194_video_import">
   <script src="./admin-session-guard.js?v=20260609_v189"></script>
 </head>
 <body>
@@ -39,7 +39,7 @@
         <p>ZIP faylni yuklab oling, arxivdan chiqaring va Chrome Extensions sahifasida <b>Load unpacked</b> orqali bir marta ulang. Keyin Sahiy, Uzum Market, 1688 va Pinduoduo mahsulot sahifalarida import tugmasi chiqadi.</p>
         <div class="extension-steps"><span>1. ZIPni oching</span><span>2. <code>chrome://extensions</code></span><span>3. Developer mode</span><span>4. Load unpacked</span></div>
       </div>
-      <a class="primary-btn download" href="/downloads/OrzuMall_Market_Importer_v3_4_SAHIY_DOMESTIC_FEE_FIX.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
+      <a class="primary-btn download" href="/downloads/OrzuMall_Market_Importer_v3_5_VIDEO_IMPORT.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
     </section>
 
     <section class="login-box" id="loginBox" hidden>
@@ -85,6 +85,7 @@
         <div class="source-head"><div class="source-cover" id="sourceCover"><i class="fa-solid fa-image"></i></div><div><h3 id="sourceTitle">Mahsulot ma’lumoti</h3><p id="sourceMeta">—</p><div class="chips" id="sourceChips"></div></div></div>
         <div class="price-grid"><div><span>Manba narxi</span><b id="cnyLabel">—</b></div><div><span>Avto hisob</span><b id="autoPriceLabel">—</b></div><div><span>MOQ</span><b id="moqLabel">—</b></div><div><span>Sotuv holati</span><b id="stockLabel">Cheklanmagan</b></div></div>
         <div class="source-block"><h4><i class="fa-solid fa-images"></i> Import qilinadigan rasmlar</h4><p>Faqat chap tomondagi asosiy mahsulot galereyasi va uning miniatyuralari qabul qilinadi. Sharhlar, foydalanuvchi yuklagan rasmlar, hujjatlar va rang ikonkalari avtomatik rad etiladi. Saqlashdan oldin belgilangan rasmlarni ko‘zdan kechiring.</p><div class="images-grid" id="imagesGrid"></div></div>
+        <div class="source-block"><h4><i class="fa-solid fa-circle-play"></i> Import qilinadigan video</h4><p>Mahsulot sahifasida ochiq video bo‘lsa importer URL manzilini oladi. Video fayl Storage’ga ko‘chirilmaydi; manba URL orqali yengil ishlaydi. Topilmasa quyidagi maydonga qo‘lda link kiriting.</p><div class="video-import-preview" id="videoPreview"><div class="empty-mini">Video topilmadi.</div></div></div>
         <div class="source-block"><h4><i class="fa-solid fa-layer-group"></i> Variant konstruktori</h4><p>Market sahifasidagi ko‘rinadigan tanlovlar avtomatik ajratiladi. Rang va razmer bilan cheklanmaydi: model, komplekt, uzunlik, quvvat yoki boshqa guruhlar ham mustaqil SKU tizimiga aylantiriladi. Noto‘g‘ri qiymat ko‘rinsa, saqlashdan oldin shu yerda tahrirlang.</p>
           <div class="variant-review">
             <div class="variant-review-head"><div><h5><i class="fa-solid fa-list-check"></i> Xaridor tanlaydigan variantlarni tekshiring</h5><p>Har qatorga bittadan qiymat yozing. Kiyimda razmer, boshqa tovarlarda model yoki spetsifikatsiya bo‘lishi mumkin. Rang uchun ixtiyoriy rasm URL’ini <code>rang | https://...</code> shaklida kiriting.</p></div><span>Avto SKU</span></div>
@@ -128,6 +129,8 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
           <label><span>Popularlik balli</span><input id="popularScore" type="number" min="0" value="50"></label>
           <label><span>Teglar</span><input id="tags" value="Tashqi katalog, Buyurtma asosida"></label>
           <label class="full"><span>Qo‘shimcha rasm URL’lari</span><textarea id="imagesText" rows="3" placeholder="Har qatorga bittadan rasm URL"></textarea></label>
+          <label class="full"><span>Mahsulot video URL</span><input id="videoUrl" placeholder="Avtomatik olinadi yoki https://...mp4"></label>
+          <label class="full"><span>Video poster URL</span><input id="videoPoster" placeholder="Video preview uchun rasm URL"></label>
           <label class="full"><span>Tavsif UZ</span><textarea id="description" rows="7" placeholder="Mahsulot haqida qisqacha ma’lumot"></textarea></label>
           <label class="full"><span>Tavsif RU</span><textarea id="descriptionRu" rows="5" placeholder="Ruscha tavsif"></textarea></label>
           <label class="full"><span>Tavsif EN</span><textarea id="descriptionEn" rows="5" placeholder="English description"></textarea></label>
@@ -160,6 +163,6 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
   </main>
 
   <div class="toast" id="toast"></div>
-  <script type="module" src="./external-catalog-import.js?v=20260610_v193_variant_i18n"></script>
+  <script type="module" src="./external-catalog-import.js?v=20260610_v194_video_import"></script>
 </body>
 </html>
