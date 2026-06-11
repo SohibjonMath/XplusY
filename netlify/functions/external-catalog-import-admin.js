@@ -10,6 +10,7 @@ const {
 } = require('./_china1688Common');
 const { MAX_IMAGES_PER_BATCH, IMAGE_STANDARD, copyImages, normalizeMarketplaceImageUrl } = require('./_china1688ImageStore');
 const { calculateChinaLandedPrice, publicPolicy: externalPricingPolicy, loadPricingPolicy, savePricingPolicy } = require('./_externalCatalogPricing');
+const { apifyReady, apifyActorId, startApify1688, pollApify1688 } = require('./_apify1688Common');
 
 function safeNumber(v, min = 0, max = 1e12, fallback = 0) {
   const n = Number(v);
@@ -97,7 +98,7 @@ function sanitizeVariantGroups(list) {
   })).filter(x => x.options.length);
 }
 function sanitizeSkuVariants(list) {
-  return (Array.isArray(list) ? list : []).slice(0, 220).map((row, idx) => ({
+  return (Array.isArray(list) ? list : []).slice(0, 1200).map((row, idx) => ({
     id: cleanText(row?.id || `sku${idx + 1}`, 160),
     name: cleanText(row?.name, 300),
     name_ru: localizedText(row, 'ru', 320), name_en: localizedText(row, 'en', 320),
@@ -182,14 +183,14 @@ function marketplaceVariants(source = {}, fallbackPrice = 0) {
     };
   };
   const cleanRows = sanitizeSkuVariants(source.skuVariants?.length ? source.skuVariants : source.variants).map(toMarketplace).filter(row => row.color || row.size);
-  if (cleanRows.length) return cleanRows.slice(0, 220);
+  if (cleanRows.length) return cleanRows.slice(0, 1200);
   // Kengaytma strukturali SKU topa olmagan holatda admin tasdiqlagan variantlardan xavfsiz SKU yaratiladi.
   const colors=sourceColors(source), sizes=sourceSizes(source);
   let rows=[];
   if(colors.length && sizes.length) rows=colors.flatMap(c=>sizes.map((z,i)=>({id:`generated-${c.name}-${i+1}`,name:`${c.name} / ${z}`,color:c.name,size:z,image:c.image||'',priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name,规格:z}})));
   else if(colors.length) rows=colors.map((c,i)=>({id:`generated-color-${i+1}`,name:c.name,color:c.name,image:c.image||'',priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{颜色:c.name}}));
   else if(sizes.length) rows=sizes.map((z,i)=>({id:`generated-spec-${i+1}`,name:z,size:z,priceUzs:safeInt(fallbackPrice,0,1e12,0),attributes:{规格:z}}));
-  return rows.map(toMarketplace).filter(row=>row.color || row.size).slice(0,220);
+  return rows.map(toMarketplace).filter(row=>row.color || row.size).slice(0,1200);
 }
 
 
@@ -350,7 +351,7 @@ function buildExternalCustomerCatalog(source = {}, fallbackPrice = 0) {
     });
   });
 
-  const maxGenerated = 240;
+  const maxGenerated = 1200;
   if (rows.length && optionGroups.length && rows.some(row => optionGroups.some(group => !row.selections?.[group.id]))) {
     const expanded = [];
     rows.forEach((row, rowIndex) => {
@@ -478,6 +479,15 @@ function upstreamSourceUrl(rawUrl = '', explicit = '') {
   const url = safeSourceUrl(rawUrl); if (!url) return '';
   try { const u = new URL(url); return nestedExternalUrl(u.searchParams.get('u') || ''); } catch (_e) { return ''; }
 }
+function upstream1688OfferId(rawUrl = '', explicit = '') {
+  const upstream = upstreamSourceUrl(rawUrl, explicit);
+  const direct = upstream && detectExternalSource(upstream)?.key === '1688' ? sourceItemIdFromUrl(upstream, '1688') : '';
+  if (direct) return direct;
+  const source = safeSourceUrl(rawUrl);
+  if (detectExternalSource(source)?.key === '1688') return sourceItemIdFromUrl(source, '1688');
+  const decoded = decodeRepeated(`${explicit || ''} ${rawUrl || ''}`);
+  return cleanText((decoded.match(/(?:detail\.1688\.com\/offer\/|m\.1688\.com\/offer\/|offer\/|offerId=)(\d{6,})/i) || [])[1], 120);
+}
 function sourceItemIdFromUrl(rawUrl = '', platform = '') {
   const url = safeSourceUrl(rawUrl); if (!url) return '';
   try {
@@ -553,13 +563,13 @@ function sourceSummary(item = {}) {
   const priceCurrency = cleanText(item.priceCurrency || item.currency || detected.currency, 16).toUpperCase();
   return {
     id: cleanText(item.id || item.itemId || sourceItemIdFromUrl(sourceUrl, detected.key), 120), url: sourceUrl,
-    upstreamUrl: upstreamSourceUrl(sourceUrl, item.upstreamUrl || item.originalUrl || ''),
+    upstreamUrl: upstreamSourceUrl(sourceUrl, item.upstreamUrl || item.originalUrl || ''), upstreamOfferId: cleanText(item.upstreamOfferId || upstream1688OfferId(sourceUrl, item.upstreamUrl || item.originalUrl || ''), 120),
     sourcePlatform: detected.key, sourceLabel: detected.label, originCountry: detected.originCountry, customerOrigin: detected.customerOrigin, priceCurrency, priceValue,
     title: cleanText(item.title || item.originalTitle, 520), image: safeUrl(item.image || images[0], 2200), images, videoUrl: videos[0]||'', videos, videoPoster: safeUrl(item.videoPoster||item.poster||images[0],2200),
     priceCny: safeNumber(item.priceCny ?? (priceCurrency === 'CNY' ? priceValue : 0), 0, 1e8, 0),
     priceUzs: safeInt(item.priceUzs ?? item.priceUZS ?? (priceCurrency === 'UZS' ? priceValue : 0), 0, 1e12, 0),
-    priceCnyMax: safeNumber(item.priceCnyMax, 0, 1e8, 0), pricing: item.pricing || calculatePrice(item.priceCny),
-    moq: safeInt(item.moq, 1, 1e8, 1), stockKnown: false, unit: cleanText(item.unit, 32) || 'dona',
+    priceCnyMax: safeNumber(item.priceCnyMax, 0, 1e8, 0), pricing: item.pricing || calculatePrice(item.priceCny), tierPrices: (Array.isArray(item.tierPrices) ? item.tierPrices : []).slice(0, 16).map(row => ({ price: safeNumber(row?.price, 0, 1e8, 0), beginAmount: safeInt(row?.beginAmount, 0, 1e9, 0) })).filter(row => row.price > 0),
+    moq: safeInt(item.moq, 1, 1e8, 1), stockKnown: false, unit: cleanText(item.unit, 32) || 'dona', weightKg: safeNumber(item.weightKg ?? item?.logistics?.unitWeight, 0, 100000, 0),
     sellerName: cleanText(item.sellerName, 220), sellerLocation: cleanText(item.sellerLocation, 220), deliveryFeeCny: safeNumber(item.deliveryFeeCny, 0, 1e8, 0),
     chinaDomesticFeeUzs: safeInt(item.chinaDomesticFeeUzs ?? item.domesticDeliveryFeeUzs ?? item.chinaDeliveryFeeUzs, 0, 1e12, 0),
     chinaFreeWeightKg: safeNumber(item.chinaFreeWeightKg ?? item.freeWeightKg, 0, 100000, 7),
@@ -623,7 +633,7 @@ async function saveProduct(db, raw, actor, pricingPolicy = {}) {
   const catalog = applyExternalCatalogPricing({ ...buildExternalCustomerCatalog(source, draft.price), sourcePlatform: draft.detected.key, sourceLabel: draft.detected.label, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, sourceUrl: draft.sourceUrl, sourceUpstreamUrl: source.upstreamUrl || '', sourceItemId: draft.itemId }, draft, pricingPolicy);
   const legacyVariants = catalogToLegacyVariants(catalog); const storedCount = draft.images.filter(isStorageUrl).length; const normalizedCount = draft.images.filter(isNormalizedStorageUrl).length;
   const externalMarket = {
-    platform: draft.detected.key, sourceLabel: draft.detected.label, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, itemId: draft.itemId, url: draft.sourceUrl, upstreamUrl: source.upstreamUrl || '', originalTitle: source.title, priceCurrency: source.priceCurrency, priceValue: source.priceValue,
+    platform: draft.detected.key, sourceLabel: draft.detected.label, originCountry: draft.detected.originCountry, customerOrigin: draft.detected.customerOrigin, itemId: draft.itemId, url: draft.sourceUrl, upstreamUrl: source.upstreamUrl || '', upstreamOfferId: source.upstreamOfferId || '', originalTitle: source.title, priceCurrency: source.priceCurrency, priceValue: source.priceValue, tierPrices: source.tierPrices || [],
     priceCny: source.priceCny, priceUzs: source.priceUzs, sourcePriceUzs: draft.sourcePriceUzs, chinaDomesticFeeUzs: draft.chinaDomesticFeeUzs, chinaPricing: draft.chinaPricing, moq: draft.moq, stock: draft.stock, stockKnown: draft.stockKnown, unit: source.unit, sellerName: source.sellerName, sellerLocation: source.sellerLocation,
     props: source.props, galleryImages: sanitizeImages(source.galleryImages?.length ? source.galleryImages : draft.externalImages), videoUrl: draft.videoUrl||source.videoUrl||'', videos: sanitizeVideos(source.videos?.length?source.videos:[draft.videoUrl]), videoPoster: draft.videoPoster||source.videoPoster||draft.images[0]||'', variantImages: source.variantImages, colorOptions: source.colorOptions, sizeOptions: source.sizeOptions,
     variantGroups: source.variantGroups, skuVariants: source.skuVariants, imagesByColor: source.imagesByColor, variantTranslations: source.variantTranslations, diagnostics: source.diagnostics || {}, customerCatalog: catalog, externalImages: draft.externalImages,
@@ -705,10 +715,12 @@ async function repriceChinaProducts(db, actor, pricingPolicy = {}) {
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return json(204, {}); if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD_NOT_ALLOWED' }); const body = parseBody(event); if (body == null) return json(400, { error: 'INVALID_JSON' }); const limited = rateLimit(event, 'external-catalog-admin', 120, 10 * 60 * 1000); if (!limited.ok) return json(429, { error: 'TOO_MANY_REQUESTS', retryAfterSec: limited.retryAfterSec }); const actor = await requireAdmin(event); if (!actor.ok) return json(actor.statusCode, { error: actor.error }); const db = admin.firestore(); const action = cleanText(body.action || '', 50).toLowerCase();
   try {
-    if (action === 'apipreview') { const detected = detectExternalSource(body.sourceUrl || body.url); if (!detected) return json(400, { error: 'SOURCE_URL_REQUIRED', message: 'Sahiy, Uzum Market, 1688 yoki Pinduoduo mahsulot havolasini kiriting.' }); if (detected.key !== '1688') return json(200, { item: sourceSummary({ url: detected.url, sourcePlatform: detected.key }), platform: detected.key, sourceLabel: detected.label, manualRequired: true, message: `${detected.label} uchun sahifani Chrome importer orqali yuboring yoki ma’lumotlarni qo‘lda to‘ldiring.` }); const fetched = await fetch1688DetailByUrl(detected.url, { force: body.force === true }); const item = normalizeDetailResponse(fetched.raw); item.url = detected.url; item.id = item.id || itemIdFromUrl(detected.url); item.sourcePlatform = '1688'; item.sourceLabel = '1688'; item.diagnostics = { ...(item.diagnostics || {}), provider: fetched.provider, cached: fetched.cached === true }; return json(200, { item, provider: fetched.provider, cached: fetched.cached === true, pricing: pricingConfig() }); }
+    if (action === 'startapify1688') { const sourceUrl = safeSourceUrl(body.sourceUrl || body.url || body?.helperSource?.url); const offerId = cleanText(body.offerId || body?.helperSource?.upstreamOfferId || upstream1688OfferId(sourceUrl, body?.helperSource?.upstreamUrl), 120); if (!offerId) return json(400, { error: 'APIFY_1688_OFFER_ID_REQUIRED', message: 'Sahiy havolasidan asl 1688 Offer ID topilmadi.' }); return json(200, await startApify1688(db, offerId, { force: body.force === true })); }
+    if (action === 'pollapify1688') return json(200, await pollApify1688(db, body.runId, body.offerId));
+    if (action === 'apipreview') { const detected = detectExternalSource(body.sourceUrl || body.url); if (!detected) return json(400, { error: 'SOURCE_URL_REQUIRED', message: 'Sahiy, Uzum Market, 1688 yoki Pinduoduo mahsulot havolasini kiriting.' }); const offerId = upstream1688OfferId(detected.url, body?.helperSource?.upstreamUrl); if ((detected.key === 'sahiy' || detected.key === '1688') && apifyReady() && offerId) return json(200, { platform: detected.key, sourceLabel: detected.label, offerId, apifyReady: true, asyncApifyRequired: true, item: sourceSummary({ ...(body.helperSource || {}), url: detected.url, sourcePlatform: detected.key, upstreamOfferId: offerId }), message: 'Apify detail boyitish boshlanishi mumkin.' }); if (detected.key !== '1688') return json(200, { item: sourceSummary({ ...(body.helperSource || {}), url: detected.url, sourcePlatform: detected.key }), platform: detected.key, sourceLabel: detected.label, manualRequired: true, apifyReady: apifyReady(), message: `${detected.label} uchun sahifani Chrome importer orqali yuboring yoki ma’lumotlarni qo‘lda to‘ldiring.` }); const fetched = await fetch1688DetailByUrl(detected.url, { force: body.force === true }); const item = normalizeDetailResponse(fetched.raw); item.url = detected.url; item.id = item.id || itemIdFromUrl(detected.url); item.sourcePlatform = '1688'; item.sourceLabel = '1688'; item.diagnostics = { ...(item.diagnostics || {}), provider: fetched.provider, cached: fetched.cached === true }; return json(200, { item, provider: fetched.provider, cached: fetched.cached === true, pricing: pricingConfig(), apifyReady: apifyReady() }); }
     if (action === 'copyimages') { const itemId = cleanText(body.itemId || 'draft', 100).replace(/[^a-z0-9_-]/gi, '') || 'draft'; const result = await copyImages(body.urls, itemId, { normalize: body.normalize !== false, strictNormalize: body.strictNormalize === true }); return json(200, { ...result, maxPerBatch: MAX_IMAGES_PER_BATCH, imageStandard: IMAGE_STANDARD }); }
     if (action === 'save') { const pricingPolicy = await loadPricingPolicy(db); return json(200, await saveProduct(db, body.product || {}, actor, pricingPolicy)); }
-    if (action === 'list') { const pricingPolicy = await loadPricingPolicy(db); const snap = await db.collection('products').limit(600).get(); const products = snap.docs.filter(doc => isExternalProduct(doc.data() || {})).map(publicRow).sort((a, b) => b.updatedAtMs - a.updatedAtMs); return json(200, { products, pricing: pricingConfig(), chinaPricingPolicy: externalPricingPolicy(pricingPolicy), supportedPlatforms: Object.values(EXTERNAL_SOURCES).map(x => ({ key: x.key, label: x.label })), rapidApiReady: rapidApi1688Ready(), rapidApiHost: rapidApi1688Ready() ? rapidApi1688Host() : '' }); }
+    if (action === 'list') { const pricingPolicy = await loadPricingPolicy(db); const snap = await db.collection('products').limit(600).get(); const products = snap.docs.filter(doc => isExternalProduct(doc.data() || {})).map(publicRow).sort((a, b) => b.updatedAtMs - a.updatedAtMs); return json(200, { products, pricing: pricingConfig(), chinaPricingPolicy: externalPricingPolicy(pricingPolicy), supportedPlatforms: Object.values(EXTERNAL_SOURCES).map(x => ({ key: x.key, label: x.label })), rapidApiReady: rapidApi1688Ready(), rapidApiHost: rapidApi1688Ready() ? rapidApi1688Host() : '', apifyReady: apifyReady(), apifyActorId: apifyReady() ? apifyActorId() : '' }); }
     if (action === 'updatepricingpolicy') { const pricingPolicy = await savePricingPolicy(db, body.policy || {}, actor); return json(200, { ok: true, chinaPricingPolicy: externalPricingPolicy(pricingPolicy) }); }
     if (action === 'repricechinaproducts') { const pricingPolicy = await loadPricingPolicy(db); return json(200, await repriceChinaProducts(db, actor, pricingPolicy)); }
     if (action === 'applynormalizedimages') return json(200, await applyNormalizedImages(db, body, actor));

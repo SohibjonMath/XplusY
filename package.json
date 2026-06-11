@@ -1,8 +1,8 @@
 {
   "name": "orzumall-netlify",
   "private": true,
-  "version": "1.93.0",
-  "description": "OrzuMall v193: RU/EN translations for external catalog variant groups, options and SKU labels",
+  "version": "1.95.0",
+  "description": "OrzuMall v195: Apify API-first hybrid importer with Sahiy logistics and video helper",
   "engines": {
     "node": "22.x"
   },

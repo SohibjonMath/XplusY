@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="./external-catalog-import.css?v=20260610_v194_video_import">
+  <link rel="stylesheet" href="./external-catalog-import.css?v=20260611_v195_apify_hybrid">
   <script src="./admin-session-guard.js?v=20260609_v189"></script>
 </head>
 <body>
@@ -22,13 +22,13 @@
   <main class="page">
     <section class="hero">
       <div class="hero-copy">
-        <span class="eyebrow"><i class="fa-solid fa-infinity"></i> Oylik API to‘lovisiz ishlaydi</span>
+        <span class="eyebrow"><i class="fa-solid fa-infinity"></i> API-first hybrid importer</span>
         <h1>Tashqi market mahsulotini <em>bir tugma</em> orqali OrzuMall’ga import qiling</h1>
-        <p>Chrome kengaytmasi Sahiy Market, Uzum Market, 1688 va Pinduoduo mahsulot sahifalaridan qoralama oladi. Sahiy sahifalarida faqat mahsulot galereyasi va variant kartalari maxsus ajratib olinadi; to‘lov logolari va mayda ikonlar import qilinmaydi. Nom, narx, asosiy rasmlar va sahifada ochiq ko‘rinadigan tanlovlar tekshirish oynasiga tushadi. Rang, razmer, model, komplekt, quvvat va boshqa variantlar mustaqil guruhlar sifatida saqlanib, SKU kombinatsiyalariga aylantiriladi. Admin ma’lumotni tekshirib saqlaydi. Mahsulot oddiy ombor katalogidan alohida ishlaydi va buyurtmaga haqiqiy manba marketi hamda asl mahsulot havolasi biriktiriladi. 1688 ayrim spetsifikatsiyalarni login qilinmagan sahifalarda yashirishi mumkin; bunday holatda konstruktorda qiymatlarni qo‘lda to‘ldirish mumkin.</p>
+        <p>Sahiy mahsulot sahifasida <b>OrzuMall’ga import</b> tugmasini bosing. Chrome kengaytma asl 1688 Offer ID, Xitoy ichidagi yetkazish summasi va videoni yuboradi. Server Apify orqali original nom, katta rasmlar, donalik narx, MOQ, vazn, atributlar va rang × o‘lcham qiymatlarini oladi. Natijalar birlashtirilib, SKU kombinatsiyalari avtomatik yaratiladi. Admin faqat rasmlar, logistika va tarjimani tekshirib katalogga saqlaydi.</p>
         <div class="hero-tags"><span><i class="fa-solid fa-layer-group"></i> 4 ta market</span><span><i class="fa-solid fa-puzzle-piece"></i> Chrome kengaytma</span><span><i class="fa-solid fa-link"></i> Asl link buyurtmada</span></div><div class="market-platforms"><span class="sahiy">Sahiy Market</span><span class="uzum">Uzum Market</span><span class="ali">1688</span><span class="pdd">Pinduoduo</span></div>
       </div>
       <div class="hero-flow">
-        <div><i class="fa-solid fa-globe"></i><b>Tashqi market</b></div><i class="fa-solid fa-arrow-right"></i><div><i class="fa-solid fa-puzzle-piece"></i><b>Importer</b></div><i class="fa-solid fa-arrow-right"></i><div><i class="fa-solid fa-shop"></i><b>OrzuMall</b></div>
+        <div><i class="fa-solid fa-puzzle-piece"></i><b>Chrome helper</b></div><i class="fa-solid fa-arrow-right"></i><div><i class="fa-solid fa-microchip"></i><b>Apify detail</b></div><i class="fa-solid fa-arrow-right"></i><div><i class="fa-solid fa-shop"></i><b>OrzuMall</b></div>
       </div>
     </section>
 
@@ -39,7 +39,7 @@
         <p>ZIP faylni yuklab oling, arxivdan chiqaring va Chrome Extensions sahifasida <b>Load unpacked</b> orqali bir marta ulang. Keyin Sahiy, Uzum Market, 1688 va Pinduoduo mahsulot sahifalarida import tugmasi chiqadi.</p>
         <div class="extension-steps"><span>1. ZIPni oching</span><span>2. <code>chrome://extensions</code></span><span>3. Developer mode</span><span>4. Load unpacked</span></div>
       </div>
-      <a class="primary-btn download" href="/downloads/OrzuMall_Market_Importer_v3_5_VIDEO_IMPORT.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
+      <a class="primary-btn download" href="/downloads/OrzuMall_Market_Importer_v3_6_APIFY_HYBRID.zip" download><i class="fa-solid fa-download"></i> Kengaytmani yuklash</a>
     </section>
 
     <section class="login-box" id="loginBox" hidden>
@@ -51,7 +51,7 @@
     <section class="import-card">
       <div class="section-title"><div><span class="step">01</span><h2>Kengaytmadan kelgan qoralama</h2><p>Eng oson usul: kerakli marketdagi mahsulot sahifasini oching va <b>OrzuMall’ga import</b> tugmasini bosing.</p></div><span class="quota free"><i class="fa-solid fa-bolt"></i> API + Extension</span></div>
       <div class="import-ready" id="extensionReady"><i class="fa-solid fa-puzzle-piece"></i><div><b>Kengaytma qoralamasini kutmoqda</b><p>Importer orqali yuborilgan mahsulot shu oynada avtomatik ochiladi.</p></div></div>
-      <div class="url-row"><div class="url-input"><i class="fa-solid fa-link"></i><input id="sourceUrl" autocomplete="off" placeholder="Sahiy, Uzum Market, 1688 yoki Pinduoduo mahsulot havolasini joylang"></div><button class="primary-btn large" id="apiBtn"><i class="fa-solid fa-bolt"></i> Havolani tekshirish</button><button class="ghost-btn large" id="manualBtn"><i class="fa-solid fa-pen-to-square"></i> Qo‘lda</button></div><div class="api-helper" id="apiHelper"><i class="fa-solid fa-shield-halved"></i> 1688 uchun RapidAPI ixtiyoriy. Barcha marketlarda Chrome importer orqali qoralama olish mumkin.</div>
+      <div class="url-row"><div class="url-input"><i class="fa-solid fa-link"></i><input id="sourceUrl" autocomplete="off" placeholder="Sahiy, Uzum Market, 1688 yoki Pinduoduo mahsulot havolasini joylang"></div><button class="primary-btn large" id="apiBtn"><i class="fa-solid fa-bolt"></i> Havolani tekshirish</button><button class="ghost-btn large" id="manualBtn"><i class="fa-solid fa-pen-to-square"></i> Qo‘lda</button></div><div class="api-helper" id="apiHelper"><i class="fa-solid fa-shield-halved"></i> Apify API-first oqimi uchun Netlify’da APIFY_API_TOKEN kiriting. Chrome importer Sahiy logistika va videoni yordamchi sifatida yuboradi.</div>
       <div class="notice" id="notice" hidden></div>
     </section>
 
@@ -83,7 +83,7 @@
       <div class="source-panel card">
         <div class="section-title compact"><div><span class="step">02</span><h2>Tashqi marketdan olingan ma’lumot</h2></div><a class="mini-link" id="open1688" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Manbada ochish</a></div>
         <div class="source-head"><div class="source-cover" id="sourceCover"><i class="fa-solid fa-image"></i></div><div><h3 id="sourceTitle">Mahsulot ma’lumoti</h3><p id="sourceMeta">—</p><div class="chips" id="sourceChips"></div></div></div>
-        <div class="price-grid"><div><span>Manba narxi</span><b id="cnyLabel">—</b></div><div><span>Avto hisob</span><b id="autoPriceLabel">—</b></div><div><span>MOQ</span><b id="moqLabel">—</b></div><div><span>Sotuv holati</span><b id="stockLabel">Cheklanmagan</b></div></div>
+        <div class="price-grid"><div><span>Manba narxi</span><b id="cnyLabel">—</b></div><div><span>Avto hisob</span><b id="autoPriceLabel">—</b></div><div><span>MOQ</span><b id="moqLabel">—</b></div><div><span>Sotuv holati</span><b id="stockLabel">Cheklanmagan</b></div></div><div class="import-diagnostics" id="importDiagnostics"></div>
         <div class="source-block"><h4><i class="fa-solid fa-images"></i> Import qilinadigan rasmlar</h4><p>Faqat chap tomondagi asosiy mahsulot galereyasi va uning miniatyuralari qabul qilinadi. Sharhlar, foydalanuvchi yuklagan rasmlar, hujjatlar va rang ikonkalari avtomatik rad etiladi. Saqlashdan oldin belgilangan rasmlarni ko‘zdan kechiring.</p><div class="images-grid" id="imagesGrid"></div></div>
         <div class="source-block"><h4><i class="fa-solid fa-circle-play"></i> Import qilinadigan video</h4><p>Mahsulot sahifasida ochiq video bo‘lsa importer URL manzilini oladi. Video fayl Storage’ga ko‘chirilmaydi; manba URL orqali yengil ishlaydi. Topilmasa quyidagi maydonga qo‘lda link kiriting.</p><div class="video-import-preview" id="videoPreview"><div class="empty-mini">Video topilmadi.</div></div></div>
         <div class="source-block"><h4><i class="fa-solid fa-layer-group"></i> Variant konstruktori</h4><p>Market sahifasidagi ko‘rinadigan tanlovlar avtomatik ajratiladi. Rang va razmer bilan cheklanmaydi: model, komplekt, uzunlik, quvvat yoki boshqa guruhlar ham mustaqil SKU tizimiga aylantiriladi. Noto‘g‘ri qiymat ko‘rinsa, saqlashdan oldin shu yerda tahrirlang.</p>
@@ -163,6 +163,6 @@ Uzunlik: 1 m | 2 m"></textarea><small>Har qator: <code>Guruh nomi: qiymat 1 | qi
   </main>
 
   <div class="toast" id="toast"></div>
-  <script type="module" src="./external-catalog-import.js?v=20260610_v194_video_import"></script>
+  <script type="module" src="./external-catalog-import.js?v=20260611_v195_apify_hybrid"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '3.1.0';
+  const VERSION = '3.6.0';
   const BUTTON_ID = 'orzumall-1688-import-btn';
   const MAX_GALLERY = 18;
   const MAX_VARIANT_GROUPS = 8;
